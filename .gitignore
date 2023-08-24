@@ -164,3 +164,4 @@ misc/
 *.xlsx
 db_config.py
 terminal.db
+xlsx
