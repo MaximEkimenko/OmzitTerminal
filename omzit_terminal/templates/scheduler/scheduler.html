@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Рабочее место технолога</title>
+</head>
+<body>
+<h1> Рабочее место планировщика </h1> <br>
+
+
+
+<form action="{% url 'scheduler' %}" method="post" enctype="multipart/form-data" ><br>
+    <table border="1">
+    {% for line in schedule %}
+        <tr>
+           <td> {{ line }} </td>
+        </tr>
+    {% endfor %}
+     </table>
+    {% csrf_token %}
+
+    <div class="form-error">{{ form.non_field_errors }}</div>
+
+    {% for each_form in form %}
+        <p>
+            <label class="form-label" for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
+            {{ each_form }}
+        </p>
+        <div class="form-error">{{ each_form.errors }}</div>
+    {% endfor %}
+    <button type="submit"> Добавить</button>
+</form>
+<a href="{% url 'home' %}">Назад</a> <br>
+</body>
+</html>

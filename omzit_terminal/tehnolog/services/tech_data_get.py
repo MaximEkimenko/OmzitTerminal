@@ -1,43 +1,45 @@
 import openpyxl
 import re
-from ..models import TechData, ProductCategory
+from ..models import TechData, ProductCategory, ProductModel
 
 
 def tech_data_get(exel_file: str, model_list: list = None, category: str = 'Котлы',
-                  exclusion_list: tuple = ('Интерполяция М', 'гофрирование', 'Интерполяция R')):
+                  exclusion_list: tuple = ('Интерполяция М', 'гофрирование', 'Интерполяция R')) -> None:
     """
-    Функция получает технологические данные из файла exel_file технологических операций по списку моделей model_list,
-    который равен списку имен листов файла исключая имена листов в списке exclusion_list
-    :param category:
+    Функция получает технологические данные из файла exel_file по списку моделей изделия model_list,
+    который равен списку имен листов файла исключая имена листов в списке exclusion_list и сохраняет в модели
+    django ProductModel, TechData
+    :param category: категория изделия Котлы или АБМК
     :param exel_file: имя файла excel
-    :param model_list: список моделей для получения данных - список листов книги excel
+    :param model_list: список моделей изделия для получения данных - список листов книги excel
     :param exclusion_list: список листов книги excel файла для исключения из чтения
-    :return:
+    :return: None
     """
-    print(category)
+    # TODO вместо cat_id сделать нормальный запрос ORM к ProductCategory!
     if str(category).strip() == 'Котлы':
         cat_id = 1
     elif str(category).strip() == 'АБМК':
         cat_id = 2
     # exclusion_list = ('Интерполяция М', 'гофрирование', 'Интерполяция R')
     ex_wb = openpyxl.load_workbook(exel_file, data_only=True)
-    # получение списка моделей, если не указана модель
+    # получение списка моделей изделия, если не указана модель
     # Если список моделей не указан явно, то забираем имена моделей из листов
     if model_list is None:
         model_list = []
         for sheet_name in ex_wb.sheetnames:
             if sheet_name not in exclusion_list:
                 model_list.append(sheet_name)
-    result_list = []  # список результатов
     for model_name in model_list:
         model_name = model_name.strip()
+        # добавление модели изделия если такой ещё не было в модель ProductModel
+        if not ProductModel.objects.filter(model_name=model_name).exists():
+            ProductModel.objects.create(model_name=model_name)
         ex_sh = ex_wb[model_name.strip()]
         op_number_template = r'\d\d.\d\d*'  # шаблон номера операции
-        # is_present = TechData.objects.filter(model_name=model_name).exists()  # проверка существования записей модели
+        # Если по модели TechData была запись, то удаляются все записи модели
         if TechData.objects.filter(model_name=model_name).exists():
             TechData.objects.filter(model_name=model_name).delete()
             print('Удалено!')
-
         # определение максимальной строки для чтения
         max_read_row = 1
         for row in ex_sh.iter_rows(min_row=2, min_col=1, max_row=ex_sh.max_row,
@@ -45,18 +47,11 @@ def tech_data_get(exel_file: str, model_list: list = None, category: str = 'Ко
             max_read_row += 1
             if 'итого' in str(row[1]).lower():
                 break
-        # формирование списка результатов
+        # добавление в модель TechData технологических данных
         for row in ex_sh.iter_rows(min_row=1, min_col=1, max_row=max_read_row,
                                    max_col=12, values_only=True):
             if re.fullmatch(op_number_template, str(row[0])):
-                result_list.append((model_name,  # модель котла
-                                    row[0],  # номер операции
-                                    row[1],  # имя операции
-                                    row[2],  # имя РЦ
-                                    row[1] + '-' + row[2],  # полное имя операции
-                                    str(row[3]),  # номер рц
-                                    row[11]))  # расчётная трудоемкость
-                # TODO если запись в базе есть, то записываем если нет, то модифицируем
+                # TODO сделать отдельной функцией
                 TechData.objects.create(model_name=model_name,
                                         op_number=row[0],
                                         op_name=row[1],
@@ -64,45 +59,24 @@ def tech_data_get(exel_file: str, model_list: list = None, category: str = 'Ко
                                         op_name_full=row[1] + '-' + row[2],
                                         ws_number=str(row[3]),
                                         norm_tech=row[11],
-                                        product_category=ProductCategory(id=cat_id)
+                                        product_category=ProductCategory(id=cat_id)  # TODO сделать нормальный запрос
                                         )
+                # TODO передать сообщение
                 print('Добавлено!')
-                # if is_present:
-                #     pass
-                #     # TODO передать сообщение
-                #     print('Изменено!')
-                # else:
-                #     TechData.objects.create(model_name=model_name,
-                #                             op_number=row[0],
-                #                             op_name=row[1],
-                #                             ws_name=row[2],
-                #                             op_name_full=row[1] + '-' + row[2],
-                #                             ws_number=str(row[3]),
-                #                             norm_tech=row[11],
-                #                             product_category=ProductCategory(id=cat_id)
-                #                             )
-                #     print('Добавлено!')
-
                 previous_op_number = str(row[0])  # обработка объединенных ячеек имени операции
                 previous_op_name = row[1]
                 # print(row[0], '---', row[1], row[2], row[11], )
             elif row[0] is None and row[2] is not None:  # если объединённая ячейка
-                result_list.append((model_name,  # модель котла
-                                    previous_op_number,  # номер операции
-                                    previous_op_name,  # имя операции
-                                    row[2],  # имя рц
-                                    previous_op_name + '-' + row[2],  # полное имя операции
-                                    str(row[3]),  # номер рц
-                                    row[11]))  # расчётная трудоемкость
-                # TODO если запись в базе есть, то записываем если нет, то модифицируем
-
-    # try:
-    #     TechData.objects.create(**form.cleaned_data) # распакованный словарь с ключами равными БД полям
-    #     return redirect('home')
-    # except:
-    #     form.add_error(None, 'Ошибка добавления данных')
-
-    return model_list, result_list
+                # добавление в модель технологических данных
+                TechData.objects.create(model_name=model_name,
+                                        op_number=previous_op_number,
+                                        op_name=previous_op_name,
+                                        ws_name=row[2],
+                                        op_name_full=previous_op_name + '-' + row[2],
+                                        ws_number=str(row[3]),
+                                        norm_tech=row[11],
+                                        product_category=ProductCategory(id=cat_id)
+                                        )
 
 
 if __name__ == '__main__':
@@ -110,16 +84,3 @@ if __name__ == '__main__':
     model_list_tst = ['7000М+', '800М+']
     exclusion_list_tst = ('Интерполяция М', 'гофрирование', 'Интерполяция R')
     tech_data_get(exel_file=ex_file_dir_tst)
-
-# objects = models.Manager()  # явное указание метода для pycharm
-#     model_name = models.CharField(max_length=30, db_index=True)  # имя модели (заказа) изделия
-#     op_number = models.CharField(max_length=20)  # номер операции
-#     op_name = models.CharField(max_length=200)  # имя операции
-#     ws_name = models.CharField(max_length=100)  # имя рабочего центра
-#     op_name_full = models.CharField(max_length=255)  # полное имея операции (имя операции + имя рабочего центра)
-#     ws_number = models.CharField(max_length=10)  # номер рабочего центра
-#     norm_tech = models.FloatField(null=True)  # норма времени рабочего центра
-#     datetime_create = models.DateTimeField(auto_now_add=True)  # дата/время добавления данных в таблицу
-#     datetime_update = models.DateTimeField(auto_now=True)  # дата/время обновления данных таблицы
-#     is_planned = models.BooleanField(default=False)  # было ли изделие хотя бы раз запланировано
-#     product_category = models.ForeignKey(to=ProductCategory, on_delete=models.DO_NOTHING)

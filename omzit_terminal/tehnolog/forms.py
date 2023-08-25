@@ -1,5 +1,5 @@
 from django import forms
-from .models import ProductCategory, TechData
+from .models import ProductCategory
 
 
 class GetTehDataForm(forms.Form):
@@ -11,9 +11,3 @@ class GetTehDataForm(forms.Form):
     category = forms.ModelChoiceField(queryset=query_set, empty_label='Категория не выбрана',
                                       label='Категория заказа')  # выбор категории
     excel_file = forms.FileField(label='Файл excel трудоемкости')  # файл Excel
-
-
-class UploadFileForm(forms.Form):
-    title = forms.CharField(max_length=50)
-    file = forms.FileField()
-

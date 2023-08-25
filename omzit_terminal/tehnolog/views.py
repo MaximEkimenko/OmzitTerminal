@@ -3,9 +3,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from .services.service_handlers import handle_uploaded_file
 from .services.tech_data_get import tech_data_get
-
 from .forms import GetTehDataForm
-from .models import *
 
 
 def tehnolog_wp(request):
@@ -30,20 +28,11 @@ def tehnolog_wp(request):
             # return redirect('tehnolog')  # обновление страницы при успехе TODO сделать сообщение об успехе!
             # вызов сервиса получения данных из xlsx
             try:
-                model_list, data_list = tech_data_get(exel_file=xlsx_file, model_list=list_names,
-                                                      exclusion_list=exception_names, category=category)
+                tech_data_get(exel_file=xlsx_file, model_list=list_names,
+                              exclusion_list=exception_names, category=category)
             except Exception as e:
                 print(e)
-            # print(data_list)
             print(form.cleaned_data)
-
-
-            # try:
-            #     TechData.objects.create(**form.cleaned_data) # распакованный словарь с ключами равными БД полям
-            #     return redirect('home')
-            # except:
-            #     form.add_error(None, 'Ошибка добавления данных')
-
     else:
         form = GetTehDataForm()  # чистая форма для первого запуска
     return render(request, r"tehnolog/tehnolog.html", {'form': form})

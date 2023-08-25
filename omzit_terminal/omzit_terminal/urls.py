@@ -6,6 +6,7 @@ urlpatterns = [
     path('admin/', admin.site.urls, name='admin'),
     path('', home, name='home'),
     path('tehnolog/', include('tehnolog.urls')),
+    path('scheduler/', include('scheduler.urls')),
     # path('worker/<str:wp_number>', include('worker.urls')), # TODO передача номера рабочего центра в строке ссылки
 ]
 

@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'testapp',
     'tehnolog.apps.TehnologConfig',
+    'scheduler.apps.SchedulerConfig'
 
 
 

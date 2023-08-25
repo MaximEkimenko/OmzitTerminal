@@ -6,11 +6,12 @@
 with sqlite3.connect("terminal.db") as con:
     cur = con.cursor()
     cur.execute(""" CREATE TABLE IF NOT EXISTS st_table(
-        id INTEGER PRIMARY KEY AUTOINCREMENT, # id СЗ
-        op_name TEXT,  # наименование операции СЗ
-        model TEXT,  # модель изделия СЗ      
-        norm_tech REAL, # технологическая норма времени СЗ  
-        order TEXT,  # номер изделия (заказа)  
+        id INTEGER PRIMARY KEY AUTOINCREMENT, # id СЗ +
+        op_name TEXT,  # наименование операции СЗ + 
+        model TEXT,  # модель изделия СЗ      + 
+        norm_tech REAL, # технологическая норма времени СЗ +   
+        order TEXT,  # номер изделия (заказа)   + 
+        workshop INTEGER,  # номер цеха + 
         datetime_plan_ws TEXT, # время планирования на цех 
         dispatcher_plan_ws TEXT,  # ФИО диспетчера запланировал
         datetime_plan_wp TEXT,  # время планирования ра РЦ
