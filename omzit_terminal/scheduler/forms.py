@@ -1,5 +1,6 @@
 from django import forms
 from tehnolog.models import ProductModel
+from .models import ShiftTask
 
 
 class SchedulerWorkshop(forms.Form):
@@ -11,3 +12,8 @@ class SchedulerWorkshop(forms.Form):
     datetime_done = forms.DateField(label='Планируемая дата готовности')
 
 
+class SchedulerWorkplace(forms.Form):
+    query_set = ShiftTask.objects.all().distinct('ws_number')
+    workplace = forms.ModelChoiceField(queryset=query_set, empty_label='РЦ не выбран', label='Рабочий центр')
+
+# .objects.filter(stuff).values("ip_address").annotate(n=models.Count("pk"))
