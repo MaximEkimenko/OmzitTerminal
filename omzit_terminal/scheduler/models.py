@@ -1,4 +1,5 @@
 from django.db import models
+from django.forms import ModelChoiceField
 
 
 class WorkshopSchedule(models.Model):
@@ -18,6 +19,25 @@ class WorkshopSchedule(models.Model):
         verbose_name = 'График цеха'
         verbose_name_plural = 'График цеха'
 
+    def __str__(self):
+        return str(self.datetime_done)
+
+
+class Doers(models.Model):
+    """
+    Таблица исполнителей
+    """
+    objects = models.Manager()  # явное указание метода для pycharm
+    doers = models.CharField(max_length=255, unique=True)
+
+
+    class Meta:
+        db_table = "doers"
+        verbose_name = 'Исполнитель'
+        verbose_name_plural = 'Исполнители'
+
+    def __str__(self):
+        return self.doers
 
 
 
@@ -39,9 +59,10 @@ class ShiftTask(models.Model):
     norm_tech = models.FloatField(null=True, blank=True)  # норма времени рабочего центра
     datetime_techdata_create = models.DateTimeField()  # дата/время создания технологических данных
     datetime_techdata_update = models.DateTimeField()  # дата/время технологических данных
-
+    ###
     datetime_plan_ws = models.DateTimeField(auto_now=True)  # время планирования в цех
     datetime_plan_wp = models.DateTimeField(null=True)  # время планирования РЦ
+    fio_doer = models.CharField(max_length=255, null=True, default='не распределено')  # ФИО исполнителя
     datetime_assign_wp = models.DateTimeField(null=True)  # время распределения
     datetime_job_start = models.DateTimeField(null=True)  # время начала работ
     datetime_master_call = models.DateTimeField(null=True)  # время вызова мастера
@@ -64,5 +85,6 @@ class ShiftTask(models.Model):
         verbose_name = 'Технологические данные'
         verbose_name_plural = 'Технологические данные'
 
-    def __str__(self):
-        return self.ws_number
+    # def __str__(self):
+    #     # return [self.pk, self.ws_number]
+    #     return f"{self.pk}-{self.ws_number}"

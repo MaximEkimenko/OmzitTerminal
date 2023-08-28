@@ -9,18 +9,22 @@
 
 
 <!--График цеха-->
-<table border="1" title="График цехов">
-        <tr>
-            <td> Цех </td> <td> Заказ </td>  <td> Изделие </td>  <td> Дата готовности </td>  <td> Статус </td>
-        </tr>
-    {% for line in schedule %}
-        <tr>
-            {% for el in line.values %}
-                <td>   {{ el }} </td>
-            {% endfor %}
-        </tr>
-    {% endfor %}
-     </table>
+{% if schedule %}
+    <table border="1" title="График цехов">
+            <tr>
+                <td> Цех </td> <td> Заказ </td>  <td> Изделие </td>  <td> Дата готовности </td>  <td> Статус </td>
+            </tr>
+        {% for line in schedule %}
+            <tr>
+                {% for el in line.values %}
+                    <td>   {{ el }} </td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+         </table>
+    {% else %}
+    <p>!!!!!!!!</p>
+{% endif %}
 
 
 <!--форма планирования цеха-->
@@ -38,28 +42,10 @@
         </p>
         <div class="form-error">{{ each_form.errors }}</div>
     {% endfor %}
-    <button type="submit"> Добавить</button>
+    <button type="submit"> Запланировать </button>
 </form>
 
 <br><br><br>
-
-<!--форма планирования РЦ-->
-<form action="{% url 'scheduler' %}" method="post" enctype="multipart/form-data" >
-
-    {% csrf_token %}
-    <div class="form-error">{{ form_workplace_plan.non_field_errors }}</div>
-
-    {% for each_form in form_workplace_plan %}
-        <p>
-            <label class="form-label" for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
-            {{ each_form }}
-        </p>
-        <div class="form-error">{{ each_form.errors }}</div>
-    {% endfor %}
-    <button type="submit"> Добавить</button>
-</form>
-
-
 
 <a href="{% url 'home' %}">Назад</a> <br>
 </body>

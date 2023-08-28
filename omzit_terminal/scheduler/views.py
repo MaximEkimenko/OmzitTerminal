@@ -1,5 +1,7 @@
+import datetime
+
 from django.shortcuts import render, redirect
-from .forms import SchedulerWorkshop, SchedulerWorkplace
+from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer
 from .models import WorkshopSchedule, ShiftTask
 from tehnolog.models import TechData
 
@@ -48,9 +50,10 @@ def scheduler(request):
                                                  ws_number=line['ws_number'],
                                                  norm_tech=line['norm_tech'],
                                                  datetime_techdata_create=line['datetime_create'],
-                                                 datetime_techdata_update=line['datetime_update']
+                                                 datetime_techdata_update=line['datetime_update'],
+                                                 datetime_plan_wp=datetime.datetime.now()
                                                  )
-                        print('Данные сменные задания успешно занесены!')
+                        print('Данные сменного задания успешно занесены!')
                     return redirect('scheduler')  # обновление страницы при успехе TODO сделать сообщение об успехе!
                 else:
                     form_workshop_plan.add_error(None, 'Такой заказ уже запланирован!')
@@ -60,21 +63,11 @@ def scheduler(request):
                 print(e, ' Ошибка запаси в базу SchedulerWorkshop')
         else:
             context = {'form_workshop_plan': form_workshop_plan, 'schedule': workshop_schedule}
-        # отображение формы планирования РЦ
-        form_workplace_plan = SchedulerWorkplace(request.POST)
-        if form_workplace_plan.is_valid():
-            print(form_workplace_plan.cleaned_data)
-
-
-
-
 
     else:
         # чистые форма для первого запуска
         form_workshop_plan = SchedulerWorkshop()
-        form_workplace_plan = SchedulerWorkplace()
-        context = {'form_workshop_plan': form_workshop_plan, 'form_workplace_plan': form_workplace_plan,
-                   'schedule': workshop_schedule}
+        context = {'form_workshop_plan': form_workshop_plan, 'schedule': workshop_schedule}
     return render(request, r"scheduler/scheduler.html", context=context)
 
 
@@ -84,14 +77,66 @@ def schedulerwp(request):
     :param request:
     :return:
     """
+
+    def if_not_none(obj):
+        if obj is None:
+            return ''
+        else:
+            return ',' + str(obj)
+
+    # отображение графика РЦ
+    # выборка из уже занесенного
+    workplace_schedule = ShiftTask.objects.values('id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number',
+                                                  'op_number', 'op_name_full', 'norm_tech', 'fio_doer').all()
+
     if request.method == 'POST':
         form_workplace_plan = SchedulerWorkplace(request.POST)
         if form_workplace_plan.is_valid():
-            print(form_workplace_plan.cleaned_data)
+            # вывод отфильтрованного графика
+            # определения рабочего центра и id
+            try:
+                filtered_workplace_schedule = (ShiftTask.objects.values
+                                               ('id', 'workshop', 'order', 'model_name',
+                                                'datetime_done', 'ws_number',
+                                                'op_number', 'op_name_full',
+                                                'norm_tech', 'fio_doer').
+                                               filter(ws_number=form_workplace_plan.cleaned_data['ws_number'].ws_number,
+                                                      datetime_done=form_workplace_plan.cleaned_data[
+                                                          'datetime_done'].datetime_done, fio_doer='не распределено'))
+            except Exception as e:
+                filtered_workplace_schedule = dict()
+                print(e)
+            # Вывод формы для заполнения ФИО
+            form_fio_doer = FioDoer(request.POST)
+            # обновление данных
+            if form_fio_doer.is_valid():
+                print(form_fio_doer.cleaned_data)
+                print(form_fio_doer.cleaned_data['st_number'])
+                doers_fios = (str(form_fio_doer.cleaned_data['fio_1']) +
+                              if_not_none((form_fio_doer.cleaned_data['fio_2'])) +
+                              if_not_none(form_fio_doer.cleaned_data['fio_3']) +
+                              if_not_none(form_fio_doer.cleaned_data['fio_4']))
+                print(doers_fios)
+                (ShiftTask.objects.filter(pk=form_fio_doer.cleaned_data['st_number'].id).update(
+                    fio_doer=doers_fios, datetime_assign_wp=datetime.datetime.now(),
 
+
+                ))
+                print('Распределено!')
+            # (ShiftTask.objects.filter(ws_number=form_workplace_plan.cleaned_data['ws_number'],
+            #                           datetime_done=str(form_workplace_plan.cleaned_data['datetime_done']))
+            #  .update(fio_doer=form_fio_doer.cleaned_data['fio_doer']))
+
+            context = {'form_workplace_plan': form_workplace_plan,
+                       'filtered_workplace_schedule': filtered_workplace_schedule,
+                       'form_fio_doer': form_fio_doer}
+
+            return render(request, r"schedulerwp/schedulerwp.html",
+                          context=context)  # TODO сделать редирект на success!
 
     else:
         # чистые форма для первого запуска
-        form_workplace_plan = SchedulerWorkplace()
-        context = {'form_workplace_plan': form_workplace_plan}
+        form_workplace_plan = SchedulerWorkplace({'ws_number': 105})
+        context = {'form_workplace_plan': form_workplace_plan, 'workplace_schedule': workplace_schedule}
+    context = {'form_workplace_plan': form_workplace_plan, 'workplace_schedule': workplace_schedule}
     return render(request, r"schedulerwp/schedulerwp.html", context=context)
