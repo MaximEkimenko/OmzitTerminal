@@ -7,7 +7,7 @@ urlpatterns = [
     path('', home, name='home'),
     path('tehnolog/', include('tehnolog.urls')),
     path('scheduler/', include('scheduler.urls')),
-    # path('worker/<str:wp_number>', include('worker.urls')), # TODO передача номера рабочего центра в строке ссылки
+    path('worker/', include('worker.urls')),
 ]
 
 # TODO написать обработчики ошибок 404, 500, перед деплоем и debug False

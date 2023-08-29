@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title> Терминал РЦ {{ ws_number }} </title>
+</head>
+<body>
+<h1> Терминал РЦ {{ ws_number }} </h1> <br>
+
+
+{% if initial_shift_tasks %}
+    <table border="1" title="График цехов">
+            <tr>
+               <td> № </td> <td> РЦ </td> <td> Изделие </td>  <td> Заказ </td>  <td> Номер операции </td>  <td> Операция </td>
+                <td> Трудоемкость </td> <td> Исполнители </td> <td> Статус </td> <td> Время начала работы </td>
+                <td> Время приемки </td> <td> Фактическая трудоемкость </td>
+            </tr>
+        {% for line in initial_shift_tasks %}
+            <tr>
+                {% for el in line.values %}
+                    <td>   {{ el }} </td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+         </table>
+    {% else %}
+    <p> Распределённые сменные задания на РЦ {{ ws_number }} отсутствуют. </p>
+{% endif %}
+{% if initial_shift_tasks %}
+
+
+{% endif %}
+
+<br><br><br>
+
+{% if select_shift_task %}
+    <form action="{{ ws_number }}"  method="POST" enctype="multipart/form-data" >
+        {% csrf_token %}
+        <label>Выбор сменного задания для запуска в работу: </label> <br>
+        <select multiple size = 10 name = "task_id" autofocus >
+                <option selected> Выберите сменное задание </option>
+            {% for task in select_shift_task %}
+                  <option> {{ task.id }}---{{ task.op_number }} {{task.op_name_full}} </option>
+            {% endfor %}
+        </select>
+        <br>
+        <button type="submit"> Начать работу </button>
+    </form>
+{% endif %}
+
+<!--<a href="{% url 'worker_choose' %}">Назад</a> <br>-->
+</body>
+</html>

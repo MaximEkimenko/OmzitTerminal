@@ -49,7 +49,7 @@ class ShiftTask(models.Model):
     # поля
     workshop = models.PositiveSmallIntegerField()  # номер цеха
     model_name = models.CharField(max_length=30, db_index=True)  # имя модели (заказа) изделия
-    datetime_done = models.DateField()  # время ответа ОТК
+    datetime_done = models.DateField()  # ожидаемая дата готовности
     order = models.CharField(max_length=100)  # номер заказа
     op_number = models.CharField(max_length=20)  # номер операции
     op_name = models.CharField(max_length=200)  # имя операции
@@ -70,7 +70,7 @@ class ShiftTask(models.Model):
     datetime_otk_answer = models.DateTimeField(null=True)  # время ответа ОТК
     master_calls = models.IntegerField(null=True)  # Количество вызовов мастера
     norm_fact = models.FloatField(null=True)  # фактическая норма времени рабочего центра
-    otk_decision = models.CharField(max_length=30, null=True)  # Решение ОТК
+    otk_decision = models.CharField(max_length=30, null=True)  # Решение ОТК  # TODO зачем это поле если есть st_status?
     decision_time = models.DateTimeField(null=True)  # длительность приёмки
     st_status = models.CharField(max_length=20, default='не запланировано')
     ###
@@ -85,6 +85,3 @@ class ShiftTask(models.Model):
         verbose_name = 'Технологические данные'
         verbose_name_plural = 'Технологические данные'
 
-    # def __str__(self):
-    #     # return [self.pk, self.ws_number]
-    #     return f"{self.pk}-{self.ws_number}"

@@ -28,7 +28,8 @@ def scheduler(request):
                     WorkshopSchedule.objects.create(order=form_workshop_plan.cleaned_data['order'],
                                                     model_name=form_workshop_plan.cleaned_data['model_name'],
                                                     workshop=form_workshop_plan.cleaned_data['workshop'],
-                                                    datetime_done=form_workshop_plan.cleaned_data['datetime_done'])
+                                                    datetime_done=form_workshop_plan.cleaned_data['datetime_done']
+                                                    )
                     print('Данные в график успешно занесены!')
                     # переменные для передачи в базу # TODO если не пригодятся - удалить!
                     formed_workshop = form_workshop_plan.cleaned_data['workshop']
@@ -118,7 +119,7 @@ def schedulerwp(request):
                               if_not_none(form_fio_doer.cleaned_data['fio_4']))
                 print(doers_fios)
                 (ShiftTask.objects.filter(pk=form_fio_doer.cleaned_data['st_number'].id).update(
-                    fio_doer=doers_fios, datetime_assign_wp=datetime.datetime.now(),
+                    fio_doer=doers_fios, datetime_assign_wp=datetime.datetime.now(), st_status='запланировано'
 
 
                 ))
