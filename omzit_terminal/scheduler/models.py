@@ -68,7 +68,8 @@ class ShiftTask(models.Model):
     datetime_master_call = models.DateTimeField(null=True)  # время вызова мастера
     datetime_otk_call = models.DateTimeField(null=True)  # время вызова ОТК
     datetime_otk_answer = models.DateTimeField(null=True)  # время ответа ОТК
-    master_calls = models.IntegerField(null=True)  # Количество вызовов мастера
+    master_calls = models.IntegerField(null=True, default=0)  # Количество вызовов мастера
+    master_called = models.CharField(null=True, default='не было')
     norm_fact = models.FloatField(null=True)  # фактическая норма времени рабочего центра
     otk_decision = models.CharField(max_length=30, null=True)  # Решение ОТК  # TODO зачем это поле если есть st_status?
     decision_time = models.DateTimeField(null=True)  # длительность приёмки

@@ -40,7 +40,7 @@
         <select multiple size = 10 name = "task_id" autofocus >
                 <option selected> Выберите сменное задание </option>
             {% for task in select_shift_task %}
-                  <option> {{ task.id }}---{{ task.op_number }} {{task.op_name_full}} </option>
+                  <option> {{ task.id }} --- {{ task.st_status }} -- {{ task.op_number }} {{task.op_name_full}} </option>
             {% endfor %}
         </select>
         <br>
