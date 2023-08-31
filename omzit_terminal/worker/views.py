@@ -34,11 +34,11 @@ def worker(request, ws_number):
     context = {}
     initial_shift_tasks = (ShiftTask.objects.values('id', 'ws_number', 'model_name', 'order', 'op_number',
                                                     'op_name_full', 'norm_tech', 'fio_doer', 'st_status',
-                                                    'datetime_job_start', 'decision_time', 'norm_fact')
+                                                    'datetime_job_start', 'decision_time')
                            .filter(ws_number=ws_number)).exclude(fio_doer='не распределено').order_by("st_status")
     select_shift_task = (ShiftTask.objects.values('id', 'ws_number', 'model_name', 'order', 'op_number',
                                                   'op_name_full', 'norm_tech', 'fio_doer', 'st_status',
-                                                  'datetime_job_start', 'decision_time', 'norm_fact')
+                                                  'datetime_job_start', 'decision_time')
                          .filter(ws_number=ws_number)).exclude(fio_doer='не распределено').order_by("st_status")
 
     # terminal_listener должен быть включён!

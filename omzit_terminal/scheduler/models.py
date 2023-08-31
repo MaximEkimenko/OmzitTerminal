@@ -66,17 +66,19 @@ class ShiftTask(models.Model):
     datetime_assign_wp = models.DateTimeField(null=True)  # время распределения
     datetime_job_start = models.DateTimeField(null=True)  # время начала работ
     datetime_master_call = models.DateTimeField(null=True)  # время вызова мастера
+    master_finish_wp = models.CharField(max_length=30, null=True)  # ФИО мастера вызова ОТК
     datetime_otk_call = models.DateTimeField(null=True)  # время вызова ОТК
     datetime_otk_answer = models.DateTimeField(null=True)  # время ответа ОТК
-    master_calls = models.IntegerField(null=True, default=0)  # Количество вызовов мастера
-    master_called = models.CharField(null=True, default='не было')
+    master_calls = models.IntegerField(null=True, default=0)  # количество вызовов мастера
+    master_called = models.CharField(null=True, default='не было')  # статус вызова мастера
     norm_fact = models.FloatField(null=True)  # фактическая норма времени рабочего центра
-    otk_decision = models.CharField(max_length=30, null=True)  # Решение ОТК  # TODO зачем это поле если есть st_status?
-    decision_time = models.DateTimeField(null=True)  # длительность приёмки
+    otk_answer = models.CharField(max_length=30, null=True)  # ФИО контролёра ответа ОТК
+    otk_decision = models.CharField(max_length=30, null=True)  # ФИО контролёра решения ОТК
+    decision_time = models.DateTimeField(null=True)  # время приёмки ОТК
     st_status = models.CharField(max_length=20, default='не запланировано')
     ###
-    otk_answer = models.CharField(max_length=30, null=True)  # ФИО контролёра ответа ОТК TODO реализовать
-    master_finish_wp = models.CharField(max_length=30, null=True)  # ФИО мастера вызова ОТК TODO реализовать
+
+
     dispatcher_plan_ws = models.CharField(max_length=30, null=True)  # ФИО диспетчера планирования цеха TODO реализовать
     dispatcher_plan_wp = models.CharField(max_length=30, null=True)  # ФИО диспетчера планирования РЦ TODO реализовать
     master_assign_wp = models.CharField(max_length=30, null=True)  # ФИО мастера распределения РЦ TODO реализовать
