@@ -13,7 +13,9 @@ TOKEN = os.getenv('RSU_TOKEN')
 admin_id = int(os.getenv('ADMIN_TELEGRAM_ID'))
 users = (admin_id, )  # админ
 
+masters = (admin_id, )
 
+control_mans_list = (admin_id, )
 # telegram ids
 test_group_id = -908012934
 
@@ -70,7 +72,7 @@ async def help_rsu_bot(message: types.Message):
 # отображение inline ws_number для мастера при вызове ОТК. Обработка команды otk_send
 @dp.message_handler(commands=['otk_send'])
 async def master_otk_send(message: types.Message):
-    if message.from_user.id in users:
+    if message.from_user.id in masters:
         # создание inline keyboard РЦ со статусом ожидание мастера
         inline_ws_buttons = types.InlineKeyboardMarkup()  # объект
         ws_list = ws_list_get("ожидание мастера")
@@ -78,7 +80,8 @@ async def master_otk_send(message: types.Message):
             btn = types.InlineKeyboardButton(text=f'{ws}', callback_data=f'call{ws}{message.from_user.id}')
             inline_ws_buttons.insert(btn)
         await message.answer('Выбор РЦ', reply_markup=inline_ws_buttons)
-
+    else:
+        await message.reply('У вас нет доступа к этому функционалу.')
 
 # обработчик callback otk_send вызова контролёра МАСТЕРОМ на РЦ
 @dp.callback_query_handler(lambda callback: call_get_re(pattern_call_otk, callback.data[:-10]))
@@ -99,7 +102,7 @@ async def otk_call(callback_query: types.CallbackQuery):
 # отображение inline ws_number для контролёра при ответе на запрос. Обработка команды otk_answer.
 @dp.message_handler(commands=['otk_answer'])
 async def otk_answer_master_send(message: types.Message):
-    if message.from_user.id in users:
+    if message.from_user.id in control_mans_list:
         # создание inline keyboard РЦ со статусом ожидание контролёра
         inline_ws_buttons = types.InlineKeyboardMarkup()  # объект инлайн кнопок РЦ
         ws_list = ws_list_get("ожидание контролёра")
@@ -107,6 +110,8 @@ async def otk_answer_master_send(message: types.Message):
             btn = types.InlineKeyboardButton(text=f'{ws}', callback_data=f'answ{ws}{message.from_user.id}')
             inline_ws_buttons.insert(btn)
         await message.answer('Выбор РЦ', reply_markup=inline_ws_buttons)
+    else:
+        await message.reply('У вас нет доступа к этому функционалу.')
 
 
 # обработчик callback otk_answer ответа контролёра МАСТЕРУ на РЦ
@@ -131,7 +136,7 @@ async def otk_call(callback_query: types.CallbackQuery):
 # отображение inline для решения отк. Обработка команды otk_decision
 @dp.message_handler(commands=['otk_decision'])
 async def otk_answer_master_send(message: types.Message):
-    if message.from_user.id in users:
+    if message.from_user.id in control_mans_list:
         # создание inline keyboard РЦ со статусом ожидание контролёра
         inline_ws_buttons = types.InlineKeyboardMarkup()  # объект инлайн кнопок РЦ
         ws_list = ws_list_get("ожидание контролёра")
@@ -139,6 +144,8 @@ async def otk_answer_master_send(message: types.Message):
             btn = types.InlineKeyboardButton(text=f'{ws}', callback_data=f'dcgo{ws}{message.from_user.id}')
             inline_ws_buttons.insert(btn)
         await message.answer('Выбор РЦ для принятия решения:', reply_markup=inline_ws_buttons)
+    else:
+        await message.reply('У вас нет доступа к этому функционалу.')
 
 
 # обработчик callback otk_decision принятия решения по СЗ на РЦ для отображение инлайн СЗ

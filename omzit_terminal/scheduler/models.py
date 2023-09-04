@@ -56,7 +56,7 @@ class ShiftTask(models.Model):
     ws_name = models.CharField(max_length=100)  # имя рабочего центра
     op_name_full = models.CharField(max_length=255)  # полное имея операции (имя операции + имя рабочего центра)
     ws_number = models.CharField(max_length=10)  # номер рабочего центра
-    norm_tech = models.FloatField(null=True, blank=True)  # норма времени рабочего центра
+    norm_tech = models.DecimalField(null=True, max_digits=10, decimal_places=2)  # норма времени рабочего центра
     datetime_techdata_create = models.DateTimeField()  # дата/время создания технологических данных
     datetime_techdata_update = models.DateTimeField()  # дата/время технологических данных
     ###
@@ -71,7 +71,7 @@ class ShiftTask(models.Model):
     datetime_otk_answer = models.DateTimeField(null=True)  # время ответа ОТК
     master_calls = models.IntegerField(null=True, default=0)  # количество вызовов мастера
     master_called = models.CharField(null=True, default='не было')  # статус вызова мастера
-    norm_fact = models.FloatField(null=True)  # фактическая норма времени рабочего центра
+    norm_fact = models.DecimalField(null=True, max_digits=10, decimal_places=2)  # фактическая норма времени рабочего центра
     otk_answer = models.CharField(max_length=30, null=True)  # ФИО контролёра ответа ОТК
     otk_decision = models.CharField(max_length=30, null=True)  # ФИО контролёра решения ОТК
     decision_time = models.DateTimeField(null=True)  # время приёмки ОТК

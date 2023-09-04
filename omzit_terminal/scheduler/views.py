@@ -87,8 +87,9 @@ def schedulerwp(request):
 
     # отображение графика РЦ
     # выборка из уже занесенного
-    workplace_schedule = ShiftTask.objects.values('id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number',
-                                                  'op_number', 'op_name_full', 'norm_tech', 'fio_doer').all()
+    workplace_schedule = (
+        ShiftTask.objects.values('id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number',
+                                 'op_number', 'op_name_full', 'norm_tech', 'fio_doer', 'st_status').all())
 
     if request.method == 'POST':
         form_workplace_plan = SchedulerWorkplace(request.POST)
@@ -100,7 +101,7 @@ def schedulerwp(request):
                                                ('id', 'workshop', 'order', 'model_name',
                                                 'datetime_done', 'ws_number',
                                                 'op_number', 'op_name_full',
-                                                'norm_tech', 'fio_doer').
+                                                'norm_tech', 'fio_doer', 'st_status').
                                                filter(ws_number=form_workplace_plan.cleaned_data['ws_number'].ws_number,
                                                       datetime_done=form_workplace_plan.cleaned_data[
                                                           'datetime_done'].datetime_done, fio_doer='не распределено'))
@@ -120,7 +121,6 @@ def schedulerwp(request):
                 print(doers_fios)
                 (ShiftTask.objects.filter(pk=form_fio_doer.cleaned_data['st_number'].id).update(
                     fio_doer=doers_fios, datetime_assign_wp=datetime.datetime.now(), st_status='запланировано'
-
 
                 ))
                 print('Распределено!')
