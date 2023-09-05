@@ -71,13 +71,16 @@ class ShiftTask(models.Model):
     datetime_otk_answer = models.DateTimeField(null=True)  # время ответа ОТК
     master_calls = models.IntegerField(null=True, default=0)  # количество вызовов мастера
     master_called = models.CharField(null=True, default='не было')  # статус вызова мастера
-    norm_fact = models.DecimalField(null=True, max_digits=10, decimal_places=2)  # фактическая норма времени рабочего центра
+    # фактическая норма времени рабочего центра
+    norm_fact = models.DecimalField(null=True, max_digits=10, decimal_places=2)
     otk_answer = models.CharField(max_length=30, null=True)  # ФИО контролёра ответа ОТК
     otk_decision = models.CharField(max_length=30, null=True)  # ФИО контролёра решения ОТК
     decision_time = models.DateTimeField(null=True)  # время приёмки ОТК
     st_status = models.CharField(max_length=20, default='не запланировано')
+    is_fail = models.BooleanField(null=True, default=False)  # факт наличия брака
+    datetime_fail = models.DateTimeField(null=True)  # время фиксации брака
+    fio_failer = models.CharField(max_length=255, null=True)  # ФИО бракоделов
     ###
-
 
     dispatcher_plan_ws = models.CharField(max_length=30, null=True)  # ФИО диспетчера планирования цеха TODO реализовать
     dispatcher_plan_wp = models.CharField(max_length=30, null=True)  # ФИО диспетчера планирования РЦ TODO реализовать

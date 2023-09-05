@@ -1,5 +1,5 @@
 import datetime
-
+from django.db.models import Q
 from django.shortcuts import render
 from .forms import WorkplaceChoose
 from django.shortcuts import redirect
@@ -32,11 +32,19 @@ def ws_number_choose(request):
 def worker(request, ws_number):
     # вывод таблицы распределённых РЦ
     context = {}
+    today = datetime.datetime.now().strftime('%d.%m.%Y')
     # TODO фильтр по дате = сегодня для принятых, не принятых, брака
     initial_shift_tasks = (ShiftTask.objects.values('id', 'ws_number', 'model_name', 'order', 'op_number',
                                                     'op_name_full', 'norm_tech', 'fio_doer', 'st_status',
                                                     'datetime_job_start', 'decision_time')
-                           .filter(ws_number=ws_number)).exclude(fio_doer='не распределено').order_by("st_status")
+                           .filter(ws_number=ws_number).exclude(fio_doer='не распределено')
+                           .exclude(Q(decision_time__lte=datetime.datetime.strptime(today, '%d.%m.%Y')) &
+                                    Q(st_status='принято'))
+                           .exclude(Q(decision_time__lte=datetime.datetime.strptime(today, '%d.%m.%Y')) &
+                                    Q(st_status='брак'))
+                           .exclude(Q(decision_time__lte=datetime.datetime.strptime(today, '%d.%m.%Y')) &
+                                    Q(st_status='не принято'))
+                           .order_by("st_status"))
     select_shift_task = ((ShiftTask.objects.values('id', 'ws_number', 'model_name', 'order', 'op_number',
                                                    'op_name_full', 'norm_tech', 'fio_doer', 'st_status',
                                                    'datetime_job_start', 'decision_time')
@@ -45,8 +53,8 @@ def worker(request, ws_number):
                          .exclude(st_status='не принято')
                          .exclude(st_status='принято')
                          .order_by("st_status"))
-
     # terminal_listener должен быть включён!
+    # формирование сообщений
     if request.method == 'POST':
         print(request.POST)
         if 'сменное' not in request.POST['task_id']:

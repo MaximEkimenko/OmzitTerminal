@@ -2,6 +2,7 @@ from django import forms
 from tehnolog.models import ProductModel
 from .models import ShiftTask, WorkshopSchedule, Doers
 from django.forms import ModelChoiceField
+from django.db.models import Q
 
 
 class SchedulerWorkshop(forms.Form):
@@ -44,18 +45,24 @@ class FiosLabel(ModelChoiceField):  # переопределение метод�
     Класс для переопределения вывода ModelChoiceField
     """
     def label_from_instance(self, obj):
-        return f"{obj.id}. Заказ - {obj.order}. №РЦ- {obj.ws_number}. Изделие - {obj.model_name}"
+        return (f"{obj.id}. Заказ - {obj.order}. №РЦ- {obj.ws_number}. Изделие - {obj.model_name}. "
+                f"Статус - {obj.st_status}")
 
 
 class FioDoer(forms.Form):
     """
     Форма для ввода ФИО
     """
-    qs_st_number = ShiftTask.objects.filter(fio_doer="не распределено")
+    # выбор "не распределено", "брак", "не принято"
+    qs_st_number = (ShiftTask.objects.filter
+                    (Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято')))
     st_number = FiosLabel(qs_st_number, label='Сменное задание', empty_label='СЗ не выбрано')
     qs_st_fio = Doers.objects.all()
     fio_1 = forms.ModelChoiceField(qs_st_fio, label='ФИО исполнителя 1', empty_label='ФИО не выбрано')
-    fio_2 = forms.ModelChoiceField(qs_st_fio, label='ФИО исполнителя 2', empty_label='ФИО не выбрано', initial=8, required=False)
-    fio_3 = forms.ModelChoiceField(qs_st_fio, label='ФИО исполнителя 3', empty_label='ФИО не выбрано', initial=8, required=False)
-    fio_4 = forms.ModelChoiceField(qs_st_fio, label='ФИО исполнителя 4', empty_label='ФИО не выбрано', initial=8, required=False)
+    fio_2 = forms.ModelChoiceField(qs_st_fio, label='ФИО исполнителя 2', empty_label='ФИО не выбрано', initial=8,
+                                   required=False)
+    fio_3 = forms.ModelChoiceField(qs_st_fio, label='ФИО исполнителя 3', empty_label='ФИО не выбрано', initial=8,
+                                   required=False)
+    fio_4 = forms.ModelChoiceField(qs_st_fio, label='ФИО исполнителя 4', empty_label='ФИО не выбрано', initial=8,
+                                   required=False)
 

@@ -153,7 +153,6 @@ def master_id_get(ws_number: str = None, st_id: str = None) -> tuple:
                 con.commit()
                 master_id, ws_result_number = cur.fetchone()
 
-
         except Exception as e:
             print(e, 'ошибка выборке ПО МАСТЕРУ')
     except Exception as e:
@@ -221,10 +220,21 @@ def decision_data_set(st_id, controlman_id, decision):
         con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
         con.autocommit = True
         # запрос на корректировку БД
-        update_query = f"""UPDATE shift_task SET otk_decision = '{controlman_id}',
-                                        st_status = '{decision}',
-                                        decision_time = '{datetime.datetime.now()}'
-                                        WHERE id='{st_id}'"""
+
+        if decision == 'брак':
+            update_query = f"""UPDATE shift_task SET otk_decision = '{controlman_id}',
+                                                        st_status = '{decision}',
+                                                        decision_time = '{datetime.datetime.now()}',
+                                                        is_fail = 'True',
+                                                        datetime_fail = '{datetime.datetime.now()}',
+                                                        fio_failer = 
+                                                        (SELECT fio_doer FROM shift_task WHERE id='{st_id}')                                                      
+                                                        WHERE id='{st_id}'"""
+        else:
+            update_query = f"""UPDATE shift_task SET otk_decision = '{controlman_id}',
+                                            st_status = '{decision}',
+                                            decision_time = '{datetime.datetime.now()}'
+                                            WHERE id='{st_id}'"""
         try:
             with con.cursor() as cur:
                 cur.execute(update_query)
@@ -271,7 +281,6 @@ def indexes_calculation(st_id):
                     results['datetime_job_start'] = line[16]
                     results['decision_time'] = line[23]
 
-
         except Exception as e:
             print(e, 'ошибка выборке')
     except Exception as e:
@@ -285,7 +294,6 @@ def indexes_calculation(st_id):
 #
 # a = datetime.timedelta()
 # a.total_seconds()
-
 
 
 if __name__ == '__main__':

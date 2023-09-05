@@ -83,6 +83,7 @@ async def master_otk_send(message: types.Message):
     else:
         await message.reply('У вас нет доступа к этому функционалу.')
 
+
 # обработчик callback otk_send вызова контролёра МАСТЕРОМ на РЦ
 @dp.callback_query_handler(lambda callback: call_get_re(pattern_call_otk, callback.data[:-10]))
 async def otk_call(callback_query: types.CallbackQuery):
@@ -119,6 +120,7 @@ async def otk_answer_master_send(message: types.Message):
 async def otk_call(callback_query: types.CallbackQuery):
     controlman_id = callback_query.data[-10:]  # id контролёра
     ws_number = callback_query.data[4:-10]  # номер РЦ
+    #TODO Получить статус по номеру РЦ, если ожидание контролёра, то стоп
     # запрос в БД на id мастера
     master_id = master_id_get(ws_number=ws_number)[0]
     # отправка сообщения о заявке на контролёра в группу ОТК
@@ -129,6 +131,7 @@ async def otk_call(callback_query: types.CallbackQuery):
     await bot.send_message(chat_id=controlman_id, text=f"Вы ответили на запрос РЦ{ws_number}.")
     # Запись в БД информации об ответе контролёра
     control_man_id_set(ws_number, controlman_id)
+    await callback_query.answer()
 # ------------------------------------------------
 
 

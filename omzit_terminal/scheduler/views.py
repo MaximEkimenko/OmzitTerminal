@@ -1,10 +1,10 @@
 import datetime
-
 from django.shortcuts import render, redirect
 from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer
 from .models import WorkshopSchedule, ShiftTask
 from tehnolog.models import TechData
-
+from django.db.models import Q
+from django.db.models import F
 
 def scheduler(request):
     """
@@ -78,13 +78,11 @@ def schedulerwp(request):
     :param request:
     :return:
     """
-
     def if_not_none(obj):
         if obj is None:
             return ''
         else:
             return ',' + str(obj)
-
     # отображение графика РЦ
     # выборка из уже занесенного
     workplace_schedule = (
@@ -94,17 +92,18 @@ def schedulerwp(request):
     if request.method == 'POST':
         form_workplace_plan = SchedulerWorkplace(request.POST)
         if form_workplace_plan.is_valid():
-            # вывод отфильтрованного графика
+            # вывод отфильтрованного графика с бракованными и непринятыми для перезапуска
             # определения рабочего центра и id
             try:
                 filtered_workplace_schedule = (ShiftTask.objects.values
-                                               ('id', 'workshop', 'order', 'model_name',
-                                                'datetime_done', 'ws_number',
-                                                'op_number', 'op_name_full',
-                                                'norm_tech', 'fio_doer', 'st_status').
+                                               ('id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number',
+                                                'op_number', 'op_name_full', 'norm_tech', 'fio_doer', 'st_status').
                                                filter(ws_number=form_workplace_plan.cleaned_data['ws_number'].ws_number,
                                                       datetime_done=form_workplace_plan.cleaned_data[
-                                                          'datetime_done'].datetime_done, fio_doer='не распределено'))
+                                                          'datetime_done'].datetime_done)
+                                               .filter(Q(fio_doer='не распределено') | Q(st_status='брак')
+                                                       | Q(st_status='не принято'))
+                                               )
             except Exception as e:
                 filtered_workplace_schedule = dict()
                 print(e)
@@ -120,9 +119,8 @@ def schedulerwp(request):
                               if_not_none(form_fio_doer.cleaned_data['fio_4']))
                 print(doers_fios)
                 (ShiftTask.objects.filter(pk=form_fio_doer.cleaned_data['st_number'].id).update(
-                    fio_doer=doers_fios, datetime_assign_wp=datetime.datetime.now(), st_status='запланировано'
-
-                ))
+                    fio_doer=doers_fios, datetime_assign_wp=datetime.datetime.now(), st_status='запланировано',
+                 datetime_job_start=None, decision_time=None))
                 print('Распределено!')
             # (ShiftTask.objects.filter(ws_number=form_workplace_plan.cleaned_data['ws_number'],
             #                           datetime_done=str(form_workplace_plan.cleaned_data['datetime_done']))
@@ -131,10 +129,9 @@ def schedulerwp(request):
             context = {'form_workplace_plan': form_workplace_plan,
                        'filtered_workplace_schedule': filtered_workplace_schedule,
                        'form_fio_doer': form_fio_doer}
-
+            # TODO сделать редирект на success! либо дать JS alert
             return render(request, r"schedulerwp/schedulerwp.html",
-                          context=context)  # TODO сделать редирект на success!
-
+                          context=context)
     else:
         # чистые форма для первого запуска
         form_workplace_plan = SchedulerWorkplace({'ws_number': 105})
