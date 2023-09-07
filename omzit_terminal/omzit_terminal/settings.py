@@ -26,7 +26,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['192.168.8.163', '192.168.8.30', '127.0.0.1']
 
 
 # Application definition
@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'testapp',
     'tehnolog.apps.TehnologConfig',
-    'scheduler.apps.SchedulerConfig'
+    'scheduler.apps.SchedulerConfig',
+    'worker.apps.WorkerConfig'
 
 
 
@@ -90,6 +91,8 @@ DATABASES = {
         'USER': 'admin',
         'PASSWORD': 'Epass1',
         'HOST': 'localhost',
+        # 'HOST': '192.168.8.163'
+        # 'HOST': '192.168.8.30'
         'PORT': '',
     }
 }

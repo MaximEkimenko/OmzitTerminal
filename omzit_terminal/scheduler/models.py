@@ -70,7 +70,7 @@ class ShiftTask(models.Model):
     datetime_otk_call = models.DateTimeField(null=True)  # время вызова ОТК
     datetime_otk_answer = models.DateTimeField(null=True)  # время ответа ОТК
     master_calls = models.IntegerField(null=True, default=0)  # количество вызовов мастера
-    master_called = models.CharField(null=True, default='не было')  # статус вызова мастера
+    master_called = models.CharField(max_length=10, null=True, default='не было')  # статус вызова мастера
     # фактическая норма времени рабочего центра
     norm_fact = models.DecimalField(null=True, max_digits=10, decimal_places=2)
     otk_answer = models.CharField(max_length=30, null=True)  # ФИО контролёра ответа ОТК
