@@ -5,7 +5,7 @@
     <title> Терминал РЦ {{ ws_number }} </title>
 <script>
 // Периодическая перезагрузка страницы
-setTimeout(() => location.reload(), 30000);
+setTimeout(() => location.href = location.pathname, 30000);
 // функция отображения сообщения
 function showNotification({top = 0, right = 0, html}) {
       let notification = document.createElement('div');

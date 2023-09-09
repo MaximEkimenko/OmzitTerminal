@@ -96,7 +96,7 @@ def st_list_get(ws_number: str) -> tuple:
     Получение tuple СЗ с РЦ запросом из базы со статусом status
     :return: tuple РЦ
     """
-    st_list = set()  # список сообщений для мастера
+    st_set = set()  # список сообщений для мастера
     try:
         # подключение к БД
         con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
@@ -110,19 +110,20 @@ def st_list_get(ws_number: str) -> tuple:
         try:
             with con.cursor() as cur:
                 cur.execute(select_query)
-                con.commit()
-                for shift_task in cur.fetchall():
-                    st = f"№ {shift_task[0]} | РЦ{shift_task[1]} | {shift_task[2]}"  # форматирование строки
-                    st_list.add(st)
+                all_tasks = list(cur.fetchall())
         except Exception as e:
             print(e, 'ошибка выборке')
+        for shift_task in all_tasks:
+            st = f"№ {shift_task[0]} | РЦ{shift_task[1]} | {shift_task[2]}"  # форматирование строки
+            # print('ST-------', st)
+            st_set.add(st)
     except Exception as e:
         print('Ошибка подключения к базе', e)
     finally:
         con.close()
-    st_list = tuple(sorted(st_list))
-    # print(st_list)
-    return st_list
+    st_set = tuple(sorted(st_set))
+    # print('ST_SET----', st_set)
+    return st_set
 
 
 def master_id_get(ws_number: str = None, st_id: str = None) -> tuple:

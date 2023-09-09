@@ -71,10 +71,12 @@ async def help_rsu_bot(message: types.Message):
 
 # TODO docstring для всх обработчиков
 # TODO разграничить права доступа
+# TODO переводчик всех id в ФИО
 # ------------------------------------------------ Мастер вызывает контролёра
 # отображение inline ws_number для мастера при вызове ОТК. Обработка команды otk_send
 @dp.message_handler(commands=['otk_send'])
 async def master_otk_send(message: types.Message):
+    # TODO если вызовов мастера нет, то ответ, что вызовов для контролёра делать не откуда
     if message.from_user.id in masters:
         # создание inline keyboard РЦ со статусом ожидание мастера
         inline_ws_buttons = types.InlineKeyboardMarkup()  # объект
@@ -106,6 +108,7 @@ async def otk_call(callback_query: types.CallbackQuery):
 # отображение inline ws_number для контролёра при ответе на запрос. Обработка команды otk_answer.
 @dp.message_handler(commands=['otk_answer'])
 async def otk_answer_master_send(message: types.Message):
+    # TODO если запросов на контролёра  нет, то ответ - нет запросов на контролёра не было
     if message.from_user.id in control_mans_list:
         # создание inline keyboard РЦ со статусом ожидание контролёра
         inline_ws_buttons = types.InlineKeyboardMarkup()  # объект инлайн кнопок РЦ
@@ -123,7 +126,7 @@ async def otk_answer_master_send(message: types.Message):
 async def otk_call(callback_query: types.CallbackQuery):
     controlman_id = callback_query.data[-10:]  # id контролёра
     ws_number = callback_query.data[4:-10]  # номер РЦ
-    # TODO Получить статус по номеру РЦ, если ожидание контролёра, то стоп
+    # TODO Получить статус по номеру РЦ, если ожидание контролёра, то ответ, что нет
     # запрос в БД на id мастера
     master_id = master_id_get(ws_number=ws_number)[0]
     # отправка сообщения о заявке на контролёра в группу ОТК
@@ -142,6 +145,7 @@ async def otk_call(callback_query: types.CallbackQuery):
 # отображение inline для решения отк. Обработка команды otk_decision
 @dp.message_handler(commands=['otk_decision'])
 async def otk_answer_master_send(message: types.Message):
+    # TODO если статуса ожидания нет, то ответ, что контролёра не ждут
     if message.from_user.id in control_mans_list:
         # создание inline keyboard РЦ со статусом ожидание контролёра
         inline_ws_buttons = types.InlineKeyboardMarkup()  # объект инлайн кнопок РЦ
@@ -162,10 +166,13 @@ async def otk_answer(callback_query: types.CallbackQuery):
     inline_st_buttons = types.InlineKeyboardMarkup()  # объект инлайн кнопок номера СЗ
     # получение списка СЗ
     shift_task_list = st_list_get(ws_number)
-    shift_task_id = st_list_get(ws_number)[0][2:5]  # id СЗ
+    # print('shift_task_list = ', shift_task_list)
     for task in shift_task_list:
+        shift_task_id = task[2:5]  # id СЗ
+        # print(shift_task_id)
         btn = types.InlineKeyboardButton(text=f'{task}',
                                          callback_data=f'stid{shift_task_id}{controlman_id}')
+        # print(f'stid{shift_task_id}{controlman_id}')
         inline_st_buttons.add(btn)
     await bot.send_message(chat_id=controlman_id, text=f'для РЦ{ws_number} выберите СЗ:',
                            reply_markup=inline_st_buttons)

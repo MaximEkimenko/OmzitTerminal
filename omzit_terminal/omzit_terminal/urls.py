@@ -12,7 +12,7 @@ urlpatterns = [
 
 ]
 
-# TODO написать обработчики ошибок 404, 500, перед деплоем и debug False
+# TODO написать обработчики ошибок 404, 500, перед деплоем и сделать debug False
 # handler404 = page_not_found
 
 
