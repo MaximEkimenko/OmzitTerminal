@@ -1,52 +1,99 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Рабочее место планировщика</title>
-</head>
-<body>
-<h1> Рабочее место планировщика </h1> <br>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Рабочее место планировщика</title>
+        <link
+            type="text/css"
+            href="{% static 'scheduler/css/scheduler.css' %}"
+            rel="stylesheet"
+        />
+    </head>
+    <body>
+        <h1>Рабочее место планировщика</h1>
 
+        <!--График цеха-->
+        {% if schedule %}
+        <div class="row">
+            <div class="col">
+                <h3>График производства</h3>
+                <table border="1" title="График цехов">
+                    <tr>
+                        <td>Цех</td>
+                        <td>Заказ</td>
+                        <td>Изделие</td>
+                        <td>Дата готовности</td>
+                        <td>Статус</td>
+                    </tr>
+                    {% for line in schedule %}
+                    <tr>
+                        {% for el in line.values %}
+                        <td>{{ el }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% else %}
+                <p>Данные для отображения отсутствуют</p>
+                {% endif %}
+            </div>
+            <div class="col">
+                <!-- prettier-ignore -->
+                {% if td_queries %}
+                <h3>Заявки на документацию</h3>
+                <table border="1" title="Заявки на документацию">
+                    <tr>
+                        <td>Заказ</td>
+                        <td>Изделие</td>
+                        <td>Статус заяки</td>
+                    </tr>
+                    {% for line in td_queries %}
+                    <tr>
+                        {% for el in line.values %}
+                        <td class="td_cell">{{ el }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% else %}
+                <p>Данные для отображения отсутствуют</p>
+                {% endif %}
+            </div>
+        </div>
+        <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
 
-<!--График цеха-->
-{% if schedule %}
-    <table border="1" title="График цехов">
-            <tr>
-                <td> Цех </td> <td> Заказ </td>  <td> Изделие </td>  <td> Дата готовности </td>  <td> Статус </td>
-            </tr>
-        {% for line in schedule %}
-            <tr>
-                {% for el in line.values %}
-                    <td>   {{ el }} </td>
+        <!--форма планирования цеха-->
+        <div class="form-div">
+            <h3>Форма заполнения</h3>
+
+            <form
+                class="form-form"
+                action="{% url 'scheduler' %}"
+                method="post"
+                enctype="multipart/form-data"
+            >
+                {% csrf_token %}
+                <div class="form-error">
+                    {{ form_workshop_plan.non_field_errors }}
+                </div>
+                {% for each_form in form_workshop_plan %}
+                <div class="col-form">{{each_form.label}}</div>
+
+                <div class="col-form">{{ each_form }}</div>
+
+                <div class="form-error">{{ each_form.errors }}</div>
                 {% endfor %}
-            </tr>
-        {% endfor %}
-         </table>
-    {% else %}
-    <p>Данные для отображения отсутствуют</p>
-{% endif %}
+                <div class="form-button">
+                    <button type="submit">
+                        Запланировать / запросить чертеж
+                    </button>
+                </div>
+            </form>
+        </div>
 
+        <br /><br /><br />
 
-<!--форма планирования цеха-->
-<form action="{% url 'scheduler' %}" method="post" enctype="multipart/form-data" >
-
-
-
-    {% csrf_token %}
-    <div class="form-error">{{ form_workshop_plan.non_field_errors }}</div>
-
-    {% for each_form in form_workshop_plan %}
-        <p>
-            <label class="form-label" for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
-            {{ each_form }}
-        </p>
-        <div class="form-error">{{ each_form.errors }}</div>
-    {% endfor %}
-    <button type="submit"> Запланировать </button>
-</form>
-
-<br><br><br>
-
-<a href="{% url 'home' %}">Назад</a> <br>
-</body>
+        <a href="{% url 'home' %}">Назад</a> <br />
+    </body>
 </html>

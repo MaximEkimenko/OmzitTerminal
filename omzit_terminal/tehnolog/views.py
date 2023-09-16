@@ -4,9 +4,11 @@ from django.shortcuts import render, redirect
 from .services.service_handlers import handle_uploaded_file
 from .services.tech_data_get import tech_data_get
 from .forms import GetTehDataForm
+from scheduler.models import WorkshopSchedule
 
 
 def tehnolog_wp(request):
+    td_queries = WorkshopSchedule.objects.values('order', 'model_query', 'td_status').exclude(td_status='утверждено')
     if request.method == 'POST':
         form = GetTehDataForm(request.POST, request.FILES)  # класс форм с частично заполненными данными
         if form.is_valid():
@@ -35,4 +37,4 @@ def tehnolog_wp(request):
             print(form.cleaned_data)
     else:
         form = GetTehDataForm()  # чистая форма для первого запуска
-    return render(request, r"tehnolog/tehnolog.html", {'form': form})
+    return render(request, r"tehnolog/tehnolog.html", {'form': form, 'td_queries': td_queries})

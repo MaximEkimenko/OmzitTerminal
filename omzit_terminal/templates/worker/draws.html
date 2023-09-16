@@ -1,0 +1,31 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Выбор чертежей {{ header_string }}</title>
+
+        <script></script>
+    </head>
+    <body>
+        <h1>Выбор чертежей {{ header_string }}</h1>
+        <form action="{{ draws }}" method="POST" enctype="multipart/form-data" id="sel_1">
+            {% csrf_token %}
+            <label id="sel_2"> Выбор чертежа: </label>
+            <br />
+            <select multiple id="sel_3" size="10" name="task_id">
+                <option selected id="0">Выберите чертеж:</option>
+
+                {% for draw in select_draws %} {% for link in pdf_links %}
+
+                <option>{{ link.filename }}</option>
+
+                {% endfor %} {% endfor %}
+            </select>
+            <br />
+            <button type="submit">Начать работу</button>
+        </form>
+
+        <br />
+    </body>
+</html>

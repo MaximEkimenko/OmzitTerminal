@@ -5,10 +5,12 @@ from .views import home, get_pdf
 urlpatterns = [
     path('admin/', admin.site.urls, name='admin'),
     path('', home, name='home'),
-    path('pdf', get_pdf),
     path('tehnolog/', include('tehnolog.urls')),
     path('scheduler/', include('scheduler.urls')),
     path('worker/', include('worker.urls')),
+    path('constructor/', include('constructor.urls')),
+    # TODO отредактировать после тестов
+    path('pdf', get_pdf),
 
 ]
 

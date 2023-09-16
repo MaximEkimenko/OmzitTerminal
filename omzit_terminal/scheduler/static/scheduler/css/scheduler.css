@@ -1,0 +1,26 @@
+.row {
+    margin: 10px;
+}
+
+.col {
+    margin: 10px;
+    display: inline-block;
+}
+
+.form-div {
+}
+.col-form {
+    margin: 10px;
+    width: 400px;
+    display: inline-block;
+}
+
+.form-form {
+    width: 1000px;
+}
+.form-button {
+}
+
+.form-error {
+    background-color: red;
+}

@@ -6,12 +6,12 @@
         <title>Рабочее место технолога</title>
         <link
             type="text/css"
-            href="{% static 'tehnolog/css/tehnolog.css' %}"
+            href="{% static 'constructor/css/constructor.css' %}"
             rel="stylesheet"
         />
     </head>
     <body>
-        <h1>Рабочее место технолога</h1>
+        <h1>Рабочее место конструктора</h1>
         <div class="col">
             <!-- prettier-ignore -->
             {% if td_queries %}
@@ -33,31 +33,8 @@
             {% else %}
             <p>Данные для отображения отсутствуют</p>
             {% endif %}
+            <script src="{% static 'constructor/js/constructor.js' %}"></script>
         </div>
-        <form
-            action="{% url 'tehnolog' %}"
-            method="post"
-            enctype="multipart/form-data"
-        >
-            <script src="{% static 'tehnolog/js/tehnolog.js' %}"></script>
-            <br />
-
-            {% csrf_token %}
-
-            <div class="form-error">{{ form.non_field_errors }}</div>
-
-            {% for each_form in form %}
-            <p>
-                <label class="form-label" for="{{ each_form.id_for_label }}"
-                    >{{each_form.label}}:
-                </label>
-                {{ each_form }}
-            </p>
-            <div class="form-error">{{ each_form.errors }}</div>
-            {% endfor %}
-
-            <button type="submit">Добавить</button>
-        </form>
         <br />
         <a href="{% url 'home' %}">Назад</a> <br />
     </body>

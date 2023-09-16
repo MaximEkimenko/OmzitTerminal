@@ -1,6 +1,7 @@
 import openpyxl
 import re
-from ..models import TechData, ProductCategory, ProductModel
+# from ..models import TechData, ProductCategory, ProductModel
+from ..models import TechData, ProductCategory
 
 
 def tech_data_get(exel_file: str, model_list: list = None, category: str = 'Котлы',
@@ -32,8 +33,12 @@ def tech_data_get(exel_file: str, model_list: list = None, category: str = 'Ко
     for model_name in model_list:
         model_name = model_name.strip()
         # добавление модели изделия если такой ещё не было в модель ProductModel
-        if not ProductModel.objects.filter(model_name=model_name).exists():
-            ProductModel.objects.create(model_name=model_name)
+
+        # TODO вставить модель Scheduler - корректировать запись сделанную диспетчером
+        #  поменять статус td_status в WorkshopSchedule
+        # if not ProductModel.objects.filter(model_name=model_name).exists():
+        #     ProductModel.objects.create(model_name=model_name)
+
         ex_sh = ex_wb[model_name.strip()]
         op_number_template = r'\d\d.\d\d*'  # шаблон номера операции
         # Если по модели TechData была запись, то удаляются все записи модели
@@ -59,7 +64,9 @@ def tech_data_get(exel_file: str, model_list: list = None, category: str = 'Ко
                                         op_name_full=row[1] + '-' + row[2],
                                         ws_number=str(row[3]),
                                         norm_tech=row[11],
-                                        product_category=ProductCategory(id=cat_id)  # TODO сделать нормальный запрос
+                                        product_category=ProductCategory(id=cat_id),  # TODO сделать нормальный запрос
+                                        draw_path=row[15],
+                                        draw_filename=row[16]
                                         )
                 # TODO передать сообщение
                 print('Добавлено!')
@@ -75,7 +82,9 @@ def tech_data_get(exel_file: str, model_list: list = None, category: str = 'Ко
                                         op_name_full=previous_op_name + '-' + row[2],
                                         ws_number=str(row[3]),
                                         norm_tech=row[11],
-                                        product_category=ProductCategory(id=cat_id)
+                                        product_category=ProductCategory(id=cat_id),
+                                        draw_path=row[15],
+                                        draw_filename=row[16]
                                         )
 
 

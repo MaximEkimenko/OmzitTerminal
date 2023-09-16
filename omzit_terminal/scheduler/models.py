@@ -4,15 +4,20 @@ from django.forms import ModelChoiceField
 
 class WorkshopSchedule(models.Model):
     """
-    Таблица графика цеха
+    Данные для планирования цеха, статусы заказов, статусы чертежей
     """
     objects = models.Manager()  # явное указание метода для pycharm
-
     workshop = models.PositiveSmallIntegerField()  # номер цеха
     model_name = models.CharField(max_length=30)  # имя модели (заказа) изделия
-    datetime_done = models.DateField()  # планируемая дата готовности
+    datetime_done = models.DateField(null=True)  # планируемая дата готовности заказа
     order = models.CharField(max_length=100)  # номер заказа
-    order_status = models.CharField(max_length=20, default='запланировано')
+    order_status = models.CharField(max_length=20, default='не запланировано')  # статус заказа
+    model_query = models.CharField(max_length=30, null=True)  # имя модели заказа при запросе КД
+    td_status = models.CharField(max_length=20, default='запрошено')  # статус технической документации
+    td_query_datetime = models.DateTimeField(auto_now_add=True, null=True)  # время запроса документации
+    td_const_done_datetime = models.DateTimeField(null=True)  # время ответа конструктора по КД
+    td_tehnolog_done_datetime = models.DateTimeField(null=True)  # время ответа технолога по КД
+    plan_datetime = models.DateTimeField(null=True)  # дата выполнения планирования заказа
 
     class Meta:
         db_table = "workshop_schedule"
@@ -24,12 +29,12 @@ class WorkshopSchedule(models.Model):
 
 
 class Doers(models.Model):
+    # TODO синхронизация с 1С
     """
     Таблица исполнителей
     """
     objects = models.Manager()  # явное указание метода для pycharm
     doers = models.CharField(max_length=255, unique=True)
-
 
     class Meta:
         db_table = "doers"
@@ -39,6 +44,9 @@ class Doers(models.Model):
     def __str__(self):
         return self.doers
 
+
+# class DocQuery(models.Model):
+#     pass
 
 
 class ShiftTask(models.Model):
@@ -81,7 +89,6 @@ class ShiftTask(models.Model):
     datetime_fail = models.DateTimeField(null=True)  # время фиксации брака
     fio_failer = models.CharField(max_length=255, null=True)  # ФИО бракоделов
     ###
-
     dispatcher_plan_ws = models.CharField(max_length=30, null=True)  # ФИО диспетчера планирования цеха TODO реализовать
     dispatcher_plan_wp = models.CharField(max_length=30, null=True)  # ФИО диспетчера планирования РЦ TODO реализовать
     master_assign_wp = models.CharField(max_length=30, null=True)  # ФИО мастера распределения РЦ TODO реализовать
