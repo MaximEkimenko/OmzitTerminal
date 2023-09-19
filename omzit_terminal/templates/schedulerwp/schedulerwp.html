@@ -1,133 +1,124 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Рабочее место планировщика рабочих центров</title>
-  </head>
-  <body>
-    <h1>Рабочее место планировщика рабочих центров</h1>
-    <br />
+    <head>
+        <meta charset="UTF-8" />
+        <title>Рабочее место планировщика рабочих центров</title>
+        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
+    </head>
 
-    <!--форма планирования РЦ-->
-    <form
-      action="{% url 'schedulerwp' %}"
-      method="post"
-      enctype="multipart/form-data"
-    >
-      {% csrf_token %}
-      <div class="form-error">{{ form_workplace_plan.non_field_errors }}</div>
+    <body>
+        <h1>Рабочее место планировщика рабочих центров</h1>
+        <br />
 
-      {% for each_form in form_workplace_plan %}
-      <p>
-        <label class="form-label" for="{{ each_form.id_for_label }}"
-          >{{each_form.label}}:
-        </label>
-        {{ each_form }}
-      </p>
-      <div class="form-error">{{ each_form.errors }}</div>
-      {% endfor %}
-      <button type="submit">Выбрать</button>
-    </form>
+        <!--форма планирования РЦ-->
+        <form action="{% url 'schedulerwp' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-error">{{ form_workplace_plan.non_field_errors }}</div>
 
-    {% if workplace_schedule %}
-    <table border="1" title="График рабочих центров">
-      <tr>
-        <td>№СЗ</td>
-        <td>Цех</td>
-        <td>Заказ</td>
-        <td>Изделие</td>
-        <td>Дата готовности</td>
-        <td>Номер РЦ</td>
-        <td>Номер операции</td>
-        <td>Операция</td>
-        <td>Норма времени</td>
-        <td>Фио исполнителя</td>
-        <td>Статус СЗ</td>
-      </tr>
+            {% for each_form in form_workplace_plan %}
+            <p>
+                <label class="form-label" for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
+                {{ each_form }}
+            </p>
+            <div class="form-error">{{ each_form.errors }}</div>
+            {% endfor %}
+            <button type="submit">Выбрать</button>
+        </form>
+        {% if workplace_schedule %}
+        <p class="alert">{{ alert_message }}</p>
+        <table border="1" title="График рабочих центров">
+            <tr>
+                <td>№СЗ</td>
+                <td>Цех</td>
+                <td>Заказ</td>
+                <td>Изделие</td>
+                <td>Дата готовности</td>
+                <td>Номер РЦ</td>
+                <td>Номер операции</td>
+                <td>Операция</td>
+                <td>Норма времени</td>
+                <td>Фио исполнителя</td>
+                <td>Статус СЗ</td>
+            </tr>
 
-      {% for line in workplace_schedule %}
-      <tr>
-        {% for el in line.values %}
-        <td>{{ el }}</td>
-        {% endfor %}
-      </tr>
-      {% endfor %}
-    </table>
-    {% endif %} {% if filtered_workplace_schedule %}
-    <table border="1" title="График рабочих центров">
-      <tr>
-        <td>№СЗ</td>
-        <td>Цех</td>
-        <td>Заказ</td>
-        <td>Изделие</td>
-        <td>Дата готовности</td>
-        <td>Номер РЦ</td>
-        <td>Номер операции</td>
-        <td>Операция</td>
-        <td>Норма времени</td>
-        <td>ФИО исполнителя</td>
-        <td>Статус СЗ</td>
-      </tr>
+            {% for line in workplace_schedule %}
+            <tr>
+                {% for el in line.values %}
+                <td>{{ el }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+        {% endif %} {% if filtered_workplace_schedule %}
 
-      {% for line in filtered_workplace_schedule %}
-      <tr>
-        {% for el in line.values %}
-        <td>{{ el }}</td>
-        {% endfor %}
-      </tr>
-      {% endfor %}
-    </table>
-    {% endif %}
+        <table border="1" title="График рабочих центров">
+            <tr>
+                <td>№СЗ</td>
+                <td>Цех</td>
+                <td>Заказ</td>
+                <td>Изделие</td>
+                <td>Дата готовности</td>
+                <td>Номер РЦ</td>
+                <td>Номер операции</td>
+                <td>Операция</td>
+                <td>Норма времени</td>
+                <td>ФИО исполнителя</td>
+                <td>Статус СЗ</td>
+            </tr>
 
-    <!--форма выбора ФИО-->
-    {% if filtered_workplace_schedule %}
-    <form
-      action="{% url 'schedulerwp' %}"
-      method="post"
-      enctype="multipart/form-data"
-    >
-      {% csrf_token %}
-      <div class="form-error">{{ form_fio_doer.non_field_errors }}</div>
+            {% for line in filtered_workplace_schedule %}
+            <tr>
+                {% for el in line.values %}
+                <td>{{ el }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+        <!--форма выбора ФИО-->
+        {% if filtered_workplace_schedule %}
+        <p class="alert">{{ alert_message }}</p>
+        <!-- <script>
+            const notification = document.getElementsByClassName("alert")[0];
+            setTimeout(() => notification.remove(), 10000);
+        </script> -->
+        <form action="{% url 'schedulerwp' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <!-- <div class="form-error">{{ form_fio_doer.non_field_errors }}</div> -->
 
-      <p>
-        <label class="form-label" for="{{ form_fio_doer.id_for_label }}"
-          >{{form_fio_doer.st_number.label}}:
-        </label>
+            <p>
+                <label class="form-label" for="{{ form_fio_doer.id_for_label }}"
+                    >{{form_fio_doer.st_number.label}}:
+                </label>
 
-        {{ form_fio_doer.st_number }}
-      </p>
-      <p>
-        <label class="form-label" for="{{ form_fio_doer.id_for_label }}"
-          >{{form_fio_doer.fio_1.label}}:
-        </label>
-        {{ form_fio_doer.fio_1 }}
-      </p>
-      <p>
-        <label class="form-label" for="{{ form_fio_doer.id_for_label }}"
-          >{{form_fio_doer.fio_2.label}}:
-        </label>
-        {{ form_fio_doer.fio_2 }}
-      </p>
-      <p>
-        <label class="form-label" for="{{ form_fio_doer.id_for_label }}"
-          >{{form_fio_doer.fio_3.label}}:
-        </label>
-        {{ form_fio_doer.fio_3 }}
-      </p>
-      <p>
-        <label class="form-label" for="{{ form_fio_doer.id_for_label }}"
-          >{{form_fio_doer.fio_4.label}}:
-        </label>
-        {{ form_fio_doer.fio_4 }}
-      </p>
+                {{ form_fio_doer.st_number }}
+            </p>
+            <p>
+                <label class="form-label" for="{{ form_fio_doer.id_for_label }}">{{form_fio_doer.fio_1.label}}: </label>
+                {{ form_fio_doer.fio_1 }}
+            </p>
+            <p>
+                <label class="form-label" for="{{ form_fio_doer.id_for_label }}">{{form_fio_doer.fio_2.label}}: </label>
+                {{ form_fio_doer.fio_2 }}
+            </p>
+            <p>
+                <label class="form-label" for="{{ form_fio_doer.id_for_label }}">{{form_fio_doer.fio_3.label}}: </label>
+                {{ form_fio_doer.fio_3 }}
+            </p>
+            <p>
+                <label class="form-label" for="{{ form_fio_doer.id_for_label }}">{{form_fio_doer.fio_4.label}}: </label>
+                {{ form_fio_doer.fio_4 }}
+            </p>
 
-      <div class="form-error">{{ form_fio_doer.errors }}</div>
+            <!-- <div class="form-error">{{ form_fio_doer.errors }}</div> -->
 
-      <button type="submit">Назначить ФИО</button>
-    </form>
+            <button type="submit">Назначить ФИО</button>
+        </form>
 
-    {% endif %}
+        {% endif %}
 
-    <a href="{% url 'home' %}">Назад</a> <br />
-  </body>
+        <a href="{% url 'home' %}">Назад</a> <br />
+        <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
+    </body>
 </html>

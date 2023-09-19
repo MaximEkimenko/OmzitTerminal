@@ -1,7 +1,8 @@
 import datetime
 import time
 import asyncio
-
+from django.http import FileResponse
+from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.db.models import Q
 from django.shortcuts import render
@@ -12,6 +13,7 @@ from tehnolog.models import TechData
 from .forms import WorkplaceChoose
 from .services.master_call_db import select_master_call
 from .services.master_call_function import send_call_master
+
 
 
 # TODO найти решение аналогов РЦ. Убрать обозначение РЦ "РЦ№1/РЦ№2" - вместо "/" использовать "-"
@@ -142,16 +144,16 @@ def draws(request, ws_st_number: str):
                     )
     print(select_draws)
 
-    draw_path = select_draws[0]['draw_path']  # путь к чертежам
+    draw_path = str(select_draws[0]['draw_path']).strip()  # путь к чертежам
     pdf_links = []  # список словарей чертежей
     # если несколько чертежей
     if ',' in select_draws[0]['draw_filename']:
         draw_filenames = select_draws[0]['draw_filename'].split(',')
         for draw_filename in draw_filenames:
-            pdf_links.append({'link': fr"{draw_path}\{draw_filename}", 'filename': draw_filename})
+            pdf_links.append({'link': fr"{draw_path}{str(draw_filename).strip()}", 'filename': draw_filename})
     else:
         draw_filename = select_draws[0]['draw_filename']
-        pdf_links.append({'link': fr"{draw_path}\{draw_filename}", 'filename': draw_filename})
+        pdf_links.append({'link': fr"{draw_path}{str(draw_filename).strip()}", 'filename': draw_filename})
 
     # TODO
     #  выбор из списка
@@ -159,7 +161,7 @@ def draws(request, ws_st_number: str):
     #  управление кнопками внутри открывшегося чертежа (открывать чертёж в iframe?)
     #  закрытие всего по прослушанной кнопке выхода = редирект на worker
 
-    context = {'header_string': header_string, 'select_draws': select_draws, 'pdf_links': pdf_links}
+    context = {'ws_number': ws_number, 'st_number': st_number, 'select_draws': select_draws, 'pdf_links': pdf_links}
     return render(request, r"worker/draws.html", context=context)
 
 
@@ -183,3 +185,14 @@ def make_master_call(request, ws_st_number):
         return redirect(f'/worker/{ws_number}?call=True')
     else:
         return redirect(f'/worker/{ws_number}?call=False')
+
+
+def show_draw(request, ws_number, pdf_file):
+    # print(ws_number)
+    # print('pdf-file --- ', pdf_file)
+    # преобразование строки из запроса в ссылку
+    path_to_file = (str(pdf_file).replace('--', '/'))
+    # print(path_to_file)
+    response = FileResponse(open(fr'{path_to_file}', 'rb'))
+    response['X-Frame-Options'] = 'SAMEORIGIN'
+    return response

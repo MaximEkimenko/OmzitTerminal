@@ -4,11 +4,7 @@
     <head>
         <meta charset="UTF-8" />
         <title>Рабочее место планировщика</title>
-        <link
-            type="text/css"
-            href="{% static 'scheduler/css/scheduler.css' %}"
-            rel="stylesheet"
-        />
+        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
     </head>
     <body>
         <h1>Рабочее место планировщика</h1>
@@ -67,16 +63,9 @@
         <div class="form-div">
             <h3>Форма заполнения</h3>
 
-            <form
-                class="form-form"
-                action="{% url 'scheduler' %}"
-                method="post"
-                enctype="multipart/form-data"
-            >
+            <form class="form-form" action="{% url 'scheduler' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
-                <div class="form-error">
-                    {{ form_workshop_plan.non_field_errors }}
-                </div>
+                <div class="form-error">{{ form_workshop_plan.non_field_errors }}</div>
                 {% for each_form in form_workshop_plan %}
                 <div class="col-form">{{each_form.label}}</div>
 
@@ -85,9 +74,7 @@
                 <div class="form-error">{{ each_form.errors }}</div>
                 {% endfor %}
                 <div class="form-button">
-                    <button type="submit">
-                        Запланировать / запросить чертеж
-                    </button>
+                    <button type="submit">Запланировать / запросить чертеж</button>
                 </div>
             </form>
         </div>

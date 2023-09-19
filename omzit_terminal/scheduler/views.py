@@ -110,13 +110,16 @@ def scheduler(request):
 
 
 def schedulerwp(request):
+    # TODO разделить на 2 view первый - выбор РЦ и даты (отредактировать формат даты) и переход на другую страницу
+    #  (schedulerfio) - передается в имени строки РЦ и дата.
+    #  второй - загружается выборка по РЦ (если выборки нет, то редирект назад и alert) и форма с заполнением
+    #  этой выборки
     """
     Планирование графика РЦ
     :param request:
     :return:
     """
-
-    def if_not_none(obj):
+    def if_not_none(obj):  # функция замены None
         if obj is None:
             return ''
         else:
@@ -145,7 +148,7 @@ def schedulerwp(request):
                                                )
             except Exception as e:
                 filtered_workplace_schedule = dict()
-                print(e)
+                print('Ошибка получения filtered_workplace_schedule', e)
             # Вывод формы для заполнения ФИО
             form_fio_doer = FioDoer(request.POST)
             # обновление данных
@@ -160,20 +163,28 @@ def schedulerwp(request):
                 (ShiftTask.objects.filter(pk=form_fio_doer.cleaned_data['st_number'].id).update(
                     fio_doer=doers_fios, datetime_assign_wp=datetime.datetime.now(), st_status='запланировано',
                     datetime_job_start=None, decision_time=None))
+                alert_message = f'Успешно распределено!'
                 print('Распределено!')
-            # (ShiftTask.objects.filter(ws_number=form_workplace_plan.cleaned_data['ws_number'],
-            #                           datetime_done=str(form_workplace_plan.cleaned_data['datetime_done']))
-            #  .update(fio_doer=form_fio_doer.cleaned_data['fio_doer']))
-
+                context = {'form_workplace_plan': form_workplace_plan,
+                           'filtered_workplace_schedule': filtered_workplace_schedule,
+                           'workplace_schedule': workplace_schedule,
+                           'form_fio_doer': form_fio_doer,
+                           'alert_message': alert_message}
+                return render(request, r"schedulerwp/schedulerwp.html", context=context)
+            alert_message = 'Выберите ФИО:'
             context = {'form_workplace_plan': form_workplace_plan,
                        'filtered_workplace_schedule': filtered_workplace_schedule,
-                       'form_fio_doer': form_fio_doer}
-            # TODO сделать редирект на success! либо дать JS alert
-            return render(request, r"schedulerwp/schedulerwp.html",
-                          context=context)
+                       'form_fio_doer': form_fio_doer,
+                       'alert_message': alert_message}
+            return render(request, r"schedulerwp/schedulerwp.html", context=context)
+            # return redirect(f'/scheduler/schedulerwp')
+        else:
+            alert_message = 'Второй раз неверно введены данные'
+            context = {'form_workplace_plan': form_workplace_plan, 'workplace_schedule': workplace_schedule,
+                       'alert_message': alert_message}
+            return render(request, r"schedulerwp/schedulerwp.html", context=context)
     else:
-        # чистые форма для первого запуска
-        form_workplace_plan = SchedulerWorkplace({'ws_number': 105})
+        form_workplace_plan = SchedulerWorkplace()
         context = {'form_workplace_plan': form_workplace_plan, 'workplace_schedule': workplace_schedule}
-    context = {'form_workplace_plan': form_workplace_plan, 'workplace_schedule': workplace_schedule}
-    return render(request, r"schedulerwp/schedulerwp.html", context=context)
+        return render(request, r"schedulerwp/schedulerwp.html", context=context)
+

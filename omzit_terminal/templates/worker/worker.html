@@ -4,7 +4,6 @@
     <head>
         <meta charset="UTF-8" />
         <title>Терминал РЦ {{ ws_number }}</title>
-        <script></script>
     </head>
     <body>
         <h1>Терминал РЦ {{ ws_number }}</h1>
@@ -60,19 +59,21 @@
         {% endif %}
         <script>
             // перенаправление на страницу чертежей
+            // элемент select
+            const select_element = document.getElementById("sel_3");
             document.addEventListener("keydown", function (event) {
                 const ws_number = "{{ ws_number }}";
-                // элемент select
-                const select_element = document.getElementById("sel_3");
                 // id выбранного option
                 const st_id = select_element.options[select_element.selectedIndex].id;
                 const tech_data = select_element.options[select_element.selectedIndex].dataset.send;
                 //const op_number = select_element.options[select_element.selectedIndex].op_number;
+                // кнопка выбрать чертёж
                 if (event.code == "KeyV") {
                     if (st_id != "0") {
                         const draw_link = `/worker/${ws_number}--${tech_data}`; // ссылка на страницу с чертежем
                         location.href = draw_link; // переход по ссылке
                     }
+                    // кнопка выхов мастера
                 } else if (event.code == "Semicolon") {
                     // Вызов мастера
                     master_call_link = `/worker/${ws_number}-${st_id}/get`;

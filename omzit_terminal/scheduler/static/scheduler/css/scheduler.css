@@ -7,8 +7,6 @@
     display: inline-block;
 }
 
-.form-div {
-}
 .col-form {
     margin: 10px;
     width: 400px;
@@ -18,9 +16,12 @@
 .form-form {
     width: 1000px;
 }
-.form-button {
-}
 
 .form-error {
     background-color: red;
+}
+.alert {
+    color: green;
+    font-size: 20px;
+    font-weight: bold;
 }
