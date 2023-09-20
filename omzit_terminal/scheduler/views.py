@@ -110,81 +110,100 @@ def scheduler(request):
 
 
 def schedulerwp(request):
-    # TODO разделить на 2 view первый - выбор РЦ и даты (отредактировать формат даты) и переход на другую страницу
-    #  (schedulerfio) - передается в имени строки РЦ и дата.
-    #  второй - загружается выборка по РЦ (если выборки нет, то редирект назад и alert) и форма с заполнением
-    #  этой выборки
     """
     Планирование графика РЦ
     :param request:
     :return:
     """
-    def if_not_none(obj):  # функция замены None
-        if obj is None:
-            return ''
-        else:
-            return ',' + str(obj)
-
     # отображение графика РЦ
     # выборка из уже занесенного
-    workplace_schedule = (
+    workplace_schedule = ((
         ShiftTask.objects.values('id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number',
                                  'op_number', 'op_name_full', 'norm_tech', 'fio_doer', 'st_status').all())
+                          .order_by("ws_number", "model_name"))
 
     if request.method == 'POST':
         form_workplace_plan = SchedulerWorkplace(request.POST)
         if form_workplace_plan.is_valid():
-            # вывод отфильтрованного графика с бракованными и непринятыми для перезапуска
-            # определения рабочего центра и id
+            ws_number = form_workplace_plan.cleaned_data['ws_number'].ws_number
+            datetime_done = form_workplace_plan.cleaned_data['datetime_done'].datetime_done
+            print(ws_number, datetime_done)
             try:
                 filtered_workplace_schedule = (ShiftTask.objects.values
                                                ('id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number',
                                                 'op_number', 'op_name_full', 'norm_tech', 'fio_doer', 'st_status').
-                                               filter(ws_number=form_workplace_plan.cleaned_data['ws_number'].ws_number,
-                                                      datetime_done=form_workplace_plan.cleaned_data[
-                                                          'datetime_done'].datetime_done)
+                                               filter(ws_number=str(ws_number), datetime_done=datetime_done)
                                                .filter(Q(fio_doer='не распределено') | Q(st_status='брак')
                                                        | Q(st_status='не принято'))
                                                )
             except Exception as e:
                 filtered_workplace_schedule = dict()
                 print('Ошибка получения filtered_workplace_schedule', e)
-            # Вывод формы для заполнения ФИО
-            form_fio_doer = FioDoer(request.POST)
-            # обновление данных
-            if form_fio_doer.is_valid():
-                print(form_fio_doer.cleaned_data)
-                print(form_fio_doer.cleaned_data['st_number'])
-                doers_fios = (str(form_fio_doer.cleaned_data['fio_1']) +
-                              if_not_none((form_fio_doer.cleaned_data['fio_2'])) +
-                              if_not_none(form_fio_doer.cleaned_data['fio_3']) +
-                              if_not_none(form_fio_doer.cleaned_data['fio_4']))
-                print(doers_fios)
-                (ShiftTask.objects.filter(pk=form_fio_doer.cleaned_data['st_number'].id).update(
-                    fio_doer=doers_fios, datetime_assign_wp=datetime.datetime.now(), st_status='запланировано',
-                    datetime_job_start=None, decision_time=None))
-                alert_message = f'Успешно распределено!'
-                print('Распределено!')
-                context = {'form_workplace_plan': form_workplace_plan,
-                           'filtered_workplace_schedule': filtered_workplace_schedule,
-                           'workplace_schedule': workplace_schedule,
-                           'form_fio_doer': form_fio_doer,
+            if filtered_workplace_schedule:
+                return redirect(f'/scheduler/schedulerfio{ws_number}_{datetime_done}')
+            else:
+                alert_message = f'Для РЦ {ws_number} на {datetime_done} нераспределённые задания отсутствуют.'
+                form_workplace_plan = SchedulerWorkplace()
+                context = {'workplace_schedule': workplace_schedule, 'form_workplace_plan': form_workplace_plan,
                            'alert_message': alert_message}
-                return render(request, r"schedulerwp/schedulerwp.html", context=context)
-            alert_message = 'Выберите ФИО:'
-            context = {'form_workplace_plan': form_workplace_plan,
-                       'filtered_workplace_schedule': filtered_workplace_schedule,
-                       'form_fio_doer': form_fio_doer,
-                       'alert_message': alert_message}
-            return render(request, r"schedulerwp/schedulerwp.html", context=context)
-            # return redirect(f'/scheduler/schedulerwp')
-        else:
-            alert_message = 'Второй раз неверно введены данные'
-            context = {'form_workplace_plan': form_workplace_plan, 'workplace_schedule': workplace_schedule,
-                       'alert_message': alert_message}
-            return render(request, r"schedulerwp/schedulerwp.html", context=context)
+                return render(request, fr"schedulerwp/schedulerwp.html", context=context)
     else:
         form_workplace_plan = SchedulerWorkplace()
-        context = {'form_workplace_plan': form_workplace_plan, 'workplace_schedule': workplace_schedule}
-        return render(request, r"schedulerwp/schedulerwp.html", context=context)
+        context = {'workplace_schedule': workplace_schedule, 'form_workplace_plan': form_workplace_plan}
+        return render(request, fr"schedulerwp/schedulerwp.html", context=context)
+        # return redirect(f'/scheduler/schedulerwp')
 
+
+def schedulerfio(request, ws_number, datetime_done):
+    """
+    Распределение ФИО на РЦ
+    :param datetime_done:
+    :param ws_number:
+    :param request:
+    :return:
+    """
+
+    def if_not_none(obj):  # функция замены None и НЕТ на пустоту в списке сиполнителей
+        if obj is None or obj == 'НЕТ':
+            return ''
+        else:
+            return ',' + str(obj)
+
+    print(ws_number)
+    print(datetime_done)
+    formatted_datetime_done = datetime.datetime.strptime(datetime_done, '%Y-%m-%d')
+    # определения рабочего центра и id
+    try:
+        filtered_workplace_schedule = (ShiftTask.objects.values
+                                       ('id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number',
+                                        'op_number', 'op_name_full', 'norm_tech', 'fio_doer', 'st_status').
+                                       filter(ws_number=str(ws_number), datetime_done=formatted_datetime_done)
+                                       .filter(Q(fio_doer='не распределено') | Q(st_status='брак')
+                                               | Q(st_status='не принято'))
+                                       )
+    except Exception as e:
+        filtered_workplace_schedule = dict()
+        print('Ошибка получения filtered_workplace_schedule', e)
+    if request.method == 'POST':
+        form_fio_doer = FioDoer(request.POST, ws_number=ws_number, datetime_done=formatted_datetime_done)
+        if form_fio_doer.is_valid():
+            doers_fios = (str(form_fio_doer.cleaned_data['fio_1']) +
+                          if_not_none(str((form_fio_doer.cleaned_data['fio_2'])).strip()) +
+                          if_not_none(str(form_fio_doer.cleaned_data['fio_3'])).strip() +
+                          if_not_none(str(form_fio_doer.cleaned_data['fio_4'])).strip())
+            print('DOERS-', doers_fios)
+            (ShiftTask.objects.filter(pk=form_fio_doer.cleaned_data['st_number'].id).update(
+                fio_doer=doers_fios, datetime_assign_wp=datetime.datetime.now(), st_status='запланировано',
+                datetime_job_start=None, decision_time=None))
+            alert_message = f'Успешно распределено!'
+            context = {'filtered_workplace_schedule': filtered_workplace_schedule,
+                       'form_fio_doer': form_fio_doer,
+                       'alert_message': alert_message}
+            return render(request, r"schedulerfio/schedulerfio.html", context=context)
+    else:
+        alert_message = ''
+        form_fio_doer = FioDoer(ws_number=ws_number, datetime_done=formatted_datetime_done)
+        context = {'filtered_workplace_schedule': filtered_workplace_schedule,
+                   'form_fio_doer': form_fio_doer,
+                   'alert_message': alert_message}
+        return render(request, r"schedulerfio/schedulerfio.html", context=context)

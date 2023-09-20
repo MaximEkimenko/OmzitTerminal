@@ -1,0 +1,91 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Распределение ФИО для РЦ</title>
+        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
+    </head>
+
+    <body>
+        <h1>
+            <!-- prettier-ignore -->
+            Распределение ФИО для РЦ {{ filtered_workplace_schedule.0.ws_number }} на дату {{ filtered_workplace_schedule.0.datetime_done }}
+        </h1>
+        <br />
+
+        {% if filtered_workplace_schedule %}
+        <p class="alert">Сменные задания для распределения:</p>
+        <table border="1" title="График рабочих центров">
+            <tr>
+                <td>№СЗ</td>
+                <td>Цех</td>
+                <td>Заказ</td>
+                <td>Изделие</td>
+                <td>Дата готовности</td>
+                <td>Номер РЦ</td>
+                <td>Номер операции</td>
+                <td>Операция</td>
+                <td>Норма времени</td>
+                <td>ФИО исполнителя</td>
+                <td>Статус СЗ</td>
+            </tr>
+
+            {% for line in filtered_workplace_schedule %}
+            <tr>
+                {% for el in line.values %}
+                <td>{{ el }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p class="alert">Все сменные задания для РЦ распределены.</p>
+
+        {% endif %}
+        <!--форма выбора ФИО-->
+        <p class="alert_gone">{{ alert_message }}</p>
+        {% if filtered_workplace_schedule %}
+        <p class="alert">Распределите сменные задания:</p>
+        <form action="" method="post" enctype="multipart/form-data" id="mainform">
+            {% csrf_token %}
+            <div class="form-error">{{ form_fio_doer.non_field_errors }}</div>
+
+            <p>
+                <label class="form-label" for="{{ form_fio_doer.id_for_label }}"
+                    >{{form_fio_doer.st_number.label}}:
+                </label>
+
+                {{ form_fio_doer.st_number }}
+            </p>
+            <p>
+                <label class="form-label" for="{{ form_fio_doer.id_for_label }}">{{form_fio_doer.fio_1.label}}: </label>
+                {{ form_fio_doer.fio_1 }}
+            </p>
+            <p>
+                <label class="form-label" for="{{ form_fio_doer.id_for_label }}">{{form_fio_doer.fio_2.label}}: </label>
+                {{ form_fio_doer.fio_2 }}
+            </p>
+            <p>
+                <label class="form-label" for="{{ form_fio_doer.id_for_label }}">{{form_fio_doer.fio_3.label}}: </label>
+                {{ form_fio_doer.fio_3 }}
+            </p>
+            <p>
+                <label class="form-label" for="{{ form_fio_doer.id_for_label }}">{{form_fio_doer.fio_4.label}}: </label>
+                {{ form_fio_doer.fio_4 }}
+            </p>
+
+            <div class="form-error">{{ form_fio_doer.errors }}</div>
+
+            <button type="submit">Назначить ФИО</button>
+        </form>
+
+        {% endif %}
+        <script>
+            const notification = document.getElementsByClassName("alert_gone")[0];
+            setTimeout(() => notification.remove(), 10000);
+        </script>
+        <a href="{% url 'schedulerwp' %}">Назад</a> <br />
+        <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
+    </body>
+</html>

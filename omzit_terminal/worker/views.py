@@ -188,6 +188,7 @@ def make_master_call(request, ws_st_number):
 
 
 def show_draw(request, ws_number, pdf_file):
+    # TODO сделать отмену если ссылки на чертёж нет или она не валидная
     # print(ws_number)
     # print('pdf-file --- ', pdf_file)
     # преобразование строки из запроса в ссылку
