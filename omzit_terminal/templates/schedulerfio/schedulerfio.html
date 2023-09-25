@@ -12,29 +12,28 @@
             <!-- prettier-ignore -->
             Распределение ФИО для РЦ {{ filtered_workplace_schedule.0.ws_number }} на дату {{ filtered_workplace_schedule.0.datetime_done }}
         </h1>
-        <br />
 
         {% if filtered_workplace_schedule %}
         <p class="alert">Сменные задания для распределения:</p>
-        <table border="1" title="График рабочих центров">
-            <tr>
-                <td>№СЗ</td>
-                <td>Цех</td>
-                <td>Заказ</td>
-                <td>Изделие</td>
-                <td>Дата готовности</td>
-                <td>Номер РЦ</td>
-                <td>Номер операции</td>
-                <td>Операция</td>
-                <td>Норма времени</td>
-                <td>ФИО исполнителя</td>
-                <td>Статус СЗ</td>
+        <table class="table" title="График рабочих центров">
+            <tr class="table_header_row">
+                <td class="td_cell">№СЗ</td>
+                <td class="td_cell">Цех</td>
+                <td class="td_cell">Заказ</td>
+                <td class="td_cell">Изделие</td>
+                <td class="td_cell">Дата готовности</td>
+                <td class="td_cell">Номер РЦ</td>
+                <td class="td_cell">Номер операции</td>
+                <td class="td_cell">Операция</td>
+                <td class="td_cell">Норма времени</td>
+                <td class="td_cell">ФИО исполнителя</td>
+                <td class="td_cell">Статус СЗ</td>
             </tr>
 
             {% for line in filtered_workplace_schedule %}
-            <tr>
+            <tr class="table_row">
                 {% for el in line.values %}
-                <td>{{ el }}</td>
+                <td class="td_cell">{{ el }}</td>
                 {% endfor %}
             </tr>
             {% endfor %}
@@ -47,37 +46,41 @@
         <p class="alert_gone">{{ alert_message }}</p>
         {% if filtered_workplace_schedule %}
         <p class="alert">Распределите сменные задания:</p>
-        <form action="" method="post" enctype="multipart/form-data" id="mainform">
+        <form action="" method="post" enctype="multipart/form-data" id="mainform" class="form_form">
             {% csrf_token %}
             <div class="form-error">{{ form_fio_doer.non_field_errors }}</div>
 
-            <p>
+            <div class="form_inner_label">
                 <label class="form-label" for="{{ form_fio_doer.id_for_label }}"
                     >{{form_fio_doer.st_number.label}}:
                 </label>
+            </div>
+            <div class="form_inner_div">{{ form_fio_doer.st_number }}</div>
+            <br />
 
-                {{ form_fio_doer.st_number }}
-            </p>
-            <p>
+            <div class="form_inner_label">
                 <label class="form-label" for="{{ form_fio_doer.id_for_label }}">{{form_fio_doer.fio_1.label}}: </label>
-                {{ form_fio_doer.fio_1 }}
-            </p>
-            <p>
+            </div>
+            <div class="form_inner_div">{{ form_fio_doer.fio_1 }}</div>
+            <br />
+            <div class="form_inner_label">
                 <label class="form-label" for="{{ form_fio_doer.id_for_label }}">{{form_fio_doer.fio_2.label}}: </label>
-                {{ form_fio_doer.fio_2 }}
-            </p>
-            <p>
+            </div>
+            <div class="form_inner_div">{{ form_fio_doer.fio_2 }}</div>
+            <br />
+            <div class="form_inner_label">
                 <label class="form-label" for="{{ form_fio_doer.id_for_label }}">{{form_fio_doer.fio_3.label}}: </label>
-                {{ form_fio_doer.fio_3 }}
-            </p>
-            <p>
+            </div>
+            <div class="form_inner_div">{{ form_fio_doer.fio_3 }}</div>
+            <br />
+            <div class="form_inner_label">
                 <label class="form-label" for="{{ form_fio_doer.id_for_label }}">{{form_fio_doer.fio_4.label}}: </label>
-                {{ form_fio_doer.fio_4 }}
-            </p>
-
+            </div>
+            <div class="form_inner_div">{{ form_fio_doer.fio_4 }}</div>
+            <br />
             <div class="form-error">{{ form_fio_doer.errors }}</div>
 
-            <button type="submit">Назначить ФИО</button>
+            <button class="form_button" type="submit" class="form_button">Назначить ФИО</button>
         </form>
 
         {% endif %}

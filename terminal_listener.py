@@ -1,31 +1,64 @@
+import time
 
 from pynput import keyboard
 from pynput.keyboard import Key, Controller
 keyboard_class = Controller()  # управление клавиатурой
-WS_NUMBER = '109'
 print("keyboard listener started!")
 
 
 def on_press(key):
+    """
+    Программа перевода сигналов от нажимаемых кнопок пульта в нужные действия
+    :param key:
+    :return:
+    """
+
     try:
-        if key.char == 'j' or key.char == 'о':  # кнопка вниз
-            keyboard_class.press(Key.backspace)
-            keyboard_class.press(Key.down)
         if key.char == 'a' or key.char == 'ф':  # кнопка вверх
             keyboard_class.press(Key.backspace)
+            keyboard_class.release(Key.backspace)
             keyboard_class.press(Key.up)
-        if key.char == 's' or key.char == 'ы':  # кнопка сменное задание
+            keyboard_class.release(Key.up)
+
+        if key.char == 'f' or key.char == 'а':  # кнопка вправо
             keyboard_class.press(Key.backspace)
-            keyboard_class.press(Key.enter)
-        if key.char == 'k' or key.char == 'л':  # кнопка +
+            keyboard_class.release(Key.backspace)
+            keyboard_class.press(Key.right)
+            keyboard_class.release(Key.right)
+
+        if key.char == 'j' or key.char == 'о':  # кнопка вниз
             keyboard_class.press(Key.backspace)
-            keyboard_class.press(Key.tab)
-        if key.char is None:  # кнопка чертёж
-            keyboard_class.press(Key.f5)
-        # TODO удалить при рефекторинге:
-        # в переводе кнопки вызова мастера нет необходимости, как и в кнопке перехода на чертеж
-        # if key.char == ';' or key.char == 'ж':  # кнопка вызов мастера
-        #    pass
+            keyboard_class.release(Key.backspace)
+            keyboard_class.press(Key.down)
+            keyboard_class.release(Key.down)
+
+        if key.char == 'l' or key.char == 'д':  # кнопка влево
+            keyboard_class.press(Key.backspace)
+            keyboard_class.release(Key.backspace)
+            keyboard_class.press(Key.left)
+            keyboard_class.release(Key.left)
+
+        if key.char == 'k' or key.char == 'л':  # кнопка '+'
+
+            keyboard_class.press(Key.backspace)
+            keyboard_class.release(Key.backspace)
+
+            keyboard_class.press(Key.ctrl_l)
+            keyboard_class.press('=')
+
+            keyboard_class.release(Key.ctrl_l)
+            keyboard_class.release('=')
+
+        if key.char == 't' or key.char == 'e':  # кнопка '-'
+            keyboard_class.press(Key.backspace)
+            keyboard_class.release(Key.backspace)
+
+            keyboard_class.press(Key.ctrl_l)
+            keyboard_class.press('-')
+
+            keyboard_class.release(Key.ctrl_l)
+            keyboard_class.release('-')
+
         print('CHAR:', key.char)
     except AttributeError:
         print('KEY:', key)

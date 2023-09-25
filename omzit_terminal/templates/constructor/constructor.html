@@ -4,11 +4,7 @@
     <head>
         <meta charset="UTF-8" />
         <title>Рабочее место технолога</title>
-        <link
-            type="text/css"
-            href="{% static 'constructor/css/constructor.css' %}"
-            rel="stylesheet"
-        />
+        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
     </head>
     <body>
         <h1>Рабочее место конструктора</h1>
@@ -16,14 +12,14 @@
             <!-- prettier-ignore -->
             {% if td_queries %}
             <h3>Заявки на документацию</h3>
-            <table border="1" title="Заявки на документацию">
-                <tr>
-                    <td>Заказ</td>
-                    <td>Изделие</td>
-                    <td>Статус заявки</td>
+            <table class="table" title="Заявки на документацию">
+                <tr class="table_header_row">
+                    <td class="td_cell">Заказ</td>
+                    <td class="td_cell">Изделие</td>
+                    <td class="td_cell">Статус заявки</td>
                 </tr>
                 {% for line in td_queries %}
-                <tr>
+                <tr class="table_row">
                     {% for el in line.values %}
                     <td class="td_cell">{{ el }}</td>
                     {% endfor %}

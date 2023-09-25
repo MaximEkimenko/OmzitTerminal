@@ -14,10 +14,8 @@ from .forms import WorkplaceChoose
 from .services.master_call_db import select_master_call
 from .services.master_call_function import send_call_master
 
-
-
 # TODO найти решение аналогов РЦ. Убрать обозначение РЦ "РЦ№1/РЦ№2" - вместо "/" использовать "-"
-#
+
 
 def ws_number_choose(request):
     """
@@ -47,7 +45,6 @@ def worker(request, ws_number):
     :return:
     """
     # вывод таблицы распределённых РЦ
-    context = {}
     today = datetime.datetime.now().strftime('%d.%m.%Y')
     initial_shift_tasks = (ShiftTask.objects.values('id', 'ws_number', 'model_name', 'order', 'op_number',
                                                     'op_name_full', 'norm_tech', 'fio_doer', 'st_status',
@@ -88,7 +85,7 @@ def worker(request, ws_number):
                 alert_message = 'СЗ принято в работу.'
             else:
                 alert_message = 'Все ок'
-            index = request.POST['task_id'].find('---')
+            index = request.POST['task_id'].find('--')
             task_id = request.POST['task_id'][:index]
             # статус в работе
             if 'запланировано' in request.POST['task_id']:  # если статус запланировано установка статуса в работе
@@ -117,7 +114,6 @@ def worker(request, ws_number):
     print('select_shift_task', select_shift_task)
     context = {'initial_shift_tasks': initial_shift_tasks, 'ws_number': ws_number,
                'select_shift_task': select_shift_task, 'alert': alert_message}
-
     # print(context)
     return render(request, r"worker/worker.html", context=context)
 
@@ -154,12 +150,6 @@ def draws(request, ws_st_number: str):
     else:
         draw_filename = select_draws[0]['draw_filename']
         pdf_links.append({'link': fr"{draw_path}{str(draw_filename).strip()}", 'filename': draw_filename})
-
-    # TODO
-    #  выбор из списка
-    #  прослушивание кнопки для перехода на чертёж подготовка view (и template?) для отображения
-    #  управление кнопками внутри открывшегося чертежа (открывать чертёж в iframe?)
-    #  закрытие всего по прослушанной кнопке выхода = редирект на worker
 
     context = {'ws_number': ws_number, 'st_number': st_number, 'select_draws': select_draws, 'pdf_links': pdf_links}
     return render(request, r"worker/draws.html", context=context)

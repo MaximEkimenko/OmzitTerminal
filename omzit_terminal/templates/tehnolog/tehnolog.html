@@ -4,26 +4,42 @@
     <head>
         <meta charset="UTF-8" />
         <title>Рабочее место технолога</title>
-        <link
-            type="text/css"
-            href="{% static 'tehnolog/css/tehnolog.css' %}"
-            rel="stylesheet"
-        />
+        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
     </head>
     <body>
         <h1>Рабочее место технолога</h1>
-        <div class="col">
-            <!-- prettier-ignore -->
-            {% if td_queries %}
+        <div class="form_div">
+            <h3>Форма для заполнения</h3>
+            <form action="{% url 'tehnolog' %}" method="post" enctype="multipart/form-data" class="form_form">
+                {% csrf_token %}
+                <div class="add_to_plan">
+                    <div class="form-error">{{ form.non_field_errors }}</div>
+
+                    {% for each_form in form %}
+
+                    <div class="form_inner_label">
+                        <label for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
+                    </div>
+                    <div class="form_inner_div">{{ each_form }}</div>
+
+                    <div class="form-error">{{ each_form.errors }}</div>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="form_button">Добавить</button>
+            </form>
+        </div>
+        <!-- prettier-ignore -->
+        {% if td_queries %}
+        <div class="table_div">
             <h3>Заявки на документацию</h3>
-            <table border="1" title="Заявки на документацию">
-                <tr>
-                    <td>Заказ</td>
-                    <td>Изделие</td>
-                    <td>Статус заявки</td>
+            <table title="Заявки на документацию" class="table">
+                <tr class="table_header_row">
+                    <td class="td_cell">Заказ</td>
+                    <td class="td_cell">Изделие</td>
+                    <td class="td_cell">Статус заявки</td>
                 </tr>
                 {% for line in td_queries %}
-                <tr>
+                <tr class="table_row">
                     {% for el in line.values %}
                     <td class="td_cell">{{ el }}</td>
                     {% endfor %}
@@ -31,34 +47,11 @@
                 {% endfor %}
             </table>
             {% else %}
-            <p>Данные для отображения отсутствуют</p>
+            <p>Заявки на КД отсутствуют отсутствуют</p>
             {% endif %}
         </div>
-        <form
-            action="{% url 'tehnolog' %}"
-            method="post"
-            enctype="multipart/form-data"
-        >
-            <script src="{% static 'tehnolog/js/tehnolog.js' %}"></script>
-            <br />
-
-            {% csrf_token %}
-
-            <div class="form-error">{{ form.non_field_errors }}</div>
-
-            {% for each_form in form %}
-            <p>
-                <label class="form-label" for="{{ each_form.id_for_label }}"
-                    >{{each_form.label}}:
-                </label>
-                {{ each_form }}
-            </p>
-            <div class="form-error">{{ each_form.errors }}</div>
-            {% endfor %}
-
-            <button type="submit">Добавить</button>
-        </form>
         <br />
         <a href="{% url 'home' %}">Назад</a> <br />
+        <script src="{% static 'tehnolog/js/tehnolog.js' %}"></script>
     </body>
 </html>

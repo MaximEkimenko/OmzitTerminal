@@ -10,22 +10,23 @@
         <h1>Рабочее место планировщика</h1>
 
         <!--График цеха-->
-        {% if schedule %}
+        {% if workshop_schedule %}
         <div class="row">
             <div class="col">
-                <h3>График производства</h3>
-                <table border="1" title="График цехов">
-                    <tr>
-                        <td>Цех</td>
-                        <td>Заказ</td>
-                        <td>Изделие</td>
-                        <td>Дата готовности</td>
-                        <td>Статус</td>
+                <h3 class="table_h3">График производства</h3>
+                <table title="График цехов" class="table">
+                    <tr class="table_header_row">
+                        <td class="td_cell">Цех</td>
+                        <td class="td_cell">Заказ</td>
+                        <td class="td_cell">Изделие</td>
+                        <td class="td_cell">Дата готовности</td>
+                        <td class="td_cell">Статус заказа</td>
+                        <td class="td_cell">% готовности</td>
                     </tr>
-                    {% for line in schedule %}
-                    <tr>
+                    {% for line in workshop_schedule %}
+                    <tr class="table_row">
                         {% for el in line.values %}
-                        <td>{{ el }}</td>
+                        <td class="td_cell">{{ el }}</td>
                         {% endfor %}
                     </tr>
                     {% endfor %}
@@ -37,15 +38,15 @@
             <div class="col">
                 <!-- prettier-ignore -->
                 {% if td_queries %}
-                <h3>Заявки на документацию</h3>
-                <table border="1" title="Заявки на документацию">
-                    <tr>
-                        <td>Заказ</td>
-                        <td>Изделие</td>
-                        <td>Статус заяки</td>
+                <h3 class="table_h3">Заявки на документацию</h3>
+                <table class="table" title="Заявки на документацию">
+                    <tr class="table_header_row">
+                        <td class="td_cell">Заказ</td>
+                        <td class="td_cell">Изделие</td>
+                        <td class="td_cell">Статус завяки</td>
                     </tr>
                     {% for line in td_queries %}
-                    <tr>
+                    <tr class="table_row">
                         {% for el in line.values %}
                         <td class="td_cell">{{ el }}</td>
                         {% endfor %}
@@ -57,30 +58,57 @@
                 {% endif %}
             </div>
         </div>
-        <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
-
+        <script>
+            function showNotification({ top = 0, right = 0, html }) {
+                let notification = document.createElement("div");
+                notification.className = "notification";
+                notification.innerHTML = html;
+                document.body.append(notification);
+                setTimeout(() => notification.remove(), 10000);
+            }
+            showNotification({
+                html: "<p class='alert_gone'> {{ alert }} </p>",
+            });
+        </script>
         <!--форма планирования цеха-->
-        <div class="form-div">
-            <h3>Форма заполнения</h3>
+        <div class="form_div">
+            <h3>Форма для заполнения</h3>
 
-            <form class="form-form" action="{% url 'scheduler' %}" method="post" enctype="multipart/form-data">
+            <form class="form_form" action="{% url 'scheduler' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="form-error">{{ form_workshop_plan.non_field_errors }}</div>
-                {% for each_form in form_workshop_plan %}
-                <div class="col-form">{{each_form.label}}</div>
 
-                <div class="col-form">{{ each_form }}</div>
+                <div class="td_query_block">
+                    <div class="form_inner_label">{{ form_workshop_plan.order.label }}</div>
+                    <div class="form_inner_div">{{ form_workshop_plan.order }}</div>
 
-                <div class="form-error">{{ each_form.errors }}</div>
-                {% endfor %}
-                <div class="form-button">
-                    <button type="submit">Запланировать / запросить чертеж</button>
+                    <div class="form_inner_label">{{ form_workshop_plan.model_query.label }}</div>
+                    <div class="form_inner_div">{{ form_workshop_plan.model_query }}</div>
+                </div>
+                <div class="add_to_plan">
+                    <div class="form_inner_label">{{ form_workshop_plan.model_name.label }}</div>
+                    <div class="form_inner_div">{{ form_workshop_plan.model_name }}</div>
+
+                    <div class="form_inner_label">{{ form_workshop_plan.workshop.label }}</div>
+                    <div class="form_inner_div">{{ form_workshop_plan.workshop }}</div>
+
+                    <div class="form_inner_label">{{ form_workshop_plan.datetime_done.label }}</div>
+                    <div class="form_inner_div">{{ form_workshop_plan.datetime_done }}</div>
+                </div>
+                <div class="form_error">{{ form_workshop_plan.errors }}</div>
+
+                <div class="form_button">
+                    <button type="submit" class="form_button">
+                        <p class="green_word">Запланировать</p>
+                        /
+                        <p class="red_word">запросить чертеж</p>
+                    </button>
                 </div>
             </form>
         </div>
-
-        <br /><br /><br />
-
+        <br />
         <a href="{% url 'home' %}">Назад</a> <br />
+        <div style="height: 90px"></div>
+        <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
     </body>
 </html>

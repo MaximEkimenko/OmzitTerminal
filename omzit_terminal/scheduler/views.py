@@ -4,7 +4,7 @@ from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer
 from .models import WorkshopSchedule, ShiftTask
 from tehnolog.models import TechData
 from django.db.models import Q
-from django.db.models import F
+from .services.schedule_handlers import get_done_rate, get_all_done_rate
 
 
 def scheduler(request):
@@ -13,13 +13,16 @@ def scheduler(request):
     :param request:
     :return:
     """
-    # выборка для графика цеха и списка заявок на чертежи
-    # график
+
+    # обновление процента готовности всех заказов
+    get_all_done_rate()
+    # график изделий
     workshop_schedule = (WorkshopSchedule.objects.values('workshop', 'order', 'model_name', 'datetime_done',
-                                                         'order_status').filter(order_status='запланировано'))
+                                                         'order_status', 'done_rate')
+                         .exclude(datetime_done=None).exclude(order_status='не запланировано')
+                         .order_by('datetime_done'))
     # перечень запросов на КД
     td_queries = WorkshopSchedule.objects.values('order', 'model_query', 'td_status').exclude(td_status='отработано')
-    # TODO вернуть в шаблон сообщение об успехе!
     if request.method == 'POST':
         form_workshop_plan = SchedulerWorkshop(request.POST)
         if form_workshop_plan.is_valid():
@@ -48,6 +51,9 @@ def scheduler(request):
                         print('Данные в график успешно занесены!')
                         formed_model_name = form_workshop_plan.cleaned_data['model_name']
                         # выборка по имени модели из модели TechData для заполнения ShiftTask
+                        # TODO убрать сущность TechData  записывать сразу Shift на этапе загрузки технолога
+                        #  весь код ниже до alert будет не нужен.
+                        #  обновить статус заказа на "запланировано"
                         tech_data = TechData.objects.filter(model_name=formed_model_name)
                         # заполнение модели ShiftTask данными планирования цехов
                         for line in tech_data.values():
@@ -63,27 +69,31 @@ def scheduler(request):
                                                      norm_tech=line['norm_tech'],
                                                      datetime_techdata_create=line['datetime_create'],
                                                      datetime_techdata_update=line['datetime_update'],
-                                                     datetime_plan_wp=datetime.datetime.now()
+                                                     datetime_plan_wp=datetime.datetime.now(),
+                                                     order_status='запланировано'
                                                      )
                             print('Данные сменного задания успешно занесены!')
-                        return redirect('scheduler')  # обновление страницы при успехе
+                        alert = 'Данные сменного задания успешно занесены.'
+                        # return redirect('scheduler')  # обновление страницы при успехе
+                        context = {'alert': alert}  # сообщение об успехе
+                        return render(request, r"scheduler/scheduler.html", context=context)
                     else:
                         form_workshop_plan.add_error(None, 'Такой заказ уже запланирован!')
-                        context = {'form_workshop_plan': form_workshop_plan, 'td_queries': td_queries}
+                        alert = 'Такой заказ уже запланирован!'
+                        context = {'form_workshop_plan': form_workshop_plan, 'td_queries': td_queries, 'alert': alert,
+                                   'workshop_schedule': workshop_schedule}
                 except Exception as e:
                     print(e, ' Ошибка запаси в базу SchedulerWorkshop')
             else:
-                # TODO сделать запрос на КД
                 # обработка заполнения поля запроса КД
                 if not form_workshop_plan.cleaned_data['model_query']:
                     form_workshop_plan.add_error(None, 'Не заполнена модель запроса КД.')
                 # если не выбран цех
                 if form_workshop_plan.cleaned_data['workshop'] == '5':
                     form_workshop_plan.add_error(None, 'Не выбран цех.')
-                    context = {'form_workshop_plan': form_workshop_plan, 'schedule': workshop_schedule,
+                    context = {'form_workshop_plan': form_workshop_plan, 'workshop_schedule': workshop_schedule,
                                'td_queries': td_queries}
                     return render(request, r"scheduler/scheduler.html", context=context)
-                # if form_workshop_plan.cleaned_data['workshop'] != '5':
                 if not (WorkshopSchedule.objects.filter(order=form_workshop_plan.cleaned_data['order'],
                                                         model_query=form_workshop_plan.cleaned_data
                                                         ['model_query'],
@@ -93,19 +103,24 @@ def scheduler(request):
                                                     model_query=form_workshop_plan.cleaned_data['model_query'],
                                                     workshop=form_workshop_plan.cleaned_data['workshop']
                                                     )
+                    alert = 'Заявка на КД сформирована.'
                     print('Заявка на КД сформирована')
-                    return redirect('scheduler')  # обновление страницы при успехе
-                context = {'form_workshop_plan': form_workshop_plan, 'schedule': workshop_schedule,
-                           'td_queries': td_queries}
+                    context = {'alert': alert, 'td_queries': td_queries, 'workshop_schedule': workshop_schedule,
+                               'form_workshop_plan': form_workshop_plan}
+                    # return redirect('scheduler')  # обновление страницы при успехе
+                    return render(request, r"scheduler/scheduler.html", context=context)
+                alert = ''
+                context = {'form_workshop_plan': form_workshop_plan, 'workshop_schedule': workshop_schedule,
+                           'td_queries': td_queries, 'alert': alert}
 
         else:
-            context = {'form_workshop_plan': form_workshop_plan, 'schedule': workshop_schedule,
+            context = {'form_workshop_plan': form_workshop_plan, 'workshop_schedule': workshop_schedule,
                        'td_queries': td_queries}
 
     else:
         # чистые формы для первого запуска
         form_workshop_plan = SchedulerWorkshop()
-        context = {'form_workshop_plan': form_workshop_plan, 'schedule': workshop_schedule, 'td_queries': td_queries}
+        context = {'form_workshop_plan': form_workshop_plan, 'workshop_schedule': workshop_schedule, 'td_queries': td_queries}
     return render(request, r"scheduler/scheduler.html", context=context)
 
 
@@ -115,11 +130,14 @@ def schedulerwp(request):
     :param request:
     :return:
     """
+
     # отображение графика РЦ
     # выборка из уже занесенного
     workplace_schedule = ((
-        ShiftTask.objects.values('id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number',
-                                 'op_number', 'op_name_full', 'norm_tech', 'fio_doer', 'st_status').all())
+                              ShiftTask.objects.values('id', 'workshop', 'order', 'model_name', 'datetime_done',
+                                                       'ws_number',
+                                                       'op_number', 'op_name_full', 'norm_tech', 'fio_doer',
+                                                       'st_status').all())
                           .order_by("ws_number", "model_name"))
 
     if request.method == 'POST':

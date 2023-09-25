@@ -1,0 +1,24 @@
+<!-- prettier-ignore -->
+{% extends "admin/base.html" %}
+{% load static %}
+<!-- prettier-ignore -->
+{% block extrastyle %}
+<style>
+    #header,
+    .module caption {
+        background-color: #31343c;
+    }
+</style>
+{% endblock %}
+<!-- prettier-ignore -->
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+<!-- prettier-ignore -->
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></h1>
+<!-- prettier-ignore -->
+{% if user.is_anonymous %}
+    {% include "admin/color_theme_toggle.html" %}
+{% endif %}
+{% endblock %}
+<!-- prettier-ignore -->
+{% block nav-global %}{% endblock %}

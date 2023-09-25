@@ -7,17 +7,20 @@ class WorkshopSchedule(models.Model):
     Данные для планирования цеха, статусы заказов, статусы чертежей
     """
     objects = models.Manager()  # явное указание метода для pycharm
-    workshop = models.PositiveSmallIntegerField()  # номер цеха
-    model_name = models.CharField(max_length=30)  # имя модели (заказа) изделия
-    datetime_done = models.DateField(null=True)  # планируемая дата готовности заказа
-    order = models.CharField(max_length=100)  # номер заказа
-    order_status = models.CharField(max_length=20, default='не запланировано')  # статус заказа
-    model_query = models.CharField(max_length=30, null=True)  # имя модели заказа при запросе КД
-    td_status = models.CharField(max_length=20, default='запрошено')  # статус технической документации
-    td_query_datetime = models.DateTimeField(auto_now_add=True, null=True)  # время запроса документации
-    td_const_done_datetime = models.DateTimeField(null=True)  # время ответа конструктора по КД
-    td_tehnolog_done_datetime = models.DateTimeField(null=True)  # время ответа технолога по КД
-    plan_datetime = models.DateTimeField(null=True)  # дата выполнения планирования заказа
+    workshop = models.PositiveSmallIntegerField(verbose_name='Цех')
+    model_name = models.CharField(max_length=30, verbose_name='Модель изделия')
+    datetime_done = models.DateField(null=True, verbose_name='Планируемая дата готовности')
+    order = models.CharField(max_length=100, verbose_name='Номер заказа')
+    order_status = models.CharField(max_length=20, default='не запланировано', verbose_name='Статус заказа')
+    model_query = models.CharField(max_length=30, null=True, verbose_name='Имя модели заказа при запросе КД')
+    done_rate = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=0,
+                                    verbose_name='процент готовности')
+    td_status = models.CharField(max_length=20, default='запрошено', verbose_name='Статус технической документации')
+    td_query_datetime = models.DateTimeField(auto_now_add=True, null=True,
+                                             verbose_name='дата/время запроса документации')
+    td_const_done_datetime = models.DateTimeField(null=True, verbose_name='дата/время ответа конструктора по КД')
+    td_tehnolog_done_datetime = models.DateTimeField(null=True, verbose_name='дата/время ответа технолога по КД')
+    plan_datetime = models.DateTimeField(null=True, verbose_name='дата/время выполнения планирования заказа')
 
     class Meta:
         db_table = "workshop_schedule"
@@ -34,7 +37,7 @@ class Doers(models.Model):
     Таблица исполнителей
     """
     objects = models.Manager()  # явное указание метода для pycharm
-    doers = models.CharField(max_length=255, unique=True)
+    doers = models.CharField(max_length=255, unique=True, verbose_name='ФИО исполнителей')
 
     class Meta:
         db_table = "doers"
@@ -55,39 +58,41 @@ class ShiftTask(models.Model):
     """
     objects = models.Manager()  # явное указание метода для pycharm
     # поля
-    workshop = models.PositiveSmallIntegerField()  # номер цеха
-    model_name = models.CharField(max_length=30, db_index=True)  # имя модели (заказа) изделия
-    datetime_done = models.DateField()  # ожидаемая дата готовности
-    order = models.CharField(max_length=100)  # номер заказа
-    op_number = models.CharField(max_length=20)  # номер операции
-    op_name = models.CharField(max_length=200)  # имя операции
-    ws_name = models.CharField(max_length=100)  # имя рабочего центра
-    op_name_full = models.CharField(max_length=255)  # полное имея операции (имя операции + имя рабочего центра)
-    ws_number = models.CharField(max_length=10)  # номер рабочего центра
-    norm_tech = models.DecimalField(null=True, max_digits=10, decimal_places=2)  # норма времени рабочего центра
-    datetime_techdata_create = models.DateTimeField()  # дата/время создания технологических данных
-    datetime_techdata_update = models.DateTimeField()  # дата/время технологических данных
+    workshop = models.PositiveSmallIntegerField(verbose_name='Цех')
+    model_name = models.CharField(max_length=30, db_index=True, verbose_name='Модель изделия')
+    datetime_done = models.DateField(verbose_name='Ожидаемая дата готовности')
+    order = models.CharField(max_length=100, verbose_name='Номер заказа')
+    op_number = models.CharField(max_length=20, verbose_name='Номер операции')
+    op_name = models.CharField(max_length=200, verbose_name='Имя операции')
+    ws_name = models.CharField(max_length=100, verbose_name='Имя рабочего центра')
+    op_name_full = models.CharField(max_length=255, verbose_name='Полное имея операции')
+    ws_number = models.CharField(max_length=10, verbose_name='Номер рабочего центра')
+    norm_tech = models.DecimalField(null=True, max_digits=10, decimal_places=2,
+                                    verbose_name='Технологическая норма времени')
+    datetime_techdata_create = models.DateTimeField(verbose_name='дата/время создания технологических данных')
+    datetime_techdata_update = models.DateTimeField(verbose_name='дата/время технологических данных')
     ###
-    datetime_plan_ws = models.DateTimeField(auto_now=True)  # время планирования в цех
-    datetime_plan_wp = models.DateTimeField(null=True)  # время планирования РЦ
-    fio_doer = models.CharField(max_length=255, null=True, default='не распределено')  # ФИО исполнителя
-    datetime_assign_wp = models.DateTimeField(null=True)  # время распределения
-    datetime_job_start = models.DateTimeField(null=True)  # время начала работ
-    datetime_master_call = models.DateTimeField(null=True)  # время вызова мастера
-    master_finish_wp = models.CharField(max_length=30, null=True)  # ФИО мастера вызова ОТК
-    datetime_otk_call = models.DateTimeField(null=True)  # время вызова ОТК
-    datetime_otk_answer = models.DateTimeField(null=True)  # время ответа ОТК
-    master_calls = models.IntegerField(null=True, default=0)  # количество вызовов мастера
-    master_called = models.CharField(max_length=10, null=True, default='не было')  # статус вызова мастера
-    # фактическая норма времени рабочего центра
-    norm_fact = models.DecimalField(null=True, max_digits=10, decimal_places=2)
-    otk_answer = models.CharField(max_length=30, null=True)  # ФИО контролёра ответа ОТК
-    otk_decision = models.CharField(max_length=30, null=True)  # ФИО контролёра решения ОТК
-    decision_time = models.DateTimeField(null=True)  # время приёмки ОТК
-    st_status = models.CharField(max_length=20, default='не запланировано')
-    is_fail = models.BooleanField(null=True, default=False)  # факт наличия брака
-    datetime_fail = models.DateTimeField(null=True)  # время фиксации брака
-    fio_failer = models.CharField(max_length=255, null=True)  # ФИО бракоделов
+    datetime_plan_ws = models.DateTimeField(auto_now=True, verbose_name='время планирования в цех')
+    datetime_plan_wp = models.DateTimeField(null=True, verbose_name='время планирования РЦ')
+    fio_doer = models.CharField(max_length=255, null=True, default='не распределено', verbose_name='ФИО исполнителей')
+    datetime_assign_wp = models.DateTimeField(null=True, verbose_name='время распределения')
+    datetime_job_start = models.DateTimeField(null=True, verbose_name='время начала работ')
+    datetime_master_call = models.DateTimeField(null=True, verbose_name='время вызова мастера')
+    master_finish_wp = models.CharField(max_length=30, null=True, verbose_name='ФИО мастера вызова ОТК')
+    datetime_otk_call = models.DateTimeField(null=True, verbose_name='время вызова ОТК')
+    datetime_otk_answer = models.DateTimeField(null=True, verbose_name='время ответа ОТК')
+    master_calls = models.IntegerField(null=True, default=0, verbose_name='количество вызовов мастера')
+    master_called = models.CharField(max_length=10, null=True, default='не было', verbose_name='статус вызова мастера')
+
+    norm_fact = models.DecimalField(null=True, max_digits=10, decimal_places=2,
+                                    verbose_name='Фактическая норма времени')
+    otk_answer = models.CharField(max_length=30, null=True, verbose_name='ФИО контролёра ответа ОТК')
+    otk_decision = models.CharField(max_length=30, null=True, verbose_name='ФИО контролёра решения ОТК')
+    decision_time = models.DateTimeField(null=True, verbose_name='Время приёмки ОТК')
+    st_status = models.CharField(max_length=20, default='не запланировано', verbose_name='Статус СЗ')
+    is_fail = models.BooleanField(null=True, default=False, verbose_name='Факт наличия брака')
+    datetime_fail = models.DateTimeField(null=True, verbose_name='Время регистрации брака')
+    fio_failer = models.CharField(max_length=255, null=True, verbose_name='ФИО бракоделов')
     ###
     dispatcher_plan_ws = models.CharField(max_length=30, null=True)  # ФИО диспетчера планирования цеха TODO реализовать
     dispatcher_plan_wp = models.CharField(max_length=30, null=True)  # ФИО диспетчера планирования РЦ TODO реализовать
@@ -95,6 +100,6 @@ class ShiftTask(models.Model):
 
     class Meta:
         db_table = "shift_task"
-        verbose_name = 'Технологические данные'
-        verbose_name_plural = 'Технологические данные'
+        verbose_name = 'Сменное задание'
+        verbose_name_plural = 'Сменные задание'
 

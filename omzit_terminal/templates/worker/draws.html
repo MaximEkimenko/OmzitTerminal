@@ -4,20 +4,20 @@
     <head>
         <meta charset="UTF-8" />
         <title>Выбор чертежей РЦ {{ ws_number }} сменное задание {{st_number}}</title>
-
+        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
         <script></script>
     </head>
-    <body style="zoom: 100%">
+    <body>
         <h1 id="h1_tag">Выбор чертежей РЦ {{ ws_number }} сменное задание {{st_number}}</h1>
         <form action="{{ draws }}" method="POST" enctype="multipart/form-data" id="sel_1">
             {% csrf_token %}
-            <label id="sel_2"> Выбор чертежа: </label>
+            <label id="sel_2" class="form_inner_label"> Выбор чертежа: </label>
             <br />
             <select multiple id="select_draws" size="10" name="draws_select">
                 <!-- <select multiple id="sel_3" size="10" name="task_id"></select> -->
-                <option id="1" data-draw_show="0" selected>Выберите чертеж:</option>
+                <option class="sel_option" data-draw_show="0" selected>Выберите чертеж:</option>
                 {% for draw in select_draws %} {% for link in pdf_links %}
-                <option id="2" data-draw_show="{{link.link}}">{{ link.filename }}</option>
+                <option class="sel_option" data-draw_show="{{link.link}}">{{ link.filename }}</option>
                 <!-- <option id="{{ task.id }}" data-send="{{ task.op_number }}--{{ task.model_name }}--{{ task.id }}"> -->
 
                 {% endfor %} {% endfor %}
@@ -62,7 +62,7 @@
                     select_element.focus();
                     draw_frame.style.display = "none";
                     // Возврат в сменные задания
-                } else if (event.code == "Enter") {
+                } else if (event.code == "KeyS") {
                     st_main_paige_link = `/worker/${ws_number}`;
                     location.href = st_main_paige_link;
                 }

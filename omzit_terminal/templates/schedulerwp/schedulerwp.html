@@ -13,44 +13,41 @@
         <br />
 
         <!--форма планирования РЦ-->
-        <form action="{% url 'schedulerwp' %}" method="post" enctype="multipart/form-data">
+        <form action="{% url 'schedulerwp' %}" method="post" enctype="multipart/form-data" class="form_form">
             {% csrf_token %}
             <div class="form-error">{{ form_workplace_plan.non_field_errors }}</div>
 
-            <p>
-                <label>РЦ: </label>
-                {{ form_workplace_plan.ws_number }}
-            </p>
-            <p>
-                <label>Дата готовности: </label>
-                {{ form_workplace_plan.datetime_done }}
-            </p>
+            <div class="form_inner_label"><label>РЦ: </label></div>
+            <div class="form_inner_div">{{ form_workplace_plan.ws_number }}</div>
+
+            <div class="form_inner_label"><label>Дата готовности: </label></div>
+            <div class="form_inner_div">{{ form_workplace_plan.datetime_done }}</div>
 
             <div class="form-error">{{ form_workplace_plan.errors }}</div>
 
-            <button type="submit">Выбрать</button>
+            <button class="form_button" type="submit">Выбрать</button>
         </form>
         {% if workplace_schedule %}
         <p class="alert">{{ alert_message }}</p>
-        <table border="1" title="График рабочих центров">
-            <tr>
-                <td>№СЗ</td>
-                <td>Цех</td>
-                <td>Заказ</td>
-                <td>Изделие</td>
-                <td>Дата готовности</td>
-                <td>Номер РЦ</td>
-                <td>Номер операции</td>
-                <td>Операция</td>
-                <td>Норма времени</td>
-                <td>Фио исполнителя</td>
-                <td>Статус СЗ</td>
+        <table title="График рабочих центров" class="table">
+            <tr class="table_header_row">
+                <td class="td_cell">№СЗ</td>
+                <td class="td_cell">Цех</td>
+                <td class="td_cell">Заказ</td>
+                <td class="td_cell">Изделие</td>
+                <td class="td_cell">Дата готовности</td>
+                <td class="td_cell">Номер РЦ</td>
+                <td class="td_cell">Номер операции</td>
+                <td class="td_cell">Операция</td>
+                <td class="td_cell">Норма времени</td>
+                <td class="td_cell">Фио исполнителя</td>
+                <td class="td_cell">Статус СЗ</td>
             </tr>
 
             {% for line in workplace_schedule %}
-            <tr>
+            <tr class="table_row">
                 {% for el in line.values %}
-                <td class="td_element">{{ el }}</td>
+                <td class="td_cell">{{ el }}</td>
                 {% endfor %}
             </tr>
             {% endfor %}
@@ -58,6 +55,6 @@
         {% endif %}
 
         <a href="{% url 'home' %}">Назад</a> <br />
-        <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
+        <script src="{% static 'scheduler/js/schedulerwp.js' %}"></script>
     </body>
 </html>

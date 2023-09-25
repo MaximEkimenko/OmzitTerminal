@@ -1,19 +1,11 @@
 // Периодическая перезагрузка страницы
 setTimeout(() => (location.href = location.pathname), 30000);
 // функция отображения сообщения
-function showNotification({ top = 0, right = 0, html }) {
-    let notification = document.createElement("div");
-    notification.className = "notification";
-    notification.style.top = top + "px";
-    notification.style.right = right + "px";
-    notification.innerHTML = html;
-    document.body.append(notification);
-    setTimeout(() => notification.remove(), 10000);
-}
 
 // подкраска ячеек
-let td_cell = document.getElementsByClassName("cell");
-let table_row = document.getElementsByClassName("row");
+
+let table_row = document.getElementsByClassName("table_row");
+
 // переменные цветов
 let color_fail = "red";
 let color_ok = "MediumSeaGreen";
@@ -22,6 +14,7 @@ let color_master = "Orange";
 let color_control_man = "Gold";
 let color_progress = "Khaki";
 // Подкраска ряда
+
 for (let i = 0; i < table_row.length; i++) {
     if (table_row[i].innerText.includes("не принято")) {
         //console.log(td_cell[i].innerText;
@@ -30,15 +23,33 @@ for (let i = 0; i < table_row.length; i++) {
         table_row[i].bgColor = color_fail;
     } else if (table_row[i].innerText.includes("в работе")) {
         table_row[i].bgColor = color_progress;
+        table_row[i].style.color = "black";
     } else if (table_row[i].innerText.includes("принято")) {
         table_row[i].bgColor = color_ok;
     }
 }
 // подкраска ячеек ожидания
+let td_cell = document.getElementsByClassName("td_cell");
+console.log(td_cell);
 for (let i = 0; i < td_cell.length; i++) {
-    if (td_cell[i].innerText.includes("ожидание мастера")) {
-        td_cell[i].bgColor = color_master;
-    } else if (td_cell[i].innerText.includes("ожидание контролёра")) {
-        td_cell[i].bgColor = color_control_man;
+    if (td_cell[i].innerText === "ожидание мастера") {
+        td_cell[i].style.setProperty("background-color", color_master, "important");
+        td_cell[i].style.color = "black";
+        td_cell[i].style.setProperty("font-weight", "bold");
+        //td_cell[i].bgColor = color_master;
+    } else if (td_cell[i].innerText === "ожидание контролёра") {
+        //td_cell[i].bgColor = color_control_man;
+        td_cell[i].style.setProperty("background-color", color_control_man, "important");
+        td_cell[i].style.color = "black";
+        td_cell[i].style.setProperty("font-weight", "bold");
+    } else if (
+        td_cell[i].innerText === "брак" ||
+        td_cell[i].innerText === "не принято" ||
+        td_cell[i].innerText === "брак" ||
+        td_cell[i].innerText === "принято"
+    ) {
+        td_cell[i].style.color = "black";
+        td_cell[i].style.setProperty("font-weight", "bold");
+        td_cell[i].style.setProperty("font-size", "24px");
     }
 }
