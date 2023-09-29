@@ -39,7 +39,7 @@ def get_all_done_rate() -> None:
         # запись в БД
         if order_status:
             WorkshopSchedule.objects.filter(order=order).update(done_rate=done_rate, order_status=order_status)
-    print(order_rate_dict)
+    # print(order_rate_dict)
 
 
 

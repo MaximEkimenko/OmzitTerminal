@@ -1,5 +1,6 @@
 from django.db import models
 from django.forms import ModelChoiceField
+from tehnolog.models import ProductCategory
 
 
 class WorkshopSchedule(models.Model):
@@ -12,15 +13,28 @@ class WorkshopSchedule(models.Model):
     datetime_done = models.DateField(null=True, verbose_name='Планируемая дата готовности')
     order = models.CharField(max_length=100, verbose_name='Номер заказа')
     order_status = models.CharField(max_length=20, default='не запланировано', verbose_name='Статус заказа')
-    model_query = models.CharField(max_length=30, null=True, verbose_name='Имя модели заказа при запросе КД')
+    model_query = models.CharField(max_length=60, null=True, verbose_name='заказ и модель')
+    query_prior = models.PositiveSmallIntegerField(verbose_name='Приоритет заявки чертежей', default=1)
     done_rate = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=0,
                                     verbose_name='процент готовности')
     td_status = models.CharField(max_length=20, default='запрошено', verbose_name='Статус технической документации')
     td_query_datetime = models.DateTimeField(auto_now_add=True, null=True,
                                              verbose_name='дата/время запроса документации')
+    td_remarks = models.TextField(blank=True, verbose_name='замечания к КД')
+    tehnolog_remark_fio = models.CharField(max_length=30, null=True, verbose_name='Замечание от')
+    is_remark = models.BooleanField(null=True, default=False, verbose_name='Факт наличия замечания к КД')
+    remark_datetime = models.DateTimeField(null=True, verbose_name='дата/время замечания к КД')
     td_const_done_datetime = models.DateTimeField(null=True, verbose_name='дата/время ответа конструктора по КД')
     td_tehnolog_done_datetime = models.DateTimeField(null=True, verbose_name='дата/время ответа технолога по КД')
+
     plan_datetime = models.DateTimeField(null=True, verbose_name='дата/время выполнения планирования заказа')
+    dispatcher_query_td_fio = models.CharField(max_length=30, null=True, verbose_name='Запросил КД')
+    dispatcher_plan_ws_fio = models.CharField(max_length=30, null=True, verbose_name='Запланировал')
+    constructor_query_td_fio = models.CharField(max_length=30, null=True, verbose_name='Передал КД')
+    tehnolog_query_td_fio = models.CharField(max_length=30, null=True, verbose_name='Утвердил')
+    tehnolog_excel_load_fio = models.CharField(max_length=30, null=True, verbose_name='Загрузил')
+
+
 
     class Meta:
         db_table = "workshop_schedule"
@@ -93,10 +107,19 @@ class ShiftTask(models.Model):
     is_fail = models.BooleanField(null=True, default=False, verbose_name='Факт наличия брака')
     datetime_fail = models.DateTimeField(null=True, verbose_name='Время регистрации брака')
     fio_failer = models.CharField(max_length=255, null=True, verbose_name='ФИО бракоделов')
-    ###
-    dispatcher_plan_ws = models.CharField(max_length=30, null=True)  # ФИО диспетчера планирования цеха TODO реализовать
-    dispatcher_plan_wp = models.CharField(max_length=30, null=True)  # ФИО диспетчера планирования РЦ TODO реализовать
-    master_assign_wp = models.CharField(max_length=30, null=True)  # ФИО мастера распределения РЦ TODO реализовать
+
+    master_assign_wp_fio = models.CharField(max_length=30, null=True, verbose_name='Распределил')
+
+    # технологические данные (унаследовано из TechData)
+    datetime_create = models.DateTimeField(auto_now_add=True, verbose_name='дата/время добавления данных в таблицу',
+                                           null=True)
+    datetime_update = models.DateTimeField(auto_now=True, verbose_name='дата/время обновления данных таблицы',
+                                           null=True)
+    # TODO после очистки базы убрать null=True
+    draw_path = models.CharField(max_length=255, null=True, blank=True, verbose_name='путь к связанным чертежам')
+    draw_filename = models.TextField(null=True, blank=True, verbose_name='имя чертежа')
+    product_category = models.ForeignKey(to=ProductCategory, on_delete=models.DO_NOTHING, null=True,
+                                         verbose_name='Категория изделия')
 
     class Meta:
         db_table = "shift_task"

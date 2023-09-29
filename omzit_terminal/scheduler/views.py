@@ -1,5 +1,13 @@
 import datetime
+
+from django.contrib.auth import logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
+from django.contrib.auth.forms import AuthenticationForm
+
 from django.shortcuts import render, redirect
+from django.urls import reverse_lazy
+
 from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer
 from .models import WorkshopSchedule, ShiftTask
 from tehnolog.models import TechData
@@ -7,13 +15,13 @@ from django.db.models import Q
 from .services.schedule_handlers import get_done_rate, get_all_done_rate
 
 
+@login_required(login_url="login/")
 def scheduler(request):
     """
-    Планирование графика цеха
+    Планирование графика цеха и создание запросов на КД
     :param request:
     :return:
     """
-
     # обновление процента готовности всех заказов
     get_all_done_rate()
     # график изделий
@@ -47,6 +55,8 @@ def scheduler(request):
                                                         datetime_done=form_workshop_plan
                                                         .cleaned_data['datetime_done'],
                                                         plan_datetime=datetime.datetime.now(),
+                                                        dispatcher_plan_ws_fio=f'{request.user.first_name} '
+                                                                               f'{request.user.last_name}'
                                                         )
                         print('Данные в график успешно занесены!')
                         formed_model_name = form_workshop_plan.cleaned_data['model_name']
@@ -101,7 +111,9 @@ def scheduler(request):
                                                             'workshop']).exists()):
                     WorkshopSchedule.objects.create(order=form_workshop_plan.cleaned_data['order'],
                                                     model_query=form_workshop_plan.cleaned_data['model_query'],
-                                                    workshop=form_workshop_plan.cleaned_data['workshop']
+                                                    workshop=form_workshop_plan.cleaned_data['workshop'],
+                                                    dispatcher_query_td_fio=f'{request.user.first_name} '
+                                                                            f'{request.user.last_name}'
                                                     )
                     alert = 'Заявка на КД сформирована.'
                     print('Заявка на КД сформирована')
@@ -120,24 +132,24 @@ def scheduler(request):
     else:
         # чистые формы для первого запуска
         form_workshop_plan = SchedulerWorkshop()
-        context = {'form_workshop_plan': form_workshop_plan, 'workshop_schedule': workshop_schedule, 'td_queries': td_queries}
+        context = {'form_workshop_plan': form_workshop_plan, 'workshop_schedule': workshop_schedule,
+                   'td_queries': td_queries}
     return render(request, r"scheduler/scheduler.html", context=context)
 
 
+@login_required(login_url="login/")
 def schedulerwp(request):
     """
     Планирование графика РЦ
     :param request:
     :return:
     """
-
-    # отображение графика РЦ
+     # отображение графика РЦ
     # выборка из уже занесенного
-    workplace_schedule = ((
-                              ShiftTask.objects.values('id', 'workshop', 'order', 'model_name', 'datetime_done',
-                                                       'ws_number',
-                                                       'op_number', 'op_name_full', 'norm_tech', 'fio_doer',
-                                                       'st_status').all())
+    workplace_schedule = ((ShiftTask.objects.values('id', 'workshop', 'order', 'model_name', 'datetime_done',
+                                                    'ws_number',
+                                                    'op_number', 'op_name_full', 'norm_tech', 'fio_doer',
+                                                    'st_status').all())
                           .order_by("ws_number", "model_name"))
 
     if request.method == 'POST':
@@ -172,6 +184,7 @@ def schedulerwp(request):
         # return redirect(f'/scheduler/schedulerwp')
 
 
+@login_required(login_url="login/")
 def schedulerfio(request, ws_number, datetime_done):
     """
     Распределение ФИО на РЦ
@@ -191,6 +204,8 @@ def schedulerfio(request, ws_number, datetime_done):
     print(datetime_done)
     formatted_datetime_done = datetime.datetime.strptime(datetime_done, '%Y-%m-%d')
     # определения рабочего центра и id
+    if not request.user.username:  # если не авторизован, то отправляется на авторизацию
+        return redirect('login/')
     try:
         filtered_workplace_schedule = (ShiftTask.objects.values
                                        ('id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number',
@@ -212,7 +227,8 @@ def schedulerfio(request, ws_number, datetime_done):
             print('DOERS-', doers_fios)
             (ShiftTask.objects.filter(pk=form_fio_doer.cleaned_data['st_number'].id).update(
                 fio_doer=doers_fios, datetime_assign_wp=datetime.datetime.now(), st_status='запланировано',
-                datetime_job_start=None, decision_time=None))
+                datetime_job_start=None, decision_time=None, master_assign_wp_fio=f'{request.user.first_name} '
+                                                                                  f'{request.user.last_name}'))
             alert_message = f'Успешно распределено!'
             context = {'filtered_workplace_schedule': filtered_workplace_schedule,
                        'form_fio_doer': form_fio_doer,
@@ -225,3 +241,20 @@ def schedulerfio(request, ws_number, datetime_done):
                    'form_fio_doer': form_fio_doer,
                    'alert_message': alert_message}
         return render(request, r"schedulerfio/schedulerfio.html", context=context)
+
+
+# авторизация пользователей
+class LoginUser(LoginView):
+    form_class = AuthenticationForm
+    template_name = 'scheduler/login.html'
+
+    def get_success_url(self):  # редирект после логина
+        if 'admin' in self.request.user.username:
+            return reverse_lazy('home')
+        elif 'disp' in self.request.user.username:
+            return reverse_lazy('scheduler')
+
+
+def logout_user(request):  # разлогинивание пользователя
+    logout(request)
+    return redirect('login')

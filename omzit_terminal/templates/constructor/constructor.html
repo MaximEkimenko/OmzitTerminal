@@ -8,6 +8,10 @@
     </head>
     <body>
         <h1>Рабочее место конструктора</h1>
+        {% if request.user.is_authenticated %}
+        <div class="logined_user">{{ user.username }} | <a href="{% url 'logout' %}"> Выйти </a></div>
+        {% else %} <a href="{% url 'login' %}"> Войти </a>
+        {%endif %}
         <div class="col">
             <!-- prettier-ignore -->
             {% if td_queries %}
@@ -33,5 +37,6 @@
         </div>
         <br />
         <a href="{% url 'home' %}">Назад</a> <br />
+        <div style="height: 150px"></div>
     </body>
 </html>

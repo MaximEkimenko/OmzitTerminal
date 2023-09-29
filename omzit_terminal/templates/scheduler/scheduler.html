@@ -8,7 +8,10 @@
     </head>
     <body>
         <h1>Рабочее место планировщика</h1>
-
+        {% if request.user.is_authenticated %}
+        <div class="logined_user">{{ user.username }} | <a href="{% url 'logout' %}"> Выйти </a></div>
+        {% else %} <a href="{% url 'login' %}"> Войти </a>
+        {%endif %}
         <!--График цеха-->
         {% if workshop_schedule %}
         <div class="row">
@@ -108,7 +111,7 @@
         </div>
         <br />
         <a href="{% url 'home' %}">Назад</a> <br />
-        <div style="height: 90px"></div>
+        <div style="height: 150px"></div>
         <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
     </body>
 </html>

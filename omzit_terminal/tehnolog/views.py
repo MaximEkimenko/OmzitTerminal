@@ -1,4 +1,6 @@
 import os
+
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from .services.service_handlers import handle_uploaded_file
@@ -7,6 +9,7 @@ from .forms import GetTehDataForm
 from scheduler.models import WorkshopSchedule
 
 
+@login_required(login_url="../scheduler/login/")
 def tehnolog_wp(request):
     td_queries = WorkshopSchedule.objects.values('order', 'model_query', 'td_status').exclude(td_status='утверждено')
     if request.method == 'POST':

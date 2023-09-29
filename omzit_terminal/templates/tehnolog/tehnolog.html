@@ -7,6 +7,10 @@
         <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
     </head>
     <body>
+        {% if request.user.is_authenticated %}
+        <div class="logined_user">{{ user.username }} | <a href="{% url 'logout' %}"> Выйти </a></div>
+        {% else %} <a href="{% url 'login' %}"> Войти </a>
+        {%endif %}
         <h1>Рабочее место технолога</h1>
         <div class="form_div">
             <h3>Форма для заполнения</h3>
@@ -53,5 +57,6 @@
         <br />
         <a href="{% url 'home' %}">Назад</a> <br />
         <script src="{% static 'tehnolog/js/tehnolog.js' %}"></script>
+        <div style="height: 150px"></div>
     </body>
 </html>

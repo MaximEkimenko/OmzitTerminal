@@ -1,0 +1,24 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
+        <title>Для работы необходима авторизация</title>
+    </head>
+    <body>
+        <h1>Вход пользователя</h1>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-error">{{ form.non_field_errors }}</div>
+            <div class="form_inner_label">{{ form.username.label }}</div>
+            <div class="form_inner_div">{{ form.username }}</div>
+            <div class="form_inner_label">{{ form.password.label }}</div>
+            <div class="form_inner_div">{{ form.password }}</div>
+            <button class="form_button" type="submit">Войти</button>
+        </form>
+        <a href="{% url 'scheduler' %}">Назад</a> <br />
+        <div style="height: 150px"></div>
+    </body>
+</html>

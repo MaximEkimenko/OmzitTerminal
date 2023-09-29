@@ -77,6 +77,7 @@ h3 {
     color: green;
     font-size: 30px;
     font-weight: bold;
+    display: inline-block;
 }
 /*таблицы*/
 .table {
@@ -140,7 +141,7 @@ h3 {
 }
 
 .form-error {
-    background-color: red;
+    color: red;
 }
 
 select {
@@ -195,3 +196,16 @@ input {
     width: auto;
     height: auto;
 }
+/* .logined_user {
+    font-size: 20px;
+    text-align: right;
+    position: absolute;
+    top: 30px;
+    right: 20px;
+    bottom: 0px;
+    left: 0px;
+    width: auto;
+}
+.logined_user a {
+    color: black;
+} */

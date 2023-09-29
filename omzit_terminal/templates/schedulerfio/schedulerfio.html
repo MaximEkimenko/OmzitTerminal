@@ -8,6 +8,10 @@
     </head>
 
     <body>
+        {% if request.user.is_authenticated %}
+        <div class="logined_user">{{ user.username }} | <a href="{% url 'logout' %}"> Выйти </a></div>
+        {% else %} <a href="{% url 'login' %}"> Войти </a>
+        {%endif %}
         <h1>
             <!-- prettier-ignore -->
             Распределение ФИО для РЦ {{ filtered_workplace_schedule.0.ws_number }} на дату {{ filtered_workplace_schedule.0.datetime_done }}

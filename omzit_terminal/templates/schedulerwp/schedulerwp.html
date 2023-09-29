@@ -8,6 +8,10 @@
     </head>
 
     <body>
+        {% if request.user.is_authenticated %}
+        <div class="logined_user">{{ user.username }} | <a href="{% url 'logout' %}"> Выйти </a></div>
+        {% else %} <a href="{% url 'login' %}"> Войти </a>
+        {%endif %}
         <a href="{% url 'home' %}">Назад</a> <br />
         <h1>Рабочее место планировщика рабочих центров</h1>
         <br />
