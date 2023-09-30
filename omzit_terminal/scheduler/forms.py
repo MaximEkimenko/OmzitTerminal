@@ -26,6 +26,14 @@ class SchedulerWorkshop(forms.Form):
                                                                          datetime.datetime.now().year + 1)))
 
 
+class QueryDraw(forms.Form):
+    """
+    Форма запроса чертежа
+    """
+
+    pass
+
+
 class SchedulerWorkplaceLabel(ModelChoiceField):  # переопределение метода отображения строки результатов для РЦ
     """
     Класс для переопределения вывода ModelChoiceField для номера РЦ
