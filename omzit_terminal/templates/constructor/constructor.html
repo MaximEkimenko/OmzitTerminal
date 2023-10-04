@@ -12,27 +12,112 @@
         <div class="logined_user">{{ user.username }} | <a href="{% url 'logout' %}"> Выйти </a></div>
         {% else %} <a href="{% url 'login' %}"> Войти </a>
         {%endif %}
+
+        <script>
+            function showNotification({ top = 0, right = 0, html }) {
+                let notification = document.createElement("div");
+                notification.className = "notification";
+                notification.innerHTML = html;
+                document.body.append(notification);
+                setTimeout(() => (notification.style.opacity = 0), 10000);
+                //setTimeout(() => notification.remove(), 10000);
+            }
+            showNotification({
+                html: "<p class='alert_gone'> {{ alert }} </p>",
+            });
+        </script>
+
         <div class="col">
             <!-- prettier-ignore -->
             {% if td_queries %}
             <h3>Заявки на документацию</h3>
             <table class="table" title="Заявки на документацию">
                 <tr class="table_header_row">
-                    <td class="td_cell">Заказ</td>
-                    <td class="td_cell">Изделие</td>
-                    <td class="td_cell">Статус заявки</td>
+                    <td class="td_cell">Модель, заказ</td>
+                    <td class="td_cell">Приоритет</td>
+                    <td class="td_cell">Статус завяки</td>
+                    <td class="td_cell">Папка чертежей</td>
                 </tr>
                 {% for line in td_queries %}
                 <tr class="table_row">
-                    {% for el in line.values %}
-                    <td class="td_cell">{{ el }}</td>
-                    {% endfor %}
+                    <td class="td_cell">{{ line.model_order_query }}</td>
+                    <td class="td_cell">{{ line.query_prior }}</td>
+                    <td class="td_cell">{{ line.td_status }}</td>
+                    <td class="td_cell">
+                        <p>\\SVR-003\draws\{{ line.model_order_query }}</p>
+                    </td>
                 </tr>
                 {% endfor %}
             </table>
             {% else %}
             <p>Данные для отображения отсутствуют</p>
             {% endif %}
+            <!-- prettier-ignore -->
+            {% for line in td_queries %}
+            {% if line.td_remarks %}
+            <h3>Замечания на КД</h3>
+            <table class="table" title="Заявки на документацию">
+                <tr class="table_header_row">
+                    <td class="td_cell">Модель, заказ</td>
+                    <td class="td_cell">Замечение</td>
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">{{ line.model_order_query }}</td>
+                    <td class="td_cell">{{ line.td_remarks }}</td>
+                </tr>
+            </table>
+            <!-- prettier-ignore -->
+            {% endif %}
+            {% endfor %}
+
+            <br />
+            <div class="form_div">
+                <h3>Форма загрузки КД</h3>
+
+                <form class="form_form" action="{% url 'constructor' %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="td_query_block">
+                        <div class="form_inner_label">{{ query_answer_form.model_order_query.label }}</div>
+                        <div class="form_inner_div">{{ query_answer_form.model_order_query }}</div>
+                        <br />
+                        <div class="form_inner_label">{{ query_answer_form.draw_files.label }}</div>
+                        <div class="form_inner_div">{{ query_answer_form.draw_files }}</div>
+
+                        <div>
+                            <button type="submit" class="form_button">
+                                <p class="red_word">Загрузить чертежи</p>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- <div class="form_button">
+                <button class="form_button" id="show_all">
+                    <p class="red_word">показать всё</p>
+                </button>
+            </div> -->
+            <!-- 
+            <script>
+                let button = document.getElementById("show_all");
+                button.onclick = handleButtonClick2;
+
+                function handleButtonClick2() {
+                    window.open("file:\\\SVR-003\\draws{{ line.model_order_query }}\\");
+                }
+            </script>
+
+            <script>
+                // строка таблицы заявок чертежей
+                const table_row = document.getElementsByClassName("table_row");
+                // скрытие отправленных
+                for (let i = 0; i < table_row.length; i++) {
+                    console.log(table_row);
+                    if (!table_row[i].innerText.includes("запрошено")) {
+                        table_row[i].style.display = "none";
+                    }
+                }
+            </script> -->
             <script src="{% static 'constructor/js/constructor.js' %}"></script>
         </div>
         <br />

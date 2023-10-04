@@ -44,8 +44,8 @@
                 <h3 class="table_h3">Заявки на документацию</h3>
                 <table class="table" title="Заявки на документацию">
                     <tr class="table_header_row">
-                        <td class="td_cell">Заказ</td>
-                        <td class="td_cell">Изделие</td>
+                        <td class="td_cell">Модель, заказ</td>
+                        <td class="td_cell">Приоритет</td>
                         <td class="td_cell">Статус завяки</td>
                     </tr>
                     {% for line in td_queries %}
@@ -67,46 +67,65 @@
                 notification.className = "notification";
                 notification.innerHTML = html;
                 document.body.append(notification);
-                setTimeout(() => notification.remove(), 10000);
+                setTimeout(() => (notification.style.opacity = 0), 10000);
+                //setTimeout(() => notification.remove(), 10000);
             }
             showNotification({
                 html: "<p class='alert_gone'> {{ alert }} </p>",
             });
         </script>
+        <br />
+        <div class="form_div">
+            <h3>Форма для запроса КД</h3>
+
+            <form class="form_form" action="{% url 'td_query' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="td_query_block">
+                    <div class="form_inner_label">{{ form_query_draw.model_query.label }}</div>
+                    <div class="form_inner_div">{{ form_query_draw.model_query }}</div>
+
+                    <div class="form_inner_label">{{ form_query_draw.order_query.label }}</div>
+                    <div class="form_inner_div">{{ form_query_draw.order_query }}</div>
+
+                    <div class="form_inner_label">{{ form_query_draw.query_prior.label }}</div>
+                    <div class="form_inner_div">{{ form_query_draw.query_prior }}</div>
+                    <div>
+                        <button type="submit" class="form_button">
+                            <p class="red_word">Запросить чертеж</p>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <br />
         <!--форма планирования цеха-->
         <div class="form_div">
-            <h3>Форма для заполнения</h3>
+            <h3>Форма для планирования</h3>
 
             <form class="form_form" action="{% url 'scheduler' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="form-error">{{ form_workshop_plan.non_field_errors }}</div>
 
-                <div class="td_query_block">
-                    <div class="form_inner_label">{{ form_workshop_plan.order.label }}</div>
-                    <div class="form_inner_div">{{ form_workshop_plan.order }}</div>
-
-                    <div class="form_inner_label">{{ form_workshop_plan.model_query.label }}</div>
-                    <div class="form_inner_div">{{ form_workshop_plan.model_query }}</div>
-                </div>
                 <div class="add_to_plan">
-                    <div class="form_inner_label">{{ form_workshop_plan.model_name.label }}</div>
-                    <div class="form_inner_div">{{ form_workshop_plan.model_name }}</div>
+                    <div class="form_inner_label">{{ form_workshop_plan.model_order_query.label }}</div>
+                    <div class="form_inner_div">{{ form_workshop_plan.model_order_query }}</div>
 
                     <div class="form_inner_label">{{ form_workshop_plan.workshop.label }}</div>
                     <div class="form_inner_div">{{ form_workshop_plan.workshop }}</div>
+                    <br />
+                    <div class="form_inner_label">{{ form_workshop_plan.category.label }}</div>
+                    <div class="form_inner_div">{{ form_workshop_plan.category }}</div>
+                    <br />
 
                     <div class="form_inner_label">{{ form_workshop_plan.datetime_done.label }}</div>
                     <div class="form_inner_div">{{ form_workshop_plan.datetime_done }}</div>
+                    <div>
+                        <button type="submit" class="form_button">
+                            <p class="green_word">Запланировать</p>
+                        </button>
+                    </div>
                 </div>
                 <div class="form_error">{{ form_workshop_plan.errors }}</div>
-
-                <div class="form_button">
-                    <button type="submit" class="form_button">
-                        <p class="green_word">Запланировать</p>
-                        /
-                        <p class="red_word">запросить чертеж</p>
-                    </button>
-                </div>
             </form>
         </div>
         <br />

@@ -5,21 +5,27 @@ from django import forms
 from .models import ShiftTask, WorkshopSchedule, Doers
 from django.forms import ModelChoiceField
 from django.db.models import Q
-
+from tehnolog.models import ProductCategory
+from constructor.forms import QueryAnswerForm
 
 class SchedulerWorkshop(forms.Form):
     """
     Форма для ввода графика цеха
     """
-    order = forms.CharField(max_length=50, label='Номер заказа')
-    model_query = forms.CharField(max_length=50, label='Модель запроса КД', required=False)
+
     query_set = WorkshopSchedule.objects.filter(td_status='утверждено', order_status='не запланировано')
-    model_name = forms.ModelChoiceField(queryset=query_set, empty_label='Модель не выбрана',
-                                        label='Модель заказа для планирования', required=False)
-    # model_name = forms.CharField(label='Модель заказа')
+
+    model_order_query = QueryAnswerForm(query_set, empty_label='выберите заказ-модель',
+                                        label='Заказ-модель', required=False)
+
+    # model_name = forms.ModelChoiceField(queryset=query_set, empty_label='Модель не выбрана',
+    #                                     label='Модель заказа для планирования')
+
     workshop = forms.ChoiceField(choices=((1, 'Цех 1'), (2, 'Цех 2'), (3, 'Цех 3'), (4, 'Цех 4'), (5, 'Выбрать')),
-                                 label='Цех', initial=5, show_hidden_initial=True
-                                 )
+                                 label='Цех', initial=5, show_hidden_initial=True)
+    query_set = ProductCategory.objects.all()
+    category = forms.ModelChoiceField(queryset=query_set, empty_label='Категория не выбрана',
+                                      label='Категория заказа')  # выбор категории
     datetime_done = forms.DateField(label='Планируемая дата готовности', required=False,
                                     widget=forms.SelectDateWidget(empty_label=("год", "месяц", "день"),
                                                                   years=(datetime.datetime.now().year,
@@ -30,8 +36,11 @@ class QueryDraw(forms.Form):
     """
     Форма запроса чертежа
     """
-
-    pass
+    # model_query = forms.CharField(max_length=50, label='Модель запроса КД', required=False)
+    model_query = forms.CharField(max_length=50, label='Модель запроса КД')
+    order_query = forms.CharField(max_length=50, label='Заказ запроса КД')
+    query_prior = forms.ChoiceField(choices=((1, 1), (2, 2), (3, 3), (4, 4)), label='Приоритет', initial=1,
+                                    required=False)
 
 
 class SchedulerWorkplaceLabel(ModelChoiceField):  # переопределение метода отображения строки результатов для РЦ
@@ -57,10 +66,9 @@ class SchedulerWorkplace(forms.Form):
     Форма для ввода графика РЦ
     """
     query_set_wp = ShiftTask.objects.all().distinct('ws_number')
-    ws_number = SchedulerWorkplaceLabel(queryset=query_set_wp, empty_label='РЦ не выбран',
-                                        label='Рабочий центр')
-    query_set_datetime_done = WorkshopSchedule.objects.all().distinct('datetime_done')
-
+    ws_number = SchedulerWorkplaceLabel(queryset=query_set_wp, empty_label='РЦ не выбран', label='Рабочий центр')
+    query_set_datetime_done = WorkshopSchedule.objects.filter(Q(order_status='запланировано') |
+                                                              Q(order_status='в работе'))
     datetime_done = SchedulerWorkplaceLabelDate(queryset=query_set_datetime_done,
                                                 empty_label='Дата готовности не выбрана',
                                                 label='Планируемая дата готовности')

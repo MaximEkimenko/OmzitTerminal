@@ -14,6 +14,7 @@ from .forms import WorkplaceChoose
 from .services.master_call_db import select_master_call
 from .services.master_call_function import send_call_master
 
+
 # TODO найти решение аналогов РЦ. Убрать обозначение РЦ "РЦ№1/РЦ№2" - вместо "/" использовать "-"
 
 
@@ -134,13 +135,14 @@ def draws(request, ws_st_number: str):
 
     # TODO сделать запрос к ShiftTask после заполнения данных
     # # Выбор списка чертежей
-    select_draws = (TechData.objects.values('ws_number', 'model_name', 'op_number', 'op_name_full', 'draw_path',
-                                            'draw_filename')
-                    .filter(ws_number=ws_number, op_number=op_number, model_name=model_name)
-                    )
+    select_draws = (ShiftTask.objects.values('ws_number', 'model_name', 'op_number', 'op_name_full', 'draw_path',
+                                             'draw_filename', 'model_order_query')
+                    .filter(ws_number=ws_number, op_number=op_number, model_name=model_name))
     print(select_draws)
+    # TODO копировать путь в shift_task
+    # draw_path = str(select_draws[0]['draw_path']).strip()  # путь к чертежам
+    draw_path = fr"C:\draws\{select_draws[0]['model_order_query']}\\"
 
-    draw_path = str(select_draws[0]['draw_path']).strip()  # путь к чертежам
     pdf_links = []  # список словарей чертежей
     # если несколько чертежей
     if ',' in select_draws[0]['draw_filename']:
@@ -150,9 +152,18 @@ def draws(request, ws_st_number: str):
     else:
         draw_filename = select_draws[0]['draw_filename']
         pdf_links.append({'link': fr"{draw_path}{str(draw_filename).strip()}", 'filename': draw_filename})
-
+    print(pdf_links)
     context = {'ws_number': ws_number, 'st_number': st_number, 'select_draws': select_draws, 'pdf_links': pdf_links}
     return render(request, r"worker/draws.html", context=context)
+
+
+def show_draw(request, ws_number, pdf_file):
+    # TODO сделать отмену если ссылки на чертёж нет или она не валидная
+    # преобразование строки из запроса в ссылку
+    path_to_file = (str(pdf_file).replace('--', '/'))
+    response = FileResponse(open(fr'{path_to_file}', 'rb'))
+    response['X-Frame-Options'] = 'SAMEORIGIN'
+    return response
 
 
 def make_master_call(request, ws_st_number):
@@ -177,13 +188,6 @@ def make_master_call(request, ws_st_number):
         return redirect(f'/worker/{ws_number}?call=False')
 
 
-def show_draw(request, ws_number, pdf_file):
-    # TODO сделать отмену если ссылки на чертёж нет или она не валидная
-    # print(ws_number)
-    # print('pdf-file --- ', pdf_file)
-    # преобразование строки из запроса в ссылку
-    path_to_file = (str(pdf_file).replace('--', '/'))
-    # print(path_to_file)
-    response = FileResponse(open(fr'{path_to_file}', 'rb'))
-    response['X-Frame-Options'] = 'SAMEORIGIN'
-    return response
+def make_dispatcher_call(request, ws_st_number):
+    pass
+

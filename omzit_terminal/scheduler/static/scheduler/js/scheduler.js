@@ -12,7 +12,6 @@ for (let i = 0; i < td_cell.length; i++) {
     // подкраска распределения
     if (td_cell[i].innerText === "не принято" || td_cell[i].innerText === "брак") {
         td_cell[i].style.color = color_fail;
-        //td_cell[i].style.setProperty("background-color", color_master, "important");
     } else if (td_cell[i].innerText === "принято") {
         td_cell[i].style.color = color_ok;
     } else if (td_cell[i].innerText === "ожидание мастера") {
@@ -24,8 +23,13 @@ for (let i = 0; i < td_cell.length; i++) {
     } else if (td_cell[i].innerText === "в работе") {
         td_cell[i].style.color = color_progress;
     } else if (td_cell[i].innerText === "запрошено") {
-        //td_cell[i].bgColor = color_not_ok;
         td_cell[i].style.color = color_not_ok;
+    } else if (td_cell[i].innerText === "передано") {
+        td_cell[i].style.color = color_not_ok;
+    } else if (td_cell[i].innerText === "замечание") {
+        td_cell[i].style.color = color_not_ok;
+    } else if (td_cell[i].innerText === "утверждено") {
+        td_cell[i].style.color = color_ok;
     } else {
         td_cell[i].bgColor = "white";
     }
