@@ -11,9 +11,8 @@ from django.urls import reverse_lazy
 
 from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw
 from .models import WorkshopSchedule, ShiftTask
-from tehnolog.models import TechData
 from django.db.models import Q
-from .services.schedule_handlers import get_done_rate, get_all_done_rate
+from .services.schedule_handlers import get_all_done_rate
 
 
 @login_required(login_url="login/")

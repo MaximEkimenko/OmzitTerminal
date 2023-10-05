@@ -34,10 +34,10 @@ async def on_startup(_):  # функция выполняется при зап�
     # await bot.send_message(admin_id, "Бот РСУ вышел в онлайн.")
     print(f'ТЕСТ БОТ онлайн в {datetime.datetime.now().strftime("%H:%M:%S")}.')
 
-
-async def send_call_master(message_to_master):
-    """ Функция вызова мастера. Импортируется в terminal_listener"""
-    await bot.send_message(chat_id=admin_id, text=message_to_master)
+#
+# async def send_call_master(message_to_master):
+#     """ Функция вызова мастера. Импортируется в terminal_listener"""
+#     await bot.send_message(chat_id=admin_id, text=message_to_master)
 
 # TODO найти, повторить и разрешить баг с выбором последней записи в инлайн кнопке при нажатии на любую.
 
@@ -94,6 +94,7 @@ async def master_otk_send(message: types.Message):
 async def otk_call(callback_query: types.CallbackQuery):
     master_id = callback_query.data[-10:]  # id мастера
     ws_number = callback_query.data[4:-10]  # номер РЦ
+
     # отправка сообщения о заявке на контролёра в группу ОТК
     await bot.send_message(chat_id=test_group_id, text=f"Вас ожидают на РЦ {ws_number}. Запрос от {master_id}")
     # Обратная связь мастеру
@@ -163,12 +164,16 @@ async def otk_answer_master_send(message: types.Message):
 async def otk_answer(callback_query: types.CallbackQuery):
     controlman_id = callback_query.data[-10:]  # id контролёра
     ws_number = callback_query.data[4:-10]  # номер РЦ
+    print('call_data=', callback_query.data)
+    print(ws_number)
     inline_st_buttons = types.InlineKeyboardMarkup()  # объект инлайн кнопок номера СЗ
     # получение списка СЗ
     shift_task_list = st_list_get(ws_number)
     # print('shift_task_list = ', shift_task_list)
     for task in shift_task_list:
-        shift_task_id = task[2:5]  # id СЗ
+        print(task)
+        print([str(task).find("|")-1])
+        shift_task_id = task[2:str(task).find("|")-1]  # id СЗ
         # print(shift_task_id)
         btn = types.InlineKeyboardButton(text=f'{task}',
                                          callback_data=f'stid{shift_task_id}{controlman_id}')
@@ -181,7 +186,7 @@ async def otk_answer(callback_query: types.CallbackQuery):
 
 # обработчик callback otk_decision принятия решения по СЗ на РЦ отображение инлайн кнопок для принятия решения
 @dp.callback_query_handler(lambda callback: call_get_re(pattern_stid_otk, callback.data[:-10]))
-async def otk_answer(callback_query: types.CallbackQuery):
+async def otk_decision(callback_query: types.CallbackQuery):
     controlman_id = callback_query.data[-10:]  # id контролёра
     # print(controlman_id)
     st_id = callback_query.data[4:-10]  # id СЗ

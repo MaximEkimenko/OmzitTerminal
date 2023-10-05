@@ -9,7 +9,13 @@ masters = (admin_id,)  # мастера
 bot = Bot(token=TOKEN)  # инициализация бота
 dp = Dispatcher(bot)  # инициализация диспетчера
 
+master_list = [admin_id]
+dispatcher_list = [admin_id]
+
 
 async def send_call_master(message_to_master):
-    """ Функция вызова мастера. Импортируется в terminal_listener"""
+    await bot.send_message(chat_id=admin_id, text=message_to_master)
+
+
+async def send_call_dispatcher(message_to_master):
     await bot.send_message(chat_id=admin_id, text=message_to_master)

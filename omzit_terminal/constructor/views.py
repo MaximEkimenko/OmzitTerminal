@@ -1,8 +1,11 @@
 import datetime
 import os
+
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 from tehnolog.services.service_handlers import handle_uploaded_file
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from scheduler.models import WorkshopSchedule
 from .forms import QueryAnswer
 
@@ -60,3 +63,7 @@ def constructor(request):
     context = {'td_queries': td_queries, 'query_answer_form': query_answer_form}
 
     return render(request, r"constructor/constructor.html", context=context)
+
+
+def draw_folder_redirect(request):
+    NotImplemented

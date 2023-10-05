@@ -8,11 +8,10 @@ from django.db.models import Q
 from django.shortcuts import render
 
 from scheduler.models import ShiftTask
-from tehnolog.models import TechData
 
 from .forms import WorkplaceChoose
-from .services.master_call_db import select_master_call
-from .services.master_call_function import send_call_master
+from .services.master_call_db import select_master_call, select_dispatcher_call
+from .services.master_call_function import send_call_master, send_call_dispatcher
 
 
 # TODO найти решение аналогов РЦ. Убрать обозначение РЦ "РЦ№1/РЦ№2" - вместо "/" использовать "-"
@@ -66,7 +65,6 @@ def worker(request, ws_number):
                          .exclude(st_status='не принято')
                          .exclude(st_status='принято')
                          .order_by("st_status"))
-    # terminal_listener должен быть включён!
     # формирование сообщений
     if request.method == 'POST':
         print(request.POST)
@@ -110,6 +108,8 @@ def worker(request, ws_number):
             alert_message = 'Вызов мастеру отправлен.'
         elif request.GET.get('call') == 'False':
             alert_message = 'Вызов мастеру уже был отправлен ранее.'
+        elif request.GET.get('call') == 'True_disp':
+            alert_message = 'Сообщение диспетчеру отправлено.'
         else:
             alert_message = ''
     print('select_shift_task', select_shift_task)
@@ -189,5 +189,24 @@ def make_master_call(request, ws_st_number):
 
 
 def make_dispatcher_call(request, ws_st_number):
-    pass
+    ws_number = str(ws_st_number)[:str(ws_st_number).find('-')]
+    st_number = str(ws_st_number)[str(ws_st_number).rfind('-') + 1:]
+    print('ws = ', ws_number)
+    print('st = ', st_number, type(st_number))
+    print('ws-st', ws_st_number)
+    if st_number == '0':
+        return redirect(f'/worker/{ws_number}?call=False')
+    # выборка вызовов мастера на РЦ ws_number
+    messages = select_dispatcher_call(ws_number=str(ws_number), st_number=str(st_number))
+    print('messages=', messages)
+    time.sleep(1)  # пауза 1 сек
+    if messages:
+        print('Вызов диспетчера')
+        for message in messages:
+            asyncio.run(send_call_dispatcher(message))  # отправка мастеру в телеграм ботом
+        print('Окончание вызова')
+        return redirect(f'/worker/{ws_number}?call=True_disp')
+    # else:
+    #     print('NO MESSAGE!')
+    #     return redirect(f'/worker/{ws_number}')
 

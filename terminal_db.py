@@ -122,7 +122,7 @@ def st_list_get(ws_number: str) -> tuple:
     finally:
         con.close()
     st_set = tuple(sorted(st_set))
-    # print('ST_SET----', st_set)
+    print('ST_SET----', st_set)
     return st_set
 
 
@@ -139,6 +139,7 @@ def master_id_get(ws_number: str = None, st_id: str = None) -> tuple:
     elif st_id:
         query_field = 'id'
         query_var = st_id
+    print('ws_number=', ws_number, 'st_id=', st_id)
     try:
         # подключение к БД
         con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)

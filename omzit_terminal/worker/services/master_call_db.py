@@ -1,7 +1,7 @@
 import datetime
 
 import psycopg2
-from . db_config import host, dbname, user, password  # TODO перенести в env брат весь файл db_config
+from .db_config import host, dbname, user, password  # TODO перенести в env весь файл db_config
 
 
 def select_master_call(ws_number: str, st_number) -> list or None:
@@ -59,6 +59,42 @@ def select_master_call(ws_number: str, st_number) -> list or None:
         con.close()
     # print(messages_to_master)
     return messages_to_master
+
+
+def select_dispatcher_call(ws_number: str, st_number) -> list or None:
+    messages_to_dispatcher = []  # список сообщений для мастера
+    try:
+        print(ws_number, st_number)
+        # подключение к БД
+        con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
+        con.autocommit = True
+        # запрос на все статусы ожидания мастера
+        select_query = f"""SELECT id, model_name, "order", op_number, op_name_full, fio_doer
+                            FROM shift_task
+                            WHERE 
+                            id = '{st_number}' AND
+                            ws_number = '{ws_number}'
+                        """
+        try:
+            with con.cursor() as cur:
+                cur.execute(select_query)
+                con.commit()
+                shift_tasks = cur.fetchall()
+                for task in shift_tasks:
+                    # print(task)
+                    message_to_dispatcher = (f"Вас ожидают на РЦ {ws_number}. Номер СЗ: {task[0]}. Заказ: {task[1]}. "
+                                             f"Изделие: {task[2]}. Операция: {task[3]} {task[4]}. "
+                                             f"Исполнители: {task[5]}")
+                    messages_to_dispatcher.append(message_to_dispatcher)
+        except Exception as e:
+            print(e, 'ошибка выборке')
+        if not messages_to_dispatcher:  # выход при отсутствии записей
+            return None
+    except Exception as e:
+        print('Ошибка подключения к базе', e)
+    finally:
+        con.close()
+    return messages_to_dispatcher
 
 
 if __name__ == '__main__':

@@ -96,8 +96,12 @@
                     }
                     // кнопка вызов мастера
                 } else if (event.code == "Semicolon") {
-                    master_call_link = `/worker/${ws_number}-${st_id}/get`;
+                    master_call_link = `/worker/${ws_number}-${st_id}/get_master`;
                     location.href = master_call_link;
+                    // кнопка вызов
+                } else if (event.code == "KeyM") {
+                    dispatcher_call_link = `/worker/${ws_number}-${st_id}/get_dispatcher`;
+                    location.href = dispatcher_call_link;
                 }
                 // кнопка запуск СЗ
                 else if (event.code == "KeyS") {
@@ -112,7 +116,6 @@
         <div style="height: 90px"></div>
         <script></script>
         <br />
-
         <a href="{% url 'worker_choose' %}">Назад</a> <br />
     </body>
 </html>
