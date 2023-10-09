@@ -97,12 +97,16 @@
                     <td class="td_cell">Заказ-модель</td>
                     <td class="td_cell">Приоритет</td>
                     <td class="td_cell">Статус завяки</td>
+                    <td class="td_cell">Папка чертежей</td>
                 </tr>
                 {% for line in td_queries %}
                 <tr class="table_row">
-                    {% for el in line.values %}
-                    <td class="td_cell">{{ el }}</td>
-                    {% endfor %}
+                    <td class="td_cell">{{ line.model_order_query }}</td>
+                    <td class="td_cell">{{ line.query_prior }}</td>
+                    <td class="td_cell">{{ line.td_status }}</td>
+                    <td class="td_cell">
+                        <p>\\SVR-003\draws\{{ line.model_order_query }}</p>
+                    </td>
                 </tr>
                 {% endfor %}
             </table>

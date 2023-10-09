@@ -44,7 +44,7 @@
                     "--"
                 );
                 // кнопка чертёж
-                if (event.code == "KeyD") {
+                if (event.code == "KeyW") {
                     //document.body.style.zoom = "100%";
                     console.log(`pdf/${ws_number}/${draw_link}`);
                     draw_frame.src = `pdf/${ws_number}/${draw_link}`;
@@ -54,7 +54,7 @@
                     h1_tag.style.display = "none";
                     form_select.style.display = "none"; // скрытие формы выбора чертежей
                     // нажатие кнопки возврата к списку чертежей "вызов мастера"
-                } else if (event.code == "Semicolon") {
+                } else if (event.code == "KeyK") {
                     // скрытие формы выбора чертежей
                     form_select.style.display = "block";
                     h1_tag.style.display = "block";
@@ -62,7 +62,7 @@
                     select_element.focus();
                     draw_frame.style.display = "none";
                     // Возврат в сменные задания
-                } else if (event.code == "KeyS") {
+                } else if (event.code == "KeyC") {
                     st_main_paige_link = `/worker/${ws_number}`;
                     location.href = st_main_paige_link;
                 }

@@ -44,7 +44,7 @@
                 <h3 class="table_h3">Заявки на документацию</h3>
                 <table class="table" title="Заявки на документацию">
                     <tr class="table_header_row">
-                        <td class="td_cell">Модель, заказ</td>
+                        <td class="td_cell">Заказ-модель</td>
                         <td class="td_cell">Приоритет</td>
                         <td class="td_cell">Статус завяки</td>
                     </tr>
@@ -81,11 +81,11 @@
             <form class="form_form" action="{% url 'td_query' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="td_query_block">
-                    <div class="form_inner_label">{{ form_query_draw.model_query.label }}</div>
-                    <div class="form_inner_div">{{ form_query_draw.model_query }}</div>
-
                     <div class="form_inner_label">{{ form_query_draw.order_query.label }}</div>
                     <div class="form_inner_div">{{ form_query_draw.order_query }}</div>
+
+                    <div class="form_inner_label">{{ form_query_draw.model_query.label }}</div>
+                    <div class="form_inner_div">{{ form_query_draw.model_query }}</div>
 
                     <div class="form_inner_label">{{ form_query_draw.query_prior.label }}</div>
                     <div class="form_inner_div">{{ form_query_draw.query_prior }}</div>

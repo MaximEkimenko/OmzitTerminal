@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import os
 
@@ -8,11 +9,13 @@ from django.contrib.auth.forms import AuthenticationForm
 
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
+from django.db.models import Q
 
 from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw
 from .models import WorkshopSchedule, ShiftTask
-from django.db.models import Q
+
 from .services.schedule_handlers import get_all_done_rate
+from worker.services.master_call_function import terminal_message_to_id
 
 
 @login_required(login_url="login/")
@@ -22,7 +25,9 @@ def scheduler(request):
     :param request:
     :return:
     """
+    group_id = -908012934  # тг группа
     # обновление процента готовности всех заказов
+    # TODO модифицировать расчёт процента готовности всех заказов по взвешенной трудоёмкости
     get_all_done_rate()
     # график изделий
     workshop_schedule = (WorkshopSchedule.objects.values('workshop', 'order', 'model_name', 'datetime_done',
@@ -70,6 +75,12 @@ def scheduler(request):
                 alert += 'Данные сменного задания успешно занесены.'
                 context = {'form_workshop_plan': form_workshop_plan, 'td_queries': td_queries, 'alert': alert,
                            'workshop_schedule': workshop_schedule, 'form_query_draw': form_query_draw}
+                # сообщение в группу
+                success_group_message = (f"Заказ-модель: "
+                                         f"{form_workshop_plan.cleaned_data['model_order_query'].model_order_query} "
+                                         f"успешно запланирован на {form_workshop_plan.cleaned_data['datetime_done']}."
+                                         )
+                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
             except Exception as e:
                 print(e, ' Ошибка запаси в базу SchedulerWorkshop')
                 alert = f'Ошибка занесения данных.'
@@ -79,7 +90,6 @@ def scheduler(request):
         else:
             context = {'form_workshop_plan': form_workshop_plan, 'workshop_schedule': workshop_schedule,
                        'td_queries': td_queries, 'form_query_draw': form_query_draw}
-
     else:
         # чистые формы для первого запуска
         form_workshop_plan = SchedulerWorkshop()
@@ -95,6 +105,7 @@ def td_query(request):
     :param request:
     :return:
     """
+    group_id = -908012934  # тг группа
     if request.method == 'POST':
         form_query_draw = QueryDraw(request.POST)
         if form_query_draw.is_valid():
@@ -117,6 +128,13 @@ def td_query(request):
                                                 td_status="запрошено",
                                                 dispatcher_query_td_fio=f"{request.user.first_name} "
                                                                         f"{request.user.last_name}")
+
+                # сообщение об успехе для отправки в группу
+                success_group_message = (f"Поступила заявка на КД. Изделие: "
+                                         f"{form_query_draw.cleaned_data['model_query']}. Заказ:  "
+                                         f"{form_query_draw.cleaned_data['order_query']}. Приоритет: "
+                                         f"{form_query_draw.cleaned_data['query_prior']}.")
+                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
                 # создание папки в общем доступе для чертежей модели
                 if not os.path.exists(rf'C:\draws\{model_order_query}'):
                     os.mkdir(rf'C:\draws\{model_order_query}')

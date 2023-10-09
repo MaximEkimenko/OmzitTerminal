@@ -1,5 +1,6 @@
 import datetime
 import os
+import asyncio
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
@@ -7,7 +8,7 @@ from .services.service_handlers import handle_uploaded_file
 from .services.tech_data_get import tech_data_get
 from .forms import GetTehDataForm, ChangeOrderModel, SendDrawBack
 from scheduler.models import WorkshopSchedule
-
+from worker.services.master_call_function import terminal_message_to_id
 
 @login_required(login_url="../scheduler/login/")
 def tehnolog_wp(request):
@@ -16,6 +17,7 @@ def tehnolog_wp(request):
     :param request:
     :return:
     """
+    group_id = -908012934  # тг группа
     td_queries = (WorkshopSchedule.objects.values('model_order_query', 'query_prior', 'td_status')
                   .exclude(td_status='завершено'))
     change_model_query_form = ChangeOrderModel()
@@ -46,13 +48,18 @@ def tehnolog_wp(request):
                               exclusion_list=exception_names,
                               model_order_query=get_teh_data_form.cleaned_data['model_order_query'].model_order_query)
                 alert = 'Загружено успешно!'
-                # TODO форму возврата чертежа на доработку
                 (WorkshopSchedule.objects.filter(model_order_query=get_teh_data_form.
                                                  cleaned_data['model_order_query'].model_order_query)
                  .update(tehnolog_query_td_fio=f'{request.user.first_name} {request.user.last_name}',
                          td_status="утверждено",
                          td_tehnolog_done_datetime=datetime.datetime.now()
                          ))
+                # сообщение в группу
+                success_group_message = (f"Загружен технологический процесс. Заказ-модель: "
+                                         f"{get_teh_data_form.cleaned_data['model_order_query'].model_order_query} "
+                                         f"доступен для планирования."
+                                         )
+                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
             except Exception as e:
                 print(f'Ошибка загрузки {filename}', e)
                 alert = f'Ошибка загрузки {filename}'
@@ -72,6 +79,7 @@ def send_draw_back(request):
     :param request:
     :return:
     """
+    group_id = -908012934  # тг группа
     if request.method == 'POST':
         send_draw_back_form = SendDrawBack(request.POST)
         if send_draw_back_form.is_valid():
@@ -85,7 +93,12 @@ def send_draw_back(request):
                      td_status='замечание'
                      )
              )
-
+            # сообщение в группу
+            success_group_message = (f"КД на заказ-модель: "
+                                     f"{send_draw_back_form.cleaned_data['model_order_query'].model_order_query} "
+                                     f"возвращено с замечанием: {send_draw_back_form.cleaned_data['td_remarks']}."
+                                     )
+            asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
         else:
             pass
 
@@ -99,6 +112,8 @@ def new_model_query(request):
     :param request:
     :return:
     """
+    group_id = -908012934  # тг группа
+    # TODO переименовать папку
     if request.method == 'POST':
         change_model_query_form = ChangeOrderModel(request.POST)
         if change_model_query_form.is_valid():
@@ -111,6 +126,11 @@ def new_model_query(request):
              .update(order=change_model_query_form.cleaned_data['order_query'].strip(),
                      model_name=change_model_query_form.cleaned_data['order_query'].strip(),
                      model_order_query=new_model_order_query))
+            # сообщение в группу
+            success_group_message = (f"Заказ-модель переименован технологической службой в: "
+                                     f"{new_model_order_query}"
+                                     )
+            asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
         else:
             pass
     return redirect('tehnolog')  # обновление страницы при успехе

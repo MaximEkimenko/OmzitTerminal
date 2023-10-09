@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import os
 
@@ -8,10 +9,12 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from scheduler.models import WorkshopSchedule
 from .forms import QueryAnswer
+from worker.services.master_call_function import terminal_message_to_id
 
 
 @login_required(login_url="../scheduler/login/")
 def constructor(request):
+    group_id = -908012934  # тг группа
     td_queries = (WorkshopSchedule.objects.values('model_order_query', 'query_prior', 'td_status', 'td_remarks')
                   .exclude(td_status='завершено'))
 
@@ -52,8 +55,15 @@ def constructor(request):
                                                     cleaned_data['model_order_query'].model_order_query).update(
                         td_status='передано',  # статус СЗ
                         td_const_done_datetime=datetime.datetime.now(),  # время загрузки
-                        constructor_query_td_fio=f'{request.user.first_name} {request.user.last_name}',
-                        td_remarks='')  # ФИО констр
+                        constructor_query_td_fio=f'{request.user.first_name} {request.user.last_name}',# ФИО констр
+                        td_remarks='')
+                    success_group_message = (f"Передано КД. Заказ-модель: "
+                                             f"{query_answer_form.cleaned_data['model_order_query']}. "
+                                             f"Открыт доступ в папке сервера: file://svr-003/draws/"
+                                             f"{query_answer_form.cleaned_data['model_order_query']}/ "
+                                             )
+                    asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+
             context = {'td_queries': td_queries, 'query_answer_form': query_answer_form, 'alert': alert}
             return render(request, r"constructor/constructor.html", context=context)
         else:

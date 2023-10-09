@@ -89,22 +89,22 @@
                 const tech_data = select_element.options[select_element.selectedIndex].dataset.send;
                 //const op_number = select_element.options[select_element.selectedIndex].op_number;
                 // кнопка выбрать чертёж
-                if (event.code == "KeyD") {
+                if (event.code == "KeyW") {
                     if (st_id != "0") {
                         const draw_link = `/worker/${ws_number}--${tech_data}`; // ссылка на страницу с чертежем
                         location.href = draw_link; // переход по ссылке
                     }
                     // кнопка вызов мастера
-                } else if (event.code == "Semicolon") {
+                } else if (event.code == "KeyK") {
                     master_call_link = `/worker/${ws_number}-${st_id}/get_master`;
                     location.href = master_call_link;
                     // кнопка вызов диспетчера
-                } else if (event.code == "KeyM") {
+                } else if (event.code == "KeyX") {
                     dispatcher_call_link = `/worker/${ws_number}-${st_id}/get_dispatcher`;
                     location.href = dispatcher_call_link;
                 }
                 // кнопка запуск СЗ
-                else if (event.code == "KeyS") {
+                else if (event.code == "KeyC") {
                     form_element.submit();
                 }
             });
