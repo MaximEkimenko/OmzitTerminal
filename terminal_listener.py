@@ -14,31 +14,31 @@ def on_press(key):
     """
 
     try:
-        if key.char == 'a' or key.char == 'ф':  # кнопка вверх
+        if key.char == 's' or key.char == 'ы':  # кнопка вверх
             keyboard_class.press(Key.backspace)
             keyboard_class.release(Key.backspace)
             keyboard_class.press(Key.up)
             keyboard_class.release(Key.up)
 
-        if key.char == 'f' or key.char == 'а':  # кнопка вправо
+        if key.char == 'b' or key.char == 'и':  # кнопка вправо
             keyboard_class.press(Key.backspace)
             keyboard_class.release(Key.backspace)
             keyboard_class.press(Key.right)
             keyboard_class.release(Key.right)
 
-        if key.char == 'j' or key.char == 'о':  # кнопка вниз
+        if key.char == 'e' or key.char == 'у':  # кнопка вниз
             keyboard_class.press(Key.backspace)
             keyboard_class.release(Key.backspace)
             keyboard_class.press(Key.down)
             keyboard_class.release(Key.down)
 
-        if key.char == 'l' or key.char == 'д':  # кнопка влево
+        if key.char == 'd' or key.char == 'в':  # кнопка влево
             keyboard_class.press(Key.backspace)
             keyboard_class.release(Key.backspace)
             keyboard_class.press(Key.left)
             keyboard_class.release(Key.left)
 
-        if key.char == 'k' or key.char == 'л':  # кнопка '+'
+        if key.char == 'v' or key.char == 'м':  # кнопка '+'
 
             keyboard_class.press(Key.backspace)
             keyboard_class.release(Key.backspace)
@@ -49,7 +49,7 @@ def on_press(key):
             keyboard_class.release(Key.ctrl_l)
             keyboard_class.release('=')
 
-        if key.char == 't' or key.char == 'e':  # кнопка '-'
+        if key.char == 'z' or key.char == 'я':  # кнопка '-'
             keyboard_class.press(Key.backspace)
             keyboard_class.release(Key.backspace)
 
