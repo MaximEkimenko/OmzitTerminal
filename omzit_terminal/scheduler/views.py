@@ -238,6 +238,11 @@ class LoginUser(LoginView):
             return reverse_lazy('home')
         elif 'disp' in self.request.user.username:
             return reverse_lazy('scheduler')
+        elif 'tehnolog' in self.request.user.username:
+            return reverse_lazy('tehnolog')
+        elif 'constructor' in self.request.user.username:
+            return reverse_lazy('constructor')
+        print(self.request.user.username)
 
 
 def logout_user(request):  # разлогинивание пользователя

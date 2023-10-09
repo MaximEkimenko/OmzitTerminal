@@ -39,8 +39,9 @@ def constructor(request):
                     print(file_save_path)
                     # обработчик загрузки файла
                     try:
-                        handle_uploaded_file(f=request.FILES["draw_files"], filename=str(file),
+                        handle_uploaded_file(f=file, filename=str(file),
                                              path=file_save_path)
+                        print('!!!!req====', file)
                         alert = 'Все файлы успешно загружены.'
                     except Exception as e:
                         print(f'Ошибка загрузки {str(file)}', e)

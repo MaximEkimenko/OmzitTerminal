@@ -2,6 +2,7 @@ import datetime
 
 import psycopg2
 from db_config import host, dbname, user, password
+import openpyxl
 
 
 def select_master_call(ws_number: str) -> list or None:
@@ -261,7 +262,7 @@ def indexes_calculation(st_id):
         con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
         con.autocommit = True
         if st_id == '*':
-            select_query = f"""SELECT * FROM shift_task"""   # получение всех данных
+            select_query = f"""SELECT * FROM shift_task"""  # получение всех данных
         else:
             select_query = f"""SELECT * FROM shift_task WHERE id='{st_id}'"""  # получение данных по id записи
         try:
@@ -292,10 +293,41 @@ def indexes_calculation(st_id):
     print(results)
     timedelta = results['decision_time'] - results['datetime_job_start']
     print(type(timedelta))
-    print(timedelta.total_seconds()/60/60)
+    print(timedelta.total_seconds() / 60 / 60)
+
+
 #
 # a = datetime.timedelta()
 # a.total_seconds()
+
+
+def doers_update(excel_file: str) -> None:
+    """
+    Функция обновления таблицы doers (либо первоначального заполнения) из excel файла
+    :param excel_file:
+    :return:
+    """
+    wb = openpyxl.load_workbook(excel_file)
+    sh = wb.active
+    try:
+        # подключение к БД
+        con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
+        con.autocommit = True
+        # запрос на корректировку БД
+        for row in sh.iter_rows(min_row=2, max_row=sh.max_row, min_col=1, max_col=sh.max_column, values_only=True):
+            if row[0] is not None:
+                print(row[0])
+                insert_query = f"""INSERT INTO doers (doers) VALUES ('{row[0]}')"""
+                try:
+                    with con.cursor() as cur:
+                        cur.execute(insert_query)
+                        con.commit()
+                except Exception as e:
+                    print(e, 'ошибка в запросе')
+    except Exception as e:
+        print('Ошибка подключения к базе', e)
+    finally:
+        con.close()
 
 
 if __name__ == '__main__':
@@ -307,5 +339,8 @@ if __name__ == '__main__':
     # master_id_get(st_id='275')
     # master_id_get(ws_number='109')
     # decision_data_set('264', '123', '!!!!!')
-    indexes_calculation('274')
+    # indexes_calculation('274')
+    fio_file = r'D:\АСУП\Python\Projects\ARC\GUI\Табель\База ФИО.xlsx'
+
+    doers_update(fio_file)
     pass
