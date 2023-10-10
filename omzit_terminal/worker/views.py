@@ -133,7 +133,6 @@ def draws(request, ws_st_number: str):
     st_number = str(ws_st_number).split('--')[3]
     header_string = f'РЦ {ws_number} СЗ {st_number}'
 
-    # TODO сделать запрос к ShiftTask после заполнения данных
     # # Выбор списка чертежей
     select_draws = (ShiftTask.objects.values('ws_number', 'model_name', 'op_number', 'op_name_full', 'draw_path',
                                              'draw_filename', 'model_order_query')
@@ -160,10 +159,13 @@ def draws(request, ws_st_number: str):
 def show_draw(request, ws_number, pdf_file):
     # TODO сделать отмену если ссылки на чертёж нет или она не валидная
     # преобразование строки из запроса в ссылку
-    path_to_file = (str(pdf_file).replace('--', '/')) + '.pdf'
-    response = FileResponse(open(fr'{path_to_file}', 'rb'))
-    response['X-Frame-Options'] = 'SAMEORIGIN'
-    return response
+    try:
+        path_to_file = (str(pdf_file).replace('--', '/')) + '.pdf'
+        response = FileResponse(open(fr'{path_to_file}', 'rb'))
+        response['X-Frame-Options'] = 'SAMEORIGIN'
+        return response
+    except FileNotFoundError as e:
+        print(e)
 
 
 def make_master_call(request, ws_st_number):

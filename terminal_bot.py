@@ -6,18 +6,39 @@ from aiogram import Bot, Dispatcher, executor, types, filters
 # работа с БД
 from terminal_db import (ws_list_get, status_change_to_otk, st_list_get, master_id_get, control_man_id_set,
                          decision_data_set)
+
 logging.basicConfig(filename="log.log", level=logging.DEBUG, filemode='w',
                     format=' %(levelname)s - %(asctime)s; файл - %(filename)s; сообщение - %(message)s')
 TOKEN = os.getenv('RSU_TOKEN')
 
+# ids
 admin_id = int(os.getenv('ADMIN_TELEGRAM_ID'))
-users = (admin_id, )  # админ
+ermishkin_id = 5221029965
+savchenko_id = 2131171377
+averkina_id = 1563020113
+donskaya_id = 6359131276
+mhitaryan_id = 413559952
 
-masters = (admin_id, )
+# groups
+omzit_otk_group_id = -981440150
+terminal_group_id = -908012934
+id_fios = {admin_id: 'Екименко М.А.',
+           ermishkin_id: 'Ермишкин В.М.',  # Мастера
+           savchenko_id: 'Савченко Е.Н.',  # ПДО
+           donskaya_id: 'Донская Ю.Г.',  # ОТК
+           averkina_id: 'Аверкина О.В.',
+           mhitaryan_id: 'Мхитарян К.',  # ПКО
 
-control_mans_list = (admin_id, )
+           }
+
+users = (admin_id, ermishkin_id, savchenko_id, donskaya_id, mhitaryan_id)  # админ
+
+masters = (admin_id, ermishkin_id,)
+dispatchers = (admin_id, savchenko_id,)
+
+control_mans_list = (admin_id, donskaya_id,)
 # telegram ids
-test_group_id = -908012934
+
 
 bot = Bot(token=TOKEN)  # инициализация бота
 dp = Dispatcher(bot)  # инициализация диспетчера
@@ -34,15 +55,8 @@ async def on_startup(_):  # функция выполняется при зап�
     # await bot.send_message(admin_id, "Бот РСУ вышел в онлайн.")
     print(f'ТЕСТ БОТ онлайн в {datetime.datetime.now().strftime("%H:%M:%S")}.')
 
-#
-# async def send_call_master(message_to_master):
-#     """ Функция вызова мастера. Импортируется в terminal_listener"""
-#     await bot.send_message(chat_id=admin_id, text=message_to_master)
 
-# TODO найти, повторить и разрешить баг с выбором последней записи в инлайн кнопке при нажатии на любую.
-
-
-def call_get_re(pattern: str, call: str) -> str:  # TODO перенести в отдельный модуль
+def call_get_re(pattern: str, call: str) -> str:
     """
     Функция получения строки из pattern re. Используется в lambda в call_back_handler вместо фильтра regexp
     :param pattern: шаблон re
@@ -96,12 +110,14 @@ async def otk_call(callback_query: types.CallbackQuery):
     ws_number = callback_query.data[4:-10]  # номер РЦ
 
     # отправка сообщения о заявке на контролёра в группу ОТК
-    await bot.send_message(chat_id=test_group_id, text=f"Вас ожидают на РЦ {ws_number}. Запрос от {master_id}")
+    await bot.send_message(chat_id=terminal_group_id, text=f"Вас ожидают на РЦ {ws_number}. Запрос от {master_id}")
     # Обратная связь мастеру
     await bot.send_message(chat_id=master_id, text="Запрос в отк отправлен.")
     # Статус ожидание контролёра
     status_change_to_otk(ws_number=ws_number, initiator_id=master_id)
     await callback_query.answer()  # закрытие inline кнопок
+
+
 # ------------------------------------------------
 
 
@@ -131,7 +147,8 @@ async def otk_call(callback_query: types.CallbackQuery):
     # запрос в БД на id мастера
     master_id = master_id_get(ws_number=ws_number)[0]
     # отправка сообщения о заявке на контролёра в группу ОТК
-    await bot.send_message(chat_id=test_group_id, text=f"Контролёр {controlman_id} ответил на запрос РЦ{ws_number}.")
+    await bot.send_message(chat_id=terminal_group_id,
+                           text=f"Контролёр {controlman_id} ответил на запрос РЦ{ws_number}.")
     # обратная связь мастеру
     await bot.send_message(chat_id=master_id, text=f"Контролёр {controlman_id} ответил на запрос РЦ{ws_number}.")
     # сообщение в личку контролёру
@@ -139,6 +156,8 @@ async def otk_call(callback_query: types.CallbackQuery):
     # Запись в БД информации об ответе контролёра
     control_man_id_set(ws_number, controlman_id)
     await callback_query.answer()
+
+
 # ------------------------------------------------
 
 
@@ -172,8 +191,8 @@ async def otk_answer(callback_query: types.CallbackQuery):
     # print('shift_task_list = ', shift_task_list)
     for task in shift_task_list:
         print(task)
-        print([str(task).find("|")-1])
-        shift_task_id = task[2:str(task).find("|")-1]  # id СЗ
+        print([str(task).find("|") - 1])
+        shift_task_id = task[2:str(task).find("|") - 1]  # id СЗ
         # print(shift_task_id)
         btn = types.InlineKeyboardButton(text=f'{task}',
                                          callback_data=f'stid{shift_task_id}{controlman_id}')
@@ -222,7 +241,7 @@ async def otk_answer(callback_query: types.CallbackQuery):
     # запись в базу
     decision_data_set(st_id, controlman_id, decision)
     # Сообщение в группу
-    await bot.send_message(chat_id=test_group_id,
+    await bot.send_message(chat_id=terminal_group_id,
                            text=f'Контролёр {controlman_id} определил "{decision}" на РЦ {ws_number} для СЗ №{st_id}')
     # сообщение в личку
     await bot.send_message(chat_id=controlman_id,
@@ -231,6 +250,8 @@ async def otk_answer(callback_query: types.CallbackQuery):
     await bot.send_message(chat_id=master_id,
                            text=f'Контролёр {controlman_id} определил "{decision}" на РЦ {ws_number} для СЗ №{st_id}')
     await callback_query.answer()  # закрытие inline кнопок
+
+
 # ------------------------------------------------
 
 
