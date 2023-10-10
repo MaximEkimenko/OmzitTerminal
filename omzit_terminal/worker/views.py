@@ -137,22 +137,22 @@ def draws(request, ws_st_number: str):
     # # Выбор списка чертежей
     select_draws = (ShiftTask.objects.values('ws_number', 'model_name', 'op_number', 'op_name_full', 'draw_path',
                                              'draw_filename', 'model_order_query')
-                    .filter(ws_number=ws_number, op_number=op_number, model_name=model_name))
+                    .filter(ws_number=ws_number, op_number=op_number, model_name=model_name, id=st_number))
     print(select_draws)
-    # TODO копировать путь в shift_task
     # draw_path = str(select_draws[0]['draw_path']).strip()  # путь к чертежам
     draw_path = fr"C:\draws\{select_draws[0]['model_order_query']}\\"
 
     pdf_links = []  # список словарей чертежей
     # если несколько чертежей
-    if ',' in select_draws[0]['draw_filename']:
-        draw_filenames = select_draws[0]['draw_filename'].split(',')
-        for draw_filename in draw_filenames:
+    if select_draws[0]['draw_filename'] is not None:
+        if ',' in select_draws[0]['draw_filename']:
+            draw_filenames = select_draws[0]['draw_filename'].split(',')
+            for draw_filename in draw_filenames:
+                pdf_links.append({'link': fr"{draw_path}{str(draw_filename).strip()}", 'filename': draw_filename})
+        else:
+            draw_filename = select_draws[0]['draw_filename']
             pdf_links.append({'link': fr"{draw_path}{str(draw_filename).strip()}", 'filename': draw_filename})
-    else:
-        draw_filename = select_draws[0]['draw_filename']
-        pdf_links.append({'link': fr"{draw_path}{str(draw_filename).strip()}", 'filename': draw_filename})
-    print(pdf_links)
+        print('pdf_links', pdf_links)
     context = {'ws_number': ws_number, 'st_number': st_number, 'select_draws': select_draws, 'pdf_links': pdf_links}
     return render(request, r"worker/draws.html", context=context)
 
@@ -160,7 +160,7 @@ def draws(request, ws_st_number: str):
 def show_draw(request, ws_number, pdf_file):
     # TODO сделать отмену если ссылки на чертёж нет или она не валидная
     # преобразование строки из запроса в ссылку
-    path_to_file = (str(pdf_file).replace('--', '/'))
+    path_to_file = (str(pdf_file).replace('--', '/')) + '.pdf'
     response = FileResponse(open(fr'{path_to_file}', 'rb'))
     response['X-Frame-Options'] = 'SAMEORIGIN'
     return response

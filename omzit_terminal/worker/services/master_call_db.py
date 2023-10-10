@@ -32,7 +32,7 @@ def select_master_call(ws_number: str, st_number) -> list or None:
                 shift_tasks = cur.fetchall()
                 for task in shift_tasks:
                     # print(task)
-                    message_to_master = (f"Вас ожидают на РЦ {ws_number}. Номер СЗ: {task[0]}. Заказ: {task[1]}. "
+                    message_to_master = (f"Мастера ожидают на РЦ {ws_number}. Номер СЗ: {task[0]}. Заказ: {task[1]}. "
                                          f"Изделие: {task[2]}. Операция: {task[3]} {task[4]}. "
                                          f"Исполнители: {task[5]}")
                     messages_to_master.append(message_to_master)
@@ -82,7 +82,7 @@ def select_dispatcher_call(ws_number: str, st_number) -> list or None:
                 shift_tasks = cur.fetchall()
                 for task in shift_tasks:
                     # print(task)
-                    message_to_dispatcher = (f"Вас ожидают на РЦ {ws_number}. Номер СЗ: {task[0]}. Заказ: {task[1]}. "
+                    message_to_dispatcher = (f"Диспетчера ожидают на РЦ {ws_number}. Номер СЗ: {task[0]}. Заказ: {task[1]}. "
                                              f"Изделие: {task[2]}. Операция: {task[3]} {task[4]}. "
                                              f"Исполнители: {task[5]}")
                     messages_to_dispatcher.append(message_to_dispatcher)
