@@ -199,7 +199,7 @@ def schedulerfio(request, ws_number, datetime_done):
     :return:
     """
     def if_not_none(obj):  # функция замены None и НЕТ на пустоту в списке исполнителей
-        if obj is None or obj == 'НЕТ':
+        if obj is None or obj == '' or obj == 'None':
             return ''
         else:
             return ',' + str(obj)

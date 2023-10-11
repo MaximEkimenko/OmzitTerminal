@@ -14,7 +14,6 @@ dispatcher_list = [admin_id]
 
 
 async def send_call_master(message_to_master):
-
     await bot.send_message(chat_id=admin_id, text=message_to_master)
 
 

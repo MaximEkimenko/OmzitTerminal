@@ -72,8 +72,7 @@ def select_dispatcher_call(ws_number: str, st_number) -> list or None:
         select_query = f"""SELECT id, model_name, "order", op_number, op_name_full, fio_doer
                             FROM shift_task
                             WHERE 
-                            id = '{st_number}' AND
-                            ws_number = '{ws_number}'
+                            id = '{st_number}'
                         """
         try:
             with con.cursor() as cur:

@@ -11,7 +11,7 @@ from scheduler.models import ShiftTask
 
 from .forms import WorkplaceChoose
 from .services.master_call_db import select_master_call, select_dispatcher_call
-from .services.master_call_function import send_call_master, send_call_dispatcher
+from .services.master_call_function import send_call_master, send_call_dispatcher, terminal_message_to_id
 
 
 # TODO найти решение аналогов РЦ. Убрать обозначение РЦ "РЦ№1/РЦ№2" - вместо "/" использовать "-"
@@ -106,8 +106,10 @@ def worker(request, ws_number):
     else:
         if request.GET.get('call') == 'True':
             alert_message = 'Вызов мастеру отправлен.'
+        elif request.GET.get('call') == 'False_wrong':
+            alert_message = 'Неверный выбор.'
         elif request.GET.get('call') == 'False':
-            alert_message = 'Вызов мастеру уже был отправлен ранее.'
+            alert_message = 'Сменное задание не принято в работу или вызов мастеру был отправлен ранее.'
         elif request.GET.get('call') == 'True_disp':
             alert_message = 'Сообщение диспетчеру отправлено.'
         else:
@@ -169,13 +171,14 @@ def show_draw(request, ws_number, pdf_file):
 
 
 def make_master_call(request, ws_st_number):
+    group_id = -908012934  # тг группа
     ws_number = str(ws_st_number)[:str(ws_st_number).find('-')]
     st_number = str(ws_st_number)[str(ws_st_number).rfind('-') + 1:]
     print('ws = ', ws_number)
     print('st = ', st_number, type(st_number))
     print('ws-st', ws_st_number)
-    if st_number == '0':
-        return redirect(f'/worker/{ws_number}?call=False')
+    # if st_number == '0':
+    #     return redirect(f'/worker/{ws_number}?call=False')
     # выборка вызовов мастера на РЦ ws_number
     messages = select_master_call(ws_number=str(ws_number), st_number=str(st_number))
     print('messages=', messages)
@@ -184,20 +187,27 @@ def make_master_call(request, ws_st_number):
         print('Вызов мастера')
         for message in messages:
             asyncio.run(send_call_master(message))  # отправка мастеру в телеграм ботом
+            # отправка в группу
+            asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=message))
         print('Окончание вызова')
         return redirect(f'/worker/{ws_number}?call=True')
+    elif st_number == '0':
+        return redirect(f'/worker/{ws_number}?call=False_wrong')
+    # elif messages is None and st_number:
+    #     return redirect(f'/worker/{ws_number}?call=False_need')
     else:
         return redirect(f'/worker/{ws_number}?call=False')
 
 
 def make_dispatcher_call(request, ws_st_number):
+    group_id = -908012934  # тг группа
     ws_number = str(ws_st_number)[:str(ws_st_number).find('-')]
     st_number = str(ws_st_number)[str(ws_st_number).rfind('-') + 1:]
     print('ws = ', ws_number)
     print('st = ', st_number, type(st_number))
     print('ws-st', ws_st_number)
     if st_number == '0':
-        return redirect(f'/worker/{ws_number}?call=False')
+        return redirect(f'/worker/{ws_number}?call=False_wrong')
     # выборка вызовов мастера на РЦ ws_number
     messages = select_dispatcher_call(ws_number=str(ws_number), st_number=str(st_number))
     print('messages=', messages)
@@ -206,8 +216,12 @@ def make_dispatcher_call(request, ws_st_number):
         print('Вызов диспетчера')
         for message in messages:
             asyncio.run(send_call_dispatcher(message))  # отправка мастеру в телеграм ботом
+            # отправка в группу
+            asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=message))
         print('Окончание вызова')
         return redirect(f'/worker/{ws_number}?call=True_disp')
+    elif st_number == 0:
+        return redirect(f'/worker/{ws_number}?call=False_wrong')
     # else:
     #     print('NO MESSAGE!')
     #     return redirect(f'/worker/{ws_number}')
