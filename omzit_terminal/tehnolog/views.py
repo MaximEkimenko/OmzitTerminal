@@ -57,7 +57,8 @@ def tehnolog_wp(request):
                 # сообщение в группу
                 success_group_message = (f"Загружен технологический процесс. Заказ-модель: "
                                          f"{get_teh_data_form.cleaned_data['model_order_query'].model_order_query} "
-                                         f"доступен для планирования."
+                                         f"доступен для планирования. "
+                                         f"Данные загрузил: {request.user.first_name} {request.user.last_name}."
                                          )
                 asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
             except Exception as e:
@@ -96,7 +97,8 @@ def send_draw_back(request):
             # сообщение в группу
             success_group_message = (f"КД на заказ-модель: "
                                      f"{send_draw_back_form.cleaned_data['model_order_query'].model_order_query} "
-                                     f"возвращено с замечанием: {send_draw_back_form.cleaned_data['td_remarks']}."
+                                     f"возвращено с замечанием: {send_draw_back_form.cleaned_data['td_remarks']}. "
+                                     f"КД вернул: {request.user.first_name} {request.user.last_name}."
                                      )
             asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
         else:
@@ -128,7 +130,8 @@ def new_model_query(request):
                      model_order_query=new_model_order_query))
             # сообщение в группу
             success_group_message = (f"Заказ-модель переименован технологической службой в: "
-                                     f"{new_model_order_query}"
+                                     f"{new_model_order_query}. "
+                                     f"Откорректировал: {request.user.first_name} {request.user.last_name}."
                                      )
             asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
         else:

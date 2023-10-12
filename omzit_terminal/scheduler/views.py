@@ -78,8 +78,8 @@ def scheduler(request):
                 # сообщение в группу
                 success_group_message = (f"Заказ-модель: "
                                          f"{form_workshop_plan.cleaned_data['model_order_query'].model_order_query} "
-                                         f"успешно запланирован на {form_workshop_plan.cleaned_data['datetime_done']}."
-                                         )
+                                         f"успешно запланирован на {form_workshop_plan.cleaned_data['datetime_done']}. "
+                                         f"Запланировал: {request.user.first_name} {request.user.last_name}.")
                 asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
             except Exception as e:
                 print(e, ' Ошибка запаси в базу SchedulerWorkshop')
@@ -133,7 +133,8 @@ def td_query(request):
                 success_group_message = (f"Поступила заявка на КД. Изделие: "
                                          f"{form_query_draw.cleaned_data['model_query']}. Заказ:  "
                                          f"{form_query_draw.cleaned_data['order_query']}. Приоритет: "
-                                         f"{form_query_draw.cleaned_data['query_prior']}.")
+                                         f"{form_query_draw.cleaned_data['query_prior']}. "
+                                         f"Заявку составил: {request.user.first_name} {request.user.last_name}.")
                 asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
                 # создание папки в общем доступе для чертежей модели
                 if not os.path.exists(rf'C:\draws\{model_order_query}'):
@@ -155,8 +156,8 @@ def schedulerwp(request):
     # выборка из уже занесенного
     workplace_schedule = ((ShiftTask.objects.values('id', 'workshop', 'order', 'model_name', 'datetime_done',
                                                     'ws_number', 'op_number', 'op_name_full', 'norm_tech', 'fio_doer',
-                                                    'st_status').all())
-                          .order_by("ws_number", "model_name"))
+                                                    'st_status').all()).exclude(datetime_done=None)
+                          .order_by("ws_number", "model_name",))
 
     if request.method == 'POST':
         form_workplace_plan = SchedulerWorkplace(request.POST)
@@ -178,7 +179,7 @@ def schedulerwp(request):
             if filtered_workplace_schedule:
                 return redirect(f'/scheduler/schedulerfio{ws_number}_{datetime_done}')
             else:
-                alert_message = f'Для РЦ {ws_number} на {datetime_done} нераспределённые задания отсутствуют.'
+                alert_message = f'Для Т{ws_number} на {datetime_done} нераспределённые задания отсутствуют.'
                 form_workplace_plan = SchedulerWorkplace()
                 context = {'workplace_schedule': workplace_schedule, 'form_workplace_plan': form_workplace_plan,
                            'alert_message': alert_message}

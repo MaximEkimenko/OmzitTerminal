@@ -14,7 +14,7 @@
         {%endif %}
         <h1>
             <!-- prettier-ignore -->
-            Распределение ФИО для РЦ {{ filtered_workplace_schedule.0.ws_number }} на дату {{ filtered_workplace_schedule.0.datetime_done }}
+            Распределение ФИО для Т{{ filtered_workplace_schedule.0.ws_number }} на дату {{ filtered_workplace_schedule.0.datetime_done }}
         </h1>
 
         {% if filtered_workplace_schedule %}
@@ -92,7 +92,7 @@
             const notification = document.getElementsByClassName("alert_gone")[0];
             setTimeout(() => notification.remove(), 10000);
         </script>
-        <a href="{% url 'schedulerwp' %}">Назад</a> <br />
+        <a href="{% url 'schedulerwp' %}">Выбор терминала</a> <br />
         <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
     </body>
 </html>

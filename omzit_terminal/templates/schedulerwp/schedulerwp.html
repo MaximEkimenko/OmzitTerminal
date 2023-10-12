@@ -12,7 +12,10 @@
         <div class="logined_user">{{ user.username }} | <a href="{% url 'logout' %}"> Выйти </a></div>
         {% else %} <a href="{% url 'login' %}"> Войти </a>
         {%endif %}
+        <!-- prettier-ignore -->
+        {% if user.username == 'admin' %}
         <a href="{% url 'home' %}">Назад</a> <br />
+        {%endif %}
         <h1>Рабочее место планировщика рабочих центров</h1>
         <br />
 
@@ -57,8 +60,10 @@
             {% endfor %}
         </table>
         {% endif %}
-
+        <!-- prettier-ignore -->
+        {% if user.username == 'admin' %}
         <a href="{% url 'home' %}">Назад</a> <br />
+        {%endif %}
         <script src="{% static 'scheduler/js/schedulerwp.js' %}"></script>
     </body>
 </html>

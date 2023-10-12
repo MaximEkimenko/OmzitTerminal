@@ -133,7 +133,7 @@ def draws(request, ws_st_number: str):
     op_number = str(ws_st_number).split('--')[1]
     model_name = str(ws_st_number).split('--')[2]
     st_number = str(ws_st_number).split('--')[3]
-    header_string = f'РЦ {ws_number} СЗ {st_number}'
+    header_string = f'Т{ws_number} СЗ {st_number}'
 
     # # Выбор списка чертежей
     select_draws = (ShiftTask.objects.values('ws_number', 'model_name', 'op_number', 'op_name_full', 'draw_path',

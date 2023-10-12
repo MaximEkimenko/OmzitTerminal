@@ -63,7 +63,8 @@ def constructor(request):
                 success_group_message = (f"Передано КД. Заказ-модель "
                                          f"{query_answer_form.cleaned_data['model_order_query'].model_order_query}. "
                                          f"Открыт доступ в папке сервера: file://svr-003/draws/"
-                                         f"{query_answer_form.cleaned_data['model_order_query'].model_order_query}/ "
+                                         f"{query_answer_form.cleaned_data['model_order_query'].model_order_query}/."
+                                         f"Передал КД: {request.user.first_name} {request.user.last_name}."
                                          )
                 asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
 

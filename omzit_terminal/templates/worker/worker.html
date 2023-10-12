@@ -7,7 +7,7 @@
         <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
     </head>
     <body id="body_terminal">
-        <h1 style="font-size: 50px">Терминал РЦ {{ ws_number }}</h1>
+        <h1 style="font-size: 50px">Терминал {{ ws_number }}</h1>
         <script>
             function showNotification({ top = 0, right = 0, html }) {
                 let notification = document.createElement("div");
@@ -116,6 +116,9 @@
         <div style="height: 90px"></div>
         <script></script>
         <br />
+        <!-- prettier-ignore -->
+        {% if user.username == 'admin' %}
         <a href="{% url 'worker_choose' %}">Назад</a> <br />
+        {%endif %}
     </body>
 </html>

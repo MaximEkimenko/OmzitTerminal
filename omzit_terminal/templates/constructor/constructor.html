@@ -121,7 +121,10 @@
             <script src="{% static 'constructor/js/constructor.js' %}"></script>
         </div>
         <br />
+        <!-- prettier-ignore -->
+        {% if user.username == 'admin' %}
         <a href="{% url 'home' %}">Назад</a> <br />
+        {%endif %}
         <div style="height: 150px"></div>
     </body>
 </html>

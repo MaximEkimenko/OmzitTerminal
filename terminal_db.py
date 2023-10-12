@@ -31,7 +31,7 @@ def select_master_call(ws_number: str) -> list or None:
                 shift_tasks = cur.fetchall()
                 for task in shift_tasks:
                     # print(task)
-                    message_to_master = (f"Вас ожидают на РЦ {ws_number}. Номер СЗ: {task[0]}. Заказ: {task[1]}. "
+                    message_to_master = (f"Вас ожидают на Т{ws_number}. Номер СЗ: {task[0]}. Заказ: {task[1]}. "
                                          f"Изделие: {task[2]}. Операция: {task[3]} {task[4]}. "
                                          f"Исполнители: {task[5]}")
                     messages_to_master.append(message_to_master)
@@ -115,7 +115,7 @@ def st_list_get(ws_number: str) -> tuple:
         except Exception as e:
             print(e, 'ошибка выборке')
         for shift_task in all_tasks:
-            st = f"№ {shift_task[0]} | РЦ{shift_task[1]} | {shift_task[2]}"  # форматирование строки
+            st = f"№ {shift_task[0]} | Е{shift_task[1]} | {shift_task[2]}"  # форматирование строки
             # print('ST-------', st)
             st_set.add(st)
     except Exception as e:
@@ -331,7 +331,7 @@ def doers_update(excel_file: str) -> None:
 
 
 if __name__ == '__main__':
-    # select_master_call("109")
+    # select_master_call("13")
     # ws_list_get('')
     # status_change_to_otk('109', 123)
     # st_list_get('109')
@@ -340,7 +340,7 @@ if __name__ == '__main__':
     # master_id_get(ws_number='109')
     # decision_data_set('264', '123', '!!!!!')
     # indexes_calculation('274')
-    fio_file = r'D:\АСУП\Python\Projects\ARC\GUI\Табель\База ФИО.xlsx'
-
-    doers_update(fio_file)
+    # fio_file = r'D:\АСУП\Python\Projects\ARC\GUI\Табель\База ФИО.xlsx'
+    # status_change_to_otk('13', '1238658905')
+    # doers_update(fio_file)
     pass

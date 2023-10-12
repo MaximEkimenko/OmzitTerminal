@@ -2,6 +2,8 @@ import datetime
 import logging
 import os
 import re
+import time
+
 from aiogram import Bot, Dispatcher, executor, types, filters
 # работа с БД
 from terminal_db import (ws_list_get, status_change_to_otk, st_list_get, master_id_get, control_man_id_set,
@@ -13,30 +15,52 @@ TOKEN = os.getenv('RSU_TOKEN')
 
 # ids
 admin_id = int(os.getenv('ADMIN_TELEGRAM_ID'))
+posohov_id = 2051721470  # цех 1
 ermishkin_id = 5221029965
-savchenko_id = 2131171377
-averkina_id = 1563020113
-donskaya_id = 6359131276
-mhitaryan_id = 413559952
+gordii_id = 6374431046
+kondratiev_id = 6125791135
+achmetov_id = 1153114403
 
+savchenko_id = 2131171377  # ПДО
+pavluchenkova_id = 1151694995
+
+averkina_id = 1563020113  # ОТК
+donskaya_id = 6359131276
+
+mhitaryan_id = 413559952  # ПКО
+saks_id = 1366631138  # ОГТ
 # groups
 omzit_otk_group_id = -981440150
 terminal_group_id = -908012934
 id_fios = {admin_id: 'Екименко М.А.',
+           posohov_id: 'Посохов О.С.',
            ermishkin_id: 'Ермишкин В.М.',  # Мастера
+           gordii_id: 'Гордий В.В.',
+           kondratiev_id: 'Кондратьев П.В.',
+           achmetov_id: 'Ахметов К.',
            savchenko_id: 'Савченко Е.Н.',  # ПДО
+           pavluchenkova_id: 'Павлюченкова Н. Л.',
            donskaya_id: 'Донская Ю.Г.',  # ОТК
            averkina_id: 'Аверкина О.В.',
            mhitaryan_id: 'Мхитарян К.',  # ПКО
+           saks_id: 'Сакс В.И.'  # ОГТ
 
            }
 
-users = (admin_id, ermishkin_id, savchenko_id, donskaya_id, mhitaryan_id)  # админ
+# пользователи имеющие доступ
+users = (admin_id,  # root
+         posohov_id, ermishkin_id, gordii_id, kondratiev_id, achmetov_id,  # производство
+         savchenko_id, pavluchenkova_id,  # ПДО
+         donskaya_id, averkina_id,  # ОТК
+         mhitaryan_id,  # ПКО
+         saks_id,  # ОГТ
+         )
 
-masters = (admin_id, ermishkin_id,)
-dispatchers = (admin_id, savchenko_id,)
+masters = (admin_id, ermishkin_id, posohov_id, gordii_id, kondratiev_id, achmetov_id)  # производство
 
-control_mans_list = (admin_id, donskaya_id,)
+dispatchers = (admin_id, savchenko_id, pavluchenkova_id, )  # диспетчеры
+
+control_mans_list = (admin_id, donskaya_id, averkina_id)  # контролёры
 # telegram ids
 
 
@@ -44,16 +68,16 @@ bot = Bot(token=TOKEN)  # инициализация бота
 dp = Dispatcher(bot)  # инициализация диспетчера
 
 # шаблоны re для callback
-pattern_call_otk = r'(call)\d\d\d'  # шаблон для вызова ОТК
-pattern_answ_otk = r'(answ)\d\d\d'  # шаблон для ответа ОТК
-pattern_dcgo_otk = r'(dcgo)\d\d\d'  # шаблон запуска решения
+pattern_call_otk = r'(call)\d\d'  # шаблон для вызова ОТК
+pattern_answ_otk = r'(answ)\d\d'  # шаблон для ответа ОТК
+pattern_dcgo_otk = r'(dcgo)\d\d'  # шаблон запуска решения
 pattern_stid_otk = r'(stid)\d'  # шаблон для вызова вариантов решений ОТК
 pattern_dscn_otk = r'(dcsn)\d'  # шаблон принятого решения ОТК
 
 
 async def on_startup(_):  # функция выполняется при запуске бота
     # await bot.send_message(admin_id, "Бот РСУ вышел в онлайн.")
-    print(f'ТЕСТ БОТ онлайн в {datetime.datetime.now().strftime("%H:%M:%S")}.')
+    print(f'Terminal_bot вышел онлайн в {datetime.datetime.now().strftime("%H:%M:%S")}.')
 
 
 def call_get_re(pattern: str, call: str) -> str:
@@ -65,22 +89,24 @@ def call_get_re(pattern: str, call: str) -> str:
     """
     try:
         result_string = re.match(pattern, call).string
+        # print(result_string)
     except Exception as e:
         result_string = ''
-        print(e)
+        print('ошибка определения RegExp', e)
 
     return result_string
 
 
 @dp.message_handler(commands=['start'])
 async def start_rsu_bot(message: types.Message):
-    await message.reply(text='')
+    await message.reply(text='Вас приветствует бот для работы с терминалами ЗАО ОмЗиТ! Чтобы воспользоваться ботом '
+                             'используйте меню.')
 
 
 @dp.message_handler(commands=['help'])
 async def help_rsu_bot(message: types.Message):
     if message.from_user.id in users:
-        await message.reply(text='')
+        await message.reply(text='Здесь будет инструкция.')
 
 
 # TODO docstring для всх обработчиков
@@ -98,7 +124,7 @@ async def master_otk_send(message: types.Message):
         for ws in ws_list:
             btn = types.InlineKeyboardButton(text=f'{ws}', callback_data=f'call{ws}{message.from_user.id}')
             inline_ws_buttons.insert(btn)
-        await message.answer('Выбор РЦ', reply_markup=inline_ws_buttons)
+        await message.answer('Выбор терминала', reply_markup=inline_ws_buttons)
     else:
         await message.reply('У вас нет доступа к этому функционалу.')
 
@@ -108,9 +134,13 @@ async def master_otk_send(message: types.Message):
 async def otk_call(callback_query: types.CallbackQuery):
     master_id = callback_query.data[-10:]  # id мастера
     ws_number = callback_query.data[4:-10]  # номер РЦ
-
+    print(ws_number, len(ws_number), type(ws_number))
+    print(master_id, len(master_id), type(master_id))
+    # print(callback_query.data)
+    # print(ws_number, master_id)
     # отправка сообщения о заявке на контролёра в группу ОТК
-    await bot.send_message(chat_id=terminal_group_id, text=f"Вас ожидают на РЦ {ws_number}. Запрос от {master_id}")
+    await bot.send_message(chat_id=terminal_group_id, text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
+                                                           f"{id_fios[int(master_id)]}")
     # Обратная связь мастеру
     await bot.send_message(chat_id=master_id, text="Запрос в отк отправлен.")
     # Статус ожидание контролёра
@@ -133,7 +163,7 @@ async def otk_answer_master_send(message: types.Message):
         for ws in ws_list:
             btn = types.InlineKeyboardButton(text=f'{ws}', callback_data=f'answ{ws}{message.from_user.id}')
             inline_ws_buttons.insert(btn)
-        await message.answer('Выбор РЦ', reply_markup=inline_ws_buttons)
+        await message.answer('Выбор терминала', reply_markup=inline_ws_buttons)
     else:
         await message.reply('У вас нет доступа к этому функционалу.')
 
@@ -148,11 +178,12 @@ async def otk_call(callback_query: types.CallbackQuery):
     master_id = master_id_get(ws_number=ws_number)[0]
     # отправка сообщения о заявке на контролёра в группу ОТК
     await bot.send_message(chat_id=terminal_group_id,
-                           text=f"Контролёр {controlman_id} ответил на запрос РЦ{ws_number}.")
+                           text=f"Контролёр {id_fios[int(controlman_id)]} ответил на запрос Т{ws_number}.")
     # обратная связь мастеру
-    await bot.send_message(chat_id=master_id, text=f"Контролёр {controlman_id} ответил на запрос РЦ{ws_number}.")
+    await bot.send_message(chat_id=master_id, text=f"Контролёр {id_fios[int(controlman_id)]} ответил "
+                                                   f"на запрос Т{ws_number}.")
     # сообщение в личку контролёру
-    await bot.send_message(chat_id=controlman_id, text=f"Вы ответили на запрос РЦ{ws_number}.")
+    await bot.send_message(chat_id=controlman_id, text=f"Вы ответили на запрос Т{ws_number}.")
     # Запись в БД информации об ответе контролёра
     control_man_id_set(ws_number, controlman_id)
     await callback_query.answer()
@@ -173,7 +204,7 @@ async def otk_answer_master_send(message: types.Message):
         for ws in ws_list:
             btn = types.InlineKeyboardButton(text=f'{ws}', callback_data=f'dcgo{ws}{message.from_user.id}')
             inline_ws_buttons.insert(btn)
-        await message.answer('Выбор РЦ для принятия решения:', reply_markup=inline_ws_buttons)
+        await message.answer('Выбор терминала для принятия решения:', reply_markup=inline_ws_buttons)
     else:
         await message.reply('У вас нет доступа к этому функционалу.')
 
@@ -198,7 +229,7 @@ async def otk_answer(callback_query: types.CallbackQuery):
                                          callback_data=f'stid{shift_task_id}{controlman_id}')
         # print(f'stid{shift_task_id}{controlman_id}')
         inline_st_buttons.add(btn)
-    await bot.send_message(chat_id=controlman_id, text=f'для РЦ{ws_number} выберите СЗ:',
+    await bot.send_message(chat_id=controlman_id, text=f'для Т{ws_number} выберите СЗ:',
                            reply_markup=inline_st_buttons)
     await callback_query.answer()  # закрытие inline кнопок
 
@@ -242,13 +273,15 @@ async def otk_answer(callback_query: types.CallbackQuery):
     decision_data_set(st_id, controlman_id, decision)
     # Сообщение в группу
     await bot.send_message(chat_id=terminal_group_id,
-                           text=f'Контролёр {controlman_id} определил "{decision}" на РЦ {ws_number} для СЗ №{st_id}')
+                           text=f'Контролёр {id_fios[int(controlman_id)]} определил "{decision}" на Т{ws_number} '
+                                f'для СЗ №{st_id}')
     # сообщение в личку
     await bot.send_message(chat_id=controlman_id,
-                           text=f'Вы определили "{decision}" на РЦ {ws_number} для СЗ №{st_id}')
+                           text=f'Вы определили "{decision}" на Т{ws_number} для СЗ №{st_id}')
     # сообщение мастеру
     await bot.send_message(chat_id=master_id,
-                           text=f'Контролёр {controlman_id} определил "{decision}" на РЦ {ws_number} для СЗ №{st_id}')
+                           text=f'Контролёр {id_fios[int(controlman_id)]} определил "{decision}" на Т{ws_number} '
+                                f'для СЗ №{st_id}')
     await callback_query.answer()  # закрытие inline кнопок
 
 

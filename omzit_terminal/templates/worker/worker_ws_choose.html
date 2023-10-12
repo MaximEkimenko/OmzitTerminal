@@ -1,34 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Терминал выбор РЦ</title>
-  </head>
-  <body>
-    <h1>Терминал выбор РЦ</h1>
-    <br />
+    <head>
+        <meta charset="UTF-8" />
+        <title>Терминал выбор РЦ</title>
+    </head>
+    <body>
+        <h1>Терминал выбор РЦ</h1>
+        <br />
 
-    <!-- форма выбора РЦ-->
-    <form
-      action="{% url 'worker_choose' %}"
-      method="post"
-      enctype="multipart/form-data"
-    >
-      {% csrf_token %}
-      <div class="form-error">{{ ws_number_form.non_field_errors }}</div>
+        <!-- форма выбора РЦ-->
+        <form action="{% url 'worker_choose' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-error">{{ ws_number_form.non_field_errors }}</div>
 
-      {% for each_form in ws_number_form %}
-      <p>
-        <label class="form-label" for="{{ ws_number_form.id_for_label }}"
-          >{{ws_number_form.label}}
-        </label>
-        {{ ws_number_form }}
-      </p>
-      <div class="form-error">{{ ws_number_form.errors }}</div>
-      {% endfor %}
-      <button type="submit">Выбрать</button>
-    </form>
-
-    <a href="{% url 'home' %}">Назад</a> <br />
-  </body>
+            {% for each_form in ws_number_form %}
+            <p>
+                <label class="form-label" for="{{ ws_number_form.id_for_label }}">{{ws_number_form.label}} </label>
+                {{ ws_number_form }}
+            </p>
+            <div class="form-error">{{ ws_number_form.errors }}</div>
+            {% endfor %}
+            <button type="submit">Выбрать</button>
+        </form>
+        <!-- prettier-ignore -->
+        {% if user.username == 'admin' %}
+        <a href="{% url 'home' %}">Назад</a> <br />
+        {% endif %}
+    </body>
 </html>
