@@ -9,6 +9,7 @@
     <body>
         {% if request.user.is_authenticated %}
         <div class="logined_user">{{ user.username }} | <a href="{% url 'logout' %}"> Выйти </a></div>
+        <a href="{% url 'instruction' %}" class="red_word">Инструкция</a> <br />
         {% else %} <a href="{% url 'login' %}"> Войти </a>
         {%endif %}
         <h1>Рабочее место технолога</h1>
@@ -134,7 +135,6 @@
             function showForm() {
                 correction_form.style.display = "block";
             }
-
             // скрытие отправленных
         </script>
 

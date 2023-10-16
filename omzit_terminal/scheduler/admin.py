@@ -4,24 +4,32 @@ from .models import ShiftTask, WorkshopSchedule, Doers
 
 
 class SchedulerShiftTaskAdmin(admin.ModelAdmin):
+    save_on_top = True
     list_display = ('id', 'model_name', 'datetime_done', 'order',
                     'op_number', 'op_name_full', 'ws_number', 'fio_doer', 'st_status')
     search_fields = ('id', 'model_name', 'datetime_done', 'order',
                      'op_number', 'op_name_full', 'ws_number', 'fio_doer', 'st_status')
     ordering = ['id']
+    list_editable = ('ws_number', 'fio_doer', 'st_status')
 
 
 class SchedulerWorkshopScheduleAdmin(admin.ModelAdmin):
-    list_display = ('workshop', 'model_name', 'datetime_done', 'order', 'order_status', 'done_rate', 'td_status')
+    save_on_top = True
+    list_display = ('id', 'workshop', 'model_name', 'datetime_done', 'order', 'order_status', 'done_rate', 'td_status')
     search_fields = ('workshop', 'model_name', 'datetime_done', 'order', 'order_status', 'done_rate', 'td_status')
     list_filter = ('workshop', 'model_name', 'datetime_done', 'order', 'order_status', 'done_rate', 'td_status')
     ordering = ['datetime_done']
+    list_editable = ('workshop', 'model_name', 'datetime_done', 'order')
+
 
 
 class SchedulerDoersAdmin(admin.ModelAdmin):
-    list_display = ('doers',)
+    save_on_top = True
+    list_display = ('id', 'doers',)
     search_fields = ('doers',)
-    # fields = ('doers',)
+    ordering = ['doers']
+    list_editable = ('doers',)
+    save_on_top = True
 
 
 admin.site.register(WorkshopSchedule, SchedulerWorkshopScheduleAdmin)

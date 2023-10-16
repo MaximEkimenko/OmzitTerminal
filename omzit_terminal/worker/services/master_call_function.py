@@ -29,3 +29,12 @@ async def terminal_message_to_id(to_id, text_message_to_id):
     :return:
     """
     await bot.send_message(chat_id=to_id, text=text_message_to_id)
+
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[-1].strip()
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip

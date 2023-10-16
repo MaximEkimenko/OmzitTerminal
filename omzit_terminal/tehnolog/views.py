@@ -9,6 +9,8 @@ from .services.tech_data_get import tech_data_get
 from .forms import GetTehDataForm, ChangeOrderModel, SendDrawBack
 from scheduler.models import WorkshopSchedule
 from worker.services.master_call_function import terminal_message_to_id
+from django.core.exceptions import PermissionDenied
+
 
 @login_required(login_url="../scheduler/login/")
 def tehnolog_wp(request):
@@ -23,6 +25,11 @@ def tehnolog_wp(request):
     change_model_query_form = ChangeOrderModel()
     send_draw_back_form = SendDrawBack()
     alert = ''
+    print(request.user.username[:8], 'tehnolog')
+    if str(request.user.username).strip() != "admin" and str(request.user.username[:8]).strip() != "tehnolog":
+        raise PermissionDenied
+
+
     if request.method == 'POST':
         get_teh_data_form = GetTehDataForm(request.POST, request.FILES)  # класс форм с частично заполненными данными
         if get_teh_data_form.is_valid():

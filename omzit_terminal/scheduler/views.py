@@ -6,6 +6,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.forms import AuthenticationForm
+from django.core.exceptions import PermissionDenied
 
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
@@ -20,6 +21,9 @@ from worker.services.master_call_function import terminal_message_to_id
 
 @login_required(login_url="login/")
 def scheduler(request):
+    if str(request.user.username).strip() != "admin" and str(request.user.username[:4]).strip() != "disp":
+        raise PermissionDenied
+
     """
     Планирование графика цеха и создание запросов на КД
     :param request:
@@ -154,6 +158,8 @@ def schedulerwp(request):
     """
     # отображение графика РЦ
     # выборка из уже занесенного
+    if str(request.user.username).strip() != "admin" and str(request.user.username[:4]).strip() != "disp":
+        raise PermissionDenied
     workplace_schedule = ((ShiftTask.objects.values('id', 'workshop', 'order', 'model_name', 'datetime_done',
                                                     'ws_number', 'op_number', 'op_name_full', 'norm_tech', 'fio_doer',
                                                     'st_status').all()).exclude(datetime_done=None)
@@ -199,6 +205,8 @@ def schedulerfio(request, ws_number, datetime_done):
     :param request:
     :return:
     """
+    if str(request.user.username).strip() != "admin" and str(request.user.username[:4]).strip() != "disp":
+        raise PermissionDenied
     def if_not_none(obj):  # функция замены None и НЕТ на пустоту в списке исполнителей
         if obj is None or obj == '' or obj == 'None':
             return ''

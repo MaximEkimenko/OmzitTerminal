@@ -23,22 +23,22 @@
         {% if initial_shift_tasks %}
         <table class="table" title="График цехов">
             <tr class="table_header_row">
-                <td class="td_cell">№</td>
-                <td class="td_cell">РЦ</td>
-                <td class="td_cell">Изделие</td>
-                <td class="td_cell">Заказ</td>
-                <td class="td_cell">Номер операции</td>
-                <td class="td_cell">Операция</td>
-                <td class="td_cell">Трудоемкость</td>
-                <td class="td_cell">Исполнители</td>
-                <td class="td_cell">Статус</td>
-                <td class="td_cell">Время начала работы</td>
-                <td class="td_cell">Время приемки</td>
+                <td class="td_cell"><p class="cell_text">№</p></td>
+                <td class="td_cell"><p class="cell_text">РЦ</p></td>
+                <td class="td_cell"><p class="cell_text">Изделие</p></td>
+                <td class="td_cell"><p class="cell_text">Заказ</p></td>
+                <td class="td_cell"><p class="cell_text">Номер операции</p></td>
+                <td class="td_cell"><p class="cell_text">Операция</p></td>
+                <td class="td_cell"><p class="cell_text">Трудоемкость</p></td>
+                <td class="td_cell"><p class="cell_text" style="width: 200px">Исполнители</p></td>
+                <td class="td_cell"><p class="cell_text">Статус</p></td>
+                <td class="td_cell"><p class="cell_text">Время начала работы</p></td>
+                <td class="td_cell"><p class="cell_text">Время приемки</p></td>
             </tr>
             {% for line in initial_shift_tasks %}
             <tr id="row" class="table_row">
                 {% for el in line.values %}
-                <td class="td_cell">{{ el }}</td>
+                <td class="td_cell"><p class="cell_text">{{ el }}</p></td>
                 {% endfor %}
             </tr>
             {% endfor %}
@@ -65,7 +65,7 @@
                     class="sel_option"
                 >
                     <!-- prettier-ignore -->
-                    {{ task.id }}--{{ task.st_status }}--{{ task.op_number }}--{{ task.model_name }}--{{ task.op_name_full }}
+                    {{ task.id }}--{{ task.st_status }}--{{ task.fio_doer }}--{{ task.op_number }}--{{ task.model_name }}--{{ task.op_name_full }}
                 </option>
                 {% endfor %}
             </select>

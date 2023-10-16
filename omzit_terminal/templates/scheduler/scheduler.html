@@ -10,6 +10,7 @@
         <h1>Рабочее место планировщика</h1>
         {% if request.user.is_authenticated %}
         <div class="logined_user">{{ user.username }} | <a href="{% url 'logout' %}"> Выйти </a></div>
+        <a href="{% url 'instruction' %}" class="red_word">Инструкция</a> <br />
         {% else %} <a href="{% url 'login' %}"> Войти </a>
         {%endif %}
         <!--График цеха-->
@@ -19,17 +20,17 @@
                 <h3 class="table_h3">График производства</h3>
                 <table title="График цехов" class="table">
                     <tr class="table_header_row">
-                        <td class="td_cell">Цех</td>
-                        <td class="td_cell">Заказ</td>
-                        <td class="td_cell">Изделие</td>
-                        <td class="td_cell">Дата готовности</td>
-                        <td class="td_cell">Статус заказа</td>
-                        <td class="td_cell">% готовности</td>
+                        <td class="td_cell"><p class="">Цех</p></td>
+                        <td class="td_cell"><p class="">Заказ /p></p></td>
+                        <td class="td_cell"><p class="">Изделие</p></td>
+                        <td class="td_cell"><p class="">Дата готовности</p></td>
+                        <td class="td_cell"><p class="">Статус заказа</p></td>
+                        <td class="td_cell"><p class="">% готовности</p></td>
                     </tr>
                     {% for line in workshop_schedule %}
                     <tr class="table_row">
                         {% for el in line.values %}
-                        <td class="td_cell">{{ el }}</td>
+                        <td class="td_cell"><p class="">{{ el }}</p></td>
                         {% endfor %}
                     </tr>
                     {% endfor %}

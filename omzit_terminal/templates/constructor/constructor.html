@@ -10,6 +10,7 @@
         <h1>Рабочее место конструктора</h1>
         {% if request.user.is_authenticated %}
         <div class="logined_user">{{ user.username }} | <a href="{% url 'logout' %}"> Выйти </a></div>
+        <a href="{% url 'instruction' %}" class="red_word">Инструкция</a> <br />
         {% else %} <a href="{% url 'login' %}"> Войти </a>
         {%endif %}
 

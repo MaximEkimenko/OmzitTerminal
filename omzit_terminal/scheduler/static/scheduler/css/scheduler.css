@@ -87,6 +87,7 @@ h3 {
     border-spacing: 2px;
     display: inline-block;
     vertical-align: middle;
+    width: auto;
 }
 
 .td_cell {
@@ -94,6 +95,11 @@ h3 {
     background-color: transparent;
     padding: 5px;
     text-align: center;
+}
+
+.cell_text {
+    font-size: 16px;
+    font-weight: bold;
 }
 
 .table_header_row {

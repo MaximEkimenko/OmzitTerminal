@@ -1,8 +1,7 @@
 import asyncio
 import datetime
 import os
-
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, FileResponse
 from django.urls import reverse
 from tehnolog.services.service_handlers import handle_uploaded_file
 from django.contrib.auth.decorators import login_required
@@ -10,15 +9,16 @@ from django.shortcuts import render, redirect
 from scheduler.models import WorkshopSchedule
 from .forms import QueryAnswer
 from worker.services.master_call_function import terminal_message_to_id
-
+from django.core.exceptions import PermissionDenied
 
 @login_required(login_url="../scheduler/login/")
 def constructor(request):
     group_id = -908012934  # тг группа
     td_queries = (WorkshopSchedule.objects.values('model_order_query', 'query_prior', 'td_status', 'td_remarks')
                   .exclude(td_status='завершено'))
-
     query_answer_form = QueryAnswer()
+    if str(request.user.username).strip() != "admin" and str(request.user.username[:11]).strip() != "constructor":
+        raise PermissionDenied
     if request.method == 'POST':
         alert = ''
         query_answer_form = QueryAnswer(request.POST, request.FILES)
@@ -78,6 +78,16 @@ def constructor(request):
     context = {'td_queries': td_queries, 'query_answer_form': query_answer_form}
 
     return render(request, r"constructor/constructor.html", context=context)
+
+
+def show_instruction(request):
+    try:
+        path_to_file = r"O:\ПТО\1 Екименко М.А\Инструкции\Инструкция ТЕРМИНАЛА.pdf"
+        response = FileResponse(open(fr'{path_to_file}', 'rb'))
+        response['X-Frame-Options'] = 'SAMEORIGIN'
+        return response
+    except FileNotFoundError as e:
+        print(e)
 
 
 def draw_folder_redirect(request):

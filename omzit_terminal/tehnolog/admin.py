@@ -17,6 +17,7 @@ class TehnologProductCategoryAdmin(admin.ModelAdmin):
     # list_display_links = ()
     search_fields = ('id', 'category_name')
     ordering = ['id']
+    list_editable = ('category_name',)
 
 
 # admin.site.register(TechData, TehnologTechDataAdmin)

@@ -10,6 +10,7 @@
     <body>
         {% if request.user.is_authenticated %}
         <div class="logined_user">{{ user.username }} | <a href="{% url 'logout' %}"> Выйти </a></div>
+        <a href="{% url 'instruction' %}" class="red_word">Инструкция</a> <br />
         {% else %} <a href="{% url 'login' %}"> Войти </a>
         {%endif %}
         <!-- prettier-ignore -->
@@ -24,7 +25,7 @@
             {% csrf_token %}
             <div class="form-error">{{ form_workplace_plan.non_field_errors }}</div>
 
-            <div class="form_inner_label"><label>РЦ: </label></div>
+            <div class="form_inner_label"><label>Терминал: </label></div>
             <div class="form_inner_div">{{ form_workplace_plan.ws_number }}</div>
 
             <div class="form_inner_label"><label>Дата готовности: </label></div>

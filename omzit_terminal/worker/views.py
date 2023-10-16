@@ -1,17 +1,20 @@
 import datetime
 import time
 import asyncio
+import socket
 from django.http import FileResponse
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.db.models import Q
 from django.shortcuts import render
+from django.core.exceptions import PermissionDenied
 
 from scheduler.models import ShiftTask
 
 from .forms import WorkplaceChoose
 from .services.master_call_db import select_master_call, select_dispatcher_call
 from .services.master_call_function import send_call_master, send_call_dispatcher, terminal_message_to_id
+from .services.master_call_function import get_client_ip
 
 
 # TODO найти решение аналогов РЦ. Убрать обозначение РЦ "РЦ№1/РЦ№2" - вместо "/" использовать "-"
@@ -23,6 +26,8 @@ def ws_number_choose(request):
     :param request:
     :return:
     """
+    if str(request.user.username).strip() != "admin":
+        raise PermissionDenied
     if request.method == 'POST':
         ws_number_form = WorkplaceChoose(request.POST)
         # получение номера РЦ
@@ -44,6 +49,17 @@ def worker(request, ws_number):
     :param ws_number:
     :return:
     """
+    # список разрешённых по имени компа
+    allowed_terminal_list = ('APM-0036.omep.net.ru',  # Екименко
+                             'SPR-008.omep.net.ru',  # Терминал №3
+                             'APM-0168.omep.net.ru',  # Отто
+                             'SVR-003.omep.net.ru')  # сервер 192.168.8.30
+    terminal_ip = get_client_ip(request)  # определение IP терминала
+    terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
+    # print('ip=', terminal_ip, 'terminal_name', terminal_name)
+    if terminal_name not in allowed_terminal_list:
+        raise PermissionDenied
+
     # вывод таблицы распределённых РЦ
     today = datetime.datetime.now().strftime('%d.%m.%Y')
     initial_shift_tasks = (ShiftTask.objects.values('id', 'ws_number', 'model_name', 'order', 'op_number',
