@@ -21,9 +21,7 @@ def select_master_call(ws_number: str, st_number) -> list or None:
         select_query = f"""SELECT id, model_name, "order", op_number, op_name_full, fio_doer
                         FROM shift_task
                         WHERE st_status='в работе' AND
-                        id = '{st_number}' AND
-                        ws_number = '{ws_number}' AND
-                        master_called = 'не было'                
+                        id = '{st_number}'               
                         """
         try:
             with con.cursor() as cur:
@@ -43,9 +41,7 @@ def select_master_call(ws_number: str, st_number) -> list or None:
         else:  # обновление переменной факта вызова мастера
             print('Обновление статуса')
             update_query = f"""UPDATE shift_task SET master_called = 'вызван', st_status='ожидание мастера'
-                                        WHERE id = '{st_number}' AND 
-                                        ws_number = '{ws_number}' AND
-                                        master_called = 'не было'; 
+                                        WHERE id = '{st_number}';
                             """
             try:
                 with con.cursor() as cur:

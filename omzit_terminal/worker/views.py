@@ -56,7 +56,6 @@ def worker(request, ws_number):
                              'SVR-003.omep.net.ru')  # сервер 192.168.8.30
     terminal_ip = get_client_ip(request)  # определение IP терминала
     terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
-    # print('ip=', terminal_ip, 'terminal_name', terminal_name)
     if terminal_name not in allowed_terminal_list:
         raise PermissionDenied
 
@@ -187,7 +186,8 @@ def show_draw(request, ws_number, pdf_file):
 
 
 def make_master_call(request, ws_st_number):
-    group_id = -908012934  # тг группа
+    # group_id = -908012934  # тг группа
+    # omzit_master_group1_id = -4005524766
     ws_number = str(ws_st_number)[:str(ws_st_number).find('-')]
     st_number = str(ws_st_number)[str(ws_st_number).rfind('-') + 1:]
     print('ws = ', ws_number)
@@ -202,9 +202,9 @@ def make_master_call(request, ws_st_number):
     if messages:
         print('Вызов мастера')
         for message in messages:
-            asyncio.run(send_call_master(message))  # отправка мастеру в телеграм ботом
+            asyncio.run(send_call_master(message))  # отправка в группу мастерам телеграм ботом
             # отправка в группу
-            asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=message))
+            # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=message))
         print('Окончание вызова')
         return redirect(f'/worker/{ws_number}?call=True')
     elif st_number == '0':
@@ -216,7 +216,7 @@ def make_master_call(request, ws_st_number):
 
 
 def make_dispatcher_call(request, ws_st_number):
-    group_id = -908012934  # тг группа
+    # group_id = -908012934  # тг группа
     ws_number = str(ws_st_number)[:str(ws_st_number).find('-')]
     st_number = str(ws_st_number)[str(ws_st_number).rfind('-') + 1:]
     print('ws = ', ws_number)
@@ -231,9 +231,9 @@ def make_dispatcher_call(request, ws_st_number):
     if messages:
         print('Вызов диспетчера')
         for message in messages:
-            asyncio.run(send_call_dispatcher(message))  # отправка мастеру в телеграм ботом
+            asyncio.run(send_call_dispatcher(message))  # отправка в группу мастерам и диспетчерам телеграм ботом
             # отправка в группу
-            asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=message))
+            # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=message))
         print('Окончание вызова')
         return redirect(f'/worker/{ws_number}?call=True_disp')
     elif st_number == 0:

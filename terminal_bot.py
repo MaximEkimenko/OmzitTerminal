@@ -32,6 +32,8 @@ saks_id = 1366631138  # ОГТ
 # groups
 omzit_otk_group_id = -981440150
 terminal_group_id = -908012934
+omzit_master_group1_id = -4005524766
+# fios
 id_fios = {admin_id: 'Екименко М.А.',
            posohov_id: 'Посохов О.С.',
            ermishkin_id: 'Ермишкин В.М.',  # Мастера
@@ -58,11 +60,9 @@ users = (admin_id,  # root
 
 masters = (admin_id, ermishkin_id, posohov_id, gordii_id, kondratiev_id, achmetov_id)  # производство
 
-dispatchers = (admin_id, savchenko_id, pavluchenkova_id, )  # диспетчеры
+dispatchers = (admin_id, savchenko_id, pavluchenkova_id,)  # диспетчеры
 
 control_mans_list = (admin_id, donskaya_id, averkina_id)  # контролёры
-# telegram ids
-
 
 bot = Bot(token=TOKEN)  # инициализация бота
 dp = Dispatcher(bot)  # инициализация диспетчера
@@ -139,8 +139,8 @@ async def otk_call(callback_query: types.CallbackQuery):
     # print(callback_query.data)
     # print(ws_number, master_id)
     # отправка сообщения о заявке на контролёра в группу ОТК
-    await bot.send_message(chat_id=terminal_group_id, text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
-                                                           f"{id_fios[int(master_id)]}")
+    await bot.send_message(chat_id=omzit_otk_group_id, text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
+                                                            f"{id_fios[int(master_id)]}")
     # Обратная связь мастеру
     await bot.send_message(chat_id=master_id, text="Запрос в отк отправлен.")
     # Статус ожидание контролёра
@@ -177,7 +177,7 @@ async def otk_call(callback_query: types.CallbackQuery):
     # запрос в БД на id мастера
     master_id = master_id_get(ws_number=ws_number)[0]
     # отправка сообщения о заявке на контролёра в группу ОТК
-    await bot.send_message(chat_id=terminal_group_id,
+    await bot.send_message(chat_id=omzit_otk_group_id,
                            text=f"Контролёр {id_fios[int(controlman_id)]} ответил на запрос Т{ws_number}.")
     # обратная связь мастеру
     await bot.send_message(chat_id=master_id, text=f"Контролёр {id_fios[int(controlman_id)]} ответил "
@@ -272,7 +272,7 @@ async def otk_answer(callback_query: types.CallbackQuery):
     # запись в базу
     decision_data_set(st_id, controlman_id, decision)
     # Сообщение в группу
-    await bot.send_message(chat_id=terminal_group_id,
+    await bot.send_message(chat_id=omzit_otk_group_id,
                            text=f'Контролёр {id_fios[int(controlman_id)]} определил "{decision}" на Т{ws_number} '
                                 f'для СЗ №{st_id}')
     # сообщение в личку

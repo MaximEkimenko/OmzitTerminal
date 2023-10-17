@@ -1,12 +1,12 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" id="content">
     <head>
         <meta charset="UTF-8" />
         <title>Терминал РЦ {{ ws_number }}</title>
         <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
     </head>
-    <body id="body_terminal">
+    <body>
         <h1 style="font-size: 50px">Терминал {{ ws_number }}</h1>
         <script>
             function showNotification({ top = 0, right = 0, html }) {
@@ -21,7 +21,7 @@
             });
         </script>
         {% if initial_shift_tasks %}
-        <table class="table" title="График цехов">
+        <table class="table" title="График цехов" id="main_table">
             <tr class="table_header_row">
                 <td class="td_cell"><p class="cell_text">№</p></td>
                 <td class="td_cell"><p class="cell_text">РЦ</p></td>
@@ -121,4 +121,8 @@
         <a href="{% url 'worker_choose' %}">Назад</a> <br />
         {%endif %}
     </body>
+    <div id="element">
+        <button id="btn-on">Включить полноэкранный режим для блока</button><br /><br />
+        <button id="btn-off">Отключить полноэкранный режим</button>
+    </div>
 </html>

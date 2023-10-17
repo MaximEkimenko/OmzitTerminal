@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import PermissionDenied
+from django.http import FileResponse
 
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
@@ -275,3 +276,18 @@ class LoginUser(LoginView):
 def logout_user(request):  # разлогинивание пользователя
     logout(request)
     return redirect('login')
+
+
+def show_workshop_scheme(request):
+    """
+    Загрузка планировки
+    :param request:
+    :return:
+    """
+    try:
+        path_to_file = r"O:\ПТО\1 Екименко М.А\Планировка\Планирока участков(цех1, цех2, цех3)+РЦ+Расписание+Виды.xlsm"
+        response = FileResponse(open(fr'{path_to_file}', 'rb'))
+        response['X-Frame-Options'] = 'SAMEORIGIN'
+        return response
+    except FileNotFoundError as e:
+        print(e)

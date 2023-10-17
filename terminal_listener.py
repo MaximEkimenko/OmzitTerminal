@@ -3,6 +3,11 @@ import time
 from pynput import keyboard
 from pynput.keyboard import Key, Controller
 keyboard_class = Controller()  # управление клавиатурой
+
+print("waiting for browser...")
+time.sleep(30)
+keyboard_class.press(Key.f11)
+keyboard_class.release(Key.f11)
 print("keyboard listener started!")
 
 
