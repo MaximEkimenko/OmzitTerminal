@@ -19,7 +19,7 @@ class QueryAnswerForm(ModelChoiceField):  # переопределение ме�
 # класс загрузки нескольких файлов
 class MultipleFileInput(ClearableFileInput):
     allow_multiple_selected = True  # установка разрешения на множественную загрузку
-    template_name = 'input_file_template.html'  # новый шаблон для тега только pdf
+    # template_name = 'input_file_template.html'  # новый шаблон для тега только pdf
 
 
 # переопределение класса множественной загрузки
@@ -43,7 +43,7 @@ class QueryAnswer(forms.Form):
     """
     query_set = WorkshopSchedule.objects.all().exclude(td_status='завершено')
     model_order_query = QueryAnswerForm(query_set, empty_label='выберите заказ-модель',
-                                        label='Заказ модель', required=False)
+                                        label='Заказ модель')
     draw_files = MultipleFileField(label='Чертежи pdf')
 
 

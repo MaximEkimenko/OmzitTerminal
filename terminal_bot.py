@@ -182,6 +182,9 @@ async def otk_call(callback_query: types.CallbackQuery):
     # обратная связь мастеру
     await bot.send_message(chat_id=master_id, text=f"Контролёр {id_fios[int(controlman_id)]} ответил "
                                                    f"на запрос Т{ws_number}.")
+    # обратная связь в группу мастерам
+    await bot.send_message(chat_id=omzit_master_group1_id, text=f"Контролёр {id_fios[int(controlman_id)]} ответил "
+                                                                f"на запрос Т{ws_number}.")
     # сообщение в личку контролёру
     await bot.send_message(chat_id=controlman_id, text=f"Вы ответили на запрос Т{ws_number}.")
     # Запись в БД информации об ответе контролёра

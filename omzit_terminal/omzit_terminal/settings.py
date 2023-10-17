@@ -2,6 +2,9 @@
 import os
 from pathlib import Path
 
+DATA_UPLOAD_MAX_NUMBER_FIELDS = None  # higher than the count of fields
+DATA_UPLOAD_MAX_MEMORY_SIZE = None
+DATA_UPLOAD_MAX_NUMBER_FILES = None
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -45,6 +48,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 
 ROOT_URLCONF = 'omzit_terminal.urls'
 
@@ -131,6 +135,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/files/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'files')
+
+
+
 
 # DATE_FORMAT = ['%d.%m.%Y']
 # DATE_INPUT_FORMATS = ['%d.%m.%Y']

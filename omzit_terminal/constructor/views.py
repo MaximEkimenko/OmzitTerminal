@@ -26,7 +26,9 @@ def constructor(request):
             print(query_answer_form.cleaned_data)
             filenames = dict(request.FILES)["draw_files"]  # имя файла
             print(filenames)
+            i = 0
             for file in filenames:
+                i += 1
                 print('-----', str(file))
                 # TODO убрать проверку pdf
                 # if '.pdf' not in str(file):
@@ -44,9 +46,11 @@ def constructor(request):
                     handle_uploaded_file(f=file, filename=str(file),
                                          path=file_save_path)
                     alert = 'Все файлы успешно загружены.'
+                    success_message = True
                 except Exception as e:
                     print(f'Ошибка загрузки {str(file)}', e)
                     alert = f'Ошибка загрузки {str(file)}.'
+                    success_message = False
 
                 # обновление данных в БД
                 WorkshopSchedule.objects.filter(model_order_query=query_answer_form.
@@ -55,15 +59,15 @@ def constructor(request):
                     td_const_done_datetime=datetime.datetime.now(),  # время загрузки
                     constructor_query_td_fio=f'{request.user.first_name} {request.user.last_name}',  # ФИО констр
                     td_remarks='')
-                success_message = True
+
 
             if success_message:
                 success_group_message = (f"Передано КД. Заказ-модель "
                                          f"{query_answer_form.cleaned_data['model_order_query'].model_order_query}. "
                                          f"Открыт доступ в папке сервера: file://svr-003/draws/"
-                                         f"{query_answer_form.cleaned_data['model_order_query'].model_order_query}/."
-                                         f"Передал КД: {request.user.first_name} {request.user.last_name}."
-                                         )
+                                         f"{query_answer_form.cleaned_data['model_order_query'].model_order_query}/. "
+                                         f"Передал КД: {request.user.first_name} {request.user.last_name}. "
+                                         f"Загружено файлов: {i}.")
                 asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
 
             context = {'td_queries': td_queries, 'query_answer_form': query_answer_form, 'alert': alert}
