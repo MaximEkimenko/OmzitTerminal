@@ -1,7 +1,7 @@
 import os
 
 
-def handle_uploaded_file(f, filename: str, path: str = os.getcwd() + r'\xlsx\\') -> str:
+def handle_uploaded_file(f, filename: str, path: str = os.getcwd() + r'\xlsx') -> str:
     """
     Обработчик копирует файл из формы загрузки частями в директорию path
     :param path: директория сохранения файла
@@ -9,7 +9,10 @@ def handle_uploaded_file(f, filename: str, path: str = os.getcwd() + r'\xlsx\\')
     :param filename: имя файла
     :return: полный путь сохраненного файла
     """
-    with open(path + filename, 'wb+') as destination:
+    with open(rf"{path}\{filename}", 'wb+') as destination:
         for chunk in f.chunks():
-            destination.write(chunk)
+            try:
+                destination.write(chunk)
+            except Exception as e:
+                print(e, f"Ошибка копирования файла! {destination.name}")
     return destination.name

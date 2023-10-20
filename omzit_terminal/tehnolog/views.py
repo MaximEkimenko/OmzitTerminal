@@ -29,7 +29,6 @@ def tehnolog_wp(request):
     if str(request.user.username).strip() != "admin" and str(request.user.username[:8]).strip() != "tehnolog":
         raise PermissionDenied
 
-
     if request.method == 'POST':
         get_teh_data_form = GetTehDataForm(request.POST, request.FILES)  # класс форм с частично заполненными данными
         if get_teh_data_form.is_valid():
@@ -43,10 +42,11 @@ def tehnolog_wp(request):
                            'change_model_query_form': change_model_query_form,
                            'send_draw_back_form': send_draw_back_form}
                 return render(request, r"tehnolog/tehnolog.html", context=context)
-            file_save_path = os.getcwd() + r'\xlsx\\'
+            file_save_path = os.getcwd() + r'\xlsx'
             # обработчик загрузки файла
             xlsx_file = handle_uploaded_file(f=request.FILES["excel_file"], filename=filename,
                                              path=file_save_path)
+            print('filename=', filename, 'path=', file_save_path, 'xlsx=', xlsx_file)
             list_names = get_teh_data_form.cleaned_data['list_names'].split(',')
             exception_names = get_teh_data_form.cleaned_data['exception_names']
             # вызов сервиса получения данных из xlsx
@@ -62,15 +62,20 @@ def tehnolog_wp(request):
                          td_tehnolog_done_datetime=datetime.datetime.now()
                          ))
                 # сообщение в группу
+                success_message = True
+            except Exception as e:
+                print(f'Ошибка загрузки {filename}', e)
+                alert = f'Ошибка загрузки {filename}'
+                success_message = False
+            if success_message:
                 success_group_message = (f"Загружен технологический процесс. Заказ-модель: "
                                          f"{get_teh_data_form.cleaned_data['model_order_query'].model_order_query} "
                                          f"доступен для планирования. "
                                          f"Данные загрузил: {request.user.first_name} {request.user.last_name}."
                                          )
                 asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
-            except Exception as e:
-                print(f'Ошибка загрузки {filename}', e)
-                alert = f'Ошибка загрузки {filename}'
+            else:
+                print('Ошибка загрузки')
             print(get_teh_data_form.cleaned_data)
     else:
         get_teh_data_form = GetTehDataForm()  # чистая форма для первого запуска

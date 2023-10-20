@@ -62,7 +62,7 @@ def tech_data_get(model_order_query: str, exel_file: str, excel_lists: list = No
                                          norm_tech=row[11],
                                          draw_filename=row[15],
                                          )
-                print('Добавлено!')
+                # print('Добавлено!')
                 previous_op_number = str(row[0])  # обработка объединенных ячеек имени операции
                 previous_op_name = row[1]
                 # print(row[0], '---', row[1], row[2], row[11], )
@@ -86,5 +86,6 @@ if __name__ == '__main__':
     ex_file_dir_tst = r'D:\АСУП\Python\Projects\OmzitTerminal\Трудоёмкость серия I.xlsx'
     model_list_tst = ['7000М+', '800М+']
     exclusion_list_tst = ('Интерполяция М', 'гофрирование', 'Интерполяция R')
-    tech_data_get(exel_file=ex_file_dir_tst)
+    # tech_data_get(exel_file=ex_file_dir_tst)
+
 

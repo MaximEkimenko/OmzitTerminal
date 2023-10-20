@@ -33,6 +33,7 @@ def scheduler(request):
     group_id = -908012934  # тг группа
     # обновление процента готовности всех заказов
     # TODO модифицировать расчёт процента готовности всех заказов по взвешенной трудоёмкости
+    #  сделать невозможным заполнять запрос с кириллицей
     get_all_done_rate()
     # график изделий
     workshop_schedule = (WorkshopSchedule.objects.values('workshop', 'order', 'model_name', 'datetime_done',

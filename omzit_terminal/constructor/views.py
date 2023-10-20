@@ -11,6 +11,7 @@ from .forms import QueryAnswer
 from worker.services.master_call_function import terminal_message_to_id
 from django.core.exceptions import PermissionDenied
 
+
 @login_required(login_url="../scheduler/login/")
 def constructor(request):
     if str(request.user.username).strip() != "admin" and str(request.user.username[:11]).strip() != "constructor":
@@ -30,15 +31,7 @@ def constructor(request):
             for file in filenames:
                 i += 1
                 print('-----', str(file))
-                # TODO убрать проверку pdf
-                # if '.pdf' not in str(file):
-                #     alert = f'{str(file)} файл должен быть .pdf!'
-                #     print(alert)
-                #     query_answer_form.add_error(None, alert)
-                #     # Перезагрузка с alert
-                #     return render(request, r"constructor/constructor.html",
-                #                   {'query_answer_form': query_answer_form, 'alert': alert})
-
+                # TODO плавающий баг при загрузке чертежей
                 order_path = query_answer_form.cleaned_data['model_order_query'].model_order_query
                 file_save_path = rf"C:\draws\{order_path}\\"
                 # обработчик загрузки файла
