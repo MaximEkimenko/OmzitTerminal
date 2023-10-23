@@ -13,6 +13,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.db.models import Q
 
+from .filters import ShiftTaskFilter
 from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw
 from .models import WorkshopSchedule, ShiftTask
 
@@ -153,6 +154,7 @@ def td_query(request):
 
 @login_required(login_url="login/")
 def schedulerwp(request):
+    #TODO сортировка
     """
     Планирование графика РЦ
     :param request:
@@ -166,6 +168,7 @@ def schedulerwp(request):
                                                     'ws_number', 'op_number', 'op_name_full', 'norm_tech', 'fio_doer',
                                                     'st_status').all()).exclude(datetime_done=None)
                           .order_by("ws_number", "model_name",))
+    f = ShiftTaskFilter(request.GET, queryset=workplace_schedule)
 
     if request.method == 'POST':
         form_workplace_plan = SchedulerWorkplace(request.POST)
@@ -190,11 +193,15 @@ def schedulerwp(request):
                 alert_message = f'Для Т{ws_number} на {datetime_done} нераспределённые задания отсутствуют.'
                 form_workplace_plan = SchedulerWorkplace()
                 context = {'workplace_schedule': workplace_schedule, 'form_workplace_plan': form_workplace_plan,
-                           'alert_message': alert_message}
+                           'alert_message': alert_message, 'filter': f}
                 return render(request, fr"schedulerwp/schedulerwp.html", context=context)
     else:
         form_workplace_plan = SchedulerWorkplace()
-        context = {'workplace_schedule': workplace_schedule, 'form_workplace_plan': form_workplace_plan}
+        context = {
+            'workplace_schedule': workplace_schedule,
+            'form_workplace_plan': form_workplace_plan,
+            'filter': f
+        }
         return render(request, fr"schedulerwp/schedulerwp.html", context=context)
 
 

@@ -35,7 +35,8 @@ INSTALLED_APPS = [
     'tehnolog.apps.TehnologConfig',
     'scheduler.apps.SchedulerConfig',
     'worker.apps.WorkerConfig',
-    'constructor.apps.ConstructorConfig'
+    'constructor.apps.ConstructorConfig',
+    'django_filters',
 
 ]
 
