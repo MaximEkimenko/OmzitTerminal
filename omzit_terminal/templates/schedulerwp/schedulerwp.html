@@ -37,23 +37,27 @@
             <button class="form_button" type="submit">Выбрать</button>
         </form>
         {% if workplace_schedule %}
-        <p class="alert">{{ alert_message }}</p>
+        {% if alert_message != '' %}
+            <p class="alert">{{ alert_message }}</p>
+        {% endif %}
+    <form method="get" id="form2">
+        <p><input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр"/></p>
         <table title="График рабочих центров" class="table">
             <tr class="table_header_row">
-                <td class="td_cell">№СЗ</td>
-                <td class="td_cell">Цех</td>
-                <td class="td_cell">Заказ</td>
-                <td class="td_cell">Изделие</td>
-                <td class="td_cell">Дата готовности</td>
-                <td class="td_cell">Номер РЦ</td>
-                <td class="td_cell">Номер операции</td>
-                <td class="td_cell">Операция</td>
-                <td class="td_cell">Норма времени</td>
-                <td class="td_cell">Фио исполнителя</td>
-                <td class="td_cell">Статус СЗ</td>
+                <td class="td_cell">№СЗ <p>{{ filter.form.id }}</p></td>
+                <td class="td_cell">Цех <p>{{ filter.form.workshop }}</p></td>
+                <td class="td_cell">Заказ <p>{{ filter.form.order }}</p></td>
+                <td class="td_cell">Изделие <p>{{ filter.form.model_name }}</p></td>
+                <td class="td_cell">Дата готовности <p>{{ filter.form.datetime_done }}</p></td>
+                <td class="td_cell">Номер РЦ <p>{{ filter.form.ws_number }}</p></td>
+                <td class="td_cell">Номер операции <p>{{ filter.form.op_number }}</p></td>
+                <td class="td_cell">Операция <p>{{ filter.form.op_name_full }}</p></td>
+                <td class="td_cell">Норма времени <p>{{ filter.form.norm_tech }}</p></td>
+                <td class="td_cell">Фио исполнителя <p>{{ filter.form.fio_doer }}</p></td>
+                <td class="td_cell">Статус СЗ <p>{{ filter.form.st_status }}</p></td>
             </tr>
 
-            {% for line in workplace_schedule %}
+            {% for line in filter.qs %}
             <tr class="table_row">
                 {% for el in line.values %}
                 <td class="td_cell">{{ el }}</td>
@@ -61,11 +65,18 @@
             </tr>
             {% endfor %}
         </table>
+
+    </form>
         {% endif %}
         <!-- prettier-ignore -->
         {% if user.username == 'admin' %}
         <a href="{% url 'home' %}">Назад</a> <br />
         {%endif %}
+        <script>
+           function onChange(){
+               document.getElementById("form2").submit();
+          }
+        </script>
         <script src="{% static 'scheduler/js/schedulerwp.js' %}"></script>
     </body>
 </html>
