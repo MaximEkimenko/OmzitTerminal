@@ -8,6 +8,7 @@ from django.db.models import Q
 from tehnolog.models import ProductCategory
 from constructor.forms import QueryAnswerForm
 
+
 class SchedulerWorkshop(forms.Form):
     """
     Форма для ввода графика цеха
@@ -15,18 +16,17 @@ class SchedulerWorkshop(forms.Form):
 
     query_set = WorkshopSchedule.objects.filter(td_status='утверждено', order_status='не запланировано')
 
-    model_order_query = QueryAnswerForm(query_set, empty_label='выберите заказ-модель',
-                                        label='Заказ-модель', required=False)
+    model_order_query = QueryAnswerForm(query_set, empty_label='выберите заказ-модель', label='Заказ-модель')
 
     # model_name = forms.ModelChoiceField(queryset=query_set, empty_label='Модель не выбрана',
     #                                     label='Модель заказа для планирования')
 
-    workshop = forms.ChoiceField(choices=((1, 'Цех 1'), (2, 'Цех 2'), (3, 'Цех 3'), (4, 'Цех 4'), (5, 'Выбрать')),
-                                 label='Цех', initial=5, show_hidden_initial=True)
+    workshop = forms.ChoiceField(choices=((1, 'Цех 1'), (2, 'Цех 2'), (3, 'Цех 3'), (4, 'Цех 4')),
+                                 label='Цех', required=True)
     query_set = ProductCategory.objects.all()
     category = forms.ModelChoiceField(queryset=query_set, empty_label='Категория не выбрана',
-                                      label='Категория заказа')  # выбор категории
-    datetime_done = forms.DateField(label='Планируемая дата готовности', required=False,
+                                      label='Категория заказа', required=True)  # выбор категории
+    datetime_done = forms.DateField(label='Планируемая дата готовности', required=True,
                                     widget=forms.SelectDateWidget(empty_label=("год", "месяц", "день"),
                                                                   years=(datetime.datetime.now().year,
                                                                          datetime.datetime.now().year + 1)))

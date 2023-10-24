@@ -10,6 +10,7 @@ from .forms import GetTehDataForm, ChangeOrderModel, SendDrawBack
 from scheduler.models import WorkshopSchedule
 from worker.services.master_call_function import terminal_message_to_id
 from django.core.exceptions import PermissionDenied
+from scheduler.filters import get_filterset
 
 
 @login_required(login_url="../scheduler/login/")
@@ -20,15 +21,15 @@ def tehnolog_wp(request):
     :return:
     """
     group_id = -908012934  # тг группа
-    td_queries = (WorkshopSchedule.objects.values('model_order_query', 'query_prior', 'td_status')
-                  .exclude(td_status='завершено'))
+    td_queries_fields = ('model_order_query', 'query_prior', 'td_status', 'td_remarks')  # поля таблицы
+    td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(td_status='завершено'))
+    f = get_filterset(data=request.GET, queryset=td_queries, fields=td_queries_fields)  # фильтры в колонки
     change_model_query_form = ChangeOrderModel()
     send_draw_back_form = SendDrawBack()
     alert = ''
     print(request.user.username[:8], 'tehnolog')
     if str(request.user.username).strip() != "admin" and str(request.user.username[:8]).strip() != "tehnolog":
         raise PermissionDenied
-
     if request.method == 'POST':
         get_teh_data_form = GetTehDataForm(request.POST, request.FILES)  # класс форм с частично заполненными данными
         if get_teh_data_form.is_valid():
@@ -38,9 +39,10 @@ def tehnolog_wp(request):
             # обработка выбора не excel файла
             if '.xlsx' not in filename:
                 get_teh_data_form.add_error(None, 'Файл должен быть .xlsx!')
-                context = {'get_teh_data_form': get_teh_data_form, 'td_queries': td_queries, 'alert': alert,
+                context = {'get_teh_data_form': get_teh_data_form, 'alert': alert,
                            'change_model_query_form': change_model_query_form,
-                           'send_draw_back_form': send_draw_back_form}
+                           'send_draw_back_form': send_draw_back_form,
+                           'filter': f}
                 return render(request, r"tehnolog/tehnolog.html", context=context)
             file_save_path = os.getcwd() + r'\xlsx'
             # обработчик загрузки файла
@@ -79,9 +81,10 @@ def tehnolog_wp(request):
             print(get_teh_data_form.cleaned_data)
     else:
         get_teh_data_form = GetTehDataForm()  # чистая форма для первого запуска
-    context = {'get_teh_data_form': get_teh_data_form, 'td_queries': td_queries, 'alert': alert,
+    context = {'get_teh_data_form': get_teh_data_form, 'alert': alert,
                'change_model_query_form': change_model_query_form,
-               'send_draw_back_form': send_draw_back_form}
+               'send_draw_back_form': send_draw_back_form,
+               'filter': f}
     return render(request, r"tehnolog/tehnolog.html", context=context)
 
 

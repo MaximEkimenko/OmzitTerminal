@@ -26,7 +26,36 @@
                 html: "<p class='alert_gone'> {{ alert }} </p>",
             });
         </script>
-
+        <div class="table_div">
+            <h3>Заявки на документацию</h3>
+            <form method="get" id="form2">
+                <p>
+                    <input
+                        type="button"
+                        onclick="window.location.href = '{{ request.path }}';"
+                        value="Сбросить фильтр"
+                    />
+                </p>
+                <table title="Заявки на документацию" class="table">
+                    <tr class="table_header_row">
+                        <td class="td_cell">{{ filter.form.model_order_query }} Заказ-модель</td>
+                        <td class="td_cell">{{ filter.form.query_prior }} Приоритет</td>
+                        <td class="td_cell">{{ filter.form.td_status }} Статус завяки</td>
+                        <td class="td_cell">Папка чертежей</td>
+                    </tr>
+                    {% for line in filter.qs %}
+                    <tr class="table_row">
+                        <td class="td_cell">{{ line.model_order_query }}</td>
+                        <td class="td_cell">{{ line.query_prior }}</td>
+                        <td class="td_cell">{{ line.td_status }}</td>
+                        <td class="td_cell">
+                            <p>\\SVR-003\draws\{{ line.model_order_query }}</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </form>
+        </div>
         <div class="form_div" id="correction_form">
             <h3>Форма корректировки заказ-модель</h3>
             <form action="{% url 'new_model_query' %}" method="post" enctype="multipart/form-data" class="form_form">
@@ -90,31 +119,6 @@
             </form>
         </div>
         <!-- prettier-ignore -->
-        {% if td_queries %}
-        <div class="table_div">
-            <h3>Заявки на документацию</h3>
-            <table title="Заявки на документацию" class="table">
-                <tr class="table_header_row">
-                    <td class="td_cell">Заказ-модель</td>
-                    <td class="td_cell">Приоритет</td>
-                    <td class="td_cell">Статус завяки</td>
-                    <td class="td_cell">Папка чертежей</td>
-                </tr>
-                {% for line in td_queries %}
-                <tr class="table_row">
-                    <td class="td_cell">{{ line.model_order_query }}</td>
-                    <td class="td_cell">{{ line.query_prior }}</td>
-                    <td class="td_cell">{{ line.td_status }}</td>
-                    <td class="td_cell">
-                        <p>\\SVR-003\draws\{{ line.model_order_query }}</p>
-                    </td>
-                </tr>
-                {% endfor %}
-            </table>
-            {% else %}
-            <p>Заявки на КД отсутствуют отсутствуют</p>
-            {% endif %}
-        </div>
         <br />
         <!-- prettier-ignore -->
         {% if user.username == 'admin' %}
@@ -137,7 +141,11 @@
             }
             // скрытие отправленных
         </script>
-
+        <script>
+            function onChange() {
+                document.getElementById("form2").submit();
+            }
+        </script>
         <div style="height: 150px"></div>
     </body>
 </html>

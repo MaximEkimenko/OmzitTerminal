@@ -14,23 +14,22 @@
         {% else %} <a href="{% url 'login' %}"> Войти </a>
         {%endif %}
         <!--График цеха-->
-        {% if workshop_schedule %}
-        <div class="row">
+        <h3 class="table_h3">График производства</h3>
+        <form method="get" id="form2">
+            <p>
+                <input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр" />
+            </p>
             <div class="col">
-                <h3 class="table_h3">График производства</h3>
                 <table title="График цехов" class="table">
                     <tr class="table_header_row">
-                        <td class="td_cell"><p class="">Цех</p></td>
-                        <td class="td_cell">
-                            <p class=""></p>
-                            <p>Заказ</p>
-                        </td>
-                        <td class="td_cell"><p class="">Изделие</p></td>
-                        <td class="td_cell"><p class="">Дата готовности</p></td>
-                        <td class="td_cell"><p class="">Статус заказа</p></td>
-                        <td class="td_cell"><p class="">% готовности</p></td>
+                        <td class="td_cell">{{ filter_w.form.workshop }}Цех</td>
+                        <td class="td_cell">{{ filter_w.form.order }} Заказ</td>
+                        <td class="td_cell">{{ filter_w.form.model_name }} Изделие</td>
+                        <td class="td_cell">{{ filter_w.form.datetime_done }}Дата готовности</td>
+                        <td class="td_cell">{{ filter_w.form.order_status }} Статус заказа</td>
+                        <td class="td_cell">{{ filter_w.form.done_rate }} % готовности</td>
                     </tr>
-                    {% for line in workshop_schedule %}
+                    {% for line in filter_w.qs %}
                     <tr class="table_row">
                         {% for el in line.values %}
                         <td class="td_cell"><p class="">{{ el }}</p></td>
@@ -38,21 +37,21 @@
                     </tr>
                     {% endfor %}
                 </table>
-                {% else %}
-                <p>Данные для отображения отсутствуют</p>
-                {% endif %}
             </div>
+        </form>
+        <h3 class="table_h3">Заявки на документацию</h3>
+        <form method="get" id="form3">
+            <p>
+                <input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр" />
+            </p>
             <div class="col">
-                <!-- prettier-ignore -->
-                {% if td_queries %}
-                <h3 class="table_h3">Заявки на документацию</h3>
                 <table class="table" title="Заявки на документацию">
                     <tr class="table_header_row">
-                        <td class="td_cell">Заказ-модель</td>
-                        <td class="td_cell">Приоритет</td>
-                        <td class="td_cell">Статус завяки</td>
+                        <td class="td_cell">{{ filter_q.form.model_order_query }} Заказ-модель</td>
+                        <td class="td_cell">{{ filter_q.form.query_prior }}Приоритет</td>
+                        <td class="td_cell">{{ filter_q.form.td_status }}Статус завяки</td>
                     </tr>
-                    {% for line in td_queries %}
+                    {% for line in filter_q.qs %}
                     <tr class="table_row">
                         {% for el in line.values %}
                         <td class="td_cell">{{ el }}</td>
@@ -60,11 +59,9 @@
                     </tr>
                     {% endfor %}
                 </table>
-                {% else %}
-                <p>Данные для отображения отсутствуют</p>
-                {% endif %}
             </div>
-        </div>
+        </form>
+
         <script>
             function showNotification({ top = 0, right = 0, html }) {
                 let notification = document.createElement("div");
@@ -101,6 +98,7 @@
                 </div>
             </form>
         </div>
+
         <br />
         <!--форма планирования цеха-->
         <div class="form_div">
@@ -136,5 +134,13 @@
         <a href="{% url 'schedulerwp' %}">Распределение</a> <br />
         <div style="height: 150px"></div>
         <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
+        <script>
+            function onChange1() {
+                document.getElementById("form2").submit();
+            }
+            function onChange2() {
+                document.getElementById("form3").submit();
+            }
+        </script>
     </body>
 </html>
