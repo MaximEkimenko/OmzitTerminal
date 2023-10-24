@@ -13,7 +13,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.db.models import Q
 
-from .filters import ShiftTaskFilter
+from .filters import get_filterset
 from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw
 from .models import WorkshopSchedule, ShiftTask
 
@@ -164,12 +164,23 @@ def schedulerwp(request):
     # выборка из уже занесенного
     if str(request.user.username).strip() != "admin" and str(request.user.username[:4]).strip() != "disp":
         raise PermissionDenied
-    workplace_schedule = ((ShiftTask.objects.values('id', 'workshop', 'order', 'model_name', 'datetime_done',
-                                                    'ws_number', 'op_number', 'op_name_full', 'norm_tech', 'fio_doer',
-                                                    'st_status').all()).exclude(datetime_done=None)
+    shift_task_fields = (
+        'id',
+        'workshop',
+        'order',
+        'model_name',
+        'datetime_done',
+        'ws_number',
+        'op_number',
+        'op_name_full',
+        'norm_tech',
+        'fio_doer',
+        'st_status'
+    )
+    workplace_schedule = (ShiftTask.objects.values(*shift_task_fields).all().exclude(datetime_done=None)
                           .order_by("ws_number", "model_name",))
-    f = ShiftTaskFilter(request.GET, queryset=workplace_schedule)
-
+    f = get_filterset(data=request.GET, queryset=workplace_schedule, fields=shift_task_fields)
+    alert_message = ''
     if request.method == 'POST':
         form_workplace_plan = SchedulerWorkplace(request.POST)
         if form_workplace_plan.is_valid():
@@ -177,13 +188,11 @@ def schedulerwp(request):
             datetime_done = form_workplace_plan.cleaned_data['datetime_done'].datetime_done
             print(ws_number, datetime_done)
             try:
-                filtered_workplace_schedule = (ShiftTask.objects.values
-                                               ('id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number',
-                                                'op_number', 'op_name_full', 'norm_tech', 'fio_doer', 'st_status').
-                                               filter(ws_number=str(ws_number), datetime_done=datetime_done)
-                                               .filter(Q(fio_doer='не распределено') | Q(st_status='брак')
-                                                       | Q(st_status='не принято'))
-                                               )
+                filtered_workplace_schedule = (
+                    ShiftTask.objects.values(*shift_task_fields)
+                    .filter(ws_number=str(ws_number), datetime_done=datetime_done)
+                    .filter(Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
+                )
             except Exception as e:
                 filtered_workplace_schedule = dict()
                 print('Ошибка получения filtered_workplace_schedule', e)
@@ -192,17 +201,15 @@ def schedulerwp(request):
             else:
                 alert_message = f'Для Т{ws_number} на {datetime_done} нераспределённые задания отсутствуют.'
                 form_workplace_plan = SchedulerWorkplace()
-                context = {'workplace_schedule': workplace_schedule, 'form_workplace_plan': form_workplace_plan,
-                           'alert_message': alert_message, 'filter': f}
-                return render(request, fr"schedulerwp/schedulerwp.html", context=context)
     else:
         form_workplace_plan = SchedulerWorkplace()
-        context = {
-            'workplace_schedule': workplace_schedule,
-            'form_workplace_plan': form_workplace_plan,
-            'filter': f
-        }
-        return render(request, fr"schedulerwp/schedulerwp.html", context=context)
+    context = {
+        'workplace_schedule': workplace_schedule,
+        'form_workplace_plan': form_workplace_plan,
+        'alert_message': alert_message,
+        'filter': f
+    }
+    return render(request, fr"schedulerwp/schedulerwp.html", context=context)
 
 
 @login_required(login_url="login/")
@@ -219,18 +226,21 @@ def schedulerfio(request, ws_number, datetime_done):
 
     print(ws_number)
     print(datetime_done)
+    shift_task_fields = (
+        'id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number',
+        'op_number', 'op_name_full', 'norm_tech', 'fio_doer', 'st_status'
+    )
     formatted_datetime_done = datetime.datetime.strptime(datetime_done, '%Y-%m-%d')
     # определения рабочего центра и id
     if not request.user.username:  # если не авторизован, то отправляется на авторизацию
         return redirect('login/')
     try:
-        filtered_workplace_schedule = (ShiftTask.objects.values
-                                       ('id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number',
-                                        'op_number', 'op_name_full', 'norm_tech', 'fio_doer', 'st_status').
-                                       filter(ws_number=str(ws_number), datetime_done=formatted_datetime_done)
-                                       .filter(Q(fio_doer='не распределено') | Q(st_status='брак')
-                                               | Q(st_status='не принято'))
-                                       )
+        filtered_workplace_schedule = (
+            ShiftTask.objects.values(*shift_task_fields)
+            .filter(ws_number=str(ws_number), datetime_done=formatted_datetime_done)
+            .filter(Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
+        )
+        f = get_filterset(data=request.GET, queryset=filtered_workplace_schedule, fields=shift_task_fields)
     except Exception as e:
         filtered_workplace_schedule = dict()
         print('Ошибка получения filtered_workplace_schedule', e)
@@ -264,7 +274,8 @@ def schedulerfio(request, ws_number, datetime_done):
         'filtered_workplace_schedule': filtered_workplace_schedule,
         'form_fio_doer': form_fio_doer,
         'alert_message': alert_message,
-        'success': success
+        'success': success,
+        'filter': f,
     }
     return render(request, r"schedulerfio/schedulerfio.html", context=context)
 

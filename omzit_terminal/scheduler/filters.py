@@ -1,49 +1,47 @@
+from collections import OrderedDict
+
 import django_filters
 from django import forms
 from django_filters import ChoiceFilter
-
-from .models import ShiftTask
-
-SHIFT_TASK_FILTER_FIELDS = ('order', 'model_name', 'datetime_done', 'fio_doer')
+from django_filters.constants import ALL_FIELDS
 
 
-class ShiftTaskFilter(django_filters.FilterSet):
-    fields_values = {field: set() for field in SHIFT_TASK_FILTER_FIELDS}
+class FieldsFilter(django_filters.FilterSet):
 
-    tasks = ShiftTask.objects.values('order', 'model_name', 'datetime_done', 'fio_doer')
-    for task in tasks:
-        for field, value in task.items():
-            print(value)
-            if field == 'fio_doer' and ',' in value:
-                for fio in value.split(', '):
-                    fields_values[field].add((fio, fio))
-            else:
+    def __init__(self, data=None, queryset=None, *, request=None, prefix=None, filter_fields):
+        super().__init__(data, queryset)
+        self.filter_fields = filter_fields
+
+    def get_form_class(self):
+        fields_values = {field: set() for field in self.filter_fields}
+
+        rows = self._meta.model.objects.values(*self.filter_fields)
+        for row in rows:
+            for field, value in row.items():
                 fields_values[field].add((value, value))
 
+        fields = OrderedDict([
+            (
+                name,
+                ChoiceFilter(
+                    choices=fields_values[name],
+                    widget=forms.Select(attrs={'onchange': "onChange()"})
+                ).field
+            )
+            for name, filter_ in self.filters.items()
+        ])
+        return type(str("%sForm" % self.__class__.__name__), (self._meta.form,), fields)
 
-    order = ChoiceFilter(
-        choices=fields_values['order'],
-        widget=forms.Select(attrs={
-                'onchange': "onChange()"
-        }))
-    model_name = ChoiceFilter(
-        choices=fields_values['model_name'],
-        widget=forms.Select(attrs={
-                'onchange': "onChange()"
-        }))
-    datetime_done = ChoiceFilter(
-        choices=fields_values['datetime_done'],
-        widget=forms.Select(attrs={
-                'onchange': "onChange()"
-        }))
-    fio_doer = ChoiceFilter(
-        choices=fields_values['fio_doer'],
-        lookup_expr='icontains',
-        widget=forms.Select(attrs={
-            'onchange': "onChange()"
-        }))
 
-    class Meta:
-        model = ShiftTask
-        fields = SHIFT_TASK_FILTER_FIELDS
+def get_filterset(data, queryset, model=None, fields=ALL_FIELDS):
+    if model is None:
+        model = queryset.model
+    meta = type(str("Meta"), (object,), {"model": model, "fields": fields})
+    filterset_class = type(
+        str("%sFilterSet" % model._meta.object_name), (FieldsFilter,), {"Meta": meta}
+    )
+    filterset = filterset_class(data, queryset=queryset, filter_fields=fields)
+    return filterset
+
+
 
