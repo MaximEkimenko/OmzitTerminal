@@ -58,9 +58,9 @@ users = (admin_id,  # root
          saks_id,  # ОГТ
          )
 
-masters = (admin_id, ermishkin_id, posohov_id, gordii_id, kondratiev_id, achmetov_id)  # производство
+masters_list = (admin_id, ermishkin_id, posohov_id, gordii_id, kondratiev_id, achmetov_id)  # производство
 
-dispatchers = (admin_id, savchenko_id, pavluchenkova_id,)  # диспетчеры
+dispatchers_list = (admin_id, savchenko_id, pavluchenkova_id,)  # диспетчеры
 
 control_mans_list = (admin_id, donskaya_id, averkina_id)  # контролёры
 
@@ -133,22 +133,28 @@ async def help_rsu_bot(message: types.Message):
         await message.reply(text="К сожалению в не являетесь зарегистрированным пользователем.")
 
 
-# TODO docstring для всх обработчиков
-# TODO разграничить права доступа
-# TODO переводчик всех id в ФИО
 # ------------------------------------------------ Мастер вызывает контролёра
 # отображение inline ws_number для мастера при вызове ОТК. Обработка команды otk_send
 @dp.message_handler(commands=['otk_send'])
 async def master_otk_send(message: types.Message):
-    # TODO если вызовов мастера нет, то ответ, что вызовов для контролёра делать не откуда
-    if message.from_user.id in masters:
+    """
+    Вызов контролёра мастером через команду otk_send
+    :param message:
+    :return:
+    """
+    if message.from_user.id in masters_list:
         # создание inline keyboard РЦ со статусом ожидание мастера
         inline_ws_buttons = types.InlineKeyboardMarkup()  # объект
         ws_list = ws_list_get("ожидание мастера")
-        for ws in ws_list:
-            btn = types.InlineKeyboardButton(text=f'{ws}', callback_data=f'call{ws}{message.from_user.id}')
-            inline_ws_buttons.insert(btn)
-        await message.answer('Выбор терминала', reply_markup=inline_ws_buttons)
+        print(ws_list)
+        if ws_list != ():
+            for ws in ws_list:
+                print(ws)
+                btn = types.InlineKeyboardButton(text=f'{ws}', callback_data=f'call{ws}{message.from_user.id}')
+                inline_ws_buttons.insert(btn)
+            await message.answer('Выбор терминала', reply_markup=inline_ws_buttons)
+        else:
+            await message.reply('Сменные задания со статусом "Вызов мастера" отсутствуют.')
     else:
         await message.reply('У вас нет доступа к этому функционалу.')
 
@@ -156,12 +162,13 @@ async def master_otk_send(message: types.Message):
 # обработчик callback otk_send вызова контролёра МАСТЕРОМ на РЦ
 @dp.callback_query_handler(lambda callback: call_get_re(pattern_call_otk, callback.data[:-10]))
 async def otk_call(callback_query: types.CallbackQuery):
+    """
+    Обработка callback_data при вызове контролёра otk_send
+    :param callback_query:
+    :return:
+    """
     master_id = callback_query.data[-10:]  # id мастера
     ws_number = callback_query.data[4:-10]  # номер РЦ
-    print(ws_number, len(ws_number), type(ws_number))
-    print(master_id, len(master_id), type(master_id))
-    # print(callback_query.data)
-    # print(ws_number, master_id)
     # отправка сообщения о заявке на контролёра в группу ОТК
     await bot.send_message(chat_id=omzit_otk_group_id, text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
                                                             f"{id_fios[int(master_id)]}")
@@ -179,15 +186,22 @@ async def otk_call(callback_query: types.CallbackQuery):
 # отображение inline ws_number для контролёра при ответе на запрос. Обработка команды otk_answer.
 @dp.message_handler(commands=['otk_answer'])
 async def otk_answer_master_send(message: types.Message):
-    # TODO если запросов на контролёра  нет, то ответ - нет запросов на контролёра не было
+    """
+    Ответ контролёра на все вызовы мастера на выбранном терминале
+    :param message:
+    :return:
+    """
     if message.from_user.id in control_mans_list:
         # создание inline keyboard РЦ со статусом ожидание контролёра
         inline_ws_buttons = types.InlineKeyboardMarkup()  # объект инлайн кнопок РЦ
         ws_list = ws_list_get("ожидание контролёра")
-        for ws in ws_list:
-            btn = types.InlineKeyboardButton(text=f'{ws}', callback_data=f'answ{ws}{message.from_user.id}')
-            inline_ws_buttons.insert(btn)
-        await message.answer('Выбор терминала', reply_markup=inline_ws_buttons)
+        if ws_list != ():
+            for ws in ws_list:
+                btn = types.InlineKeyboardButton(text=f'{ws}', callback_data=f'answ{ws}{message.from_user.id}')
+                inline_ws_buttons.insert(btn)
+            await message.answer('Выбор терминала', reply_markup=inline_ws_buttons)
+        else:
+            await message.reply('Терминалы с ожиданием контролёра отсутствуют.')
     else:
         await message.reply('У вас нет доступа к этому функционалу.')
 
@@ -195,9 +209,13 @@ async def otk_answer_master_send(message: types.Message):
 # обработчик callback otk_answer ответа контролёра МАСТЕРУ на РЦ
 @dp.callback_query_handler(lambda callback: call_get_re(pattern_answ_otk, callback.data[:-10]))
 async def otk_call(callback_query: types.CallbackQuery):
+    """
+    Обработчик callback.data при ответе контролёра
+    :param callback_query:
+    :return:
+    """
     controlman_id = callback_query.data[-10:]  # id контролёра
     ws_number = callback_query.data[4:-10]  # номер РЦ
-    # TODO Получить статус по номеру РЦ, если ожидание контролёра, то ответ, что нет
     # запрос в БД на id мастера
     master_id = master_id_get(ws_number=ws_number)[0]
     # отправка сообщения о заявке на контролёра в группу ОТК
@@ -222,23 +240,35 @@ async def otk_call(callback_query: types.CallbackQuery):
 # ------------------------------------------------ Контролёр принимает решение
 # отображение inline для решения отк. Обработка команды otk_decision
 @dp.message_handler(commands=['otk_decision'])
-async def otk_answer_master_send(message: types.Message):
-    # TODO если статуса ожидания нет, то ответ, что контролёра не ждут
+async def otk_decision_terminal_choice(message: types.Message):
+    """
+    Принятие решения контролёром по сменному заданию. Выбор терминала.
+    :param message:
+    :return:
+    """
     if message.from_user.id in control_mans_list:
         # создание inline keyboard РЦ со статусом ожидание контролёра
         inline_ws_buttons = types.InlineKeyboardMarkup()  # объект инлайн кнопок РЦ
         ws_list = ws_list_get("ожидание контролёра")
-        for ws in ws_list:
-            btn = types.InlineKeyboardButton(text=f'{ws}', callback_data=f'dcgo{ws}{message.from_user.id}')
-            inline_ws_buttons.insert(btn)
-        await message.answer('Выбор терминала для принятия решения:', reply_markup=inline_ws_buttons)
+        if ws_list != ():
+            for ws in ws_list:
+                btn = types.InlineKeyboardButton(text=f'{ws}', callback_data=f'dcgo{ws}{message.from_user.id}')
+                inline_ws_buttons.insert(btn)
+            await message.answer('Выбор терминала для принятия решения:', reply_markup=inline_ws_buttons)
+        else:
+            await message.reply('Терминалы с СЗ для приёмки отсутствуют.')
     else:
         await message.reply('У вас нет доступа к этому функционалу.')
 
 
 # обработчик callback otk_decision принятия решения по СЗ на РЦ для отображение инлайн СЗ
 @dp.callback_query_handler(lambda callback: call_get_re(pattern_dcgo_otk, callback.data[:-10]))
-async def otk_answer(callback_query: types.CallbackQuery):
+async def otk_decision_shift_task_choice(callback_query: types.CallbackQuery):
+    """
+    Обработчик callback_data для отображения inline кнопок сменного задания. Выбор сменного задания.
+    :param callback_query:
+    :return:
+    """
     controlman_id = callback_query.data[-10:]  # id контролёра
     ws_number = callback_query.data[4:-10]  # номер РЦ
     print('call_data=', callback_query.data)
@@ -263,7 +293,12 @@ async def otk_answer(callback_query: types.CallbackQuery):
 
 # обработчик callback otk_decision принятия решения по СЗ на РЦ отображение инлайн кнопок для принятия решения
 @dp.callback_query_handler(lambda callback: call_get_re(pattern_stid_otk, callback.data[:-10]))
-async def otk_decision(callback_query: types.CallbackQuery):
+async def otk_decision_choice(callback_query: types.CallbackQuery):
+    """
+    Отображение inline решения контролёра. Выбор решения контролёра.
+    :param callback_query:
+    :return:
+    """
     controlman_id = callback_query.data[-10:]  # id контролёра
     # print(controlman_id)
     st_id = callback_query.data[4:-10]  # id СЗ
@@ -282,7 +317,12 @@ async def otk_decision(callback_query: types.CallbackQuery):
 
 # обработчик callback записи данных по решению в базу и выдаче обратной связи мастеру
 @dp.callback_query_handler(lambda callback: call_get_re(pattern_dscn_otk, callback.data[:-10]))
-async def otk_answer(callback_query: types.CallbackQuery):
+async def otk_decision_register(callback_query: types.CallbackQuery):
+    """
+    Обработка решения callback.data решения контролёра. Запись решения в БД.
+    :param callback_query:
+    :return:
+    """
     st_id = callback_query.data[4:-11]  # id СЗ
     print(st_id)
     controlman_id = callback_query.data[-10:]  # id контролёра
@@ -314,6 +354,22 @@ async def otk_answer(callback_query: types.CallbackQuery):
 
 # ------------------------------------------------
 
+# TODO команда получения списка СЗ с не принятым решение (все СЗ со статусом ожидание контролёра):
+#  report_active_shift_tasks
+@dp.message_handler(commands=['text'])  # получение активных запросов отк в виде строки
+async def report_active_shift_tasks(message: types.Message):
+    # if message.from_user.id in control_mans_list:
+    #     try:
+    #         # text_string = create_report(report_type='text', fios_dict=id_fios)
+    #         if text_string:
+    #             await message.reply(text=text_string)
+    #         else:
+    #             await message.answer(text='Активных запросов на контролёра на данный момент нет.')
+    #     except Exception as e:
+    #         print(e)
+    # else:
+    #     await message.answer(text='У вас не доступа к этому функционалу. Обратитесь к руководителю.')
+    pass
 
 async def on_shutdown(_):  # функция выполняется при завершении работы бота
     # await bot.send_message(admin_id, "Bot is offline!")
