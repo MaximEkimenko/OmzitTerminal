@@ -266,7 +266,7 @@ def schedulerfio(request, ws_number, datetime_done):
                                                                                       f'{request.user.last_name}'))
                 alert_message = f'Успешно распределено!'
             else:
-                alert_message = f'Исполнители дублируются. Повторите выбор исполнителей!'
+                alert_message = f'Исполнители дублируются. Измените исполнителей.'
                 success = 0
     else:
         form_fio_doer = FioDoer(ws_number=ws_number, datetime_done=formatted_datetime_done)
