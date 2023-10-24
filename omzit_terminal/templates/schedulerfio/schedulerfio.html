@@ -96,6 +96,11 @@
             const notification = document.getElementsByClassName("alert_gone")[0];
             setTimeout(() => notification.remove(), 10000);
         </script>
+        <script>
+           function onChange(){
+               document.getElementById("form2").submit();
+          }
+        </script>
         <a href="{% url 'schedulerwp' %}">Выбор терминала</a> <br />
         <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
     </body>
