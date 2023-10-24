@@ -19,10 +19,11 @@
         </h1>
 
         {% if filtered_workplace_schedule %}
-    <form method="get" id="form2">
+
         <p class="alert">Сменные задания для распределения:</p>
+        <form method="get" id="form2">
         <p><input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр"/></p>
-                <table class="table" title="График рабочих центров">
+        <table class="table" title="График рабочих центров">
             <tr class="table_header_row">
                 <td class="td_cell">№СЗ <p>{{ filter.form.id }}</p></td>
                 <td class="td_cell">Цех <p>{{ filter.form.workshop }}</p></td>
@@ -33,7 +34,7 @@
                 <td class="td_cell">Номер операции <p>{{ filter.form.op_number }}</p></td>
                 <td class="td_cell">Операция <p>{{ filter.form.op_name_full }}</p></td>
                 <td class="td_cell">Норма времени <p>{{ filter.form.norm_tech }}</p></td>
-                <td class="td_cell">ФИО исполнителя <p>{{ filter.form.fio_doer }}</p></td>
+                <td class="td_cell">Фио исполнителя <p>{{ filter.form.fio_doer }}</p></td>
                 <td class="td_cell">Статус СЗ <p>{{ filter.form.st_status }}</p></td>
             </tr>
 
@@ -45,13 +46,15 @@
             </tr>
             {% endfor %}
         </table>
+        </form>
         {% else %}
         <p class="alert">Все сменные задания для РЦ распределены.</p>
-    </form>
 
         {% endif %}
         <!--форма выбора ФИО-->
-        <p class="alert_gone">{{ alert_message }}</p>
+        {% if alert_message != '' %}
+            <p class="alert_gone">{{ alert_message }}</p>
+        {% endif %}
         {% if filtered_workplace_schedule %}
         <p class="alert">Распределите сменные задания:</p>
         <form action="" method="post" enctype="multipart/form-data" id="mainform" class="form_form">
@@ -93,7 +96,10 @@
 
         {% endif %}
         <script>
-            const notification = document.getElementsByClassName("alert_gone")[0];
+            var notification = document.getElementsByClassName("alert_gone")[0];
+            if ({{success}} === 0) {
+              notification.style.color = "red";
+            }
             setTimeout(() => notification.remove(), 10000);
         </script>
         <script>

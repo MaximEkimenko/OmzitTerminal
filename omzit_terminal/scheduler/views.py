@@ -249,6 +249,7 @@ def schedulerfio(request, ws_number, datetime_done):
     alert_message = ''
 
     if request.method == 'POST':
+        print('POST')
         form_fio_doer = FioDoer(request.POST, ws_number=ws_number, datetime_done=formatted_datetime_done)
         if form_fio_doer.is_valid():
             fios = list(filter(
@@ -265,7 +266,7 @@ def schedulerfio(request, ws_number, datetime_done):
                                                                                       f'{request.user.last_name}'))
                 alert_message = f'Успешно распределено!'
             else:
-                alert_message = f'Исполнители дублируются'
+                alert_message = f'Исполнители дублируются. Повторите выбор исполнителей!'
                 success = 0
     else:
         form_fio_doer = FioDoer(ws_number=ws_number, datetime_done=formatted_datetime_done)

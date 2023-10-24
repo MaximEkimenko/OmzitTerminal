@@ -37,7 +37,9 @@
             <button class="form_button" type="submit">Выбрать</button>
         </form>
         {% if workplace_schedule %}
-        <p class="alert">{{ alert_message }}</p>
+        {% if alert_message != '' %}
+            <p class="alert">{{ alert_message }}</p>
+        {% endif %}
     <form method="get" id="form2">
         <p><input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр"/></p>
         <table title="График рабочих центров" class="table">
