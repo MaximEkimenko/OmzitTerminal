@@ -96,7 +96,7 @@
 
         {% endif %}
         <script>
-            var notification = document.getElementsByClassName("alert_gone")[0];
+            const notification = document.getElementsByClassName("alert_gone")[0];
             if ({{success}} === 0) {
               notification.style.color = "red";
             }
