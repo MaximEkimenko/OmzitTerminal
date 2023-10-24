@@ -234,21 +234,22 @@ def schedulerfio(request, ws_number, datetime_done):
     if request.method == 'POST':
         form_fio_doer = FioDoer(request.POST, ws_number=ws_number, datetime_done=formatted_datetime_done)
         if form_fio_doer.is_valid():
+            # Получение списка без None
             fios = list(filter(
                 lambda x: x != 'None',
                 (str(form_fio_doer.cleaned_data[f'fio_{i}']) for i in range(1, 5))
             ))
             unique_fios = set(fios)
-            doers_fios = ', '.join(unique_fios)
+            doers_fios = ', '.join(unique_fios)  # получение уникального списка
             print('DOERS-', doers_fios)
-            if len(fios) == len(unique_fios):
+            if len(fios) == len(unique_fios):  # если есть повторения в списке fios
                 (ShiftTask.objects.filter(pk=form_fio_doer.cleaned_data['st_number'].id).update(
                     fio_doer=doers_fios, datetime_assign_wp=datetime.datetime.now(), st_status='запланировано',
                     datetime_job_start=None, decision_time=None, master_assign_wp_fio=f'{request.user.first_name} '
                                                                                       f'{request.user.last_name}'))
                 alert_message = f'Успешно распределено!'
             else:
-                alert_message = f'Исполнители дублируются'
+                alert_message = f'Исполнители дублируются. Измените исполнителей.'
                 success = 0
     else:
         form_fio_doer = FioDoer(ws_number=ws_number, datetime_done=formatted_datetime_done)
