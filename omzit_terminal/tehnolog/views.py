@@ -138,15 +138,22 @@ def new_model_query(request):
     if request.method == 'POST':
         change_model_query_form = ChangeOrderModel(request.POST)
         if change_model_query_form.is_valid():
-            # модель_заказ
-            new_model_order_query = (f"{change_model_query_form.cleaned_data['order_query'].strip()}_"
-                                     f"{change_model_query_form.cleaned_data['model_query'].strip()}")
+            old_model_order_query = change_model_query_form.cleaned_data['model_order_query'].model_order_query
 
-            (WorkshopSchedule.objects.filter(model_order_query=change_model_query_form.
-                                             cleaned_data['model_order_query'].model_order_query)
-             .update(order=change_model_query_form.cleaned_data['order_query'].strip(),
-                     model_name=change_model_query_form.cleaned_data['order_query'].strip(),
+            new_order = change_model_query_form.cleaned_data['order_query'].strip()
+            new_model = change_model_query_form.cleaned_data['model_query'].strip()
+            new_model_order_query = f"{new_order}_{new_model}"
+
+            (WorkshopSchedule.objects.filter(model_order_query=old_model_order_query)
+             .update(order=new_order,
+                     model_name=new_model,
                      model_order_query=new_model_order_query))
+
+            # переименование папки
+            old_folder = os.path.join("C:/", "draws", old_model_order_query)
+            new_folder = os.path.join("C:/", "draws", new_model_order_query)
+            os.rename(old_folder, new_folder)
+
             # сообщение в группу
             success_group_message = (f"Заказ-модель переименован технологической службой в: "
                                      f"{new_model_order_query}. "
