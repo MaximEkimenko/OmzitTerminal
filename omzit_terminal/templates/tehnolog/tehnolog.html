@@ -22,10 +22,21 @@
                 setTimeout(() => (notification.style.opacity = 0), 10000);
                 //setTimeout(() => notification.remove(), 10000);
             }
+        </script>
+        {% if 'Ошибка' in alert %}
+        <script>
+            showNotification({
+                html: "<p class='alert_gone' style='color:red';> {{ alert }} </p>",
+            });
+        </script>
+        {% else %}
+        <script>
             showNotification({
                 html: "<p class='alert_gone'> {{ alert }} </p>",
             });
         </script>
+        {% endif %}
+
         <div class="table_div">
             <h3>Заявки на документацию</h3>
             <form method="get" id="form2">

@@ -16,7 +16,7 @@ class GetTehDataForm(forms.Form):
 
     list_names = forms.CharField(max_length=255, label='Имя листа Excel для загрузки')
     # список исключений
-    exception_names = forms.CharField(max_length=255, label='Список листов исключений', required=False)
+    # exception_names = forms.CharField(max_length=255, label='Список листов исключений', required=False)
     excel_file = forms.FileField(label='Файл excel трудоемкости')  # файл Excel
 
 
