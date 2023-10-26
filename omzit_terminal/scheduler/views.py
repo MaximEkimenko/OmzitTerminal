@@ -30,6 +30,7 @@ def scheduler(request):
     if str(request.user.username).strip() != "admin" and str(request.user.username[:4]).strip() != "disp":
         raise PermissionDenied
     group_id = -908012934  # тг группа
+
     # обновление процента готовности всех заказов
     # TODO модифицировать расчёт процента готовности всех заказов по взвешенной трудоёмкости
     #  сделать невозможным заполнять запрос с кириллицей
@@ -69,11 +70,12 @@ def scheduler(request):
                 alert = 'Данные в график успешно занесены! '
                 print('Данные в график успешно занесены!\n')
                 # заполнение модели ShiftTask данными планирования цехов
+                print(ShiftTask.objects.filter(model_order_query=form_workshop_plan.cleaned_data['model_order_query']))
                 (ShiftTask.objects.filter(
                     model_order_query=form_workshop_plan.cleaned_data['model_order_query'].model_order_query)
                  .update(workshop=form_workshop_plan.cleaned_data['workshop'],
                          datetime_done=form_workshop_plan.cleaned_data['datetime_done'],
-                         product_category=str(form_workshop_plan.cleaned_data['category'])
+                         product_category=str(form_workshop_plan.cleaned_data['category']),
                          ))
                 print('Данные сменного задания успешно занесены!')
                 alert += 'Данные сменного задания успешно занесены.'
@@ -85,7 +87,7 @@ def scheduler(request):
                                          f"{form_workshop_plan.cleaned_data['model_order_query'].model_order_query} "
                                          f"успешно запланирован на {form_workshop_plan.cleaned_data['datetime_done']}. "
                                          f"Запланировал: {request.user.first_name} {request.user.last_name}.")
-                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
             except Exception as e:
                 print(e, ' Ошибка запаси в базу SchedulerWorkshop')
                 alert = f'Ошибка занесения данных.'

@@ -20,7 +20,7 @@ def tehnolog_wp(request):
     :param request:
     :return:
     """
-    # group_id = -908012934  # тг группа
+    group_id = -908012934  # тг группа
     td_queries_fields = ('model_order_query', 'query_prior', 'td_status', 'td_remarks')  # поля таблицы
     td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(td_status='завершено'))
     f = get_filterset(data=request.GET, queryset=td_queries, fields=td_queries_fields)  # фильтры в колонки
@@ -80,7 +80,7 @@ def tehnolog_wp(request):
                                          f"доступен для планирования. "
                                          f"Данные загрузил: {request.user.first_name} {request.user.last_name}."
                                          )
-                # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
             else:
                 print('Ошибка загрузки')
             print(get_teh_data_form.cleaned_data)

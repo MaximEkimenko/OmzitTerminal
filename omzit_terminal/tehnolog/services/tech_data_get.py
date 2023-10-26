@@ -48,6 +48,7 @@ def tech_data_get(model_order_query: str, exel_file: str, excel_list: str):
     # корректировка разрешённых полей
     else:
         tasks = []
+        # разрешённые поля
         allowed_fields = ('ws_number', 'norm_tech', 'draw_filename')
         for data in data_list:
             allowed_data = dict()
@@ -60,6 +61,8 @@ def tech_data_get(model_order_query: str, exel_file: str, excel_list: str):
                 tasks.append(task)
             except ShiftTask.DoesNotExist:
                 is_uploaded = False
+        else:
+            ShiftTask.objects.bulk_update(tasks, allowed_fields)
     return is_uploaded
 
 
@@ -85,7 +88,7 @@ def get_excel_data(data: Dict, exel_file: str, excel_list: str) -> List:  # TODO
         if re.fullmatch(op_number_template, str(row[0])):
             data.update(
                 {
-                    'excel_list_name': f'{excel_list}-{i}',
+                    'excel_list_name': f'{excel_list}-{i}',  # инкремент для гарантированно уникальной записи
                     'op_number': row[0],
                     'op_name': row[1],
                     'ws_name': row[2],
@@ -117,7 +120,4 @@ def get_excel_data(data: Dict, exel_file: str, excel_list: str) -> List:  # TODO
 
 
 if __name__ == '__main__':
-    ex_file_dir_tst = r'D:\АСУП\Python\Projects\OmzitTerminal\Трудоёмкость серия I.xlsx'
-    model_list_tst = ['7000М+', '800М+']
-    exclusion_list_tst = ('Интерполяция М', 'гофрирование', 'Интерполяция R')
-    # tech_data_get(exel_file=ex_file_dir_tst)
+    pass
