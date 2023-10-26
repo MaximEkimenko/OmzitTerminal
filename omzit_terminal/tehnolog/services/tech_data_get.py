@@ -67,6 +67,13 @@ def tech_data_get(model_order_query: str, exel_file: str, excel_list: str):
 
 
 def get_excel_data(data: Dict, exel_file: str, excel_list: str) -> List:  # TODO при рефакторинге перенести в services
+    """
+    Получение данных из excel
+    :param data:
+    :param exel_file:
+    :param excel_list:
+    :return:
+    """
     ex_wb = openpyxl.load_workbook(exel_file, data_only=True)
     excel_list = excel_list.strip()
     ex_sh = ex_wb[excel_list.strip()]
