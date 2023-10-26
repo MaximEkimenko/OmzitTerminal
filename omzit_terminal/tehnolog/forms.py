@@ -24,7 +24,7 @@ class ChangeOrderModel(forms.Form):
     """
     Изменение заказ-модели
     """
-    query_set = WorkshopSchedule.objects.all().exclude(td_status='завершено')
+    query_set = WorkshopSchedule.objects.filter(order_status='не запланировано').exclude(td_status='завершено')
     model_order_query = QueryAnswerForm(query_set, empty_label='выберите заказ-модель',
                                         label='Заказ модель', required=False)
     model_query = forms.CharField(max_length=50, label='Новое имя модели')
