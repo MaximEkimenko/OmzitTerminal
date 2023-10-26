@@ -16,28 +16,36 @@ def tech_data_get(model_order_query: str, exel_file: str, excel_list: str):
     :param excel_list: модель изделия для получения данных - лист книги excel
     :return: None
     """
+    # модель, заказ
     model_name, order = model_order_query.split('_')
-
-    # Получение списка данных
+    # общие данные для всех записей shift_task (СЗ)
     common_data = {
         'model_name': model_name,
         'order': order,
         'model_order_query': model_order_query
     }
+    # формирование данных для создания записей shift_task (СЗ)
     data_list = get_excel_data(common_data, exel_file, excel_list)
 
-    shift_tasks = ShiftTask.objects.filter(model_order_query=model_order_query)
-
-    def create_all_shift_tasks():
+    def create_all_shift_tasks():  # TODO при рефакторинге перенести в services
+        """
+        Метод создает сменные задания
+        :return:
+        """
         tasks = [ShiftTask(**data) for data in data_list]
         ShiftTask.objects.bulk_create(tasks)
 
+    # заполнение shift_task
+    shift_tasks = ShiftTask.objects.filter(model_order_query=model_order_query)  # существующие СЗ
     is_uploaded = True
+    # если ранее не загружалось
     if not shift_tasks.exists():
         create_all_shift_tasks()
+    # если статус запланировано
     elif all(st == 'не запланировано' for st in shift_tasks.values_list('st_status', flat=True)):
         shift_tasks.delete()
         create_all_shift_tasks()
+    # корректировка разрешённых полей
     else:
         tasks = []
         allowed_fields = ('ws_number', 'norm_tech', 'draw_filename')
@@ -55,7 +63,7 @@ def tech_data_get(model_order_query: str, exel_file: str, excel_list: str):
     return is_uploaded
 
 
-def get_excel_data(data: Dict, exel_file: str, excel_list: str) -> List:
+def get_excel_data(data: Dict, exel_file: str, excel_list: str) -> List:  # TODO при рефакторинге перенести в services
     ex_wb = openpyxl.load_workbook(exel_file, data_only=True)
     excel_list = excel_list.strip()
     ex_sh = ex_wb[excel_list.strip()]

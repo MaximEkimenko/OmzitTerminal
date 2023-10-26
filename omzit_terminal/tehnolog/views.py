@@ -20,7 +20,7 @@ def tehnolog_wp(request):
     :param request:
     :return:
     """
-    group_id = -908012934  # тг группа
+    # group_id = -908012934  # тг группа
     td_queries_fields = ('model_order_query', 'query_prior', 'td_status', 'td_remarks')  # поля таблицы
     td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(td_status='завершено'))
     f = get_filterset(data=request.GET, queryset=td_queries, fields=td_queries_fields)  # фильтры в колонки
@@ -49,7 +49,8 @@ def tehnolog_wp(request):
             xlsx_file = handle_uploaded_file(f=request.FILES["excel_file"], filename=filename,
                                              path=file_save_path)
             print('filename=', filename, 'path=', file_save_path, 'xlsx=', xlsx_file)
-            list_name = get_teh_data_form.cleaned_data['list_names'].split(',')
+            list_name = get_teh_data_form.cleaned_data['list_names']
+            print(list_name)
             # вызов сервиса получения данных из xlsx
             try:
                 is_uploaded = tech_data_get(exel_file=xlsx_file, excel_list=list_name,
@@ -67,7 +68,7 @@ def tehnolog_wp(request):
                     success_message = True
                 else:
                     alert = (f'Ошибка загрузки {filename}! '
-                                   f'Изменены недопустимые поля, добавлены, удалены или перемещены строки!')
+                             f'Изменены недопустимые поля, добавлены, удалены или перемещены строки!')
                     success_message = False
             except Exception as e:
                 print(f'Ошибка загрузки {filename}', e)
@@ -79,7 +80,7 @@ def tehnolog_wp(request):
                                          f"доступен для планирования. "
                                          f"Данные загрузил: {request.user.first_name} {request.user.last_name}."
                                          )
-                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
             else:
                 print('Ошибка загрузки')
             print(get_teh_data_form.cleaned_data)
