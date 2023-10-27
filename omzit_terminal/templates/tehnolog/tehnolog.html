@@ -37,6 +37,20 @@
         </script>
         {% endif %}
 
+        {% if 'Ошибка' in upload_alert %}
+        <script>
+            showNotification({
+                html: "<p class='alert_gone' style='color:red';> {{ upload_alert }} </p>",
+            });
+        </script>
+        {% else %}
+        <script>
+            showNotification({
+                html: "<p class='alert_gone'> {{ upload_alert }} </p>",
+            });
+        </script>
+        {% endif %}
+
         <div class="table_div">
             <h3>Заявки на документацию</h3>
             <form method="get" id="form2">
@@ -132,6 +146,32 @@
         <!-- prettier-ignore -->
         <br />
         <!-- prettier-ignore -->
+
+        <div class="form_div">
+            <h3>Форма загрузки КД</h3>
+
+            <form class="form_form" action="{% url 'tehnolog' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="td_query_block">
+                    <div class="form_inner_label">{{ draw_files_upload_form.model_order_query.label }}</div>
+                    <div class="form_inner_div">{{ draw_files_upload_form.model_order_query }}</div>
+                    <br />
+                    <div class="form_inner_label">{{ draw_files_upload_form.draw_files.label }}</div>
+                    <div class="form_inner_div">{{ draw_files_upload_form.draw_files }}</div>
+
+                    <div>
+                        <button type="submit" class="form_button">
+                            <p class="red_word">Загрузить чертежи</p>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- prettier-ignore -->
+        <br />
+        <!-- prettier-ignore -->
+
         {% if user.username == 'admin' %}
         <a href="{% url 'home' %}">Назад</a> <br />
         {%endif %}
