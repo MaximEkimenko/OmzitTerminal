@@ -21,7 +21,7 @@ def handle_uploaded_file(f, filename: str, path: str = os.getcwd() + r'\xlsx') -
 
 def handle_uploaded_draw_file(username, f, filename: str, path: str) -> str:
     """
-    Обработчик копирует файл из формы загрузки частями в директорию path
+    Обработчик копирует файл из формы загрузки частями в директорию path. Получение доступа из файла permissions.json.
     :param username: имя пользователя
     :param path: директория сохранения файла
     :param f: объект файла django
@@ -31,9 +31,7 @@ def handle_uploaded_draw_file(username, f, filename: str, path: str) -> str:
     error = False
     file_path = rf"{path}\{filename}"
     print(f"Начало создания файла {file_path} пользователем {username}")
-
     permissions_json_path = rf"{path}\permissions.json"
-
     # получаем данные из файла с доступами
     permissions = {}
     try:
@@ -41,7 +39,6 @@ def handle_uploaded_draw_file(username, f, filename: str, path: str) -> str:
             permissions = json.load(json_file)
     except Exception as e:
         print(f'При обращении к файлу  доступов {permissions_json_path} при попытке чтения вызвано исключение: {e}')
-
     # определяем доступ пользователя к перезаписи файла
     if not os.path.exists(file_path):
         uploading_allowed = True
@@ -56,7 +53,6 @@ def handle_uploaded_draw_file(username, f, filename: str, path: str) -> str:
     else:
         uploading_allowed = False
         print(f'У пользователя отсутствует доступ с перезаписи файла!')
-
     # при наличии доступа пробуем создать файл
     if uploading_allowed:
         try:
@@ -73,7 +69,6 @@ def handle_uploaded_draw_file(username, f, filename: str, path: str) -> str:
         except Exception as e:
             error = True
             print(e, f"Ошибка создания файла!")
-
     if error:
         # при ошибке создания файла, удаляем его
         try:
@@ -95,5 +90,4 @@ def handle_uploaded_draw_file(username, f, filename: str, path: str) -> str:
     else:
         print(f'Файл не создан из-за проблем с доступом!')
         file_path = ''
-
     return file_path

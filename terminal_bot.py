@@ -345,10 +345,15 @@ async def otk_decision_register(callback_query: types.CallbackQuery):
     # сообщение в личку
     await bot.send_message(chat_id=controlman_id,
                            text=f'Вы определили "{decision}" на Т{ws_number} для СЗ №{st_id}')
+    # сообщение в группу мастерам
+    await bot.send_message(chat_id=omzit_master_group1_id,
+                           text=f'Контролёр {id_fios[int(controlman_id)]} определил "{decision}" на Т{ws_number} '
+                                f'для СЗ №{st_id}')
     # сообщение мастеру
     await bot.send_message(chat_id=master_id,
                            text=f'Контролёр {id_fios[int(controlman_id)]} определил "{decision}" на Т{ws_number} '
                                 f'для СЗ №{st_id}')
+
     await callback_query.answer()  # закрытие inline кнопок
 
 

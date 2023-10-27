@@ -27,7 +27,7 @@ def scheduler(request):
         :param request:
         :return:
         """
-    if str(request.user.username).strip() != "admin" and str(request.user.username[:4]).strip() != "disp":
+    if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:4]).strip() != "disp":
         raise PermissionDenied
     group_id = -908012934  # тг группа
 
@@ -164,7 +164,7 @@ def schedulerwp(request):
     """
     # отображение графика РЦ
     # выборка из уже занесенного
-    if str(request.user.username).strip() != "admin" and str(request.user.username[:4]).strip() != "disp":
+    if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:4]).strip() != "disp":
         raise PermissionDenied
     shift_task_fields = (
         'id',

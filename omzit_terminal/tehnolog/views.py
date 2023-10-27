@@ -30,8 +30,7 @@ def tehnolog_wp(request):
     change_model_query_form = ChangeOrderModel()
     send_draw_back_form = SendDrawBack()
     alert = ''
-    print(request.user.username[:8], 'tehnolog')
-    if str(request.user.username).strip() != "admin" and str(request.user.username[:8]).strip() != "tehnolog":
+    if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:8]).strip() != "tehnolog":
         raise PermissionDenied
 
     context = {}
@@ -43,8 +42,6 @@ def tehnolog_wp(request):
     if request.method == 'POST' and context['upload_alert'] == '':
         get_teh_data_form = GetTehDataForm(request.POST, request.FILES)  # класс форм с частично заполненными данными
         if get_teh_data_form.is_valid():
-            # ключ excel_file в словаре request.FILES должен быть равен имени формы созданной в классе
-            # GetTehDataForm
             filename = str(dict(request.FILES)["excel_file"][0])  # имя файла
             # обработка выбора не excel файла
             if '.xlsx' not in filename:
@@ -149,7 +146,6 @@ def new_model_query(request):
     :return:
     """
     group_id = -908012934  # тг группа
-    # TODO переименовать папку
     if request.method == 'POST':
         change_model_query_form = ChangeOrderModel(request.POST)
         if change_model_query_form.is_valid():
@@ -181,6 +177,14 @@ def new_model_query(request):
 
 
 def upload_draws(request, draws_path, group_id):
+    """
+    Загрузка чертежей технологом к имеющемуся комплекту КД. Обработка доступа к повторной загрузку через
+    json файл permissions.json
+    :param request:
+    :param draws_path: Путь чертежей
+    :param group_id: id тг группы для отправки сообщения
+    :return:
+    """
     alert = ''
     files = dict(request.FILES).get("draw_files")
     if request.method == 'POST' and files is not None:
@@ -188,7 +192,6 @@ def upload_draws(request, draws_path, group_id):
         if draw_files_upload_form.is_valid():
             model_order_query = draw_files_upload_form.cleaned_data['model_order_query'].model_order_query
             file_save_path = os.path.join(draws_path, model_order_query)
-
             # создаем файл с доступами, если не существует
             permissions_json_path = os.path.join(file_save_path, 'permissions.json')
             if not os.path.exists(permissions_json_path):
@@ -197,12 +200,9 @@ def upload_draws(request, draws_path, group_id):
                         json.dump({}, json_file)
                 except Exception as e:
                     print(f'При попытке создания файла доступов {permissions_json_path} вызвано исключение: {e}')
-
             success = True
-
             for file in files:
                 filename = str(file)
-                print('-----', filename)
                 # обработчик загрузки файла
                 uploaded_file = handle_uploaded_draw_file(
                     username=request.user.username,
@@ -214,33 +214,19 @@ def upload_draws(request, draws_path, group_id):
                     alert = f'Ошибка загрузки {filename}.'
                     success = False
                     break
-
             if success:
-                # обновление данных в БД
-                WorkshopSchedule.objects.filter(
-                    model_order_query=model_order_query
-                ).update(
-                    td_status='передано',  # статус СЗ
-                    td_tehnolog_done_datetime=datetime.datetime.now(),  # время загрузки
-                    tehnolog_query_td_fio=f'{request.user.first_name} {request.user.last_name}',  # ФИО констр
-                    td_remarks=''
-                )
+                # Сообщение об успехе
                 alert = 'Все файлы успешно загружены.'
-
-                success_group_message = (f"Передано КД. Заказ-модель "
+                success_group_message = (f"Обновлён комплект КД чертежами ТД. Заказ-модель "
                                          f"{model_order_query}. "
-                                         f"Открыт доступ в папке сервера: file://svr-003/draws/"
-                                         f"{model_order_query}/. "
-                                         f"Передал КД: {request.user.first_name} {request.user.last_name}. "
+                                         f"Обновил: {request.user.first_name} {request.user.last_name}. "
                                          f"Загружено файлов: {len(files)}.")
                 # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
                 print(success_group_message, group_id)
-
         else:
             print('INVALID FORM!')
             alert = 'Ошибка! Форма не валидна!'
     else:
         draw_files_upload_form = QueryAnswer()
-
     context = {'draw_files_upload_form': draw_files_upload_form, 'upload_alert': alert}
     return context

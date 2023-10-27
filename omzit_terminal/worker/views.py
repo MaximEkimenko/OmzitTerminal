@@ -26,7 +26,7 @@ def ws_number_choose(request):
     :param request:
     :return:
     """
-    if str(request.user.username).strip() != "admin":
+    if str(request.user.username).strip()[:5] != "admin":
         raise PermissionDenied
     if request.method == 'POST':
         ws_number_form = WorkplaceChoose(request.POST)
@@ -53,7 +53,8 @@ def worker(request, ws_number):
     allowed_terminal_list = ('APM-0036.omep.net.ru',  # Екименко
                              'SPR-008.omep.net.ru',  # Терминал №3
                              'APM-0168.omep.net.ru',  # Отто
-                             'SVR-003.omep.net.ru')  # сервер 192.168.8.30
+                             'APM-0314.omep.net.ru',  # Чаловец
+                             'APM-0168.omep.net.ru')  # сервер 192.168.8.30
     terminal_ip = get_client_ip(request)  # определение IP терминала
     terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
     if terminal_name not in allowed_terminal_list:

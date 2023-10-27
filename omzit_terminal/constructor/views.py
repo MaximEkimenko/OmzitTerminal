@@ -15,7 +15,7 @@ from scheduler.filters import get_filterset
 
 @login_required(login_url="../scheduler/login/")
 def constructor(request):
-    if str(request.user.username).strip() != "admin" and str(request.user.username[:11]).strip() != "constructor":
+    if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:11]).strip() != "constructor":
         raise PermissionDenied
     group_id = -908012934  # тг группа
     td_queries_fields = ('model_order_query', 'query_prior', 'td_status', 'td_remarks')  # поля таблицы
