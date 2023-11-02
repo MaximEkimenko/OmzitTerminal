@@ -223,7 +223,7 @@ def schedulerfio(request, ws_number, datetime_done):
     :param request:
     :return:
     """
-    if str(request.user.username).strip() != "admin" and str(request.user.username[:4]).strip() != "disp":
+    if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:4]).strip() != "disp":
         raise PermissionDenied
 
     print(ws_number)

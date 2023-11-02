@@ -35,9 +35,7 @@
                 html: "<p class='alert_gone'> {{ alert }} </p>",
             });
         </script>
-        {% endif %}
-
-        {% if 'Ошибка' in upload_alert %}
+        {% endif %} {% if 'Ошибка' in upload_alert %}
         <script>
             showNotification({
                 html: "<p class='alert_gone' style='color:red';> {{ upload_alert }} </p>",
@@ -148,7 +146,7 @@
         <!-- prettier-ignore -->
 
         <div class="form_div">
-            <h3>Форма загрузки КД</h3>
+            <h3>Форма дополнения комплекта КД</h3>
 
             <form class="form_form" action="{% url 'tehnolog' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
@@ -177,21 +175,6 @@
         {%endif %}
         <script src="{% static 'tehnolog/js/tehnolog.js' %}"></script>
 
-        <button class="hide_button" id="show_form">
-            <p>переименовать заказ-модель</p>
-        </button>
-
-        <script>
-            const correction_form = document.getElementById("correction_form");
-            const button = document.getElementById("show_form");
-            correction_form.style.display = "none";
-            button.onclick = showForm;
-
-            function showForm() {
-                correction_form.style.display = "block";
-            }
-            // скрытие отправленных
-        </script>
         <script>
             function onChange() {
                 document.getElementById("form2").submit();
