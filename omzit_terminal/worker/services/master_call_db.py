@@ -1,7 +1,31 @@
-import datetime
+import threading
+import time
 
 import psycopg2
 from .db_config import host, dbname, user, password  # TODO перенести в env весь файл db_config
+
+
+def continue_work(st_number):
+    print(f'Через 10 минут статус СЗ {st_number} измениться на "в работе"')
+    time.sleep(600)
+    try:
+        con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
+        con.autocommit = True
+        update_query = f"""
+        UPDATE shift_task 
+        SET st_status='в работе' 
+        WHERE id = '{st_number}' AND st_status = 'ожидание мастера';
+        """
+        try:
+            with con.cursor() as cur:
+                cur.execute(update_query)
+                con.commit()
+        except Exception as e:
+            print(e, 'ошибка обновления')
+    except Exception as e:
+        print('Ошибка подключения к базе', e)
+    finally:
+        con.close()
 
 
 def select_master_call(ws_number: str, st_number) -> list or None:
@@ -40,13 +64,17 @@ def select_master_call(ws_number: str, st_number) -> list or None:
             return None
         else:  # обновление переменной факта вызова мастера
             print('Обновление статуса')
-            update_query = f"""UPDATE shift_task SET master_called = 'вызван', st_status='ожидание мастера'
-                                        WHERE id = '{st_number}';
-                            """
+            update_query = f"""
+                        UPDATE shift_task 
+                        SET master_called = 'вызван', st_status='ожидание мастера', master_calls=master_calls+1
+                        WHERE id = '{st_number}';
+                        """
             try:
                 with con.cursor() as cur:
                     cur.execute(update_query)
                     con.commit()
+                    thread = threading.Thread(target=continue_work, args=(st_number,))
+                    thread.start()
             except Exception as e:
                 print(e, 'ошибка обновления')
     except Exception as e:
