@@ -50,15 +50,17 @@ def worker(request, ws_number):
     :return:
     """
     # список разрешённых по имени компа
-    allowed_terminal_list = ('APM-0036.omep.net.ru',  # Екименко
-                             'SPR-008.omep.net.ru',  # Терминал №3
-                             'APM-0168.omep.net.ru',  # Отто
-                             'APM-0314.omep.net.ru',  # Чкаловец
-                             'APM-0168.omep.net.ru')  # сервер 192.168.8.30
+    allowed_terminal_list = ('APM-0036',  # Екименко
+                             'SPR-008',  # Терминал №3
+                             'APM-0168',  # Отто
+                             'APM-0314',  # Чекаловец
+                             'APM-0168')  # сервер 192.168.8.30
     terminal_ip = get_client_ip(request)  # определение IP терминала
     terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
-    if terminal_name not in allowed_terminal_list:
+    if terminal_name[:terminal_name.find('.')] not in allowed_terminal_list:
         raise PermissionDenied
+    else:
+        print(f'Permission granted to {terminal_name[:terminal_name.find(".")]}')
 
     # вывод таблицы распределённых РЦ
     today = datetime.datetime.now().strftime('%d.%m.%Y')
