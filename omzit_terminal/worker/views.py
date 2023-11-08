@@ -265,7 +265,7 @@ def pause_work(task_id=None, is_lunch=False):
         # если указан обед, то добавляем все СЗ со статусом "в работе" в список для записи в json
         if is_lunch and not task_id:
             stopped_shift_tasks.append(st.pk)
-        message_to_master = (f"Приостановлена работа на Т{st.workshop}. Номер СЗ: {st.id}. "
+        message_to_master = (f"Приостановлена работа на Т{st.ws_number}. Номер СЗ: {st.id}. "
                              f"Заказ: {st.order}. Изделие: {st.model_name}. "
                              f"Операция: {st.op_number} {st.op_name_full}. "
                              f"Исполнители: {st.fio_doer}")
@@ -333,7 +333,7 @@ def resume_work(task_id=None, is_lunch=False):
     else:
         print('Непредусмотренный случай возобновления работы!')
     for st in shift_tasks:
-        message_to_master = (f"Возобновлена работа на Т{st.workshop}. Номер СЗ: {st.id}. "
+        message_to_master = (f"Возобновлена работа на Т{st.ws_number}. Номер СЗ: {st.id}. "
                              f"Заказ: {st.order}. Изделие: {st.model_name}. "
                              f"Операция: {st.op_number} {st.op_name_full}. "
                              f"Исполнители: {st.fio_doer}")
