@@ -6,7 +6,7 @@ from .db_config import host, dbname, user, password  # TODO перенести �
 
 
 def continue_work(st_number):
-    print(f'Через 10 минут статус СЗ {st_number} измениться на "в работе"')
+    print(f'Через 10 минут статус СЗ {st_number} изменится на "в работе"')
     time.sleep(600)
     try:
         con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
@@ -44,7 +44,7 @@ def select_master_call(ws_number: str, st_number) -> list or None:
         # запрос на все статусы ожидания мастера
         select_query = f"""SELECT id, model_name, "order", op_number, op_name_full, fio_doer
                         FROM shift_task
-                        WHERE st_status='в работе' AND
+                        WHERE st_status in ('в работе', 'пауза')  AND
                         id = '{st_number}'               
                         """
         try:
