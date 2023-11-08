@@ -70,7 +70,7 @@ def worker(request, ws_number):
     initial_shift_tasks = (ShiftTask.objects.values('id', 'ws_number', 'model_name', 'order', 'op_number',
                                                     'op_name_full', 'norm_tech', 'fio_doer', 'st_status',
                                                     'datetime_job_start', 'decision_time')
-                           .filter(ws_number=ws_number).exclude(fio_doer='не распределено')
+                           .filter(ws_number=ws_number, next_shift_task=None).exclude(fio_doer='не распределено')
                            .exclude(Q(decision_time__lte=datetime.datetime.strptime(today, '%d.%m.%Y')) &
                                     Q(st_status='принято'))
                            .exclude(Q(decision_time__lte=datetime.datetime.strptime(today, '%d.%m.%Y')) &

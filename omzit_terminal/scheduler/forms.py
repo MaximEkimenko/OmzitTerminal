@@ -97,7 +97,7 @@ class FioDoer(forms.Form):
             # query_set запроса СЗ
             qs_st_number = (ShiftTask.objects.filter  # выбор "не распределено", "брак", "не принято"
                             (Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
-                            ).filter(ws_number=ws_number, datetime_done=datetime_done)
+                            ).filter(ws_number=ws_number, datetime_done=datetime_done, next_shift_task=None)
         else:
             qs_st_number = None
         # Вызов супер класса для создания поля st_number
