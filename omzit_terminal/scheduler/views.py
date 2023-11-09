@@ -192,7 +192,7 @@ def schedulerwp(request):
             try:
                 filtered_workplace_schedule = (
                     ShiftTask.objects.values(*shift_task_fields)
-                    .filter(ws_number=str(ws_number), datetime_done=datetime_done)
+                    .filter(ws_number=str(ws_number), datetime_done=datetime_done, next_shift_task=None)
                     .filter(Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
                 )
             except Exception as e:
@@ -239,7 +239,7 @@ def schedulerfio(request, ws_number, datetime_done):
     try:
         filtered_workplace_schedule = (
             ShiftTask.objects.values(*shift_task_fields)
-            .filter(ws_number=str(ws_number), datetime_done=formatted_datetime_done)
+            .filter(ws_number=str(ws_number), datetime_done=formatted_datetime_done, next_shift_task=None)
             .filter(Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
         )
         f = get_filterset(data=request.GET, queryset=filtered_workplace_schedule, fields=shift_task_fields)
@@ -263,10 +263,29 @@ def schedulerfio(request, ws_number, datetime_done):
             doers_fios = ', '.join(unique_fios)  # получение уникального списка
             print('DOERS-', doers_fios)
             if len(fios) == len(unique_fios):  # если есть повторения в списке fios
-                (ShiftTask.objects.filter(pk=form_fio_doer.cleaned_data['st_number'].id).update(
-                    fio_doer=doers_fios, datetime_assign_wp=datetime.datetime.now(), st_status='запланировано',
-                    datetime_job_start=None, decision_time=None, master_assign_wp_fio=f'{request.user.first_name} '
-                                                                                      f'{request.user.last_name}'))
+                shift_task = ShiftTask.objects.get(pk=form_fio_doer.cleaned_data['st_number'].id)
+                data = {
+                    'fio_doer': doers_fios,
+                    'datetime_assign_wp': datetime.datetime.now(),
+                    'st_status': 'запланировано',
+                    'datetime_job_start': None,
+                    'decision_time': None,
+                    'master_assign_wp_fio': f'{request.user.first_name} {request.user.last_name}'
+                }
+                if shift_task.st_status == "брак":
+                    #  создаем дубликат СЗ с браком
+                    new_shift_task = ShiftTask.objects.get(pk=form_fio_doer.cleaned_data['st_number'].id)
+                    new_shift_task.pk = None
+                    for field, value in data.items():
+                        setattr(new_shift_task, field, value)
+                    new_shift_task.save()
+                    #  добавляем в СЗ с браком ссылку на новое СЗ для исправления брака
+                    shift_task.next_shift_task = new_shift_task
+                else:
+                    for field, value in data.items():
+                        setattr(shift_task, field, value)
+                shift_task.save()
+
                 alert_message = f'Успешно распределено!'
             else:
                 alert_message = f'Исполнители дублируются. Измените исполнителей.'
