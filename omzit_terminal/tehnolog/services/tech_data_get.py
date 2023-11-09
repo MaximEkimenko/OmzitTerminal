@@ -17,7 +17,7 @@ def tech_data_get(model_order_query: str, exel_file: str, excel_list: str):
     :return: None
     """
     # модель, заказ
-    order, model_name = model_order_query.split('_')
+    model_name, order = model_order_query.split('_')
     # общие данные для всех записей shift_task (СЗ)
     common_data = {
         'model_name': model_name,
