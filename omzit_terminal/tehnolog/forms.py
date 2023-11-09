@@ -10,7 +10,7 @@ class GetTehDataForm(forms.Form):
     """
     # список имен листов книги для чтения
 
-    query_set = WorkshopSchedule.objects.all().exclude(td_status='завершено')
+    query_set = WorkshopSchedule.objects.exclude(td_status__in=('завершено', 'запрошено'))
     model_order_query = QueryAnswerForm(query_set, empty_label='выберите заказ-модель',
                                         label='Заказ модель', required=False)
 
