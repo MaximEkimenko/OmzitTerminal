@@ -3,7 +3,7 @@ from typing import Dict, List
 
 import openpyxl
 import re
-from scheduler.models import ShiftTask, WorkshopSchedule
+from scheduler.models import ShiftTask
 
 
 def tech_data_get(model_order_query: str, exel_file: str, excel_list: str):
@@ -17,7 +17,7 @@ def tech_data_get(model_order_query: str, exel_file: str, excel_list: str):
     :return: None
     """
     # модель, заказ
-    order, model_name = model_order_query.split('_')
+    model_name, order = model_order_query.split('_')
     # общие данные для всех записей shift_task (СЗ)
     common_data = {
         'model_name': model_name,
@@ -32,17 +32,7 @@ def tech_data_get(model_order_query: str, exel_file: str, excel_list: str):
         Метод создает сменные задания
         :return:
         """
-        ws = WorkshopSchedule.objects.get(model_order_query=model_order_query)
-        add_data = {
-            'datetime_done': ws.datetime_done,
-            'workshop': ws.workshop,
-            'product_category': ws.product_category
-        }
-        tasks = []
-        for data in data_list:
-            data.update(add_data)
-            print(f"При обновлении ТД создано СЗ со следующими данными {data}")
-            tasks.append(ShiftTask(**data))
+        tasks = [ShiftTask(**data) for data in data_list]
         ShiftTask.objects.bulk_create(tasks)
 
     # заполнение shift_task
