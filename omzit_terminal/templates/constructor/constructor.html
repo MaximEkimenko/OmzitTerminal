@@ -45,6 +45,8 @@
                         <td class="td_cell">{{ filter.form.model_order_query }} Заказ-модель</td>
                         <td class="td_cell">{{ filter.form.query_prior }} Приоритет</td>
                         <td class="td_cell">{{ filter.form.td_status }} Статус завяки</td>
+                        <td class="td_cell">{{ filter.form.datetime_done }}Дата готовности изделия</td>
+                        <td class="td_cell">{{ filter.form.td_query_datetime }} Дата запроса</td>
                         <td class="td_cell">Папка чертежей</td>
                     </tr>
                     {% for line in filter.qs %}
@@ -52,6 +54,8 @@
                         <td class="td_cell">{{ line.model_order_query }}</td>
                         <td class="td_cell">{{ line.query_prior }}</td>
                         <td class="td_cell">{{ line.td_status }}</td>
+                        <td class="td_cell">{{ line.datetime_done }}</td>
+                        <td class="td_cell">{{ line.td_query_datetime }}</td>
                         <td class="td_cell">
                             <p>\\SVR-003\draws\{{ line.model_order_query }}</p>
                         </td>
@@ -61,29 +65,24 @@
             </form>
 
             <!-- prettier-ignore -->
-	
+
             <h3>Замечания на КД</h3>
             <table class="table" title="Заявки на документацию">
                 <tr class="table_header_row">
                     <td class="td_cell">Заказ-модель</td>
                     <td class="td_cell">Замечение</td>
                 </tr>
-                {% for line in filter.qs %}
-				{% if line.td_remarks %}
-	
+                {% for line in filter.qs %} {% if line.td_remarks %}
+
                 <tr class="table_row">
                     <td class="td_cell">{{ line.model_order_query }}</td>
                     <td class="td_cell">{{ line.td_remarks }}</td>
                 </tr>
-				
-				{% endif %}
-				{% endfor %}
-				
 
+                {% endif %} {% endfor %}
             </table>
             <!-- prettier-ignore -->
 
-			
             <br />
             <div class="form_div">
                 <h3>Форма загрузки КД</h3>

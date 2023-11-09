@@ -18,7 +18,8 @@ def constructor(request):
     if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:11]).strip() != "constructor":
         raise PermissionDenied
     group_id = -908012934  # тг группа
-    td_queries_fields = ('model_order_query', 'query_prior', 'td_status', 'td_remarks')  # поля таблицы
+    td_queries_fields = ('model_order_query', 'query_prior', 'td_status', 'td_remarks', 'datetime_done',
+                         'td_query_datetime')  # поля таблицы
     td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(td_status='завершено'))
     f = get_filterset(data=request.GET, queryset=td_queries, fields=td_queries_fields)  # фильтры в колонки
     query_answer_form = QueryAnswer()
