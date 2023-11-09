@@ -61,23 +61,29 @@
             </form>
 
             <!-- prettier-ignore -->
-            {% for line in filter.qs %}
-            {% if line.td_remarks %}
+	
             <h3>Замечания на КД</h3>
             <table class="table" title="Заявки на документацию">
                 <tr class="table_header_row">
                     <td class="td_cell">Заказ-модель</td>
                     <td class="td_cell">Замечение</td>
                 </tr>
+                {% for line in filter.qs %}
+				{% if line.td_remarks %}
+	
                 <tr class="table_row">
                     <td class="td_cell">{{ line.model_order_query }}</td>
                     <td class="td_cell">{{ line.td_remarks }}</td>
                 </tr>
+				
+				{% endif %}
+				{% endfor %}
+				
+
             </table>
             <!-- prettier-ignore -->
-            {% endif %}
-            {% endfor %}
 
+			
             <br />
             <div class="form_div">
                 <h3>Форма загрузки КД</h3>

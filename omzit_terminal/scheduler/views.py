@@ -87,7 +87,7 @@ def scheduler(request):
                                          f"{form_workshop_plan.cleaned_data['model_order_query'].model_order_query} "
                                          f"успешно запланирован на {form_workshop_plan.cleaned_data['datetime_done']}. "
                                          f"Запланировал: {request.user.first_name} {request.user.last_name}.")
-                # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
             except Exception as e:
                 print(e, ' Ошибка запаси в базу SchedulerWorkshop')
                 alert = f'Ошибка занесения данных.'
