@@ -26,6 +26,8 @@ pavluchenkova_id = 1151694995
 
 averkina_id = 1563020113  # ОТК
 donskaya_id = 6359131276
+sultigova_id = 6049253475
+potapova_id = 5010645397
 
 mhitaryan_id = 413559952  # ПКО
 saks_id = 1366631138  # ОГТ
@@ -44,16 +46,17 @@ id_fios = {admin_id: 'Екименко М.А.',
            pavluchenkova_id: 'Павлюченкова Н. Л.',
            donskaya_id: 'Донская Ю.Г.',  # ОТК
            averkina_id: 'Аверкина О.В.',
+           sultigova_id: 'Султыгова О.',
+           potapova_id: 'Потапова М. А.',
            mhitaryan_id: 'Мхитарян К.',  # ПКО
            saks_id: 'Сакс В.И.'  # ОГТ
-
            }
 
 # пользователи имеющие доступ
 users = (admin_id,  # root
          posohov_id, ermishkin_id, gordii_id, kondratiev_id, achmetov_id,  # производство
          savchenko_id, pavluchenkova_id,  # ПДО
-         donskaya_id, averkina_id,  # ОТК
+         donskaya_id, averkina_id, sultigova_id, potapova_id,  # ОТК
          mhitaryan_id,  # ПКО
          saks_id,  # ОГТ
          )
@@ -375,6 +378,7 @@ async def report_active_shift_tasks(message: types.Message):
     # else:
     #     await message.answer(text='У вас не доступа к этому функционалу. Обратитесь к руководителю.')
     pass
+
 
 async def on_shutdown(_):  # функция выполняется при завершении работы бота
     # await bot.send_message(admin_id, "Bot is offline!")
