@@ -24,37 +24,50 @@
                 //setTimeout(() => notification.remove(), 10000);
             }
         </script>
-        {% if 'Ошибка' in alert %}
-        <script>
-            showNotification({
-                html: "<p class='alert_gone' style='color:red';> {{ alert }} </p>",
-            });
-        </script>
-        {% else %}
-        <script>
-            showNotification({
-                html: "<p class='alert_gone'> {{ alert }} </p>",
-            });
-        </script>
-        {% endif %}
-
-        {% if 'Ошибка' in upload_alert %}
-        <script>
-            showNotification({
-                html: "<p class='alert_gone' style='color:red';> {{ upload_alert }} </p>",
-            });
-        </script>
-        {% else %}
-        <script>
-            showNotification({
-                html: "<p class='alert_gone'> {{ upload_alert }} </p>",
-            });
-        </script>
-        {% endif %}
-
-
-        <div class="modal" id="correction_form">
-            <form id="id_correction_form" action="{% url 'new_model_query' %}" method="post" enctype="multipart/form-data" class="form_form modal-content">
+        <div class="legend">
+            <h4>Обозначения действий</h4>
+            <div class="legend_row">
+                <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" viewBox="0 0 576 512" style="fill: #ffa500">
+                    <path
+                        d="M64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0H64zM256 0V128H384L256 0zM112 256H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16z"
+                    />
+                </svg>
+                Загрузить технологические данные
+            </div>
+            <div class="legend_row">
+                <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" viewBox="0 0 576 512" style="fill: #e60000">
+                    <path
+                        d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"
+                    />
+                </svg>
+                Вернуть КД на доработку
+            </div>
+            <div class="legend_row">
+                <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" viewBox="0 0 576 512" style="fill: #ffa500">
+                    <path
+                        d="M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384v38.6C310.1 219.5 256 287.4 256 368c0 59.1 29.1 111.3 73.7 143.3c-3.2 .5-6.4 .7-9.7 .7H64c-35.3 0-64-28.7-64-64V64zm384 64H256V0L384 128zm48 96a144 144 0 1 1 0 288 144 144 0 1 1 0-288zm16 80c0-8.8-7.2-16-16-16s-16 7.2-16 16v48H368c-8.8 0-16 7.2-16 16s7.2 16 16 16h48v48c0 8.8 7.2 16 16 16s16-7.2 16-16V384h48c8.8 0 16-7.2 16-16s-7.2-16-16-16H448V304z"
+                    />
+                </svg>
+                Дополнить КД
+            </div>
+            <div class="legend_row">
+                <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" viewBox="0 0 576 512" style="fill: #ffa500">
+                    <path
+                        d="M362.7 19.3L314.3 67.7 444.3 197.7l48.4-48.4c25-25 25-65.5 0-90.5L453.3 19.3c-25-25-65.5-25-90.5 0zm-71 71L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4L1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L421.7 220.3 291.7 90.3z"
+                    />
+                </svg>
+                <label>Переименовать заказ-модель</label>
+            </div>
+        </div>
+        <!-- Форма корректировки order_model_query -->
+        <div id="correction_form" class="modal">
+            <form
+                id="id_correction_form"
+                action="{% url 'new_model_query' %}"
+                method="post"
+                enctype="multipart/form-data"
+                class="form_form modal-content"
+            >
                 {% csrf_token %}
                 <div class="add_to_plan">
                     <h3>Форма корректировки заказ-модель</h3>
@@ -73,9 +86,15 @@
                 </div>
             </form>
         </div>
-
+        <!-- Форма отправки КД на доработку -->
         <div id="id_modal_draw_back" class="modal">
-            <form id="id_draw_back_form" action="{% url 'send_draw_back' %}" method="post" enctype="multipart/form-data" class="form_form modal-content">
+            <form
+                id="id_draw_back_form"
+                action="{% url 'send_draw_back' %}"
+                method="post"
+                enctype="multipart/form-data"
+                class="form_form modal-content"
+            >
                 {% csrf_token %}
                 <div class="add_to_plan">
                     <h3>Форма возварата КД на доработку</h3>
@@ -94,9 +113,15 @@
                 </div>
             </form>
         </div>
-
+        <!-- Форма загрузки ТД -->
         <div id="id_modal_td" class="modal">
-            <form id="id_td_form" action="{% url 'tehnolog' %}" method="post" enctype="multipart/form-data" class="form_form modal-content">
+            <form
+                id="id_td_form"
+                action="{% url 'tehnolog' %}"
+                method="post"
+                enctype="multipart/form-data"
+                class="form_form modal-content"
+            >
                 {% csrf_token %}
                 <div class="add_to_plan">
                     <h3>Форма для загрузки технологических данных</h3>
@@ -115,7 +140,7 @@
                 </div>
             </form>
         </div>
-        <!-- prettier-ignore -->
+        <!-- Основная таблица интерфейса -->
         {% if td_queries %}
         <div class="table_div">
             <h3>Заявки на документацию</h3>
@@ -136,54 +161,95 @@
                         <p>\\SVR-003\draws\{{ line.model_order_query }}</p>
                     </td>
                     <td class="td_cell">
-                        {% if line.td_status != "запрошено"  %}
-                            <button class="td_upload_btn btn" value="{{ line.model_order_query }}" title="Загрузить ТД">
-                                <svg xmlns="http://www.w3.org/2000/svg" height="2em" viewBox="0 0 384 512" style="fill:#ffa500"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0H64zM256 0V128H384L256 0zM112 256H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16z"/></svg>
-                            </button>
-                        {% endif %}
-                    </td>
-                    <td class="td_cell">
-                        {% if line.td_status != "запрошено"  %}
-                        <button class="draw_back_btn btn" value="{{ line.model_order_query }}" title="Вернуть КД на доработку">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="2em" viewBox="0 0 384 512" style="fill:#e60000"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>
+                        {% if line.td_status != "запрошено" %}
+                        <!-- кнопка загрузить технологические данные -->
+                        <button class="td_upload_btn btn" value="{{ line.model_order_query }}" title="Загрузить ТД">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                height="2em"
+                                viewBox="0 0 384 512"
+                                style="fill: #ffa500"
+                            >
+                                <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
+                                <path
+                                    d="M64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0H64zM256 0V128H384L256 0zM112 256H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16z"
+                                />
+                            </svg>
                         </button>
+                        <p>Загрузить ТД</p>
+                        {% endif %}
+                    </td>
+
+                    <td class="td_cell">
+                        {% if line.td_status != "запрошено" %}
+                        <!-- Кнопока вернуть чертёж на доработку -->
+                        <button
+                            class="draw_back_btn btn"
+                            value="{{ line.model_order_query }}"
+                            title="Вернуть КД на доработку"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                height="2em"
+                                viewBox="0 0 384 512"
+                                style="fill: #e60000"
+                            >
+                                <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
+                                <path
+                                    d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"
+                                />
+                            </svg>
+                        </button>
+                        <p>Вернуть КД</p>
                         {% endif %}
                     </td>
                     <td class="td_cell">
-                         {% if line.td_status != "запрошено"  %}
+                        {% if line.td_status != "запрошено" %}
+                        <!-- Кнопка дополнить КД -->
                         <button class="upload_draw btn" value="{{ line.model_order_query }}" title="Загрузить КД">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="2em" viewBox="0 0 576 512" style="fill:#ffa500"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384v38.6C310.1 219.5 256 287.4 256 368c0 59.1 29.1 111.3 73.7 143.3c-3.2 .5-6.4 .7-9.7 .7H64c-35.3 0-64-28.7-64-64V64zm384 64H256V0L384 128zm48 96a144 144 0 1 1 0 288 144 144 0 1 1 0-288zm16 80c0-8.8-7.2-16-16-16s-16 7.2-16 16v48H368c-8.8 0-16 7.2-16 16s7.2 16 16 16h48v48c0 8.8 7.2 16 16 16s16-7.2 16-16V384h48c8.8 0 16-7.2 16-16s-7.2-16-16-16H448V304z"/></svg>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                height="2em"
+                                viewBox="0 0 576 512"
+                                style="fill: #ffa500"
+                            >
+                                <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
+                                <path
+                                    d="M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384v38.6C310.1 219.5 256 287.4 256 368c0 59.1 29.1 111.3 73.7 143.3c-3.2 .5-6.4 .7-9.7 .7H64c-35.3 0-64-28.7-64-64V64zm384 64H256V0L384 128zm48 96a144 144 0 1 1 0 288 144 144 0 1 1 0-288zm16 80c0-8.8-7.2-16-16-16s-16 7.2-16 16v48H368c-8.8 0-16 7.2-16 16s7.2 16 16 16h48v48c0 8.8 7.2 16 16 16s16-7.2 16-16V384h48c8.8 0 16-7.2 16-16s-7.2-16-16-16H448V304z"
+                                />
+                            </svg>
                         </button>
+                        <p>Дополнить КД</p>
                         {% endif %}
                     </td>
                     <td class="td_cell">
-                        {% if line.order_status != "запланировано"  %}
-                        <button class="change_omq btn" value="{{ line.model_order_query }}" title="Откорректировать заказ-модель">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="2em" viewBox="0 0 512 512" style="fill:#ffa500"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M362.7 19.3L314.3 67.7 444.3 197.7l48.4-48.4c25-25 25-65.5 0-90.5L453.3 19.3c-25-25-65.5-25-90.5 0zm-71 71L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4L1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L421.7 220.3 291.7 90.3z"/></svg>
+                        {% if line.order_status != "запланировано" %}
+                        <!-- Переименовать заказ-модель -->
+                        <button
+                            class="change_omq btn"
+                            value="{{ line.model_order_query }}"
+                            title="Откорректировать заказ-модель"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                height="2em"
+                                viewBox="0 0 512 512"
+                                style="fill: #ffa500"
+                            >
+                                <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
+                                <path
+                                    d="M362.7 19.3L314.3 67.7 444.3 197.7l48.4-48.4c25-25 25-65.5 0-90.5L453.3 19.3c-25-25-65.5-25-90.5 0zm-71 71L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4L1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L421.7 220.3 291.7 90.3z"
+                                />
+                            </svg>
                         </button>
+                        <p>Переименовать заказ-модель</p>
                         {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
             </table>
-            <div class="legend">
-                <div class="legend_row">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" viewBox="0 0 576 512" style="fill:#ffa500"><path d="M64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0H64zM256 0V128H384L256 0zM112 256H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16z"/></svg>
-                    Загрузить технологические данные
-                </div>
-                <div class="legend_row">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" viewBox="0 0 576 512" style="fill:#e60000"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>
-                    Вернуть КД на доработку
-                </div>
-                <div class="legend_row">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" viewBox="0 0 576 512" style="fill:#ffa500"><path d="M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384v38.6C310.1 219.5 256 287.4 256 368c0 59.1 29.1 111.3 73.7 143.3c-3.2 .5-6.4 .7-9.7 .7H64c-35.3 0-64-28.7-64-64V64zm384 64H256V0L384 128zm48 96a144 144 0 1 1 0 288 144 144 0 1 1 0-288zm16 80c0-8.8-7.2-16-16-16s-16 7.2-16 16v48H368c-8.8 0-16 7.2-16 16s7.2 16 16 16h48v48c0 8.8 7.2 16 16 16s16-7.2 16-16V384h48c8.8 0 16-7.2 16-16s-7.2-16-16-16H448V304z"/></svg>
-                    Загрузить КД
-                </div>
-                <div class="legend_row">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" viewBox="0 0 576 512" style="fill:#ffa500"><path d="M362.7 19.3L314.3 67.7 444.3 197.7l48.4-48.4c25-25 25-65.5 0-90.5L453.3 19.3c-25-25-65.5-25-90.5 0zm-71 71L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4L1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L421.7 220.3 291.7 90.3z"/></svg>
-                    <label>Переименовать заказ-модель</label>
-                </div>
-            </div>
+            <!-- Легенда обозначений -->
+
             {% else %}
             <p>Заявки на КД отсутствуют отсутствуют</p>
             {% endif %}
@@ -191,7 +257,13 @@
         <br />
         <br />
         <div id="id_modal_td_kd" class="modal">
-            <form id="id_td_kd_form" class="form_form modal-content" action="{% url 'tehnolog' %}" method="post" enctype="multipart/form-data">
+            <form
+                id="id_td_kd_form"
+                class="form_form modal-content"
+                action="{% url 'tehnolog' %}"
+                method="post"
+                enctype="multipart/form-data"
+            >
                 {% csrf_token %}
                 <div class="add_to_plan">
                     <h3>Форма загрузки КД</h3>
@@ -216,107 +288,111 @@
         <script src="{% static 'tehnolog/js/tehnolog.js' %}"></script>
 
         <script>
-            document.addEventListener('DOMContentLoaded', function () { // При загрузке документа
+            document.addEventListener("DOMContentLoaded", function () {
+                // При загрузке документа
                 const sel = id_td_form.elements.model_order_query; // Получаем все селекты
                 console.log(sel);
-                const buttons = document.querySelectorAll('.td_upload_btn'); // Получаем кнопки с классом
+                const buttons = document.querySelectorAll(".td_upload_btn"); // Получаем кнопки с классом
                 console.log(buttons);
-                buttons.forEach(function (c) { // Для каждой кнопки
-                    c.onclick = function () { // Слушаем нажатие
+                buttons.forEach(function (c) {
+                    // Для каждой кнопки
+                    c.onclick = function () {
+                        // Слушаем нажатие
                         // Если нажата, то выбирает тот option, который в тексте кнопки.
-                        const modal = document.querySelector('#id_modal_td');
-                        modal.style.display = 'block';
-                        for (var n = 0; n < sel.length; n++)
-                        {
-                            if (sel.options[n].text == c.value)
-                            sel.options[n].selected = true;
+                        const modal = document.querySelector("#id_modal_td");
+                        modal.style.display = "block";
+                        for (var n = 0; n < sel.length; n++) {
+                            if (sel.options[n].text == c.value) sel.options[n].selected = true;
                         }
                         id_td_form.elements.list_names.focus();
                         window.onclick = function (event) {
-                          if (event.target == modal) {
-                            modal.style.display = 'none';
-                          }
+                            if (event.target == modal) {
+                                modal.style.display = "none";
+                            }
                         };
-                    }
-                })
-            })
+                    };
+                });
+            });
         </script>
         <script>
-            document.addEventListener('DOMContentLoaded', function () { // При загрузке документа
+            document.addEventListener("DOMContentLoaded", function () {
+                // При загрузке документа
                 const sel = id_draw_back_form.elements.model_order_query; // Получаем все селекты
                 console.log(sel);
-                const buttons = document.querySelectorAll('.draw_back_btn'); // Получаем кнопки с классом
+                const buttons = document.querySelectorAll(".draw_back_btn"); // Получаем кнопки с классом
                 console.log(buttons);
-                buttons.forEach(function (c) { // Для каждой кнопки
-                    c.onclick = function () { // Слушаем нажатие
+                buttons.forEach(function (c) {
+                    // Для каждой кнопки
+                    c.onclick = function () {
+                        // Слушаем нажатие
                         // Если нажата, то выбирает тот option, который в тексте кнопки.
-                        const modal = document.querySelector('#id_modal_draw_back');
-                        modal.style.display = 'block';
-                        for (var n = 0; n < sel.length; n++)
-                        {
-                            if (sel.options[n].text == c.value)
-                            sel.options[n].selected = true;
+                        const modal = document.querySelector("#id_modal_draw_back");
+                        modal.style.display = "block";
+                        for (var n = 0; n < sel.length; n++) {
+                            if (sel.options[n].text == c.value) sel.options[n].selected = true;
                         }
                         id_draw_back_form.elements.td_remarks.focus();
                         window.onclick = function (event) {
-                          if (event.target == modal) {
-                            modal.style.display = 'none';
-                          }
+                            if (event.target == modal) {
+                                modal.style.display = "none";
+                            }
                         };
-                    }
-                })
-            })
+                    };
+                });
+            });
         </script>
         <script>
-            document.addEventListener('DOMContentLoaded', function () { // При загрузке документа
+            document.addEventListener("DOMContentLoaded", function () {
+                // При загрузке документа
                 const sel = id_correction_form.elements.model_order_query; // Получаем все селекты
                 console.log(sel);
-                const buttons = document.querySelectorAll('.change_omq'); // Получаем кнопки с классом
+                const buttons = document.querySelectorAll(".change_omq"); // Получаем кнопки с классом
                 console.log(buttons);
-                buttons.forEach(function (c) { // Для каждой кнопки
-                    c.onclick = function () { // Слушаем нажатие
+                buttons.forEach(function (c) {
+                    // Для каждой кнопки
+                    c.onclick = function () {
+                        // Слушаем нажатие
                         // Если нажата, то выбирает тот option, который в тексте кнопки.
-                        const modal = document.querySelector('#correction_form');
-                        modal.style.display = 'block';
-                        for (var n = 0; n < sel.length; n++)
-                        {
-                            if (sel.options[n].text == c.value)
-                            sel.options[n].selected = true;
+                        const modal = document.querySelector("#correction_form");
+                        modal.style.display = "block";
+                        for (var n = 0; n < sel.length; n++) {
+                            if (sel.options[n].text == c.value) sel.options[n].selected = true;
                         }
                         // correction_form.elements.td_remarks.focus();
                         window.onclick = function (event) {
-                          if (event.target == modal) {
-                            modal.style.display = 'none';
-                          }
+                            if (event.target == modal) {
+                                modal.style.display = "none";
+                            }
                         };
-                    }
-                })
-            })
+                    };
+                });
+            });
         </script>
-         <script>
-            document.addEventListener('DOMContentLoaded', function () { // При загрузке документа
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                // При загрузке документа
                 const sel = id_td_kd_form.elements.model_order_query; // Получаем все селекты
                 console.log(sel);
-                const buttons = document.querySelectorAll('.upload_draw'); // Получаем кнопки с классом
+                const buttons = document.querySelectorAll(".upload_draw"); // Получаем кнопки с классом
                 console.log(buttons);
-                buttons.forEach(function (c) { // Для каждой кнопки
-                    c.onclick = function () { // Слушаем нажатие
+                buttons.forEach(function (c) {
+                    // Для каждой кнопки
+                    c.onclick = function () {
+                        // Слушаем нажатие
                         // Если нажата, то выбирает тот option, который в тексте кнопки.
-                        const modal = document.querySelector('#id_modal_td_kd');
-                        modal.style.display = 'block';
-                        for (var n = 0; n < sel.length; n++)
-                        {
-                            if (sel.options[n].text == c.value)
-                            sel.options[n].selected = true;
+                        const modal = document.querySelector("#id_modal_td_kd");
+                        modal.style.display = "block";
+                        for (var n = 0; n < sel.length; n++) {
+                            if (sel.options[n].text == c.value) sel.options[n].selected = true;
                         }
                         window.onclick = function (event) {
-                          if (event.target == modal) {
-                            modal.style.display = 'none';
-                          }
+                            if (event.target == modal) {
+                                modal.style.display = "none";
+                            }
                         };
-                    }
-                })
-            })
+                    };
+                });
+            });
         </script>
 
         <div style="height: 150px"></div>

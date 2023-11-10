@@ -65,7 +65,7 @@ masters_list = (admin_id, ermishkin_id, posohov_id, gordii_id, kondratiev_id, ac
 
 dispatchers_list = (admin_id, savchenko_id, pavluchenkova_id,)  # диспетчеры
 
-control_mans_list = (admin_id, donskaya_id, averkina_id)  # контролёры
+control_mans_list = (admin_id, donskaya_id, averkina_id, sultigova_id, potapova_id)  # контролёры
 
 bot = Bot(token=TOKEN)  # инициализация бота
 dp = Dispatcher(bot)  # инициализация диспетчера

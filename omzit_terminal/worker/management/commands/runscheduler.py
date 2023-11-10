@@ -31,9 +31,9 @@ class Command(BaseCommand):
     help = "Runs APScheduler."
 
     def handle(self, *args, **options):
-        scheduler = BlockingScheduler(timezone=settings.TIME_ZONE)
+        scheduler = BlockingScheduler(timezone=settings.TIME_ZONE, job_defaults={'misfire_grace_time': 1*60})
         scheduler.add_jobstore(DjangoJobStore(), "default")
-
+        print("Scheduler запущен")
         scheduler.add_job(
             pause_work,
             kwargs={'is_lunch': True, },
@@ -41,7 +41,9 @@ class Command(BaseCommand):
             id="Приостановка работы в обед",
             max_instances=1,
             replace_existing=True,
+            misfire_grace_time=1*60,
         )
+
         logger.info("Запущена задача 'Приостановка работы в обед' каждый день в 12:00.")
 
         scheduler.add_job(

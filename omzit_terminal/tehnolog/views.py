@@ -27,6 +27,7 @@ def tehnolog_wp(request):
     td_queries_fields = ('model_order_query', 'query_prior', 'td_status', 'td_remarks', 'order_status')  # поля таблицы
     td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(td_status='завершено'))
     f = get_filterset(data=request.GET, queryset=td_queries, fields=td_queries_fields)  # фильтры в колонки
+    print(f)
     change_model_query_form = ChangeOrderModel()
     send_draw_back_form = SendDrawBack()
     alert = ''
@@ -99,7 +100,8 @@ def tehnolog_wp(request):
         'get_teh_data_form': get_teh_data_form, 'alert': alert,
         'change_model_query_form': change_model_query_form,
         'send_draw_back_form': send_draw_back_form,
-        'filter': f
+        'filter': f,
+        'td_queries': td_queries
     })
     return render(request, r"tehnolog/tehnolog.html", context=context)
 
