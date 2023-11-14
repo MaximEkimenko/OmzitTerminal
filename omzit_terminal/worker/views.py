@@ -54,9 +54,12 @@ def worker(request, ws_number):
                              'SPR-008',  # Терминал №3
                              'APM-0168',  # Отто
                              'APM-0314',  # Чекаловец
-                             'APM-0168')  # сервер 192.168.8.30
+                             'APM-0168',
+                             'kubernetes'
+                             )  # сервер 192.168.8.30
     terminal_ip = get_client_ip(request)  # определение IP терминала
     terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
+    print(terminal_name)
     if terminal_name[:terminal_name.find('.')] not in allowed_terminal_list:
         raise PermissionDenied
     else:

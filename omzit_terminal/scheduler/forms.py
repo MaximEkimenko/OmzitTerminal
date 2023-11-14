@@ -2,7 +2,7 @@ import datetime
 
 from django import forms
 # from tehnolog.models import ProductModel
-from .models import ShiftTask, WorkshopSchedule, Doers
+from .models import ShiftTask, WorkshopSchedule, Doers, model_pattern, model_error_text, order_pattern, order_error_text
 from django.forms import ModelChoiceField
 from django.db.models import Q
 from tehnolog.models import ProductCategory
@@ -34,8 +34,10 @@ class QueryDraw(forms.Form):
     Форма запроса чертежа
     """
     # model_query = forms.CharField(max_length=50, label='Модель запроса КД', required=False)
-    model_query = forms.CharField(max_length=50, label='Модель запроса КД')
-    order_query = forms.CharField(max_length=50, label='Заказ запроса КД')
+    model_query = forms.CharField(max_length=50, label='Модель запроса КД',
+                                  widget=forms.TextInput(attrs={'pattern': model_pattern, 'title': model_error_text}))
+    order_query = forms.CharField(max_length=50, label='Заказ запроса КД',
+                                  widget=forms.TextInput(attrs={'pattern': order_pattern, 'title': order_error_text}))
     query_prior = forms.ChoiceField(choices=((1, 1), (2, 2), (3, 3), (4, 4)), label='Приоритет', initial=1,
                                     required=False)
 
