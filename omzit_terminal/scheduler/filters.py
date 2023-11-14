@@ -28,6 +28,7 @@ class FieldsFilter(django_filters.FilterSet):
                 ChoiceFilter(
                     choices=fields_values[name],
                     widget=forms.Select(attrs={'onchange': f"onChange{self.index}()",
+                                               'form': f'filter_form{self.index}',
                                                'style': "width: 20px; height: 20px;"
                                                         "border-radius: 0;"}),
                     empty_label='',

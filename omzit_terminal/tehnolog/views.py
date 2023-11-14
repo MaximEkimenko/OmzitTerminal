@@ -2,7 +2,6 @@ import datetime
 import json
 import os
 import asyncio
-
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 
@@ -14,6 +13,7 @@ from scheduler.models import WorkshopSchedule
 from worker.services.master_call_function import terminal_message_to_id
 from django.core.exceptions import PermissionDenied
 from scheduler.filters import get_filterset
+TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
 
 
 @login_required(login_url="../scheduler/login/")
@@ -23,7 +23,7 @@ def tehnolog_wp(request):
     :param request:
     :return:
     """
-    group_id = -908012934  # тг группа
+    group_id = TERMINAL_GROUP_ID  # тг группа
     td_queries_fields = ('model_order_query', 'query_prior', 'td_status', 'td_remarks', 'order_status')  # поля таблицы
     td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(td_status='завершено'))
     f = get_filterset(data=request.GET, queryset=td_queries, fields=td_queries_fields)  # фильтры в колонки
@@ -113,7 +113,7 @@ def send_draw_back(request):
     :param request:
     :return:
     """
-    group_id = -908012934  # тг группа
+    group_id = TERMINAL_GROUP_ID  # тг группа
     if request.method == 'POST':
         send_draw_back_form = SendDrawBack(request.POST)
         if send_draw_back_form.is_valid():
@@ -147,7 +147,7 @@ def new_model_query(request):
     :param request:
     :return:
     """
-    group_id = -908012934  # тг группа
+    group_id = TERMINAL_GROUP_ID  # тг группа
     if request.method == 'POST':
         change_model_query_form = ChangeOrderModel(request.POST)
         if change_model_query_form.is_valid():
@@ -223,7 +223,7 @@ def upload_draws(request, draws_path, group_id):
                                          f"{model_order_query}. "
                                          f"Обновил: {request.user.first_name} {request.user.last_name}. "
                                          f"Загружено файлов: {len(files)}.")
-                # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
                 print(success_group_message, group_id)
         else:
             print('INVALID FORM!')

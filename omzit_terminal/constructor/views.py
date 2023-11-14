@@ -1,8 +1,7 @@
+import os
 import asyncio
 import datetime
-import os
-from django.http import HttpResponseRedirect, FileResponse
-from django.urls import reverse
+from django.http import FileResponse
 from tehnolog.services.service_handlers import handle_uploaded_file
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
@@ -11,13 +10,15 @@ from .forms import QueryAnswer
 from worker.services.master_call_function import terminal_message_to_id
 from django.core.exceptions import PermissionDenied
 from scheduler.filters import get_filterset
+# ADMIN_TELEGRAM_ID
+TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
 
 
 @login_required(login_url="../scheduler/login/")
 def constructor(request):
     if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:11]).strip() != "constructor":
         raise PermissionDenied
-    group_id = -908012934  # тг группа
+    group_id = TERMINAL_GROUP_ID  # тг группа
     td_queries_fields = ('model_order_query', 'query_prior', 'td_status', 'td_remarks', 'datetime_done',
                          'td_query_datetime')  # поля таблицы
     td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(td_status='завершено'))

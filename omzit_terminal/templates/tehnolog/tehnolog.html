@@ -9,56 +9,34 @@
     </head>
     <body>
         {% if request.user.is_authenticated %}
-        <div class="logined_user">{{ user.username }} | <a href="{% url 'logout' %}"> Выйти </a></div>
-        <a href="{% url 'instruction' %}" class="red_word">Инструкция</a> <br />
+        <div class="legend">
+            <div>
+                <p>Пользователь: {{ user.username }} | <a href="{% url 'logout' %}" class="legend_link"> Выйти </a></p>
+                <p><a href="{% url 'instruction' %}">Инструкция</a> <br /></p>
+                <p>Папка с чертежами: \\SVR-003\draws</p>
+            </div>
+        </div>
         {% else %} <a href="{% url 'login' %}"> Войти </a>
         {%endif %}
         <h1>Рабочее место технолога</h1>
+        {% if alert %}
         <script>
-            function showNotification({ top = 0, right = 0, html }) {
+            function showNotification({ top = 0, right = 0, html, class_name }) {
                 let notification = document.createElement("div");
-                notification.className = "notification";
+                notification.className = class_name;
                 notification.innerHTML = html;
                 document.body.append(notification);
-                setTimeout(() => (notification.style.opacity = 0), 10000);
-                //setTimeout(() => notification.remove(), 10000);
+                // setTimeout(() => (notification.style.opacity = 0), 10000);
+                setTimeout(() => notification.remove(), 10000);
             }
+            showNotification({
+                // class_name: "alert_gone",
+                class_name: "notification",
+                html: "<p class='alert_gone'> {{ alert }} </p>",
+            });
         </script>
-        <div class="legend">
-            <h4>Обозначения действий</h4>
-            <div class="legend_row">
-                <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" viewBox="0 0 576 512" style="fill: #ffa500">
-                    <path
-                        d="M64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0H64zM256 0V128H384L256 0zM112 256H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16z"
-                    />
-                </svg>
-                Загрузить технологические данные
-            </div>
-            <div class="legend_row">
-                <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" viewBox="0 0 576 512" style="fill: #e60000">
-                    <path
-                        d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"
-                    />
-                </svg>
-                Вернуть КД на доработку
-            </div>
-            <div class="legend_row">
-                <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" viewBox="0 0 576 512" style="fill: #ffa500">
-                    <path
-                        d="M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384v38.6C310.1 219.5 256 287.4 256 368c0 59.1 29.1 111.3 73.7 143.3c-3.2 .5-6.4 .7-9.7 .7H64c-35.3 0-64-28.7-64-64V64zm384 64H256V0L384 128zm48 96a144 144 0 1 1 0 288 144 144 0 1 1 0-288zm16 80c0-8.8-7.2-16-16-16s-16 7.2-16 16v48H368c-8.8 0-16 7.2-16 16s7.2 16 16 16h48v48c0 8.8 7.2 16 16 16s16-7.2 16-16V384h48c8.8 0 16-7.2 16-16s-7.2-16-16-16H448V304z"
-                    />
-                </svg>
-                Дополнить КД
-            </div>
-            <div class="legend_row">
-                <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" viewBox="0 0 576 512" style="fill: #ffa500">
-                    <path
-                        d="M362.7 19.3L314.3 67.7 444.3 197.7l48.4-48.4c25-25 25-65.5 0-90.5L453.3 19.3c-25-25-65.5-25-90.5 0zm-71 71L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4L1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L421.7 220.3 291.7 90.3z"
-                    />
-                </svg>
-                <label>Переименовать заказ-модель</label>
-            </div>
-        </div>
+        {% endif %}
+
         <!-- Форма корректировки order_model_query -->
         <div id="correction_form" class="modal">
             <form
@@ -72,14 +50,11 @@
                 <div class="add_to_plan">
                     <h3>Форма корректировки заказ-модель</h3>
                     <div class="form-error">{{ change_model_query_form.non_field_errors }}</div>
-
                     {% for each_form in change_model_query_form %}
-
                     <div class="form_inner_label">
                         <label for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
                     </div>
                     <div class="form_inner_div">{{ each_form }}</div>
-
                     <div class="form-error">{{ each_form.errors }}</div>
                     {% endfor %}
                     <button type="submit" class="form_button">переименовать</button>
@@ -99,9 +74,7 @@
                 <div class="add_to_plan">
                     <h3>Форма возварата КД на доработку</h3>
                     <div class="form-error">{{ send_draw_back_form.non_field_errors }}</div>
-
                     {% for each_form in send_draw_back_form %}
-
                     <div class="form_inner_label" style="vertical-align: middle">
                         <label for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
                     </div>
@@ -126,14 +99,11 @@
                 <div class="add_to_plan">
                     <h3>Форма для загрузки технологических данных</h3>
                     <div class="form-error">{{ get_teh_data_form.non_field_errors }}</div>
-
                     {% for each_form in get_teh_data_form %}
-
                     <div class="form_inner_label">
                         <label for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
                     </div>
                     <div class="form_inner_div">{{ each_form }}</div>
-
                     <div class="form-error">{{ each_form.errors }}</div>
                     {% endfor %}
                     <button type="submit" class="form_button"><p class="green_word">Добавить</p></button>
@@ -144,43 +114,32 @@
         {% if td_queries %}
         <div class="table_div">
             <h3>Заявки на документацию</h3>
+            <p>
+                <input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр" />
+            </p>
             <table title="Заявки на документацию" class="table">
                 <tr class="table_header_row">
-                    <td class="td_cell">Заказ-модель</td>
-                    <td class="td_cell">Приоритет</td>
-                    <td class="td_cell">Статус заявки</td>
-                    <td class="td_cell">Папка чертежей</td>
-                    <td class="td_cell" colspan="4">Действия</td>
+                    <form method="get" id="filter_form">
+                        <td class="td_cell">{{ filter.form.model_order_query }} Заказ-модель</td>
+
+                        <td class="td_cell">{{ filter.form.query_prior }}Приоритет</td>
+                        <td class="td_cell">{{ filter.form.td_status }} Статус заявки</td>
+                    </form>
+                    <td class="td_cell">Действия</td>
                 </tr>
-                {% for line in td_queries %}
+                {% for line in filter.qs %}
                 <tr class="table_row">
                     <td class="td_cell">{{ line.model_order_query }}</td>
                     <td class="td_cell">{{ line.query_prior }}</td>
                     <td class="td_cell">{{ line.td_status }}</td>
                     <td class="td_cell">
-                        <p>\\SVR-003\draws\{{ line.model_order_query }}</p>
-                    </td>
-                    <td class="td_cell">
                         {% if line.td_status != "запрошено" %}
                         <!-- кнопка загрузить технологические данные -->
                         <button class="td_upload_btn btn" value="{{ line.model_order_query }}" title="Загрузить ТД">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                height="2em"
-                                viewBox="0 0 384 512"
-                                style="fill: #ffa500"
-                            >
-                                <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
-                                <path
-                                    d="M64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0H64zM256 0V128H384L256 0zM112 256H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64H272c8.8 0 16 7.2 16 16s-7.2 16-16 16H112c-8.8 0-16-7.2-16-16s7.2-16 16-16z"
-                                />
-                            </svg>
+                            Загрузить ТД
                         </button>
-                        <p>Загрузить ТД</p>
-                        {% endif %}
-                    </td>
-
-                    <td class="td_cell">
+                        <!-- prettier-ignore -->
+                        {% endif %} 
                         {% if line.td_status != "запрошено" %}
                         <!-- Кнопока вернуть чертёж на доработку -->
                         <button
@@ -188,41 +147,17 @@
                             value="{{ line.model_order_query }}"
                             title="Вернуть КД на доработку"
                         >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                height="2em"
-                                viewBox="0 0 384 512"
-                                style="fill: #e60000"
-                            >
-                                <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
-                                <path
-                                    d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"
-                                />
-                            </svg>
+                            Вернуть КД
                         </button>
-                        <p>Вернуть КД</p>
-                        {% endif %}
-                    </td>
-                    <td class="td_cell">
+                        <!-- prettier-ignore -->
+                        {% endif %} 
                         {% if line.td_status != "запрошено" %}
                         <!-- Кнопка дополнить КД -->
                         <button class="upload_draw btn" value="{{ line.model_order_query }}" title="Загрузить КД">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                height="2em"
-                                viewBox="0 0 576 512"
-                                style="fill: #ffa500"
-                            >
-                                <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
-                                <path
-                                    d="M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384v38.6C310.1 219.5 256 287.4 256 368c0 59.1 29.1 111.3 73.7 143.3c-3.2 .5-6.4 .7-9.7 .7H64c-35.3 0-64-28.7-64-64V64zm384 64H256V0L384 128zm48 96a144 144 0 1 1 0 288 144 144 0 1 1 0-288zm16 80c0-8.8-7.2-16-16-16s-16 7.2-16 16v48H368c-8.8 0-16 7.2-16 16s7.2 16 16 16h48v48c0 8.8 7.2 16 16 16s16-7.2 16-16V384h48c8.8 0 16-7.2 16-16s-7.2-16-16-16H448V304z"
-                                />
-                            </svg>
+                            Дополнить КД
                         </button>
-                        <p>Дополнить КД</p>
-                        {% endif %}
-                    </td>
-                    <td class="td_cell">
+                        <!-- prettier-ignore -->
+                        {% endif %} 
                         {% if line.order_status != "запланировано" %}
                         <!-- Переименовать заказ-модель -->
                         <button
@@ -230,26 +165,13 @@
                             value="{{ line.model_order_query }}"
                             title="Откорректировать заказ-модель"
                         >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                height="2em"
-                                viewBox="0 0 512 512"
-                                style="fill: #ffa500"
-                            >
-                                <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
-                                <path
-                                    d="M362.7 19.3L314.3 67.7 444.3 197.7l48.4-48.4c25-25 25-65.5 0-90.5L453.3 19.3c-25-25-65.5-25-90.5 0zm-71 71L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4L1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L421.7 220.3 291.7 90.3z"
-                                />
-                            </svg>
+                            Переименовать ЗМ
                         </button>
-                        <p>Переименовать заказ-модель</p>
                         {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
             </table>
-            <!-- Легенда обозначений -->
-
             {% else %}
             <p>Заявки на КД отсутствуют отсутствуют</p>
             {% endif %}
@@ -272,7 +194,6 @@
                     <br />
                     <div class="form_inner_label">{{ draw_files_upload_form.draw_files.label }}</div>
                     <div class="form_inner_div">{{ draw_files_upload_form.draw_files }}</div>
-
                     <div>
                         <button type="submit" class="form_button">
                             <p class="red_word">Загрузить чертежи</p>
@@ -286,14 +207,12 @@
         <a href="{% url 'home' %}">Назад</a> <br />
         {%endif %}
         <script src="{% static 'tehnolog/js/tehnolog.js' %}"></script>
-
         <script>
+            // кнопка загрузить ТД
             document.addEventListener("DOMContentLoaded", function () {
                 // При загрузке документа
                 const sel = id_td_form.elements.model_order_query; // Получаем все селекты
-                console.log(sel);
                 const buttons = document.querySelectorAll(".td_upload_btn"); // Получаем кнопки с классом
-                console.log(buttons);
                 buttons.forEach(function (c) {
                     // Для каждой кнопки
                     c.onclick = function () {
@@ -315,12 +234,11 @@
             });
         </script>
         <script>
+            // кнопка вернуть КД
             document.addEventListener("DOMContentLoaded", function () {
                 // При загрузке документа
                 const sel = id_draw_back_form.elements.model_order_query; // Получаем все селекты
-                console.log(sel);
                 const buttons = document.querySelectorAll(".draw_back_btn"); // Получаем кнопки с классом
-                console.log(buttons);
                 buttons.forEach(function (c) {
                     // Для каждой кнопки
                     c.onclick = function () {
@@ -342,12 +260,11 @@
             });
         </script>
         <script>
+            // кнопка вернуть КД
             document.addEventListener("DOMContentLoaded", function () {
                 // При загрузке документа
                 const sel = id_correction_form.elements.model_order_query; // Получаем все селекты
-                console.log(sel);
                 const buttons = document.querySelectorAll(".change_omq"); // Получаем кнопки с классом
-                console.log(buttons);
                 buttons.forEach(function (c) {
                     // Для каждой кнопки
                     c.onclick = function () {
@@ -370,11 +287,9 @@
         </script>
         <script>
             document.addEventListener("DOMContentLoaded", function () {
-                // При загрузке документа
+                // кнопка дополнить КД
                 const sel = id_td_kd_form.elements.model_order_query; // Получаем все селекты
-                console.log(sel);
                 const buttons = document.querySelectorAll(".upload_draw"); // Получаем кнопки с классом
-                console.log(buttons);
                 buttons.forEach(function (c) {
                     // Для каждой кнопки
                     c.onclick = function () {
@@ -393,6 +308,11 @@
                     };
                 });
             });
+        </script>
+        <script>
+            function onChange() {
+                document.getElementById("filter_form").submit();
+            }
         </script>
 
         <div style="height: 150px"></div>

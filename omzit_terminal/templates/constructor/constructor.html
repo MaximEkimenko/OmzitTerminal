@@ -9,93 +9,102 @@
     <body>
         <h1>Рабочее место конструктора</h1>
         {% if request.user.is_authenticated %}
-        <div class="logined_user">{{ user.username }} | <a href="{% url 'logout' %}"> Выйти </a></div>
-        <a href="{% url 'instruction' %}" class="red_word">Инструкция</a> <br />
-        {% else %} <a href="{% url 'login' %}"> Войти </a>
-        {%endif %}
-
+        <div class="legend">
+            <div>
+                <p>Пользователь: {{ user.username }} | <a href="{% url 'logout' %}" class="legend_link"> Выйти </a></p>
+                <p><a href="{% url 'instruction' %}">Инструкция</a></p>
+                <p>Папка с чертежами: \\SVR-003\draws</p>
+            </div>
+        </div>
+        {% else %}
+        <a href="{% url 'login' %}"> Войти </a>
+        <!-- prettier-ignore -->
+        {%endif %} 
+        {% if alert %}
         <script>
-            function showNotification({ top = 0, right = 0, html }) {
+            function showNotification({ top = 0, right = 0, html, class_name }) {
                 let notification = document.createElement("div");
-                notification.className = "notification";
+                notification.className = class_name;
                 notification.innerHTML = html;
                 document.body.append(notification);
-                setTimeout(() => (notification.style.opacity = 0), 10000);
-                //setTimeout(() => notification.remove(), 10000);
+                // setTimeout(() => (notification.style.opacity = 0), 10000);
+                setTimeout(() => notification.remove(), 10000);
             }
             showNotification({
+                class_name: "notification",
                 html: "<p class='alert_gone'> {{ alert }} </p>",
             });
         </script>
-
+        {%endif %}
         <div class="col">
-            <!-- prettier-ignore -->
-
+            <!-- Основная таблица интерфейса -->
             <h3>Заявки на документацию</h3>
-            <form method="get" id="form2">
-                <p>
-                    <input
-                        type="button"
-                        onclick="window.location.href = '{{ request.path }}';"
-                        value="Сбросить фильтр"
-                    />
-                </p>
-                <table class="table" title="Заявки на документацию">
+            <p>
+                <input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр" />
+            </p>
+            <table class="table" title="Заявки на документацию">
+                <form method="get" id="filter_form">
                     <tr class="table_header_row">
                         <td class="td_cell">{{ filter.form.model_order_query }} Заказ-модель</td>
                         <td class="td_cell">{{ filter.form.query_prior }} Приоритет</td>
                         <td class="td_cell">{{ filter.form.td_status }} Статус завяки</td>
-                        <td class="td_cell">{{ filter.form.datetime_done }}Дата готовности изделия</td>
+                        <td class="td_cell">{{ filter.form.datetime_done }}Дата готовности</td>
                         <td class="td_cell">{{ filter.form.td_query_datetime }} Дата запроса</td>
-                        <td class="td_cell">Папка чертежей</td>
+                        <td class="td_cell">Действие</td>
                     </tr>
-                    {% for line in filter.qs %}
-                    <tr class="table_row">
-                        <td class="td_cell">{{ line.model_order_query }}</td>
-                        <td class="td_cell">{{ line.query_prior }}</td>
-                        <td class="td_cell">{{ line.td_status }}</td>
-                        <td class="td_cell">{{ line.datetime_done }}</td>
-                        <td class="td_cell">{{ line.td_query_datetime }}</td>
-                        <td class="td_cell">
-                            <p>\\SVR-003\draws\{{ line.model_order_query }}</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </table>
-            </form>
+                </form>
+                {% for line in filter.qs %}
+                <tr class="table_row">
+                    <td class="td_cell">{{ line.model_order_query }}</td>
+                    <td class="td_cell">{{ line.query_prior }}</td>
+                    <td class="td_cell">{{ line.td_status }}</td>
+                    <td class="td_cell">{{ line.datetime_done }}</td>
+                    <td class="td_cell">{{ line.td_query_datetime }}</td>
+                    <td class="td_cell">
+                        <button class="kd_upload_btn btn" value="{{ line.model_order_query }}" title="Загрузить КД">
+                            Загрузить КД
+                        </button>
+                    </td>
+                </tr>
 
-            <!-- prettier-ignore -->
-
+                {% endfor %}
+            </table>
+            <!-- Таблица замечаний к КД -->
             <h3>Замечания на КД</h3>
-            <table class="table" title="Заявки на документацию">
+            <table class="table" title="Замечания на КД">
                 <tr class="table_header_row">
                     <td class="td_cell">Заказ-модель</td>
                     <td class="td_cell">Замечение</td>
                 </tr>
-                {% for line in filter.qs %} {% if line.td_remarks %}
-
+                <!-- prettier-ignore -->
+                {% for line in filter.qs %} 
+                    {% if line.td_remarks %}
                 <tr class="table_row">
                     <td class="td_cell">{{ line.model_order_query }}</td>
                     <td class="td_cell">{{ line.td_remarks }}</td>
                 </tr>
-
-                {% endif %} {% endfor %}
+                <!-- prettier-ignore -->
+                {% endif %} 
+                {% endfor %}
             </table>
-            <!-- prettier-ignore -->
-
             <br />
-            <div class="form_div">
-                <h3>Форма загрузки КД</h3>
-
-                <form class="form_form" action="{% url 'constructor' %}" method="post" enctype="multipart/form-data">
+            <!-- Форма загрузки КД -->
+            <div id="query_answer" class="modal">
+                <form
+                    id="id_query_answer_form"
+                    action="{% url 'constructor' %}"
+                    method="post"
+                    enctype="multipart/form-data"
+                    class="form_form modal-content"
+                >
                     {% csrf_token %}
-                    <div class="td_query_block">
+                    <div class="add_to_plan">
+                        <h3>Форма загрузки КД</h3>
                         <div class="form_inner_label">{{ query_answer_form.model_order_query.label }}</div>
                         <div class="form_inner_div">{{ query_answer_form.model_order_query }}</div>
                         <br />
                         <div class="form_inner_label">{{ query_answer_form.draw_files.label }}</div>
                         <div class="form_inner_div">{{ query_answer_form.draw_files }}</div>
-
                         <div>
                             <button type="submit" class="form_button">
                                 <p class="red_word">Загрузить чертежи</p>
@@ -104,39 +113,36 @@
                     </div>
                 </form>
             </div>
-
-            <!-- <div class="form_button">
-                <button class="form_button" id="show_all">
-                    <p class="red_word">показать всё</p>
-                </button>
-            </div> -->
-            <!-- 
             <script>
-                let button = document.getElementById("show_all");
-                button.onclick = handleButtonClick2;
-
-                function handleButtonClick2() {
-                    window.open("file:\\\SVR-003\\draws{{ line.model_order_query }}\\");
-                }
+                document.addEventListener("DOMContentLoaded", function () {
+                    // Кнопка загрузки КД
+                    const sel = id_query_answer_form.elements.model_order_query; // Получаем все селекты
+                    const buttons = document.querySelectorAll(".kd_upload_btn"); // Получаем кнопки с классом
+                    buttons.forEach(function (c) {
+                        // Для каждой кнопки
+                        c.onclick = function () {
+                            // Слушаем нажатие
+                            // Если нажата, то выбирает тот option, который в тексте кнопки.
+                            const modal = document.querySelector("#query_answer");
+                            modal.style.display = "block";
+                            for (var n = 0; n < sel.length; n++) {
+                                if (sel.options[n].text == c.value) sel.options[n].selected = true;
+                            }
+                            window.onclick = function (event) {
+                                if (event.target == modal) {
+                                    modal.style.display = "none";
+                                }
+                            };
+                        };
+                    });
+                });
             </script>
-
-            <script>
-                // строка таблицы заявок чертежей
-                const table_row = document.getElementsByClassName("table_row");
-                // скрытие отправленных
-                for (let i = 0; i < table_row.length; i++) {
-                    console.log(table_row);
-                    if (!table_row[i].innerText.includes("запрошено")) {
-                        table_row[i].style.display = "none";
-                    }
-                }
-            </script> -->
             <script src="{% static 'constructor/js/constructor.js' %}"></script>
         </div>
         <br />
         <script>
             function onChange() {
-                document.getElementById("form2").submit();
+                document.getElementById("filter_form").submit();
             }
         </script>
         {% if user.username == 'admin' %}

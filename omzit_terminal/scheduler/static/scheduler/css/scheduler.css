@@ -1,11 +1,6 @@
 body {
     font-family: Arial, Helvetica, sans-serif;
     text-align: center;
-    /* background-image: linear-gradient(to top, rgba(255, 174, 0, 0.473), rgba(0, 68, 255, 0.493));
-    
-
-    /* background-image: repeating-linear-gradient(red, yellow 200%, green 200%); */
-    /* color: #707070; */
     color: white;
 
     background-image: url("background.png");
@@ -238,16 +233,75 @@ input {
     border-bottom: 0.5px solid red;
     margin: 2px;
 }
-/* .logined_user {
-    font-size: 20px;
-    text-align: right;
-    position: absolute;
-    top: 30px;
-    right: 20px;
-    bottom: 0px;
-    left: 0px;
-    width: auto;
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
 }
-.logined_user a {
-    color: black;
-} */
+
+.modal-content {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.add_to_plan {
+    background-color: #31343c;
+    border: solid green 1px;
+    margin: 10px;
+    border-radius: 10px;
+}
+
+.close {
+    /* some rules */
+}
+/* Стили модальных окон */
+.btn {
+    background-color: white;
+    border: solid 2px black;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 0 14px 0 14px;
+    box-shadow: 10em;
+}
+.btn:hover {
+    background-color: green;
+    color: white;
+    border: solid 2px black;
+    border-radius: 10px;
+    /* font-weight: bold; */
+    /* width: 15em; */
+}
+/* Стили легенды окон */
+.legend {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    /* display: block; */
+    text-align: right;
+    width: max-content;
+}
+.legend a {
+    color: red;
+    text-align: right;
+}
+
+.notification {
+    /* position: absolute; */
+    display: block;
+}
+
+.scheduler {
+    /* float: right; */
+    display: inline-block;
+}

@@ -20,9 +20,6 @@ from .services.master_call_function import send_call_master, send_call_dispatche
 from .services.master_call_function import get_client_ip
 
 
-# TODO найти решение аналогов РЦ. Убрать обозначение РЦ "РЦ№1/РЦ№2" - вместо "/" использовать "-"
-
-
 def ws_number_choose(request):
     """
     Выбор РЦ
@@ -64,7 +61,6 @@ def worker(request, ws_number):
         raise PermissionDenied
     else:
         print(f'Permission granted to {terminal_name[:terminal_name.find(".")]}')
-
     # вывод таблицы распределённых РЦ
     today = datetime.datetime.now().strftime('%d.%m.%Y')
     initial_shift_tasks = (ShiftTask.objects.values('id', 'ws_number', 'model_name', 'order', 'op_number',
@@ -164,7 +160,6 @@ def draws(request, ws_st_number: str):
                                              'draw_filename', 'model_order_query')
                     .filter(ws_number=ws_number, op_number=op_number, model_name=model_name, id=st_number))
     print(select_draws)
-    # draw_path = str(select_draws[0]['draw_path']).strip()  # путь к чертежам
     draw_path = fr"C:\draws\{select_draws[0]['model_order_query']}\\"
 
     pdf_links = []  # список словарей чертежей
@@ -195,8 +190,6 @@ def show_draw(request, ws_number, pdf_file):
 
 
 def make_master_call(request, ws_st_number):
-    # group_id = -908012934  # тг группа
-    # omzit_master_group1_id = -4005524766
     ws_number = str(ws_st_number)[:str(ws_st_number).find('-')]
     st_number = str(ws_st_number)[str(ws_st_number).rfind('-') + 1:]
     print('ws = ', ws_number)
@@ -218,8 +211,6 @@ def make_master_call(request, ws_st_number):
         return redirect(f'/worker/{ws_number}?call=True')
     elif st_number == '0':
         return redirect(f'/worker/{ws_number}?call=False_wrong')
-    # elif messages is None and st_number:
-    #     return redirect(f'/worker/{ws_number}?call=False_need')
     else:
         return redirect(f'/worker/{ws_number}?call=False')
 
@@ -247,9 +238,6 @@ def make_dispatcher_call(request, ws_st_number):
         return redirect(f'/worker/{ws_number}?call=True_disp')
     elif st_number == 0:
         return redirect(f'/worker/{ws_number}?call=False_wrong')
-    # else:
-    #     print('NO MESSAGE!')
-    #     return redirect(f'/worker/{ws_number}')
 
 
 def pause_work(task_id=None, is_lunch=False):

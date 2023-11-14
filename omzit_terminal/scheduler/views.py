@@ -18,6 +18,7 @@ from .models import WorkshopSchedule, ShiftTask
 
 from .services.schedule_handlers import get_all_done_rate
 from worker.services.master_call_function import terminal_message_to_id
+TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
 
 
 @login_required(login_url="login/")
@@ -29,7 +30,7 @@ def scheduler(request):
         """
     if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:4]).strip() != "disp":
         raise PermissionDenied
-    group_id = -908012934  # тг группа
+    group_id = TERMINAL_GROUP_ID  # тг группа
 
     # обновление процента готовности всех заказов
     # TODO модифицировать расчёт процента готовности всех заказов по взвешенной трудоёмкости
@@ -43,7 +44,7 @@ def scheduler(request):
     # фильтры в колонки графика
     f_w = get_filterset(data=request.GET, queryset=workshop_schedule, fields=workshop_schedule_fields, index=1)
     # перечень запросов на КД
-    td_queries_fields = ('model_order_query', 'query_prior', 'td_status')  # поля таблицы
+    td_queries_fields = ('model_order_query', 'query_prior', 'td_status', 'order_status')  # поля таблицы
     td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(td_status='завершено'))
     # фильтры в колонки заявок
     # f_q = get_filterset_second_table(data=request.GET, queryset=td_queries, fields=td_queries_fields)
@@ -115,7 +116,7 @@ def td_query(request):
     :param request:
     :return:
     """
-    group_id = -908012934  # тг группа
+    group_id = TERMINAL_GROUP_ID  # тг группа
     if request.method == 'POST':
         form_query_draw = QueryDraw(request.POST)
         if form_query_draw.is_valid():
@@ -209,7 +210,7 @@ def schedulerwp(request):
         'workplace_schedule': workplace_schedule,
         'form_workplace_plan': form_workplace_plan,
         'alert_message': alert_message,
-        'filter': f
+        # 'filter': f
     }
     return render(request, fr"schedulerwp/schedulerwp.html", context=context)
 
@@ -246,10 +247,8 @@ def schedulerfio(request, ws_number, datetime_done):
     except Exception as e:
         filtered_workplace_schedule = dict()
         print('Ошибка получения filtered_workplace_schedule', e)
-
     success = 1
     alert_message = ''
-
     if request.method == 'POST':
         print('POST')
         form_fio_doer = FioDoer(request.POST, ws_number=ws_number, datetime_done=formatted_datetime_done)

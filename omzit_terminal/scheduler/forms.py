@@ -18,9 +18,6 @@ class SchedulerWorkshop(forms.Form):
 
     model_order_query = QueryAnswerForm(query_set, empty_label='выберите заказ-модель', label='Заказ-модель')
 
-    # model_name = forms.ModelChoiceField(queryset=query_set, empty_label='Модель не выбрана',
-    #                                     label='Модель заказа для планирования')
-
     workshop = forms.ChoiceField(choices=((1, 'Цех 1'), (2, 'Цех 2'), (3, 'Цех 3'), (4, 'Цех 4')),
                                  label='Цех', required=True)
     query_set = ProductCategory.objects.all()
@@ -80,7 +77,7 @@ class FiosLabel(ModelChoiceField):  # переопределение метод�
     """
 
     def label_from_instance(self, obj):
-        return (f"{obj.id}. Заказ - {obj.order}. №РЦ- {obj.ws_number}. Изделие - {obj.model_name}. "
+        return (f"{obj.id}. Заказ - {obj.order}. №T-{obj.ws_number}. Изделие - {obj.model_name}. "
                 f"Статус - {obj.st_status}")
 
 

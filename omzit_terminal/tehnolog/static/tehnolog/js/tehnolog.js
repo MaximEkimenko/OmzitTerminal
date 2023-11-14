@@ -19,5 +19,3 @@ for (let i = 0; i < td_cell.length; i++) {
         td_cell[i].style.color = "white";
     }
 }
-// td_cell[1].style.color = "red";
-// .style.setProperty("color", "blue", "important")

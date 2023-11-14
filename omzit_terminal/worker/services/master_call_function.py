@@ -31,6 +31,13 @@ async def send_call_master(message_to_master):
 
 
 async def send_call_dispatcher(message_to_master):
+    """
+    Отправка сообщения в группу мастерам для диспетчера
+    :param message_to_master:
+    :return:
+    """
+    # TODO сравнить с send_call_master и заменить на него если не понадобится разделять процессы мастера и диспетчера
+    #  до обновления 5
     await bot.send_message(chat_id=omzit_master_group1_id, text=message_to_master)
 
 
@@ -50,6 +57,7 @@ def get_client_ip(request):
     :param request:
     :return:
     """
+    # TODO убрать HTTP_X_FORWARDED_FOR, если не понадобится до обновления 4
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
         ip = x_forwarded_for.split(',')[-1].strip()

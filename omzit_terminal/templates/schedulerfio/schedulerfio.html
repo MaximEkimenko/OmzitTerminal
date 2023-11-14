@@ -9,105 +9,174 @@
 
     <body>
         {% if request.user.is_authenticated %}
-        <div class="logined_user">{{ user.username }} | <a href="{% url 'logout' %}"> Выйти </a></div>
-        <a href="{% url 'instruction' %}" class="red_word">Инструкция</a> <br />
-        {% else %} <a href="{% url 'login' %}"> Войти </a>
+        <div class="legend">
+            <div>
+                <p>Пользователь: {{ user.username }} | <a href="{% url 'logout' %}" class="legend_link"> Выйти </a></p>
+                <p><a href="{% url 'instruction' %}">Инструкция</a></p>
+                <p>Папка с чертежами: \\SVR-003\draws</p>
+            </div>
+        </div>
+        {% else %}
+        <a href="{% url 'login' %}"> Войти </a>
+        <!-- prettier-ignore -->
         {%endif %}
         <h1>
             <!-- prettier-ignore -->
             Распределение ФИО для Т{{ filtered_workplace_schedule.0.ws_number }} на дату {{ filtered_workplace_schedule.0.datetime_done }}
         </h1>
-
-        {% if filtered_workplace_schedule %}
+        {% if alert_message != '' %}
+        <script>
+            function showNotification({ top = 0, right = 0, html, class_name }) {
+                let notification = document.createElement("div");
+                notification.className = class_name;
+                notification.innerHTML = html;
+                document.body.append(notification);
+                setTimeout(() => notification.remove(), 10000);
+            }
+            showNotification({
+                class_name: "notification",
+                html: "<p class='alert_gone'> {{ alert_message }} </p>",
+            });
+        </script>
+        {% endif %} {% if filtered_workplace_schedule %}
 
         <p class="alert">Сменные задания для распределения:</p>
-        <form method="get" id="form2">
-            <p>
-                <input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр" />
-            </p>
-            <table class="table" title="График рабочих центров">
+
+        <p>
+            <input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр" />
+        </p>
+        <table class="table" title="График рабочих центров">
+            <form method="get" id="filter_form">
                 <tr class="table_header_row">
+                    <td class="td_cell">Действие</td>
                     <td class="td_cell">{{ filter.form.id }} №СЗ</td>
-                    <td class="td_cell">{{ filter.form.workshop }} Цех</td>
+                    <td class="td_cell">Цех</td>
                     <td class="td_cell">{{ filter.form.order }} Заказ</td>
                     <td class="td_cell">{{ filter.form.model_name }} Изделие</td>
                     <td class="td_cell">{{ filter.form.datetime_done }} Дата готовности</td>
-                    <td class="td_cell">{{ filter.form.ws_number }} Номер РЦ</td>
+                    <td class="td_cell">Номер Т</td>
                     <td class="td_cell">{{ filter.form.op_number }} Номер операции</td>
                     <td class="td_cell">{{ filter.form.op_name_full }} Операция</td>
-                    <td class="td_cell">{{ filter.form.norm_tech }} Норма времени</td>
+                    <td class="td_cell">Норма времени</td>
                     <td class="td_cell">{{ filter.form.fio_doer }} Фио исполнителя</td>
                     <td class="td_cell">{{ filter.form.st_status }} Статус СЗ</td>
                 </tr>
+            </form>
+            {% for line in filter.qs %}
 
-                {% for line in filter.qs %}
-                <tr class="table_row">
-                    {% for el in line.values %}
-                    <td class="td_cell">{{ el }}</td>
-                    {% endfor %}
-                </tr>
+            <tr class="table_row">
+                <td class="td_cell">
+                    <button class="id_plan_fio_btn btn" value="{{ line.id }}" title="Распределить">Распределить</button>
+                </td>
+                {% for el in line.values %}
+                <td class="td_cell">{{ el }}</td>
                 {% endfor %}
-            </table>
-        </form>
+            </tr>
+            <!-- prettier-ignore -->
+            {% endfor %}
+            {{ st_number }}
+        </table>
+
         {% else %}
         <p class="alert">Все сменные задания для РЦ распределены.</p>
 
         {% endif %}
         <!--форма выбора ФИО-->
-        {% if alert_message != '' %}
-        <p class="alert_gone">{{ alert_message }}</p>
-        {% endif %} {% if filtered_workplace_schedule %}
-        <p class="alert">Распределите сменные задания:</p>
-        <form action="" method="post" enctype="multipart/form-data" id="mainform" class="form_form">
-            {% csrf_token %}
-            <div class="form-error">{{ form_fio_doer.non_field_errors }}</div>
 
-            <div class="form_inner_label">
-                <label class="form-label" for="{{ form_fio_doer.id_for_label }}"
-                    >{{form_fio_doer.st_number.label}}:
-                </label>
-            </div>
-            <div class="form_inner_div">{{ form_fio_doer.st_number }}</div>
-            <br />
+        {% if filtered_workplace_schedule %}
+        <!-- Форма распределения -->
+        <div class="modal" id="plan_fio">
+            <form
+                id="id_plan_fio_form"
+                action=""
+                method="post"
+                enctype="multipart/form-data"
+                class="form_form modal-content"
+            >
+                {% csrf_token %}
+                <div class="add_to_plan">
+                    <p class="alert">Распределите сменные задания:</p>
+                    <div class="form_inner_label">
+                        <label class="form-label" for="{{ form_fio_doer.id_for_label }}"
+                            >{{form_fio_doer.st_number.label}}:
+                        </label>
+                    </div>
+                    <div class="form_inner_div">{{ form_fio_doer.st_number }}</div>
+                    <br />
 
-            <div class="form_inner_label">
-                <label class="form-label" for="{{ form_fio_doer.id_for_label }}">{{form_fio_doer.fio_1.label}}: </label>
-            </div>
-            <div class="form_inner_div">{{ form_fio_doer.fio_1 }}</div>
-            <br />
-            <div class="form_inner_label">
-                <label class="form-label" for="{{ form_fio_doer.id_for_label }}">{{form_fio_doer.fio_2.label}}: </label>
-            </div>
-            <div class="form_inner_div">{{ form_fio_doer.fio_2 }}</div>
-            <br />
-            <div class="form_inner_label">
-                <label class="form-label" for="{{ form_fio_doer.id_for_label }}">{{form_fio_doer.fio_3.label}}: </label>
-            </div>
-            <div class="form_inner_div">{{ form_fio_doer.fio_3 }}</div>
-            <br />
-            <div class="form_inner_label">
-                <label class="form-label" for="{{ form_fio_doer.id_for_label }}">{{form_fio_doer.fio_4.label}}: </label>
-            </div>
-            <div class="form_inner_div">{{ form_fio_doer.fio_4 }}</div>
-            <br />
-            <div class="form-error">{{ form_fio_doer.errors }}</div>
+                    <div class="form_inner_label">
+                        <label class="form-label" for="{{ form_fio_doer.id_for_label }}"
+                            >{{form_fio_doer.fio_1.label}}:
+                        </label>
+                    </div>
+                    <div class="form_inner_div">{{ form_fio_doer.fio_1 }}</div>
+                    <br />
+                    <div class="form_inner_label">
+                        <label class="form-label" for="{{ form_fio_doer.id_for_label }}"
+                            >{{form_fio_doer.fio_2.label}}:
+                        </label>
+                    </div>
+                    <div class="form_inner_div">{{ form_fio_doer.fio_2 }}</div>
+                    <br />
+                    <div class="form_inner_label">
+                        <label class="form-label" for="{{ form_fio_doer.id_for_label }}"
+                            >{{form_fio_doer.fio_3.label}}:
+                        </label>
+                    </div>
+                    <div class="form_inner_div">{{ form_fio_doer.fio_3 }}</div>
+                    <br />
+                    <div class="form_inner_label">
+                        <label class="form-label" for="{{ form_fio_doer.id_for_label }}"
+                            >{{form_fio_doer.fio_4.label}}:
+                        </label>
+                    </div>
+                    <div class="form_inner_div">{{ form_fio_doer.fio_4 }}</div>
+                    <br />
+                    <div class="form-error">{{ form_fio_doer.errors }}</div>
 
-            <button class="form_button" type="submit" class="form_button">Назначить ФИО</button>
-        </form>
+                    <button class="form_button" type="submit" class="form_button">Назначить ФИО</button>
+                </div>
+            </form>
+        </div>
 
         {% endif %}
-        <!-- <script>
-            const notification = document.getElementsByClassName("alert_gone")[0];
-            if ({{success}} === 0) {
-              notification.style.color = "red";
-            }
-        </script> -->
+
+        <script>
+            // кнопки распределения
+            document.addEventListener("DOMContentLoaded", function () {
+                const sel = id_plan_fio_form.elements.st_number; // Получаем все селекты
+                const buttons = document.querySelectorAll(".id_plan_fio_btn"); // Получаем кнопки с классом
+                buttons.forEach(function (c) {
+                    // Для каждой кнопки
+                    c.onclick = function () {
+                        // Слушаем нажатие
+                        // Если нажата, то выбирает тот option, который в тексте кнопки.
+                        const modal = document.querySelector("#plan_fio");
+                        modal.style.display = "block";
+                        for (var n = 0; n < sel.length; n++) {
+                            // получение номера сменного задания из строки form_fio_doer.st_number
+                            let st_string = sel.options[n].text;
+                            let str_index = st_string.indexOf(".");
+                            let st_number = st_string.slice(0, str_index);
+                            if (st_number == c.value) sel.options[n].selected = true;
+                        }
+                        window.onclick = function (event) {
+                            if (event.target == modal) {
+                                modal.style.display = "none";
+                            }
+                        };
+                    };
+                });
+            });
+        </script>
+
         <script>
             function onChange() {
-                document.getElementById("form2").submit();
+                document.getElementById("filter_form").submit();
             }
         </script>
         <a href="{% url 'schedulerwp' %}">Выбор терминала</a> <br />
+        <div style="height: 150px"></div>
         <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
     </body>
 </html>
