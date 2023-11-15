@@ -59,7 +59,6 @@ def worker(request, ws_number):
                              )  # сервер 192.168.8.30
     terminal_ip = get_client_ip(request)  # определение IP терминала
     terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
-    print(terminal_name)
     if terminal_name[:terminal_name.find('.')] not in allowed_terminal_list:
         raise PermissionDenied
     else:
