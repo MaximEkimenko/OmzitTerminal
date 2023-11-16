@@ -86,7 +86,7 @@ DATABASES = {
         'USER': 'admin',
         'PASSWORD': 'Epass1',
         'HOST': 'localhost',
-        # 'HOST': '192.168.8.163'
+        # 'HOST': '192.168.8.163',
         # 'HOST': '192.168.8.30'
         'PORT': '',
     }
