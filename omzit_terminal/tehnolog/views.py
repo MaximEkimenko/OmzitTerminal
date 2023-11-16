@@ -13,6 +13,7 @@ from scheduler.models import WorkshopSchedule
 from worker.services.master_call_function import terminal_message_to_id
 from django.core.exceptions import PermissionDenied
 from scheduler.filters import get_filterset
+# ADMIN_TELEGRAM_ID
 TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
 
 

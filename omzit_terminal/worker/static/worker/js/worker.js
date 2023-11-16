@@ -42,6 +42,11 @@ for (let i = 0; i < td_cell.length; i++) {
         td_cell[i].style.setProperty("background-color", color_control_man, "important");
         td_cell[i].style.color = "black";
         td_cell[i].style.setProperty("font-weight", "bold");
+    } else if (td_cell[i].innerText === "пауза") {
+        //td_cell[i].bgColor = color_control_man;
+        td_cell[i].style.setProperty("background-color", color_master, "important");
+        td_cell[i].style.color = "black";
+        td_cell[i].style.setProperty("font-weight", "bold");
     } else if (
         td_cell[i].innerText === "брак" ||
         td_cell[i].innerText === "не принято" ||

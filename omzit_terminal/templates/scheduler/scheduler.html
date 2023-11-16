@@ -61,7 +61,8 @@
                     <td class="td_cell">{{ line.query_prior }}</td>
                     <td class="td_cell">{{ line.td_status }}</td>
                     <td class="td_cell">
-                        {% if line.td_status == "утверждено" and line.order_status != "запланировано"%}
+                        <!-- prettier-ignore -->
+                        {% if line.td_status == "утверждено" and line.order_status != "в работе" and line.order_status != "запланировано" and line.order_status != "завершено" %}
                         <button
                             class="id_plan_workshop_btn btn"
                             value="{{ line.model_order_query }}"

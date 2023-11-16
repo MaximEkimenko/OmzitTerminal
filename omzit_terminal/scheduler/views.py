@@ -18,7 +18,7 @@ from .models import WorkshopSchedule, ShiftTask
 
 from .services.schedule_handlers import get_all_done_rate
 from worker.services.master_call_function import terminal_message_to_id
-TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
+TERMINAL_GROUP_ID = os.getenv('ADMIN_TELEGRAM_ID')
 
 
 @login_required(login_url="login/")
