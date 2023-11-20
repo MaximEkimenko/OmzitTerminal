@@ -158,7 +158,7 @@
                         </button>
                         <!-- prettier-ignore -->
                         {% endif %} 
-                        {% if line.order_status != "запланировано" %}
+                        {% if line.order_status != "запланировано" and line.order_status != "в работе" %}
                         <!-- Переименовать заказ-модель -->
                         <button
                             class="change_omq btn"

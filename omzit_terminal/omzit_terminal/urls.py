@@ -9,8 +9,8 @@ urlpatterns = [
     path('scheduler/', include('scheduler.urls')),
     path('worker/', include('worker.urls')),
     path('constructor/', include('constructor.urls')),
-    # TODO отредактировать после тестов
-    path('pdf', get_pdf),
+
+
 
 ]
 

@@ -13,11 +13,12 @@ from django.urls import reverse_lazy
 from django.db.models import Q
 
 from .filters import get_filterset
-from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw
+from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw, PlanBid
 from .models import WorkshopSchedule, ShiftTask
 
 from .services.schedule_handlers import get_all_done_rate
 from worker.services.master_call_function import terminal_message_to_id
+
 TERMINAL_GROUP_ID = os.getenv('ADMIN_TELEGRAM_ID')
 
 
@@ -337,3 +338,159 @@ def show_workshop_scheme(request):
         return response
     except FileNotFoundError as e:
         print(e)
+
+
+@login_required(login_url="login/")
+def plan(request):
+    """
+            Планирование графика цеха и создание запросов на КД
+            :param request:
+            :return:
+            """
+    if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:4]).strip() != "disp":
+        raise PermissionDenied
+    group_id = TERMINAL_GROUP_ID  # тг группа
+
+    # обновление процента готовности всех заказов
+    # TODO модифицировать расчёт процента готовности всех заказов по взвешенной трудоёмкости
+    #  сделать невозможным заполнять запрос с кириллицей
+    get_all_done_rate()
+    # график изделий
+    workshop_schedule_fields = ('workshop', 'order', 'model_name', 'datetime_done', 'order_status', 'done_rate')
+    workshop_schedule = (WorkshopSchedule.objects.values(*workshop_schedule_fields)
+                         .exclude(datetime_done=None).exclude(order_status='не запланировано')
+                         .order_by('datetime_done'))
+    # фильтры в колонки графика
+    f_w = get_filterset(data=request.GET, queryset=workshop_schedule, fields=workshop_schedule_fields, index=1)
+    # фильтры в колонки заявок
+
+    # форма запроса КД
+    if request.method == 'POST':
+        form_workshop_plan = SchedulerWorkshop(request.POST)
+        if form_workshop_plan.is_valid():
+            print(form_workshop_plan.cleaned_data)
+            # заполнение графика цеха датой готовности и цехом
+            try:
+                # Планирование графика цеха
+                # заполнение срока готовности, категория изделия, статус изделия, ФИО планировщика
+                (WorkshopSchedule.objects.filter(model_order_query=form_workshop_plan.
+                                                 cleaned_data['model_order_query'].model_order_query).update(
+                    datetime_done=form_workshop_plan.cleaned_data['datetime_done'],
+                    workshop=form_workshop_plan.cleaned_data['workshop'],
+                    product_category=str(form_workshop_plan.cleaned_data['category']),
+                    order_status='запланировано',
+                    dispatcher_plan_ws_fio=f'{request.user.first_name} {request.user.last_name}'))
+                # Заполнение данных СЗ, статус СЗ, ФИО планировщика, категория изделия,
+                alert = 'Данные в график успешно занесены! '
+                print('Данные в график успешно занесены!\n')
+                # заполнение модели ShiftTask данными планирования цехов
+                print(ShiftTask.objects.filter(model_order_query=form_workshop_plan.cleaned_data['model_order_query']))
+                (ShiftTask.objects.filter(
+                    model_order_query=form_workshop_plan.cleaned_data['model_order_query'].model_order_query)
+                 .update(workshop=form_workshop_plan.cleaned_data['workshop'],
+                         datetime_done=form_workshop_plan.cleaned_data['datetime_done'],
+                         product_category=str(form_workshop_plan.cleaned_data['category']),
+                         ))
+                print('Данные сменного задания успешно занесены!')
+                alert += 'Данные сменного задания успешно занесены.'
+                context = {'form_workshop_plan': form_workshop_plan, 'alert': alert,
+                           'workshop_schedule': workshop_schedule, 'filter_w': f_w, }
+                # сообщение в группу
+                success_group_message = (f"Заказ-модель: "
+                                         f"{form_workshop_plan.cleaned_data['model_order_query'].model_order_query} "
+                                         f"успешно запланирован на {form_workshop_plan.cleaned_data['datetime_done']}. "
+                                         f"Запланировал: {request.user.first_name} {request.user.last_name}.")
+                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+            except Exception as e:
+                print(e, ' Ошибка запаси в базу SchedulerWorkshop')
+                alert = f'Ошибка занесения данных.'
+                context = {'form_workshop_plan': form_workshop_plan, 'workshop_schedule': workshop_schedule,
+                           'alert': alert, 'filter_w': f_w, }
+                return render(request, r"scheduler/scheduler.html", context=context)
+        else:
+            context = {'form_workshop_plan': form_workshop_plan, 'workshop_schedule': workshop_schedule,
+                       'filter_w': f_w, }
+    else:
+        # чистые формы для первого запуска
+        form_workshop_plan = SchedulerWorkshop()
+        context = {'form_workshop_plan': form_workshop_plan, 'workshop_schedule': workshop_schedule,
+                   'filter_w': f_w}
+    return render(request, r"scheduler/plan.html", context=context)
+
+
+@login_required(login_url="login/")
+def test_scheduler(request):
+    """
+        Планирование графика цеха и создание запросов на КД
+        :param request:
+        :return:
+        """
+    if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:4]).strip() != "disp":
+        raise PermissionDenied
+    group_id = TERMINAL_GROUP_ID  # тг группа
+
+    # обновление процента готовности всех заказов
+    # TODO модифицировать расчёт процента готовности всех заказов по взвешенной трудоёмкости
+    #  сделать невозможным заполнять запрос с кириллицей
+    # фильтры в колонки графика
+    # перечень запросов на КД
+    td_queries_fields = ('model_order_query', 'query_prior', 'td_status', 'order_status')  # поля таблицы
+    td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(td_status='завершено'))
+    # фильтры в колонки заявок
+    # f_q = get_filterset_second_table(data=request.GET, queryset=td_queries, fields=td_queries_fields)
+    f_q = get_filterset(data=request.GET, queryset=td_queries, fields=td_queries_fields, index=2)
+
+    # форма запроса КД
+    form_query_draw = QueryDraw()
+    form_plan_bid = PlanBid()
+    if request.method == 'POST':
+        form_workshop_plan = SchedulerWorkshop(request.POST)
+        if form_workshop_plan.is_valid():
+            print(form_workshop_plan.cleaned_data)
+            # заполнение графика цеха датой готовности и цехом
+            try:
+                # Планирование графика цеха
+                # заполнение срока готовности, категория изделия, статус изделия, ФИО планировщика
+                (WorkshopSchedule.objects.filter(model_order_query=form_workshop_plan.
+                                                 cleaned_data['model_order_query'].model_order_query).update(
+                    datetime_done=form_workshop_plan.cleaned_data['datetime_done'],
+                    workshop=form_workshop_plan.cleaned_data['workshop'],
+                    product_category=str(form_workshop_plan.cleaned_data['category']),
+                    order_status='запланировано',
+                    dispatcher_plan_ws_fio=f'{request.user.first_name} {request.user.last_name}'))
+                # Заполнение данных СЗ, статус СЗ, ФИО планировщика, категория изделия,
+                alert = 'Данные в график успешно занесены! '
+                print('Данные в график успешно занесены!\n')
+                # заполнение модели ShiftTask данными планирования цехов
+                print(ShiftTask.objects.filter(model_order_query=form_workshop_plan.cleaned_data['model_order_query']))
+                (ShiftTask.objects.filter(
+                    model_order_query=form_workshop_plan.cleaned_data['model_order_query'].model_order_query)
+                 .update(workshop=form_workshop_plan.cleaned_data['workshop'],
+                         datetime_done=form_workshop_plan.cleaned_data['datetime_done'],
+                         product_category=str(form_workshop_plan.cleaned_data['category']),
+                         ))
+                print('Данные сменного задания успешно занесены!')
+                alert += 'Данные сменного задания успешно занесены.'
+                context = {'form_workshop_plan': form_workshop_plan, 'td_queries': td_queries, 'alert': alert,
+                          'form_query_draw': form_query_draw, 'filter_q': f_q}
+                # сообщение в группу
+                success_group_message = (f"Заказ-модель: "
+                                         f"{form_workshop_plan.cleaned_data['model_order_query'].model_order_query} "
+                                         f"успешно запланирован на {form_workshop_plan.cleaned_data['datetime_done']}. "
+                                         f"Запланировал: {request.user.first_name} {request.user.last_name}.")
+                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+            except Exception as e:
+                print(e, ' Ошибка запаси в базу SchedulerWorkshop')
+                alert = f'Ошибка занесения данных.'
+                context = {'form_workshop_plan': form_workshop_plan, 'td_queries': td_queries,
+                           'form_query_draw': form_query_draw, 'alert': alert, 'filter_q': f_q}
+                return render(request, r"scheduler/scheduler.html", context=context)
+        else:
+            context = {'form_workshop_plan': form_workshop_plan, 'td_queries': td_queries,
+                       'form_query_draw': form_query_draw, 'filter_q': f_q}
+    else:
+        # чистые формы для первого запуска
+        form_workshop_plan = SchedulerWorkshop()
+        context = {'form_workshop_plan': form_workshop_plan, 'td_queries': td_queries,
+                   'form_query_draw': form_query_draw, 'filter_q': f_q, 'form_plan_bid':form_plan_bid}
+    return render(request, r"scheduler/test_scheduler.html", context=context)

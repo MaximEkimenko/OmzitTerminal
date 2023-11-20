@@ -27,10 +27,11 @@ class ChangeOrderModel(forms.Form):
     query_set = WorkshopSchedule.objects.filter(order_status='не запланировано').exclude(td_status='завершено')
     model_order_query = QueryAnswerForm(query_set, empty_label='выберите заказ-модель',
                                         label='Заказ модель', required=False)
-    model_query = forms.CharField(max_length=50, label='Новое имя модели',
-                                  widget=forms.TextInput(attrs={'pattern': model_pattern, 'title': model_error_text}))
+
     order_query = forms.CharField(max_length=50, label='Новое имя заказа',
                                   widget=forms.TextInput(attrs={'pattern': order_pattern, 'title': order_error_text}))
+    model_query = forms.CharField(max_length=50, label='Новое имя модели',
+                                  widget=forms.TextInput(attrs={'pattern': model_pattern, 'title': model_error_text}))
 
 
 class SendDrawBack(forms.Form):

@@ -7,7 +7,7 @@ import time
 from aiogram import Bot, Dispatcher, executor, types, filters
 # работа с БД
 from terminal_db import (ws_list_get, status_change_to_otk, st_list_get, master_id_get, control_man_id_set,
-                         decision_data_set)
+                         decision_data_set, lines_count)
 
 logging.basicConfig(filename="log.log", level=logging.DEBUG, filemode='w',
                     format=' %(levelname)s - %(asctime)s; файл - %(filename)s; сообщение - %(message)s')
@@ -177,13 +177,17 @@ async def otk_call(callback_query: types.CallbackQuery):
     """
     master_id = callback_query.data[-10:]  # id мастера
     ws_number = callback_query.data[4:-10]  # номер РЦ
-    # отправка сообщения о заявке на контролёра в группу ОТК
-    await bot.send_message(chat_id=omzit_otk_group_id, text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
-                                                            f"{id_fios[int(master_id)]}")
-    # Обратная связь мастеру
-    await bot.send_message(chat_id=master_id, text="Запрос в отк отправлен.")
     # Статус ожидание контролёра
     status_change_to_otk(ws_number=ws_number, initiator_id=master_id)
+    st_count = lines_count(ws_number=str(ws_number))  # количество СЗ с ожиданием контролёра
+    print('WS_COUNT_FROM_FUNC', lines_count(ws_number=str(ws_number)), 'st_count=', st_count)
+    # отправка сообщения о заявке на контролёра в группу ОТК
+    await bot.send_message(chat_id=omzit_otk_group_id, text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
+                                                            f"{id_fios[int(master_id)]}. "   
+                                                            f"Количество сменных заданий для приёмки: {st_count}.")
+    # Обратная связь мастеру
+    await bot.send_message(chat_id=master_id, text="Запрос в отк отправлен.")
+    await bot.send_message(chat_id=omzit_master_group1_id, text="Запрос в отк отправлен.")
     await callback_query.answer()  # закрытие inline кнопок
 
 

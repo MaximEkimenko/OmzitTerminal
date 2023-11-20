@@ -1,0 +1,179 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="fullScreen">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Рабочее место планировщика</title>
+        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
+    </head>
+    <body>
+        <h1>Рабочее место планировщика</h1>
+        {% if request.user.is_authenticated %}
+        <div class="legend">
+            <div>
+                <p>Пользователь: {{ user.username }} | <a href="{% url 'logout' %}" class="legend_link"> Выйти </a></p>
+                <p><a href="{% url 'instruction' %}">Инструкция</a></p>
+                <p>Папка с чертежами: \\SVR-003\draws</p>
+            </div>
+        </div>
+        {% else %}
+        <a href="{% url 'login' %}"> Войти </a>
+        <!-- prettier-ignore -->
+        {%endif %} 
+        {% if alert %}
+        <script>
+            function showNotification({ top = 0, right = 0, html, class_name }) {
+                let notification = document.createElement("div");
+                notification.className = class_name;
+                notification.innerHTML = html;
+                document.body.append(notification);
+                // setTimeout(() => (notification.style.opacity = 0), 10000);
+                setTimeout(() => notification.remove(), 10000);
+            }
+            showNotification({
+                html: "<p class='alert_gone'> {{ alert }} </p>",
+                class_name: "notification",
+            });
+        </script>
+        {%endif %}
+        <!-- Основная таблица интерфейса -->
+        <!--График цеха-->
+        <div class="col" scheduler>
+            <h3 class="table_h3">График производства</h3>
+            <p>
+                <input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр" />
+            </p>
+            <table title="График цехов" class="table">
+                <form method="get" id="filter_form1">
+                    <tr class="table_header_row">
+                        <td class="td_cell">{{ filter_w.form.workshop }}Цех</td>
+                        <td class="td_cell">{{ filter_w.form.order }} Заказ</td>
+                        <td class="td_cell">{{ filter_w.form.model_name }} Изделие</td>
+                        <td class="td_cell">{{ filter_w.form.datetime_done }}Дата готовности</td>
+                        <td class="td_cell">{{ filter_w.form.order_status }} Статус заказа</td>
+                        <td class="td_cell">{{ filter_w.form.done_rate }} % готовности</td>
+                    </tr>
+                </form>
+                {% for line in filter_w.qs %}
+                <tr class="table_row">
+                    {% for el in line.values %}
+                    <td class="td_cell"><p class="">{{ el }}</p></td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        <!-- Форма запроса КД -->
+        <div class="modal" id="order_model">
+            <form
+                class="form_form modal-content"
+                id="if_order_model_form"
+                action="{% url 'td_query' %}"
+                method="post"
+                enctype="multipart/form-data"
+            >
+                {% csrf_token %}
+                <div class="add_to_plan">
+                    <h3>Форма для запроса КД</h3>
+                    <div class="form_inner_label">{{ form_query_draw.order_query.label }}</div>
+                    <div class="form_inner_div">{{ form_query_draw.order_query }}</div>
+
+                    <div class="form_inner_label">{{ form_query_draw.model_query.label }}</div>
+                    <div class="form_inner_div">{{ form_query_draw.model_query }}</div>
+
+                    <div class="form_inner_label">{{ form_query_draw.query_prior.label }}</div>
+                    <div class="form_inner_div">{{ form_query_draw.query_prior }}</div>
+                    <div>
+                        <button type="submit" class="form_button">
+                            <p class="red_word">Запросить чертеж</p>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <!--форма планирования цеха-->
+        <div id="plan_workshop" class="modal">
+            <form
+                id="id_plan_workshop_form"
+                action="{% url 'scheduler' %}"
+                method="post"
+                enctype="multipart/form-data"
+                class="form_form modal-content"
+            >
+                {% csrf_token %}
+                <div class="add_to_plan">
+                    <h3>Форма для планирования</h3>
+                    <div class="form_inner_label">{{ form_workshop_plan.model_order_query.label }}</div>
+                    <div class="form_inner_div">{{ form_workshop_plan.model_order_query }}</div>
+                    <br />
+                    <div class="form_inner_label">{{ form_workshop_plan.workshop.label }}</div>
+                    <div class="form_inner_div">{{ form_workshop_plan.workshop }}</div>
+                    <br />
+                    <div class="form_inner_label">{{ form_workshop_plan.category.label }}</div>
+                    <div class="form_inner_div">{{ form_workshop_plan.category }}</div>
+                    <br />
+                    <div class="form_inner_label">{{ form_workshop_plan.datetime_done.label }}</div>
+                    <div class="form_inner_div">{{ form_workshop_plan.datetime_done }}</div>
+                    <div>
+                        <button type="submit" class="form_button">
+                            <p class="green_word">Запланировать</p>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <script>
+            // кнопки планирования
+            document.addEventListener("DOMContentLoaded", function () {
+                // При загрузке документа
+                const sel = id_plan_workshop_form.elements.model_order_query; // Получаем все селекты
+                const buttons = document.querySelectorAll(".id_plan_workshop_btn"); // Получаем кнопки с классом
+                buttons.forEach(function (c) {
+                    // Для каждой кнопки
+                    c.onclick = function () {
+                        // Слушаем нажатие
+                        // Если нажата, то выбирает тот option, который в тексте кнопки.
+                        const modal = document.querySelector("#plan_workshop");
+                        modal.style.display = "block";
+                        for (var n = 0; n < sel.length; n++) {
+                            if (sel.options[n].text == c.value) sel.options[n].selected = true;
+                        }
+                        window.onclick = function (event) {
+                            if (event.target == modal) {
+                                modal.style.display = "none";
+                            }
+                        };
+                    };
+                });
+                // Кнопка заказать КД
+                const button_query = document.querySelectorAll(".id_make_order_query_btn"); // Получаем кнопки с классом
+                button_query.forEach(function (c) {
+                    // Для каждой кнопки
+                    c.onclick = function () {
+                        // Слушаем нажатие
+                        const modal_query = document.querySelector("#order_model");
+                        modal_query.style.display = "block";
+                        window.onclick = function (event) {
+                            if (event.target == modal_query) {
+                                modal_query.style.display = "none";
+                            }
+                        };
+                    };
+                });
+            });
+        </script>
+        <br />
+        <a href="{% url 'home' %}">назад</a> <br />
+        <div style="height: 150px"></div>
+
+        <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
+        <script>
+            function onChange1() {
+                document.getElementById("filter_form1").submit();
+            }
+            function onChange2() {
+                document.getElementById("filter_form2").submit();
+            }
+        </script>
+    </body>
+</html>

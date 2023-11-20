@@ -115,7 +115,7 @@ def st_list_get(ws_number: str) -> tuple:
         except Exception as e:
             print(e, 'ошибка выборке')
         for shift_task in all_tasks:
-            st = f"№ {shift_task[0]} | Е{shift_task[1]} | {shift_task[2]}"  # форматирование строки
+            st = f"№ {shift_task[0]} | T{shift_task[1]} | {shift_task[2]}"  # форматирование строки
             # print('ST-------', st)
             st_set.add(st)
     except Exception as e:
@@ -194,6 +194,33 @@ def status_change_to_otk(ws_number: str, initiator_id: str) -> None:
     finally:
         con.close()
 
+
+def lines_count(ws_number: str) -> int:
+    """
+    Количество записей по ws_number
+    :param ws_number:
+    :return:
+    """
+    try:
+        # подключение к БД
+        con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
+        con.autocommit = True
+        # запрос на корректировку БД
+        count_query = f"""select COUNT(id) from shift_task where ws_number='{ws_number}' AND
+                           st_status='ожидание контролёра'"""
+        try:
+            with con.cursor() as cur:
+                cur.execute(count_query)
+                con.commit()
+                ws_count = cur.fetchall()
+        except Exception as e:
+            print(e, 'ошибка выборке')
+        print(ws_count[0])
+    except Exception as e:
+        print('Ошибка подключения к базе', e)
+    finally:
+        con.close()
+    return ws_count[0][0]
 
 def control_man_id_set(ws_number, controlman_id):
     try:
