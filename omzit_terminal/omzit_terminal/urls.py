@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.views.i18n import JavaScriptCatalog
+
 from .views import home, get_pdf
 
 urlpatterns = [
@@ -9,9 +11,7 @@ urlpatterns = [
     path('scheduler/', include('scheduler.urls')),
     path('worker/', include('worker.urls')),
     path('constructor/', include('constructor.urls')),
-
-
-
+    path('jsi18n/', JavaScriptCatalog.as_view(), name='javascript-catalog'),
 ]
 
 # TODO написать обработчики ошибок 404, 500, перед деплоем и сделать debug False
