@@ -180,3 +180,61 @@ class ShiftTask(models.Model):
             current_st_status = ShiftTask.objects.get(pk=self.pk).st_status
             if current_st_status == "пауза":
                 self.datetime_job_resume = timezone.now()
+
+
+class DailyReport(models.Model):
+    """
+    Данные для ежедневных отчётов
+    """
+    objects = models.Manager()
+    calendar_day = models.DateField(verbose_name="Дата отчёта")
+    day_plan = models.DecimalField(decimal_places=1, max_digits=10, verbose_name="План на день", default=0)
+    day_fact = models.DecimalField(decimal_places=1, max_digits=10, verbose_name="Факт за день", default=0)
+
+    day_plan_rate = models.DecimalField(decimal_places=2, max_digits=10, verbose_name="% выполнения плана за день",
+                                        default=0)
+
+    plan_sum = models.DecimalField(decimal_places=1, max_digits=10, verbose_name="Всего план на дату", default=0)
+    fact_sum = models.DecimalField(decimal_places=1, max_digits=10, verbose_name="Всего факт на дату", default=0)
+
+    plan_done_rate = models.DecimalField(decimal_places=2, max_digits=10, verbose_name="% выполнения плана",
+                                         default=0)
+    fact_done_rate = models.DecimalField(decimal_places=2, max_digits=10, verbose_name="Фактический % выполнения плана",
+                                         default=0)
+    plan_loos_rate = models.DecimalField(decimal_places=2, max_digits=10, verbose_name="Отставание/опережение плана",
+                                         default=0)
+    day_fails = models.PositiveSmallIntegerField(verbose_name="Случаев брака за день", default=0)
+    day_save_violations = models.PositiveSmallIntegerField(verbose_name="Случаев нарушений ОТПБ за день", default=0)
+    month_plan_data = models.ForeignKey(to='MonthPlans', on_delete=models.PROTECT,
+                                        related_name="month_plan_table",
+                                        # null=True, blank=True,
+                                        verbose_name="Месяц планирования")
+    personal_total = models.PositiveSmallIntegerField(verbose_name='Всего персонала в цехе 1', default=0)
+    personal_shift = models.PositiveSmallIntegerField(verbose_name='Выход в дату персонала в цехе 1', default=0)
+    personal_total_welders = models.PositiveSmallIntegerField(verbose_name='Всего сварщиков в цехе 1', default=0)
+    personal_shift_welders = models.PositiveSmallIntegerField(verbose_name='Выход в дату сварщиков в цехе 1',
+                                                              default=0)
+    personal_total_locksmiths = models.PositiveSmallIntegerField(verbose_name='Всего слесарей в цехе 1', default=0)
+    personal_shift_locksmiths = models.PositiveSmallIntegerField(verbose_name='Выход в дату слесарей в цехе 1',
+                                                                 default=0)
+    workshop = models.PositiveSmallIntegerField(verbose_name="Цех", default=0)
+
+    class Meta:
+        db_table = "report"
+        verbose_name = 'Ежедневный отчёт'
+        verbose_name_plural = 'Ежедневные отчёты'
+
+
+class MonthPlans(models.Model):
+    """
+    Ежемесячные значения плана
+    """
+    objects = models.Manager()
+    month_plan = models.DateField(verbose_name="Месяц планирования")
+    month_plan_amount = models.DecimalField(decimal_places=1, max_digits=10, verbose_name="План на месяц в н/ч")
+    workshop = models.PositiveSmallIntegerField(verbose_name="Цех", default=0)
+
+    class Meta:
+        db_table = "month_plan_table"
+        verbose_name = 'План на месяц в н/ч'
+        verbose_name_plural = 'Планы на месяц в н/ч'

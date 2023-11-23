@@ -122,10 +122,6 @@ class PlanBid(forms.Form):
     """
     Форма для ввода графика РЦ
     """
-    # query_set_workpiece = ShiftTask.objects.filter(st_status='пауза')
-
-    # workpiece_3_radio = forms.RadioSelect()
-    # workpiece_plazma_radio = forms.RadioSelect()
 
     order_query = forms.CharField(max_length=50, label='Имя заказа для служебной',
                                   widget=forms.TextInput(attrs={'pattern': order_pattern, 'title': order_error_text}))
@@ -142,5 +138,28 @@ class PlanBid(forms.Form):
                                     widget=forms.SelectDateWidget(empty_label=("год", "месяц", "день"),
                                                                   years=(datetime.datetime.now().year,
                                                                          datetime.datetime.now().year + 1)))
+
+
+class DailyReportForm(forms.Form):
+    """
+    Форма для заполнения ежедневного отчёта
+    """
+
+    day_plan = forms.DecimalField(min_value=0, max_digits=10, decimal_places=1, label='План день', required=False)
+    day_fact = forms.DecimalField(min_value=0, max_digits=10, decimal_places=1, label='Факт день')
+    personal_total = forms.IntegerField(min_value=0, label='Всего персонала', initial=1)
+    personal_shift = forms.IntegerField(min_value=0, label='Выход в дату персонала', initial=1)
+    personal_total_welders = forms.IntegerField(min_value=0, label='Всего сварщиков', initial=1)
+    personal_shift_welders = forms.IntegerField(min_value=0, label='Выход в дату сварщиков', initial=1)
+    personal_total_locksmiths = forms.IntegerField(min_value=0, label='Всего слесарей', initial=1)
+    personal_shift_locksmiths = forms.IntegerField(min_value=0, label='Выход в дату слесарей', initial=1)
+
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     self.fields["day_plan"].widget.attrs.update({"class": "day_plan"})
+    #     self.fields["day_fact"].widget.attrs.update({"class": "day_fact"})
+
+
+
 
 

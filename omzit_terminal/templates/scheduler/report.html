@@ -1,0 +1,391 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="fullScreen">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Рабочее место диспетчера</title>
+        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
+    </head>
+    <body>
+        <h1>Заполнение отчётов</h1>
+        {% if request.user.is_authenticated %}
+        <div class="legend">
+            <div>
+                <p>Пользователь: {{ user.username }} | <a href="{% url 'logout' %}" class="legend_link"> Выйти </a></p>
+                <p><a href="{% url 'instruction' %}">Инструкция</a></p>
+                <p>Папка с чертежами: \\SVR-003\draws</p>
+            </div>
+        </div>
+        {% else %}
+        <a href="{% url 'login' %}"> Войти </a>
+        <!-- prettier-ignore -->
+        {%endif %} 
+        {% if alert %}
+        <script>
+            function showNotification({ top = 0, right = 0, html, class_name }) {
+                let notification = document.createElement("div");
+                notification.className = class_name;
+                notification.innerHTML = html;
+                document.body.append(notification);
+                // setTimeout(() => (notification.style.opacity = 0), 10000);
+                setTimeout(() => notification.remove(), 10000);
+            }
+            showNotification({
+                html: "<p class='alert_gone'> {{ alert }} </p>",
+                class_name: "notification",
+            });
+        </script>
+        {%endif %}
+        <!-- Основная таблица интерфейса -->
+        <h3 class="table_h3">Таблица данных отчётов цеха №{{ workshop }} за {{yesterday|date:"m.Y" }}</h3>
+        <table class="table" title="Заявки на документацию">
+            <tr class="table_header_row">
+                <td class="td_cell">Дата</td>
+                <!-- prettier-ignore -->
+                {% for line in report_days %}
+                    {% if line.workshop == workshop %}
+                    {% if line.calendar_day == yesterday %}
+                <td class="td_cell yesterday">{{ line.calendar_day|date:"d.m" }}</td>
+                {% else %}
+                <td class="td_cell">{{ line.calendar_day|date:"d.m" }}</td>
+                <!-- prettier-ignore -->
+                {% endif %}
+                    {% endif %}
+                    {% endfor %}
+            </tr>
+            <tr class="table_row">
+                <td class="td_cell">План нч день</td>
+                <!-- prettier-ignore -->
+                {% for line in report_days %}
+                    {% if line.workshop == workshop %}
+                    {% if line.calendar_day == yesterday %}
+                <td class="td_cell yesterday">{{ line.day_plan }}</td>
+                {% else %}
+                <td class="td_cell">{{ line.day_plan }}</td>
+                <!-- prettier-ignore -->
+                {% endif %} 
+                    {% endif %}
+                    {% endfor %}
+            </tr>
+            <form
+                id="id_send_form"
+                action="{% url 'report' %}"
+                method="post"
+                enctype="multipart/form-data"
+                class="send_form"
+            >
+                {% csrf_token %}
+                <tr class="table_row">
+                    <td class="td_cell">Факт нч день</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                    {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">{{ report_form.day_fact }}</td>
+                    {% else %}
+                    <td class="td_cell">{{ line.day_fact }}</td>
+                    <!-- prettier-ignore -->
+                    {% endif %} 
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+
+                <tr class="table_row">
+                    <td class="td_cell">План от начала</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                        {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">{{ line.plan_sum }}</td>
+                    {% else %}
+                    <td class="td_cell">{{ line.plan_sum }}</td>
+                    <!-- prettier-ignore -->
+                    {% endif %} 
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">Факт нч от начала</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                        {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">{{ line.fact_sum }}</td>
+                    {% else %}
+                    <td class="td_cell">{{ line.fact_sum }}</td>
+                    <!-- prettier-ignore -->
+                    {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">% выполнения плана в день</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                        {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">{{ line.day_plan_rate }}</td>
+                    {% else %}
+                    <td class="td_cell">{{ line.day_plan_rate }}</td>
+                    <!-- prettier-ignore -->
+                    {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">% планируемое выполнения плана от начала месяца</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                        {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">{{ line.plan_done_rate }}</td>
+                    {% else %}
+                    <td class="td_cell">{{ line.plan_done_rate }}</td>
+                    <!-- prettier-ignore -->
+                    {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">% фактическое выполнения плана от начала месяца</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                        {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">{{ line.fact_done_rate }}</td>
+                    {% else %}
+                    <td class="td_cell">{{ line.fact_done_rate }}</td>
+                    <!-- prettier-ignore -->
+                    {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">% отставания / опережения плана</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                        {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">{{ line.plan_loos_rate }}</td>
+                    {% else %}
+                    <td class="td_cell">{{ line.plan_loos_rate }}</td>
+                    <!-- prettier-ignore -->
+                    {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">Случаев брака</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                        {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">{{ line.day_fails }}</td>
+                    {% else %}
+                    <td class="td_cell">{{ line.day_fails }}</td>
+                    <!-- prettier-ignore -->
+                    {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">Случаев брака</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                        {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">{{ line.day_save_violations }}</td>
+                    {% else %}
+                    <td class="td_cell">{{ line.day_save_violations }}</td>
+                    <!-- prettier-ignore -->
+                    {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">Всего персонала</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                    {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">{{ report_form.personal_total }}</td>
+                    {% else %}
+                    <td class="td_cell">{{ line.personal_total }}</td>
+                    <!-- prettier-ignore -->
+                    {% endif %} 
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">Выход персонала</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                    {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">{{ report_form.personal_shift }}</td>
+                    {% else %}
+                    <td class="td_cell">{{ line.personal_shift }}</td>
+                    <!-- prettier-ignore -->
+                    {% endif %} 
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">Всего сварщиков</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                    {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">{{ report_form.personal_total_welders }}</td>
+                    {% else %}
+                    <td class="td_cell">{{ line.personal_total_welders}}</td>
+                    <!-- prettier-ignore -->
+                    {% endif %} 
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">Выход сварщиков</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                    {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">{{ report_form.personal_shift_welders }}</td>
+                    {% else %}
+                    <td class="td_cell">{{ line.personal_shift_welders }}</td>
+                    <!-- prettier-ignore -->
+                    {% endif %} 
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">Всего слесарей</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                    {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">{{ report_form.personal_total_locksmiths }}</td>
+                    {% else %}
+                    <td class="td_cell">{{ line.personal_total_locksmiths}}</td>
+                    <!-- prettier-ignore -->
+                    {% endif %} 
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">Выход слесарей</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                    {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">
+                        <div>{{ report_form.personal_shift_locksmiths }}</div>
+                    </td>
+                    {% else %}
+                    <td class="td_cell">{{ line.personal_shift_locksmiths }}</td>
+                    <!-- prettier-ignore -->
+                    {% endif %} 
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+            </form>
+        </table>
+        <button type="submit" class="btn" form="id_send_form">
+            <p class="red_word">Заполнить данные</p>
+        </button>
+
+        <!-- <table class="table" title="Заявки на документацию">
+                <tr class="table_header_row">
+                    <td class="td_cell">Цех</td>
+                    <td class="td_cell">Дата</td>
+                    <td class="td_cell">План нч день</td>
+                    <td class="td_cell">Факт нч день</td>
+                    <td class="td_cell">План нч от начала месяця</td>
+                    <td class="td_cell">Факт нч от начала месяця</td>
+                    <td class="td_cell">% выполнения плана в день</td>
+                    <td class="td_cell">% выполнения плана от начала месяца</td>
+                    <td class="td_cell">% оставания/опережения плана</td>
+                    <td class="td_cell">Случаев брака</td>
+                    <td class="td_cell">Нарушений ОТПБ</td>
+                    <td class="td_cell">Всего персонала</td>
+                    <td class="td_cell">Выход персонала</td>
+                    <td class="td_cell">Всего сварщиков</td>
+                    <td class="td_cell">Выход сварщиков</td>
+                    <td class="td_cell">Всего слесарей</td>
+                    <td class="td_cell">Выход слесарей</td>
+                    <td class="td_cell">Всего маляров</td>
+                    <td class="td_cell">Выход маляров</td>
+                </tr>
+                prettier-ignore
+
+                {% for line in report_days %}
+   
+                {% if line.calendar_day == yesterday %}
+
+                <tr class="table_row">
+                    <form id="" action="{% url 'report' %}" method="post" enctype="multipart/form-data" class="">
+                        {% csrf_token %}
+                        <td class="td_cell">{{ line.workshop }}</td>
+                        <td class="td_cell">{{ line.calendar_day|date:"d.m.Y" }}</td>
+                        <td class="td_cell">{{ line.day_plan }}</td>
+                        <td class="td_cell">{{ report_form.day_fact }}</td>
+                        <td class="td_cell">{{ line.plan_sum }}</td>
+                        <td class="td_cell">{{ line.fact_sum }}</td>
+                        <td class="td_cell">{{ line.plan_done_rate }}</td>
+                        <td class="td_cell">CALC</td>
+                        <td class="td_cell">CALC</td>
+                        <td class="td_cell">{{ line.day_fails }}</td>
+                        <td class="td_cell">{{ line.day_save_violations }}</td>
+                        <td class="td_cell">{{ report_form.personal_total }}</td>
+                        <td class="td_cell">{{ report_form.personal_shift }}</td>
+                        <td class="td_cell">{{ report_form.personal_total_welders }}</td>
+                        <td class="td_cell">{{ report_form.personal_shift_welders }}</td>
+                        <td class="td_cell">{{ report_form.personal_total_locksmiths }}</td>
+                        <td class="td_cell">{{ report_form.personal_shift_locksmiths }}</td>
+                        <td class="td_cell">TO ADD</td>
+                        <td class="td_cell">TO ADD</td>
+                    </form>
+
+                    {% endif %}
+                    <td class="td_cell">{{ line.workshop }}</td>
+                    <td class="td_cell">{{ line.calendar_day|date:"d.m.Y" }}</td>
+                    <td class="td_cell">{{ line.day_plan }}</td>
+                    <td class="td_cell">{{ line.day_fact }}</td>
+                    <td class="td_cell">{{ line.plan_sum }}</td>
+                    <td class="td_cell">{{ line.fact_sum }}</td>
+                    <td class="td_cell">{{ line.plan_done_rate }}</td>
+                    <td class="td_cell">CALC</td>
+                    <td class="td_cell">CALC</td>
+                    <td class="td_cell">{{ line.day_fails }}</td>
+                    <td class="td_cell">{{ line.day_save_violations }}</td>
+                    <td class="td_cell">{{ line.personal_total }}</td>
+                    <td class="td_cell">{{ line.personal_shift }}</td>
+                    <td class="td_cell">{{ line.personal_total_welders }}</td>
+                    <td class="td_cell">{{ line.personal_shift_welders }}</td>
+                    <td class="td_cell">{{ line.personal_total_locksmiths }}</td>
+                    <td class="td_cell">{{ line.personal_shift_locksmiths }}</td>
+                    <td class="td_cell">TO ADD</td>
+                    <td class="td_cell">TO ADD</td>
+                </tr>
+                {% endfor %}
+                <button type="submit" class="form_button">
+                    <p class="red_word">Заполнить данные</p>
+                </button>
+            </table> -->
+
+        <!-- Форма заполнения отчёта -->
+
+        <!-- <div id="" class="">
+            <form id="" action="{% url 'report' %}" method="post" enctype="multipart/form-data" class="">
+                {% csrf_token %} {% for elem in report_form%} {{ elem.label }} {{ elem }} {% endfor %}
+                <div>
+                    <button type="submit" class="form_button">
+                        <p class="red_word">Заполнить данные</p>
+                    </button>
+                </div>
+            </form>
+        </div> -->
+
+        <div style="height: 150px"></div>
+    </body>
+</html>

@@ -30,6 +30,8 @@ sultigova_id = 6049253475
 potapova_id = 5010645397
 sofinskaya_id = 1358370501
 sheglov_id = 1501419738
+dubenuk_id = 1359982302
+dolganev_id = 1907891961
 
 mhitaryan_id = 413559952  # ПКО
 saks_id = 1366631138  # ОГТ
@@ -51,7 +53,10 @@ id_fios = {admin_id: 'Екименко М.А.',
            sultigova_id: 'Султыгова О.',
            potapova_id: 'Потапова М. А.',
            sofinskaya_id: 'Софинская А. Г.',
+           dolganev_id: 'Долганев А.Н.',
+           dubenuk_id: 'Дубенюк А. П.',
            sheglov_id: 'Щеглов В.',
+
            mhitaryan_id: 'Мхитарян К.',  # ПКО
            saks_id: 'Сакс В.И.'  # ОГТ
            }
@@ -60,7 +65,7 @@ id_fios = {admin_id: 'Екименко М.А.',
 users = (admin_id,  # root
          posohov_id, ermishkin_id, gordii_id, kondratiev_id, achmetov_id,  # производство
          savchenko_id, pavluchenkova_id,  # ПДО
-         donskaya_id, averkina_id, sultigova_id, potapova_id, sofinskaya_id, sheglov_id,  # ОТК
+         donskaya_id, averkina_id, sultigova_id, potapova_id, sofinskaya_id, sheglov_id, dubenuk_id, dolganev_id,  # ОТК
          mhitaryan_id,  # ПКО
          saks_id,  # ОГТ
          )
@@ -69,8 +74,8 @@ masters_list = (admin_id, ermishkin_id, posohov_id, gordii_id, kondratiev_id, ac
 
 dispatchers_list = (admin_id, savchenko_id, pavluchenkova_id,)  # диспетчеры
 
-control_mans_list = (admin_id, donskaya_id, averkina_id, sultigova_id, potapova_id, sofinskaya_id,
-                     sheglov_id)  # контролёры
+control_mans_list = (admin_id, donskaya_id, averkina_id, sultigova_id, potapova_id, sofinskaya_id, dolganev_id,
+                     sheglov_id, dubenuk_id)  # контролёры
 
 bot = Bot(token=TOKEN)  # инициализация бота
 dp = Dispatcher(bot)  # инициализация диспетчера
@@ -183,7 +188,7 @@ async def otk_call(callback_query: types.CallbackQuery):
     print('WS_COUNT_FROM_FUNC', lines_count(ws_number=str(ws_number)), 'st_count=', st_count)
     # отправка сообщения о заявке на контролёра в группу ОТК
     await bot.send_message(chat_id=omzit_otk_group_id, text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
-                                                            f"{id_fios[int(master_id)]}. "   
+                                                            f"{id_fios[int(master_id)]}. "
                                                             f"Количество сменных заданий для приёмки: {st_count}.")
     # Обратная связь мастеру
     await bot.send_message(chat_id=master_id, text="Запрос в отк отправлен.")
