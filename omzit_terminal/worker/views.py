@@ -7,9 +7,10 @@ import socket
 from django.http import FileResponse
 from django.http import HttpResponse
 from django.shortcuts import redirect
-from django.db.models import Q, QuerySet
+from django.db.models import Q, QuerySet, F
 from django.shortcuts import render
 from django.core.exceptions import PermissionDenied
+from django.utils import timezone
 
 from omzit_terminal.settings import BASE_DIR
 from scheduler.models import ShiftTask
@@ -113,7 +114,10 @@ def worker(request, ws_number):
                 # обновление данных
                 if not ShiftTask.objects.filter(pk=task_id, st_status='в работе'):
                     ShiftTask.objects.filter(pk=task_id).update(st_status='в работе',
-                                                                datetime_job_start=datetime.datetime.now())
+                                                                datetime_job_start=datetime.datetime.now(),
+                                                                datetime_job_resume=datetime.datetime.now(),
+                                                                job_duration=datetime.timedelta(0),
+                                                                )
                     alert_message = 'Сменное задание запущенно в работу.'
                     # return redirect(f'/worker/{ws_number}', context={'alert': alert_message})  # обновление страницы
                 # else:
@@ -263,7 +267,11 @@ def pause_work(task_id=None, is_lunch=False):
             asyncio.run(send_call_master(message_to_master))
         except Exception as ex:
             print(f"При попытке отправки сообщения мастеру из функции 'pause_work' вызвано исключение: {ex}")
-    shift_tasks.update(st_status='пауза')
+
+    shift_tasks.update(
+        st_status='пауза',
+        job_duration=F("job_duration") + (timezone.now() - F("datetime_job_resume")),
+    )
 
     if is_lunch:  # если автоматическая пауза в обеденное время
 
@@ -332,4 +340,4 @@ def resume_work(task_id=None, is_lunch=False):
         except Exception as ex:
             print(f"При попытке отправки сообщения мастеру из функции 'resume_work' вызвано исключение: {ex}")
     if isinstance(shift_tasks, QuerySet):
-        shift_tasks.update(st_status='в работе')
+        shift_tasks.update(st_status='в работе', datetime_job_resume=timezone.now())

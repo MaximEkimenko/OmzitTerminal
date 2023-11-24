@@ -3,19 +3,28 @@ import calendar
 import asyncio
 import datetime
 import os
+import shutil
+from typing import Tuple
+
+import openpyxl
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import PermissionDenied
+from django.core.mail import EmailMessage
 from django.http import FileResponse
 
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
-from django.db.models import Q, Avg
 
+from django.db.models import Q
+from django.utils.timezone import make_aware, make_naive
+
+
+from omzit_terminal.settings import BASE_DIR
 from .filters import get_filterset
-from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw, PlanBid, DailyReportForm
+from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw, PlanBid, DailyReportForm, ReportForm
 from .models import WorkshopSchedule, ShiftTask, DailyReport, MonthPlans
 
 from .services.schedule_handlers import get_all_done_rate
@@ -189,6 +198,7 @@ def schedulerwp(request):
     alert_message = ''
     if request.method == 'POST':
         form_workplace_plan = SchedulerWorkplace(request.POST)
+        form_report = ReportForm()
         if form_workplace_plan.is_valid():
             ws_number = form_workplace_plan.cleaned_data['ws_number'].ws_number
             datetime_done = form_workplace_plan.cleaned_data['datetime_done'].datetime_done
@@ -209,9 +219,11 @@ def schedulerwp(request):
                 form_workplace_plan = SchedulerWorkplace()
     else:
         form_workplace_plan = SchedulerWorkplace()
+        form_report = ReportForm()
     context = {
         'workplace_schedule': workplace_schedule,
         'form_workplace_plan': form_workplace_plan,
+        'form_report': form_report,
         'alert_message': alert_message,
         # 'filter': f
     }
@@ -497,3 +509,178 @@ def test_scheduler(request):
                    'form_query_draw': form_query_draw, 'filter_q': f_q, 'form_plan_bid': form_plan_bid}
     return render(request, r"scheduler/test_scheduler.html", context=context)
 
+
+
+def shift_tasks_reports(request, start: str = "", end: str = ""):
+    """
+    Загружает файл отчета по сменным заданиям
+    :param start: с даты (дата распределения)
+    :param end: по дату (дата распределения)
+    :return: excel-файл
+    """
+    start, end = get_start_end_st_report(start, end)
+    exel_file = create_shift_task_report(start, end)
+    return FileResponse(open(exel_file, 'rb'))
+
+
+def shift_tasks_auto_report():
+    """
+    Отправляет отчет по сменным заданиям на электронную почту и в папку O:/Расчет эффективности/Отчёты по СЗ
+    """
+    start = make_aware(datetime.datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0))
+    end = make_aware(datetime.datetime.now())
+    exel_file = create_shift_task_report(start, end)
+    shutil.copy(exel_file, os.path.join(r"O:\Расчет эффективности\Отчёты по СЗ", os.path.basename(exel_file)))
+    email = EmailMessage(
+        f"Отчет {start.strftime('%d.%m.%Y')}-{end.strftime('%d.%m.%Y')}",
+        f"Отчет {start.strftime('%d.%m.%Y')}-{end.strftime('%d.%m.%Y')}",
+        "omzit-report@yandex.ru",
+        [
+            "alex4ekalovets@gmail.com",
+            "pdo02@omzit.ru",
+            "pdo06@omzit.ru",
+            "pdo09@omzit.ru",
+            "e.savchenko@omzit.ru",
+            "PVB@omzit.ru",
+            "m.ekimenko@omzit.ru"
+        ],
+        [],
+    )
+    email.attach_file(exel_file)
+    email.send()
+
+
+def create_shift_task_report(start, end):
+    """
+    Создает excel-файл отчета по сменным заданиям в папке xslx в корне проекта
+    :param start: с даты (дата распределения)
+    :param end: по дату (дата распределения)
+    :return:
+    """
+    # Формируем имена столбцов для полного отчета из аттрибута модели verbose_name
+    verbose_names = dict()
+    for field in ShiftTask._meta.get_fields():
+        if hasattr(field, "verbose_name"):
+            verbose_names[field.name] = field.verbose_name
+        else:
+            verbose_names[field.name] = field.name
+
+    queryset = ShiftTask.objects.exclude(
+        fio_doer="не распределено"
+    ).order_by("datetime_assign_wp")
+
+    fields_1C_report = (
+        "pk",  # №
+        "op_number",  # № Операции
+        "op_name_full",  # Операция
+        "fio_doer",  # Исполнители
+        "decision_time",  # Дата готовности
+    )
+    fields_disp_report = (
+        "pk",  # №
+        "ws_number",  # РЦ
+        "op_number",  # № Операции
+        "op_name_full",  # Операция
+        "fio_doer",  # Исполнители
+        "datetime_assign_wp",  # Дата распределения
+        "datetime_job_start",  # Дата начала
+        "decision_time",  # Дата окончания
+        "job_duration",  # Длительность работы
+        "norm_tech",  # Технологическая норма
+        "st_status",  # Статус СЗ
+        "master_finish_wp",  # Мастер
+        "otk_decision",  # Контролер
+    )
+
+    # Определяем путь к excel файлу шаблона
+    exel_file_src = BASE_DIR / "ReportTemplate.xlsx"
+    # Формируем название нового файла
+    new_file_name = (f"{datetime.datetime.now().strftime('%Y.%m.%d %H-%M')} report "
+                     f"{start.strftime('%d.%m.%Y')}-{end.strftime('%d.%m.%Y')}.xlsx")
+    # Создаем папку для хранения отчетов
+    if not os.path.exists(BASE_DIR / "xlsx"):
+        os.mkdir(BASE_DIR / "xlsx")
+    # Формируем путь к новому файлу
+    exel_file_dst = BASE_DIR / "xlsx" / new_file_name
+    # Копируем шаблон в новый файл отчета
+    shutil.copy(exel_file_src, exel_file_dst)
+
+    # Формируем отчет
+    ex_wb = openpyxl.load_workbook(exel_file_src, data_only=True)
+    sheets_reports = {
+        "Отчет для 1С": queryset.values(*fields_1C_report).filter(
+            datetime_assign_wp__gte=start,
+            datetime_assign_wp__lte=end
+        ),
+        "Отчет для диспетчера": queryset.values(*fields_disp_report).filter(
+            datetime_assign_wp__gte=start,
+            datetime_assign_wp__lte=end
+        ),
+        "Полный отчет": queryset.values(*verbose_names)
+    }
+    for sheet_name in sheets_reports:
+        ex_sh = ex_wb[sheet_name]
+        report = sheets_reports[sheet_name]
+        if report:
+            # Для полного отчета создаем шапку из verbose_name
+            if sheet_name == "Полный отчет":
+                for i, key in enumerate(report[0]):
+                    ex_sh.cell(row=1, column=i + 1).value = verbose_names[key]
+            # Заполняем строки данными
+            for i, row in enumerate(report):
+                for j, key in enumerate(row):
+                    cell = ex_sh.cell(row=i + 2, column=j + 1)
+                    try:
+                        row[key] = make_naive(row[key]).strftime('%Y.%m.%d %H:%M:%S')
+                    except Exception:
+                        pass
+                    cell.value = row[key]
+            ex_wb.save(exel_file_dst)
+    return exel_file_dst
+
+
+def shift_tasks_report_view(request, start: str = "", end: str = ""):
+    """
+    Просмотр отчета по сменным заданиям за выбранный период
+    :param start: с даты (Дата распределения)
+    :param end: по дату (Дата распределения)
+    """
+    start, end = get_start_end_st_report(start, end)
+    shift_task_fields = (
+        'id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number',
+        'op_number', 'op_name_full', 'norm_tech', 'fio_doer', "datetime_assign_wp", 'st_status',
+    )
+
+    workplace_schedule = ShiftTask.objects.values(
+        *shift_task_fields
+    ).exclude(
+        fio_doer="не распределено"
+    ).filter(
+        datetime_assign_wp__gte=start,
+        datetime_assign_wp__lte=end
+    ).order_by("datetime_assign_wp")
+
+    f = get_filterset(data=request.GET, queryset=workplace_schedule, fields=shift_task_fields)
+    context = {
+        'workplace_schedule': workplace_schedule,
+        'filter': f,
+    }
+    return render(request, fr"schedulerwp/view_report.html", context=context)
+
+
+def get_start_end_st_report(start: str, end: str) -> Tuple:
+    """
+    Преобразует полученные от пользователя строки с датами или null в дату и время
+    :param start: с даты (Дата распределения)
+    :param end: по дату (Дата распределения)
+    :return: дату начала, дату окончания формирования отчета
+    """
+    if start == "null":
+        start = make_aware(datetime.datetime(year=1990, month=1, day=1, hour=0, minute=0, second=0, microsecond=0))
+    else:
+        start = make_aware(datetime.datetime.strptime(start, "%d.%m.%Y"))
+    if end == "null":
+        end = make_aware(datetime.datetime.now())
+    else:
+        end = make_aware(datetime.datetime.strptime(end, "%d.%m.%Y").replace(hour=23, minute=59, second=59))
+    return start, end

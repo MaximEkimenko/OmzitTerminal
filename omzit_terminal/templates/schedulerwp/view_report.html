@@ -1,0 +1,64 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Рабочее место планировщика рабочих центров</title>
+        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
+    </head>
+
+    <body>
+        {% if request.user.is_authenticated %}
+        <div class="logined_user">{{ user.username }} | <a href="{% url 'logout' %}"> Выйти </a></div>
+        <a href="{% url 'instruction' %}" class="red_word">Инструкция</a>
+        <a href="{% url 'scheme' %}" class="red_word">Планировка</a> <br />
+        {% else %} <a href="{% url 'login' %}"> Войти </a>
+        {%endif %}
+        <!-- prettier-ignore -->
+        {% if user.username == 'admin' %}
+        <a href="{% url 'home' %}">Назад</a> <br />
+        {%endif %}
+        <h1>Рабочее место планировщика рабочих центров</h1>
+        <br />
+            <p>
+                <input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр" />
+            </p>
+            <table title="График рабочих центров" class="table">
+            <form method="get" id="filter_form">
+                <tr class="table_header_row">
+                    <td class="td_cell">{{ filter.form.id }} №СЗ</td>
+                    <td class="td_cell">{{ filter.form.workshop }} Цех</td>
+                    <td class="td_cell">{{ filter.form.order }} Заказ</td>
+                    <td class="td_cell">{{ filter.form.model_name }} Изделие</td>
+                    <td class="td_cell">{{ filter.form.datetime_done }} Дата готовности</td>
+                    <td class="td_cell">{{ filter.form.ws_number }} Номер РЦ</td>
+                    <td class="td_cell">{{ filter.form.op_number }} Номер операции</td>
+                    <td class="td_cell">{{ filter.form.op_name_full }} Операция</td>
+                    <td class="td_cell">{{ filter.form.norm_tech }} Норма времени</td>
+                    <td class="td_cell">{{ filter.form.fio_doer }} Фио исполнителя</td>
+                    <td class="td_cell">{{ filter.form.datetime_assign_wp }} Дата распределения</td>
+                    <td class="td_cell">{{ filter.form.st_status }} Статус СЗ</td>
+                </tr>
+            </form>
+                {% for line in filter.qs %}
+                    <tr class="table_row">
+                        {% for el in line.values %}
+                            <td class="td_cell">{{ el }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </table>
+
+        <div>
+            <p><button class='btn' onclick="window.location.href = '{% url 'schedulerwp' %}';">Назад</button></p>
+        </div>
+        
+        <script>
+            function onChange() {
+                document.getElementById("filter_form").submit()
+            }
+        </script>
+        <div style="height: 150px"></div>
+        <script src="{% static 'scheduler/js/schedulerwp.js' %}"></script>
+    </body>
+</html>

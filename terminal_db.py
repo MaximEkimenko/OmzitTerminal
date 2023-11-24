@@ -258,12 +258,14 @@ def decision_data_set(st_id, controlman_id, decision):
                                                         is_fail = 'True',
                                                         datetime_fail = '{datetime.datetime.now()}',
                                                         fio_failer = 
-                                                        (SELECT fio_doer FROM shift_task WHERE id='{st_id}')                                                      
+                                                        (SELECT fio_doer FROM shift_task WHERE id='{st_id}')
+                                                        job_duration = job_duration + ('{datetime.datetime.now()}' - datetime_job_resume)                                                      
                                                         WHERE id='{st_id}'"""
         else:
             update_query = f"""UPDATE shift_task SET otk_decision = '{controlman_id}',
                                             st_status = '{decision}',
                                             decision_time = '{datetime.datetime.now()}'
+                                            job_duration = job_duration + ({datetime.datetime.now()} - datetime_job_resume)
                                             WHERE id='{st_id}'"""
         try:
             with con.cursor() as cur:

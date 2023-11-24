@@ -13,7 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', "lkjasj129u23lknjasdasdad1")
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -83,8 +83,12 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'terminal',
-        'USER': 'admin',
         'PASSWORD': 'Epass1',
+        'USER': 'admin',
+
+        # 'NAME': 'postgres',
+        # 'USER': 'postgres',
+        # 'PASSWORD': 'Valm0nts89',
         'HOST': 'localhost',
         # 'HOST': '192.168.8.163',
         # 'HOST': '192.168.8.30'
@@ -156,3 +160,11 @@ APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
 # etc. See: https://djangopackages.org/grids/g/workers-queues-tasks/ for popular options).
 APSCHEDULER_RUN_NOW_TIMEOUT = 25  # Seconds
 # Запуск планировщика: python manage.py runscheduler
+
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.yandex.ru'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'omzit-report@yandex.ru'
+EMAIL_HOST_PASSWORD = 'lacwpquciwybdxki'
+DEFAULT_FROM_EMAIL = 'omzit-report'
+DEFAULT_TO_EMAIL = 'omzit-report'

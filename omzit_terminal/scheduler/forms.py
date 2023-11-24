@@ -1,6 +1,9 @@
 import datetime
 
 from django import forms
+from django.contrib.admin import widgets
+from django.utils.timezone import make_aware
+
 # from tehnolog.models import ProductModel
 from .models import ShiftTask, WorkshopSchedule, Doers, model_pattern, model_error_text, order_pattern, order_error_text
 from django.forms import ModelChoiceField
@@ -65,12 +68,12 @@ class SchedulerWorkplace(forms.Form):
     Форма для ввода графика РЦ
     """
     query_set_wp = ShiftTask.objects.all().distinct('ws_number')
-    ws_number = SchedulerWorkplaceLabel(queryset=query_set_wp, empty_label='РЦ не выбран', label='Рабочий центр')
-    query_set_datetime_done = WorkshopSchedule.objects.filter(Q(order_status='запланировано') |
-                                                              Q(order_status='в работе'))
-    datetime_done = SchedulerWorkplaceLabelDate(queryset=query_set_datetime_done,
-                                                empty_label='Дата готовности не выбрана',
-                                                label='Планируемая дата готовности')
+    ws_number = SchedulerWorkplaceLabel(queryset=query_set_wp, empty_label='РЦ не выбран', label='Терминал')
+    order_model_query_set = WorkshopSchedule.objects.filter(Q(order_status='запланировано') |
+                                                            Q(order_status='в работе'))
+    order_model_query = SchedulerWorkplaceLabelDate(queryset=order_model_query_set,
+                                                    empty_label='Не выбрано',
+                                                    label='Заказ-модель')
 
 
 class FiosLabel(ModelChoiceField):  # переопределение метода отображения строки результатов для ФИО
@@ -160,6 +163,28 @@ class DailyReportForm(forms.Form):
     #     self.fields["day_fact"].widget.attrs.update({"class": "day_fact"})
 
 
+class ReportForm(forms.Form):
+    """
+    Форма ответа на заявку КД
+    """
+    date_start = forms.DateField(
+        widget=widgets.AdminDateWidget(attrs={"class": "vDateField report_input"}),
+        label='c',
+        initial=make_aware(datetime.datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0))
+    )
+    date_end = forms.DateField(
+        widget=widgets.AdminDateWidget(attrs={"class": "vDateField report_input"}),
+        label='по',
+        initial=make_aware(datetime.datetime.now())
+    )
 
-
-
+    class Media:
+        css = {
+            'all': (
+                '/static/scheduler/css/widgets.css',
+            )
+        }
+        js = [
+            '/admin/jsi18n/',
+            '/static/admin/js/core.js',
+        ]

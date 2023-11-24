@@ -9,6 +9,7 @@ from django_apscheduler.jobstores import DjangoJobStore
 from django_apscheduler.models import DjangoJobExecution
 from django_apscheduler import util
 
+from scheduler.views import shift_tasks_auto_report
 from worker.views import pause_work, resume_work
 
 logger = logging.getLogger(__name__)
@@ -77,6 +78,17 @@ class Command(BaseCommand):
         logger.info(
             "Запущена еженедельная задача: 'delete_old_job_executions'."
         )
+
+        scheduler.add_job(
+            shift_tasks_auto_report,
+            trigger=CronTrigger(hour="07", minute="30"),
+            id="Получение отчета по СЗ",
+            max_instances=1,
+            replace_existing=True,
+            misfire_grace_time=1 * 60,
+        )
+
+        logger.info("Запущена задача 'Получение отчета по СЗ' каждый день в 7:30.")
 
         try:
             logger.info("Starting scheduler...")
