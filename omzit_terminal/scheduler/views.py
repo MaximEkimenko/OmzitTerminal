@@ -12,7 +12,7 @@ from django.http import FileResponse
 
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
-from django.db.models import Q
+from django.db.models import Q, Avg
 
 from .filters import get_filterset
 from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw, PlanBid, DailyReportForm
@@ -497,90 +497,3 @@ def test_scheduler(request):
                    'form_query_draw': form_query_draw, 'filter_q': f_q, 'form_plan_bid': form_plan_bid}
     return render(request, r"scheduler/test_scheduler.html", context=context)
 
-
-@login_required(login_url="login")
-def report(request):
-    # today = datetime.datetime(year=2023, month=12, day=1)  # произвольная дата
-    today = datetime.datetime.now()  # сегодня
-    # today = datetime.datetime(year=2023, month=11, day=22)
-    yesterday = today - datetime.timedelta(days=1)  # вчера
-    start_date = yesterday.replace(day=1)  # первый день текущего месяца
-    _, last_day = calendar.monthrange(yesterday.year, yesterday.month)  # последний день текущего месяца
-    end_date = datetime.datetime(year=yesterday.year, month=yesterday.month, day=last_day)  # последняя дата месяца)
-    # список дат дней месяца
-    daterange = [(start_date + datetime.timedelta(days=x)) for x in range(0, end_date.day)]
-    # print(daterange[0].date(), yesterday.date())
-    # TODO перенести добавление плановых данных и дней месяца в отдельную функцию или по расписанию
-    # days_dict = dict()
-    # days_list = []
-    # for i in range(1, MonthPlans.objects.filter(month_plan=daterange[0]).count() + 1):  # цикл по всем цехам
-    #     month_plan = MonthPlans.objects.get(workshop=i, month_plan=daterange[0])  # план цеха
-    #     day_plan = month_plan.month_plan_amount / len(daterange)  # план на каждый день месяца
-    #     plan_sum = 0  # сумма планового нч на день
-    #     for date in daterange:
-    #         plan_sum += day_plan
-    #         days_dict.update({'calendar_day': date, 'day_plan': day_plan, 'plan_sum': plan_sum, 'workshop': i})
-    #         days_list.append(DailyReport(**days_dict))
-    # TODO добавить при создании записей ForeignKey планов модели MonthPlans, например в цикле по цехам:
-    #  record_object = DailyReport.objects.filter(workshop=1)
-    #  record_object.update(month_plan_data=MonthPlans.objects.get(workshop=1, month_plan=yesterday.date()))
-    #
-    # DailyReport.objects.bulk_create(days_list)
-    # TODO end
-    workshop = int(request.GET.get('workshop')) if request.GET else 1  # № цеха по умолчанию
-    report_days = (DailyReport.objects.filter(calendar_day__gte=today - datetime.timedelta(days=4),
-                                              calendar_day__lte=today + datetime.timedelta(days=3), workshop=workshop)
-                   .order_by('calendar_day'))
-    # report_days = (DailyReport.objects.filter(workshop=workshop)
-    #                .order_by('calendar_day'))
-    # l = []
-    # for day in report_days:
-    #     l.append(float(day.day_plan_rate))
-    #     # print(day.day_plan_rate)
-    # print(l)
-
-    if request.method == 'POST':
-        report_form = DailyReportForm(request.POST)
-        if report_form.is_valid():
-            try:
-                previous_day_data = DailyReport.objects.get(
-                    calendar_day=(yesterday - datetime.timedelta(days=1)).date(),
-                    workshop=workshop)
-                fact_sum = previous_day_data.fact_sum + report_form.cleaned_data['day_fact']
-            except Exception as e:
-                fact_sum = report_form.cleaned_data['day_fact']
-
-            yesterday_data = DailyReport.objects.select_related('month_plan_data').get(calendar_day=yesterday,
-                                                                                       workshop=workshop)
-
-            day_plan_rate = 100 * report_form.cleaned_data['day_fact'] / yesterday_data.day_plan
-            print(yesterday_data.plan_sum, yesterday_data.fact_sum, fact_sum)
-            # plan_done_rate = 100 * fact_sum / yesterday_data.plan_sum
-            plan_done_rate = 100 * yesterday_data.plan_sum / yesterday_data.month_plan_data.month_plan_amount
-            fact_done_rate = 100 * fact_sum / yesterday_data.month_plan_data.month_plan_amount
-            plan_loos_rate = fact_done_rate - plan_done_rate
-            print(fact_done_rate)
-            print(plan_done_rate)
-            print(plan_loos_rate)
-
-            record_object = DailyReport.objects.filter(calendar_day=yesterday.date(), workshop=workshop)
-            record_object.update(fact_sum=fact_sum, day_fact=report_form.cleaned_data['day_fact'],
-                                 day_plan_rate=day_plan_rate, plan_done_rate=plan_done_rate,
-                                 fact_done_rate=fact_done_rate, plan_loos_rate=plan_loos_rate)
-
-            report_days = (DailyReport.objects.filter(calendar_day__gte=today - datetime.timedelta(days=4),
-                                                      calendar_day__lte=today + datetime.timedelta(days=4))
-                           .order_by('calendar_day'))
-
-            context = {'report_form': report_form, 'report_days': report_days, 'yesterday': yesterday.date(),
-                       'workshop': workshop}
-
-            return render(request, r"scheduler/report.html", context=context)
-        else:
-            print('not_valid_form')
-    else:
-        report_form = DailyReportForm()
-
-    context = {'report_form': report_form, 'report_days': report_days, 'yesterday': yesterday.date(),
-               'workshop': workshop}
-    return render(request, r"scheduler/report.html", context=context)
