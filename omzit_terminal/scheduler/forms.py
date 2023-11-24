@@ -60,7 +60,7 @@ class SchedulerWorkplaceLabelDate(ModelChoiceField):  # переопределе
     """
 
     def label_from_instance(self, obj):
-        return obj.datetime_done
+        return obj.model_order_query
 
 
 class SchedulerWorkplace(forms.Form):
@@ -68,10 +68,10 @@ class SchedulerWorkplace(forms.Form):
     Форма для ввода графика РЦ
     """
     query_set_wp = ShiftTask.objects.all().distinct('ws_number')
-    ws_number = SchedulerWorkplaceLabel(queryset=query_set_wp, empty_label='РЦ не выбран', label='Терминал')
-    order_model_query_set = WorkshopSchedule.objects.filter(Q(order_status='запланировано') |
+    ws_number = SchedulerWorkplaceLabel(queryset=query_set_wp, empty_label='Терминал не выбран', label='Терминал')
+    model_order_query_set = WorkshopSchedule.objects.filter(Q(order_status='запланировано') |
                                                             Q(order_status='в работе'))
-    order_model_query = SchedulerWorkplaceLabelDate(queryset=order_model_query_set,
+    model_order_query = SchedulerWorkplaceLabelDate(queryset=model_order_query_set,
                                                     empty_label='Не выбрано',
                                                     label='Заказ-модель')
 
@@ -95,11 +95,11 @@ class FioDoer(forms.Form):
     def __init__(self, *args, **kwargs):
         if 'ws_number' in kwargs and kwargs['ws_number'] is not None:
             ws_number = kwargs.pop('ws_number')
-            datetime_done = kwargs.pop('datetime_done')
+            model_order_query = kwargs.pop('model_order_query')
             # query_set запроса СЗ
             qs_st_number = (ShiftTask.objects.filter  # выбор "не распределено", "брак", "не принято"
                             (Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
-                            ).filter(ws_number=ws_number, datetime_done=datetime_done, next_shift_task=None)
+                            ).filter(ws_number=ws_number, model_order_query=model_order_query, next_shift_task=None)
         else:
             qs_st_number = None
         # Вызов супер класса для создания поля st_number
@@ -156,11 +156,6 @@ class DailyReportForm(forms.Form):
     personal_shift_welders = forms.IntegerField(min_value=0, label='Выход в дату сварщиков', initial=1)
     personal_total_locksmiths = forms.IntegerField(min_value=0, label='Всего слесарей', initial=1)
     personal_shift_locksmiths = forms.IntegerField(min_value=0, label='Выход в дату слесарей', initial=1)
-
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     self.fields["day_plan"].widget.attrs.update({"class": "day_plan"})
-    #     self.fields["day_fact"].widget.attrs.update({"class": "day_fact"})
 
 
 class ReportForm(forms.Form):

@@ -22,7 +22,9 @@
         {%endif %}
         <h1>
             <!-- prettier-ignore -->
-            Распределение ФИО для Т{{ filtered_workplace_schedule.0.ws_number }} на дату {{ filtered_workplace_schedule.0.datetime_done }}
+            Распределение ФИО для Т{{ filtered_workplace_schedule.0.ws_number }} для модели {{ filtered_workplace_schedule.0.model_name }}
+            <br />
+            заказа {{ filtered_workplace_schedule.0.order }} на дату {{ filtered_workplace_schedule.0.datetime_done }}
         </h1>
         {% if alert_message != '' %}
         <script>

@@ -1,5 +1,4 @@
-{% load static %}
-{% load i18n %}
+{% load static %} {% load i18n %}
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -27,72 +26,74 @@
         <a href="{% url 'home' %}">Назад</a> <br />
         {%endif %}
         <h1>Рабочее место планировщика рабочих центров</h1>
-        <br />
+        <br /><br /><br /><br /><br />
 
         <!--форма планирования РЦ-->
         <form action="{% url 'schedulerwp' %}" method="post" enctype="multipart/form-data" class="form_form">
             {% csrf_token %}
             <div class="add_to_plan">
                 <div class="form-error">{{ form_workplace_plan.non_field_errors }}</div>
-                    
+                <div class="form_inner_label">Выбор терминала для распределения</div>
+                <br />
                 <div class="form_inner_label">{{ form_workplace_plan.ws_number.label }}:</div>
                 <div class="form_inner_div">{{ form_workplace_plan.ws_number }}</div>
-    
-                <div class="form_inner_label">{{ form_workplace_plan.order_model_query.label }}:</div>
-                <div class="form_inner_div">{{ form_workplace_plan.order_model_query }}</div>
-    
+
+                <div class="form_inner_label">{{ form_workplace_plan.model_order_query.label }}:</div>
+                <div class="form_inner_div">{{ form_workplace_plan.model_order_query }}</div>
+
+                <div class="form_inner_div"><button class="btn" type="submit">Выбрать</button></div>
+
                 <div class="form-error">{{ form_workplace_plan.errors }}</div>
-                <p>
-                    <button class="btn" type="submit">Выбрать</button>
-                </p>
             </div>
         </form>
 
         <script type="text/javascript" src="/jsi18n/"></script>
-        <script type="text/javascript">window.__admin_media_prefix__ = "{% static 'admin/' %}";</script>
+        <script type="text/javascript">
+            window.__admin_media_prefix__ = "{% static 'admin/' %}";
+        </script>
+        <br /><br /><br />
         {{ form_report.media }}
 
-        <div class="form_form", id="id_report_form">
+        <div class="form_form" , id="id_report_form">
             <div class="add_to_plan">
                 <div class="form-error">{{ form_report.non_field_errors }}</div>
-                <div class="form_inner_label">Сформировать отчет</div>
+                <div class="form_inner_label">Формирование отчётов</div>
+                <br />
+
                 <div class="form_inner_label">{{ form_report.date_start.label }}:</div>
                 <div class="form_inner_div">{{ form_report.date_start }}</div>
-    
+
                 <div class="form_inner_label">{{ form_report.date_end.label }}:</div>
                 <div class="form_inner_div">{{ form_report.date_end }}</div>
-    
+
                 <div class="form-error">{{ form_report.errors }}</div>
-                <div>
-                    <p><button class='btn' onclick="getReport('st_report')">Загрузить отчет</button></p>
+                <div class="form_inner_div">
+                    <button class="btn" onclick="getReport('st_report')">Загрузить xlsx отчет</button>
                 </div>
-                <div>
-                    <p><button class='btn' onclick="getReport('view_st_report')">Посмотреть отчет</button></p>
+                <div class="form_inner_div">
+                    <button class="btn" onclick="getReport('view_st_report')">Посмотреть отчет</button>
                 </div>
-                
             </div>
         </div>
 
-
         {% if workplace_schedule %} {% if alert_message != '' %}
         <p class="alert">{{ alert_message }}</p>
-        {% endif %}
-        {% endif %}
+        {% endif %} {% endif %}
         <!-- prettier-ignore -->
         {% if user.username == 'admin' %}
         <a href="{% url 'home' %}">Назад</a> <br />
         {%endif %}
         <script>
             function getReport(url) {
-                var start = document.getElementById("id_date_start").value
-                var end = document.getElementById("id_date_end").value
+                var start = document.getElementById("id_date_start").value;
+                var end = document.getElementById("id_date_end").value;
                 if (start == "") {
-                    start = "null"
+                    start = "null";
                 }
                 if (end == "") {
-                    end = "null"
+                    end = "null";
                 }
-                window.location.href = `${url}_${start}_${end}`
+                window.location.href = `${url}_${start}_${end}`;
             }
         </script>
         <div style="height: 150px"></div>
