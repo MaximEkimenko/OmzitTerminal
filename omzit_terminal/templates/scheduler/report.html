@@ -293,6 +293,19 @@
         <button type="submit" class="btn" form="id_send_form">
             <p class="red_word">Заполнить данные</p>
         </button>
+        <p>plan{{ workshop }}-{{yesterday|date:'m' }}.jpg</p>
+        <a href="{% static 'scheduler/jpg/plan1-11.jpg' %}">
+            <img src="{% static 'scheduler/jpg/plan1-11.jpg' %}" height="100px" />
+        </a>
+
+        <!-- function open_photo(photo) {
+            document.getElementById("big-photo").innerHTML =
+              ("<img onclick='close_photo()' style='position: absolute;' src='" + photo + "'>")
+          }
+          
+          function close_photo() {
+            document.getElementById("big-photo").innerHTML = ""
+          } -->
 
         <!-- <table class="table" title="Заявки на документацию">
                 <tr class="table_header_row">
