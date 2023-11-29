@@ -9,7 +9,7 @@ from .models import ShiftTask, WorkshopSchedule, Doers, model_pattern, model_err
 from django.forms import ModelChoiceField
 from django.db.models import Q
 from tehnolog.models import ProductCategory
-from constructor.forms import QueryAnswerForm
+from constructor.forms import QueryAnswerForm, MultipleFileField, MultipleFileInput
 
 
 class SchedulerWorkshop(forms.Form):
@@ -141,6 +141,8 @@ class PlanBid(forms.Form):
                                     widget=forms.SelectDateWidget(empty_label=("год", "месяц", "день"),
                                                                   years=(datetime.datetime.now().year,
                                                                          datetime.datetime.now().year + 1)))
+    sz_order_model_query = forms.CharField(max_length=50,
+                                           widget=forms.TextInput(attrs={'hidden': "true"}))
 
 
 class DailyReportForm(forms.Form):
@@ -176,6 +178,41 @@ class ReportForm(forms.Form):
         widget=widgets.AdminDateWidget(attrs={"class": "vDateField report_input"}),
         label='по',
         initial=make_aware(datetime.datetime.now())
+    )
+
+    class Media:
+        css = {
+            'all': (
+                '/static/scheduler/css/widgets.css',
+            )
+        }
+        js = [
+            '/admin/jsi18n/',
+            '/static/admin/js/core.js',
+        ]
+
+
+class CdwChoiceForm(forms.Form):
+    """
+    Форма ответа на заявку КД
+    """
+    cdw_files = MultipleFileField(label='Чертежи cdw',
+                                  widget=MultipleFileInput(attrs={'accept': ".cdw"}))
+
+
+class SendSZForm(forms.Form):
+    """
+    Форма ответа на заявку КД
+    """
+    sz_number = forms.CharField(max_length=50, label='Номер заявки',
+                                widget=forms.TextInput(attrs={"class": "report_input"}))
+    product_name = forms.CharField(max_length=50, label='Изделие',
+                                   widget=forms.TextInput(attrs={"class": "report_input"}))
+    sz_text = forms.CharField(label='Текст заявки',
+                              widget=forms.Textarea(attrs={"class": "sz_textarea"}))
+    need_date = forms.DateField(
+        widget=widgets.AdminDateWidget(attrs={"class": "vDateField report_input"}),
+        label='Дата потребности',
     )
 
     class Media:

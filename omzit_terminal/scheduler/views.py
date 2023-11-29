@@ -2,35 +2,43 @@ import calendar
 
 import asyncio
 import datetime
+import json
 import os
 import shutil
+import threading
 from typing import Tuple
 
 import openpyxl
+import psutil
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import PermissionDenied
 from django.core.mail import EmailMessage
-from django.http import FileResponse
+from django.http import FileResponse, JsonResponse
 
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 
 from django.db.models import Q
+from django.utils import timezone
 from django.utils.timezone import make_aware, make_naive
 
-
 from omzit_terminal.settings import BASE_DIR
+from tehnolog.services.service_handlers import handle_uploaded_file
 from .filters import get_filterset
-from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw, PlanBid, DailyReportForm, ReportForm
+from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw, PlanBid, DailyReportForm, ReportForm, \
+    CdwChoiceForm, SendSZForm
 from .models import WorkshopSchedule, ShiftTask, DailyReport, MonthPlans
 
 from .services.schedule_handlers import get_all_done_rate
 from worker.services.master_call_function import terminal_message_to_id
+from .services.specification import connect_to_client, get_specifications_server, get_specifications_ssh
 
 TERMINAL_GROUP_ID = os.getenv('ADMIN_TELEGRAM_ID')
+SPEC_CREATION_PROCESS = dict()
+SPEC_CREATION_THREAD = dict()
 
 
 @login_required(login_url="login")
@@ -448,11 +456,14 @@ def test_scheduler(request):
     #  сделать невозможным заполнять запрос с кириллицей
     # фильтры в колонки графика
     # перечень запросов на КД
-    td_queries_fields = ('model_order_query', 'query_prior', 'td_status', 'order_status')  # поля таблицы
+    td_queries_fields = ['model_order_query', 'query_prior', 'td_status', 'order_status', 'sz']  # поля таблицы
     td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(td_status='завершено'))
     # фильтры в колонки заявок
-    # f_q = get_filterset_second_table(data=request.GET, queryset=td_queries, fields=td_queries_fields)
-    f_q = get_filterset(data=request.GET, queryset=td_queries, fields=td_queries_fields, index=2)
+    # f_w = get_filterset_second_table(data=request.GET, queryset=td_queries, fields=td_queries_fields)
+    filter_fields = ['model_order_query', 'query_prior', 'td_status', 'order_status']
+    f_q = get_filterset(data=request.GET, queryset=td_queries, fields=filter_fields, index=2)
+
+    sz_shift_tasks = ShiftTask.objects.values("workpiece", 'model_order_query').filter()
 
     # форма запроса КД
     form_query_draw = QueryDraw()
@@ -506,9 +517,9 @@ def test_scheduler(request):
         # чистые формы для первого запуска
         form_workshop_plan = SchedulerWorkshop()
         context = {'form_workshop_plan': form_workshop_plan, 'td_queries': td_queries,
-                   'form_query_draw': form_query_draw, 'filter_q': f_q, 'form_plan_bid': form_plan_bid}
+                   'form_query_draw': form_query_draw, 'filter_q': f_q, 'form_plan_bid': form_plan_bid,
+                   'sz_st': sz_shift_tasks}
     return render(request, r"scheduler/test_scheduler.html", context=context)
-
 
 
 def shift_tasks_reports(request, start: str = "", end: str = ""):
@@ -684,3 +695,150 @@ def get_start_end_st_report(start: str, end: str) -> Tuple:
     else:
         end = make_aware(datetime.datetime.strptime(end, "%d.%m.%Y").replace(hour=23, minute=59, second=59))
     return start, end
+
+
+def create_specification(request):
+    """
+    Рабочее место для создания заявки на детали по спецификации
+    """
+    alert = ""
+    spec = dict()
+    draw_form = CdwChoiceForm()  # Форма выбора файлов
+    send_form = SendSZForm()  # Форма отправки служебной записки
+    shared_folder = r"\\omzit\Shared\Temp\cdwr"
+
+    ip = request.META.get('REMOTE_ADDR')
+
+    # Проверяем, есть ли запущенный процесс загрузки чертежей для данного ip
+    pid = SPEC_CREATION_PROCESS.get(ip)
+    if pid and psutil.pid_exists(pid):
+        alert = "Выполняется формирование спецификации..."
+        context = {'spec': spec, "send_form": send_form, 'alert': alert, "draw_form": draw_form}
+        return render(request, r"scheduler/specification.html", context=context)
+
+    thr = SPEC_CREATION_THREAD.get(ip)
+    if thr and thr.is_alive():
+        alert = "Выполняется формирование спецификации..."
+        context = {'spec': spec, "send_form": send_form, 'alert': alert, "draw_form": draw_form}
+        return render(request, r"scheduler/specification.html", context=context)
+
+    if request.method == "POST":
+        draw_form = CdwChoiceForm(request.POST, request.FILES)
+        files = []
+        if draw_form.is_valid():
+            files = dict(request.FILES).get("cdw_files")
+
+            # Создаем директорию cdwr в папке M:\Temp
+            try:
+                os.mkdir(shared_folder)
+            except Exception as ex:
+                print(fr"При попытке создания папки {shared_folder} вызвано исключение: {ex}")
+            if os.path.exists(shared_folder):
+                files_path = shared_folder
+                # client = None
+                client = connect_to_client(ip)
+                if client:
+                    scenario = "КОМПАС на клиенте"
+                else:
+                    scenario = "КОМПАС на сервере"
+            else:  # Если нет доступа к M:\Temp, то создаем папку на сервере
+                files_path = BASE_DIR / "cdw"
+                if not os.path.exists(files_path):
+                    os.mkdir(files_path)
+                scenario = "КОМПАС на сервере"
+
+            # Загружаем файлы, добавляем полные пути в список files_paths
+            files_paths = []
+            for file in files:
+                filename = str(file)
+                try:
+                    handle_uploaded_file(f=file, filename=filename, path=files_path)
+                    files_paths.append(os.path.join(files_path, filename))
+                except Exception as ex:
+                    print(f"При загрузке файлов в {files_path} возникло исключение: {ex}")
+                    files_paths = []
+
+            print(scenario)
+            # Обработка сценария, когда КОМПАС установлен на сервере
+            if scenario == "КОМПАС на сервере":
+                pid = get_specifications_server(files_paths)
+                SPEC_CREATION_PROCESS[ip] = pid
+            elif scenario == "КОМПАС на клиенте":
+                thread = threading.Thread(target=get_specifications_ssh, args=(client, files_paths))
+                SPEC_CREATION_THREAD[ip] = thread
+                thread.start()
+
+            if files_paths:
+                alert = "Выполняется формирование спецификации..."
+            else:
+                alert = "Ошибка формирования спецификации!"
+        context = {'spec': spec, 'draw_form': draw_form, 'alert': alert, "files": files, "send_form": send_form}
+        return render(request, r"scheduler/specification.html", context=context)
+    else:  # метод GET
+        # Загружаем файл спецификации из specification.json
+        try:
+            if os.path.exists(shared_folder):
+                files_path = shared_folder
+            else:
+                files_path = BASE_DIR / "cdw"
+            json_path = os.path.join(files_path, "specification.json")
+            with open(json_path, 'r') as json_file:
+                spec = json.load(json_file)
+        except Exception:
+            print("Ошибка получения файла спецификации")
+        rows = []  # Все строки по всем чертежам
+        names = []  # Наименования для заполнения select
+        draw_names = dict()  # Соответствие наименований чертежам
+        draws = set()  # Чертежи для заполнения select
+        if spec:
+            spec.pop("columns")
+            for key, value in spec.items():
+                draw_names[key] = []
+                for row in value:
+                    draw_names[key].append(row["Наименование"])
+                    row["Чертеж"] = key
+                    draws.add(key)
+                    names.append(row["Наименование"])
+                rows.extend(value)
+    context = {'draw_names': draw_names, 'rows': rows, "names": names, "draws": draws,
+               "send_form": send_form, "draw_form": draw_form, 'alert': alert}
+    return render(request, r"scheduler/specification.html", context=context)
+
+
+def create_shift_tasks_from_spec(request):
+    """
+    Создает сменные задания из спецификации
+    """
+    if request.method == "POST":
+
+        # Удаляем файлы спецификаций
+        json_path_1 = BASE_DIR / "specification.json"
+        json_path_2 = r"\\omzit\Shared\Temp\cdwr\specification.json"
+        if os.path.exists(json_path_1):
+            os.remove(json_path_1)
+        elif os.path.exists(json_path_2):
+            os.remove(json_path_2)
+
+        json_data = request.body
+        data = json.loads(json_data)
+        if data:
+            model_name = str(datetime.datetime.now().timestamp())[:7]
+            order = data["sz"]["sz_number"]
+            model_order_query = f"{order}_{model_name}"
+            WorkshopSchedule.objects.create(
+                model_name=model_name,
+                order=order,
+                model_order_query=model_order_query,
+                sz=data["sz"],
+                td_status="передано",
+            )
+            shift_tasks = []
+            for product in data["products"]:
+                shift_tasks.append(ShiftTask(
+                    model_name=model_name,
+                    order=order,
+                    model_order_query=model_order_query,
+                    workpiece=product,
+                ))
+            ShiftTask.objects.bulk_create(shift_tasks)
+        return JsonResponse({"STATUS": "OK"})

@@ -57,6 +57,15 @@ class WorkshopSchedule(models.Model):
     tehnolog_query_td_fio = models.CharField(max_length=30, null=True, verbose_name='Утвердил / загрузил')
     product_category = models.CharField(max_length=30, null=True, verbose_name='Категория изделия')
 
+    # Пример структуры {
+    # "author": "admin",
+    # "sz_text": "Прошу изготовить",
+    # "need_date": "22.12.2023",
+    # "sz_number": "СЗ1",
+    # "product_name": "Блок Б57"
+    # }
+    sz = models.JSONField(null=True, blank=True, verbose_name='Данные служебной записки')
+
     # tehnolog_excel_load_fio = models.CharField(max_length=30, null=True, verbose_name='Загрузил')
 
     class Meta:
@@ -145,6 +154,16 @@ class ShiftTask(models.Model):
         null=True,
         blank=True
     )
+
+    # Пример структуры {
+    # "draw": "AGCC.287-6400-PB-01-KM1.DW-0037 - Блок Б57-1-Тип10_V18",
+    # "name": "Б1-1",
+    # "text": "Б1-1 Швеллер 30П ГОСТ 8240-97 С255-4 ГОСТ 27772-2015 L=7500 (2 шт.)",
+    # "count": "2",
+    # "length": "7500",
+    # "material": "Швеллер 30П ГОСТ 8240-97 С255-4 ГОСТ 27772-2015"
+    # }
+    workpiece = models.JSONField(null=True, blank=True, verbose_name='Заготовка')
 
     class Meta:
         db_table = "shift_task"

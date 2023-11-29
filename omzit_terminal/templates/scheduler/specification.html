@@ -1,0 +1,481 @@
+{% load static %}
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Рабочее место заявителя</title>
+        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
+        <link type="text/css" href="{% static 'tehnolog/css/tehnolog.css' %}" rel="stylesheet" />
+    </head>
+    <body>
+        {% if request.user.is_authenticated %}
+        <div class="legend">
+            <div>
+                <p>Пользователь: {{ user.username }} | <a href="{% url 'logout' %}" class="legend_link"> Выйти </a></p>
+                <p><a href="{% url 'instruction' %}">Инструкция</a> <br /></p>
+                <p>Папка с чертежами: \\SVR-003\draws</p>
+            </div>
+        </div>
+        {% else %} <a href="{% url 'login' %}"> Войти </a>
+        {%endif %}
+        <h1>Рабочее место заявителя</h1>
+        {% if alert and "Ошибка" not in alert %}
+        <p class='alert_gone'> {{ alert }} </p>
+        <script>
+            setTimeout(function(){
+                window.location.href='{% url "specification" %}';
+            }, 2000)
+        </script>
+        {% elif "Ошибка" in alert %}
+        <p class='alert_gone' style='color: red;'> {{ alert }} </p>
+        {% endif %}
+        <div id="id_modal_td_kd" class="">
+            <form
+                id="id_td_kd_form"
+                class="form_form"
+                action="{% url 'specification' %}"
+                method="post"
+                enctype="multipart/form-data"
+            >
+                {% csrf_token %}
+                <div class="add_to_plan">
+                    <h3>Форма загрузки КД</h3>
+                    <div class="form_inner_label">{{ draw_form.cdw_files.label }}</div>
+                    <div class="form_inner_div">{{ draw_form.cdw_files }}</div>
+                    <div>
+                        <button type="submit" class="form_button">
+                            <p class="red_word">Загрузить чертежи</p>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <!-- Основная таблица интерфейса -->
+            <div class="table_div" >
+                <h3>Изделия</h3>
+                <table title="Спецификация" class="table_spec" id="id_table">
+                    <tr class="table_header_row">
+                        <td class="td_cell">Чертеж</td>
+                        <td class="td_cell">Наименование</td>
+                        <td class="td_cell" style="width: 300px">Материал</td>
+                        <td class="td_cell">Количество</td>
+                        <td class="td_cell">Длина</td>
+                        <td class="td_cell">Действия</td>
+                    </tr>
+                    <tr class="table_row">
+                    </tr>
+                </table>
+            </div>
+        <script type="text/javascript" src="/jsi18n/"></script>
+        <script type="text/javascript">window.__admin_media_prefix__ = "{% static 'admin/' %}";</script>
+        {{ send_form.media }}
+        <div id="id_modal_spec_send" class="">
+            <div
+                id="id_spec_send_form"
+                class="form_form"
+            >
+                <div class="add_to_plan">
+                    <h3>Форма отправки заявки</h3>
+                    <div class="form_inner_label">{{ send_form.sz_number.label }}</div>
+                    <div class="form_inner_div">{{ send_form.sz_number }}</div>
+                    <div class="form_inner_label">{{ send_form.product_name.label }}</div>
+                    <div class="form_inner_div">{{ send_form.product_name }}</div>
+                    <div class="form_inner_label">{{ send_form.need_date.label }}:</div>
+                    <div class="form_inner_div">{{ send_form.need_date }}</div>
+                    <br>
+                    <div class="form_inner_label">{{ send_form.sz_text.label }}</div>
+                    <br>
+                    <div class="form_inner_div">{{ send_form.sz_text }}</div>
+                    <br>
+                    <div>
+                        <button class="form_button" onclick="tableDataToJSON('id_table', 'http://127.0.0.1:8000/scheduler/create_st/')">
+                            <p class="red_word">Отправить заявку</p>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br />
+        <br />
+
+        <!-- prettier-ignore -->
+        {% if user.username == 'admin' %}
+        <a href="{% url 'home' %}">Назад</a> <br />
+        {%endif %}
+        <script src="{% static 'tehnolog/js/tehnolog.js' %}"></script>
+        <script>
+            var lastRowIndex = 0
+            document.addEventListener("DOMContentLoaded", function () {
+                // При загрузке документа
+                if (localStorage.getItem("saved_table") === null) {
+                    addRow("id_table", false)
+                } else {
+                    var table = document.getElementById("id_table")
+                    table.innerHTML = localStorage.getItem("saved_table");
+                    lastRowIndex = localStorage.getItem("lastRowIndex")
+                    let last_cell = table.rows[lastRowIndex].cells[5]
+                    for (i = 0; i < last_cell.children.length - 1; i++) {
+                        last_cell.removeChild(last_cell.lastChild)
+                    }
+
+                    let rows = table.rows
+                    for (let i = 2; i < rows.length; i++) {
+                        let cells = table.rows[i].cells
+                        if (cells[0].hasChildNodes()) {
+                            cells[0].firstChild.value = localStorage.getItem(`draw${i}`)
+                        }
+                        if (cells[1].hasChildNodes()) {
+                            cells[1].firstChild.value = localStorage.getItem(`name${i}`)
+                        }
+                    }
+                    let lastRow = rows[lastRowIndex].cells
+                    console.log(lastRow[2].innerHTML)
+                    if (lastRow[2].innerHTML == "" && lastRow[3].innerHTML == "" && lastRow[4].innerHTML == "") {
+                        DeleteRow(lastRow[5].firstChild)
+                    } else {
+                        addRow("id_table", false)
+                    }
+
+                }      
+            })
+
+            function updateStorage() {
+                let table = document.getElementById("id_table")
+                let rows = table.rows
+                for (let i = 2; i < rows.length; i++) {
+                    let cells = table.rows[i].cells
+                    if (cells[0].hasChildNodes()) {
+                        localStorage.setItem(`draw${i}`, cells[0].firstChild.value)
+                    }
+                    if (cells[1].hasChildNodes()) {
+                        localStorage.setItem(`name${i}`, cells[1].firstChild.value)
+                    }
+                }
+                localStorage.setItem("saved_table", table.innerHTML);
+                localStorage.setItem("lastRowIndex", lastRowIndex);
+            }
+  
+            var draws = [];
+            draws.push("Выберите чертеж");
+            draws.push("Все чертежи");
+            {% for draw in draws %}
+                draws.push("{{ draw }}")
+            {% endfor %}
+
+            var last_draw = "Выберите чертеж"
+
+            const add_button = document.createElement('button');
+            add_button.classList.add('btn');
+            add_button.setAttribute('onclick', 'addRow("id_table", true)');
+            add_button.setAttribute('id', 'id_add_btn');
+            add_button.textContent = 'Добавить строку';
+
+            const add_all_button = document.createElement('button');
+            add_all_button.classList.add('btn');
+            add_all_button.setAttribute('onclick', 'addAllDetails(this)');
+            add_all_button.setAttribute('id', 'id_add_all_btn');
+            add_all_button.textContent = 'Добавить все';
+
+
+            function addRow(tableID, save) {
+                var tableRef = document.getElementById(tableID);
+                var previousLastRowIndex = lastRowIndex
+
+                if (previousLastRowIndex > 3){
+                    let last_prev_cell = tableRef.rows[previousLastRowIndex - 1].cells[5]
+                    let btn_1 = last_prev_cell.id_add_btn
+                    let btn_2 = last_prev_cell.id_add_all_btn
+                }
+    
+                var newRow = tableRef.insertRow(-1);
+                newRow.className = "table_row";
+                lastRowIndex = newRow.rowIndex
+
+                for (var n = 0; n < 6; n++) {
+                    var newCell = newRow.insertCell(0);
+                    newCell.className = "td_cell";
+                };
+                
+                const delete_button = document.createElement('button');
+                delete_button.classList.add('btn');
+                delete_button.setAttribute('onclick', 'DeleteRow(this)');
+                delete_button.textContent = 'Удалить';
+
+                const change_button = document.createElement('button');
+                change_button.classList.add('btn');
+                change_button.setAttribute('onclick', 'changeRow(this)');
+                change_button.textContent = 'Изменить';
+
+                newRow.cells[5].appendChild(delete_button);
+                newRow.cells[5].appendChild(change_button);
+                newRow.cells[5].appendChild(add_button);
+                newRow.cells[5].appendChild(add_all_button);
+
+                const listSelects = [];
+                var data = [];
+                data.push("Выберите изделие по наименованию");
+                if (last_draw == "Выберите чертеж" || last_draw == "Все чертежи") {
+                    {% for name in names %}
+                        data.push("{{ name }}")
+                    {% endfor %}
+                } else {
+                    {% for draw, names_on_draw in draw_names.items %}
+                        var draw = "{{ draw }}"
+                        if (draw == last_draw) {
+                            {% for name in names_on_draw %}
+                                data.push("{{ name }}")
+                            {% endfor %}
+                        }
+                    {% endfor %}
+                
+                }
+
+                const select = document.createElement("select");
+                listSelects.push(select);
+                select.id = `select_${newRow.rowIndex}`;
+                select.name = `selectName`;
+                select.className = "name_select"
+                select.setAttribute("onchange", "SelectChoiсe(this)")
+
+                for (let i = 0; i < data.length; i++) {
+                    const option = document.createElement("option");
+                    option.className = "name_select_option"
+                    option.value = data[i];
+                    option.text = data[i];
+                    select.add(option);
+                };
+
+                const select_draw = document.createElement("select");
+                listSelects.push(select_draw);
+                select_draw.id = `select_draw_${newRow.rowIndex}`;
+                select_draw.name = `selectName`;
+                select_draw.className = "name_select"
+                select_draw.setAttribute("onchange", "changeDrawChoice(this)")
+
+                for (let i = 0; i < draws.length; i++) {
+                    const option = document.createElement("option");
+                    option.className = "name_select_option"
+                    option.value = draws[i];
+                    option.text = draws[i];
+                    select_draw.add(option);
+                };
+
+                newRow.cells[1].appendChild(select);
+                select_draw_obj = newRow.cells[0].appendChild(select_draw);
+                select_draw_obj.value = last_draw;
+                if (save == true) {
+                    updateStorage()
+                }
+                
+            };
+
+
+            function addAllDetails(obj){
+                var table = obj.parentNode.parentNode.parentNode;
+                var currentRow = obj.parentNode.parentNode
+                var options = currentRow.cells[1].firstChild.children
+                for (let i = 0; i < options.length; i++) {
+                        currentRow.cells[1].firstChild.selectedIndex = i
+                        SelectChoiсe(currentRow.cells[1].firstChild)
+                        currentRow = table.rows[lastRowIndex]
+                };
+                updateStorage()
+            };
+
+
+            function DeleteRow(obj){
+               var table = obj.parentNode.parentNode.parentNode;
+               var currentRowIndex = obj.parentNode.parentNode.rowIndex;
+               table.deleteRow(currentRowIndex);
+               lastRowIndex = lastRowIndex - 1;
+               if (lastRowIndex > 1) {
+                    table.rows[lastRowIndex].cells[5].appendChild(add_button);
+               } else {
+                    addRow("id_table", true);
+               }
+               updateStorage()
+            };
+
+            function changeDrawChoice(obj){
+              if (obj.selectedIndex) {
+                   var currentRow = obj.parentNode.parentNode;
+                    last_draw = obj.value
+                    const listSelects = [];
+                    var data = [];
+                    data.push("Выберите изделие по наименованию");
+                    if (last_draw == "Выберите чертеж" || last_draw == "Все чертежи") {
+                        {% for name in names %}
+                            data.push("{{ name }}")
+                        {% endfor %}
+                    } else {
+                        {% for draw, names_on_draw in draw_names.items %}
+                            var draw = "{{ draw }}"
+                            if (draw == last_draw) {
+                                {% for name in names_on_draw %}
+                                    data.push("{{ name }}")
+                                {% endfor %}
+                            }
+                        {% endfor %}
+                    }
+
+                    const select = document.createElement("select");
+                    listSelects.push(select);
+                    select.id = `select_${currentRow.rowIndex}`;
+                    select.name = `selectName`;
+                    select.className = "name_select"
+                    select.setAttribute("onchange", "SelectChoiсe(this)")
+
+                    for (let i = 0; i < data.length; i++) {
+                        const option = document.createElement("option");
+                        option.className = "name_select_option"
+                        option.value = data[i];
+                        option.text = data[i];
+                        select.add(option);
+                    };
+
+                    currentRow.cells[1].removeChild(currentRow.cells[1].firstChild)
+                    currentRow.cells[1].appendChild(select)
+                    currentRow.cells[2].innerText = "";
+                    currentRow.cells[3].innerText = "";
+                    currentRow.cells[4].innerText = "";
+                    updateStorage()
+               }
+            }
+
+            function changeRow(obj) {
+               var currentRow = obj.parentNode.parentNode;
+               var draw_text = currentRow.cells[0].firstChild.value
+               var detail_text = currentRow.cells[1].firstChild.value
+               currentRow.cells[0].removeChild(currentRow.cells[0].firstChild)
+               currentRow.cells[1].removeChild(currentRow.cells[1].firstChild)
+               if (draw_text == "Выберите чертеж" || draw_text == "Все чертежи") {
+                    currentRow.cells[0].innerText = ""
+               } else {
+                    currentRow.cells[0].innerText = draw_text
+               }
+               if (detail_text == "Выберите изделие по наименованию") {
+                    currentRow.cells[1].innerText = ""
+               } else {
+                    currentRow.cells[1].innerText = detail_text
+               }
+               for (let i = 0; i <= 4 ; i++) {
+                        currentRow.cells[i].setAttribute("contenteditable", "true");
+               };
+               currentRow.cells[0].focus()
+               updateStorage()
+            }
+
+            function SelectChoiсe(obj){
+              if (obj.selectedIndex) {
+                   var currentRow = obj.parentNode.parentNode;
+                   var current_draw = ""
+                   var counter = 0
+                   {% for row in rows %}
+                       counter ++
+                       if (last_draw == "Выберите чертеж" || last_draw == "Все чертежи") {
+                          current_draw = "{{ row.Чертеж }}"
+                       } else {
+                          counter = obj.selectedIndex
+                          current_draw = last_draw
+                       }
+                        var draw_name = "{{ row.Чертеж }}";
+                        var name_select = "{{ row.Наименование }}";
+                        if (name_select == obj.value && current_draw == draw_name && counter == obj.selectedIndex) {
+                           currentRow.cells[0].firstChild.value = current_draw;
+                           currentRow.cells[2].innerText = "{{ row.Материал }}";
+                           currentRow.cells[3].innerText = "{{ row.Количество }}";
+                           currentRow.cells[4].innerText = "{{ row.Длина }}";
+                        };
+                   {% endfor %}
+                   if (currentRow.rowIndex == lastRowIndex) {
+                        addRow("id_table", true);
+                   }
+                   updateStorage()
+              }
+            }
+
+            async function postData(url = '', data = {}) {
+                const csrfToken = '{{ csrf_token }}';
+                const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify(data)
+                });
+                return await response.json();
+            }
+
+            function tableDataToJSON(tableID, url) {
+                var table = document.getElementById(tableID)
+
+                const rowsCount = table.rows.length
+                var products = []
+                for (let i = 2; i < rowsCount; i++) {
+                        let draw = getCellText(table, i, 0)
+                        let name = getCellText(table, i, 1)
+                        if (draw != "Выберите чертеж" && draw != "Все чертежи" && name != "Выберите изделие по наименованию") {
+                            var text = ""
+                            text += name + " " + getCellText(table, i, 2)
+                            let length = getCellText(table, i, 4)
+                            let count = getCellText(table, i, 3)
+                            if (length != "") {
+                                text += " L=" + length
+                            }
+                            if (count != "") {
+                                text += " (" + count + " шт.)"
+                            }
+                            products.push({
+                                draw: draw,
+                                name: getCellText(table, i, 1),
+                                material: getCellText(table, i, 2),
+                                length: getCellText(table, i, 4),
+                                count: getCellText(table, i, 3),
+                                text: text
+                            })
+                        }
+                }
+                var data = {
+                    sz: {
+                        sz_number: document.getElementById("id_sz_number").value,
+                        product_name: document.getElementById("id_product_name").value,
+                        sz_text: document.getElementById("id_sz_text").value,
+                        need_date: document.getElementById("id_need_date").value,
+                        author: '{{ request.user }}'
+                    },
+                    products: products
+                }
+                
+                postData(url, data).then((data) => {
+                    if (data['STATUS'] == 'OK') {
+                        console.log("OK")
+                        alert("Заявка успешно создана!")
+                        localStorage.clear();
+                        window.location.href='{% url "specification" %}';
+                    } else {
+                        console.log("не OK")
+                    }
+                  });
+            }
+
+            function getCellText(table, i, j) {
+                var cell = table.rows[i].cells[j]
+                if (cell.hasChildNodes()) {
+                    var childName = cell.childNodes[0].nodeName
+                    if (childName == "SELECT") {
+                    return cell.firstChild.value
+                    } else {
+                        return cell.innerText
+                    }
+                } else {
+                    return ""
+                }
+            }
+
+        </script>
+
+        <div style="height: 150px"></div>
+    </body>
+</html>

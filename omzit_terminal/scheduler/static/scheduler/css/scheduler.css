@@ -326,3 +326,67 @@ input {
     border-radius: 7px;
     height: 30px;
 }
+
+.name_input {
+    font-size: 16px;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 7px;
+    height: 40px;
+}
+.name_select {
+    font-size: 16px;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 7px;
+    width: 400px;
+    height: 40px;
+    background-color: transparent;
+    color: white;
+}
+.name_select_option {
+  color: white;
+  background: #31343C;
+}
+
+.draw_select {
+    font-size: 16px;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 7px;
+    width: 300px;
+    height: 40px;
+    background-color: transparent;
+    color: white;
+}
+.draw_select_option {
+  color: white;
+  background: #31343C;
+}
+
+.table_spec {
+    border: solid 1px orange;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    border-spacing: 2px;
+    display: inline-block;
+    vertical-align: middle;
+    width: auto;
+}
+
+.sz_textarea {
+    font-size: 1rem;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 7px;
+}
+
+.scroll_div_back {
+    width:970px;
+    overflow:hidden;
+}
+
+.scroll_div {
+    height:300px;
+    overflow-y:scroll;
+}
