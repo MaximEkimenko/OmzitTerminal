@@ -60,7 +60,7 @@ class SchedulerWorkplaceLabelDate(ModelChoiceField):  # переопределе
     """
 
     def label_from_instance(self, obj):
-        return obj.datetime_done
+        return obj.model_order_query
 
 
 class SchedulerWorkplace(forms.Form):
@@ -126,21 +126,23 @@ class PlanBid(forms.Form):
     Форма для ввода графика РЦ
     """
 
-    order_query = forms.CharField(max_length=50, label='Имя заказа для служебной',
-                                  widget=forms.TextInput(attrs={'pattern': order_pattern, 'title': order_error_text}))
+    sz_order_query = forms.CharField(max_length=50, label='Имя заказа для служебной',
+                                     widget=forms.TextInput(
+                                         attrs={'pattern': order_pattern, 'title': order_error_text}))
 
-    model_query = forms.CharField(max_length=50, label='Наименование изделия служебной',
-                                  widget=forms.TextInput(attrs={'pattern': model_pattern, 'title': model_error_text}))
+    sz_model_query = forms.CharField(max_length=50, label='Наименование изделия служебной',
+                                     widget=forms.TextInput(
+                                         attrs={'pattern': model_pattern, 'title': model_error_text}))
 
-    workshop = forms.ChoiceField(choices=((0, 'Без сборки'), (1, 'Цех 1'), (2, 'Цех 2'), (3, 'Цех 3'), (4, 'Цех 4')),
-                                 label='Цех сборщик', required=False)
+    sz_workshop = forms.ChoiceField(choices=((0, 'Без сборки'), (1, 'Цех 1'), (2, 'Цех 2'), (3, 'Цех 3'), (4, 'Цех 4')),
+                                    label='Цех сборщик', required=False)
     query_set_category = ProductCategory.objects.all()
-    category = forms.ModelChoiceField(queryset=query_set_category, empty_label='Категория не выбрана',
-                                      label='Категория заказа', required=True)  # выбор категории
-    datetime_done = forms.DateField(label='Планируемая дата готовности', required=True,
-                                    widget=forms.SelectDateWidget(empty_label=("год", "месяц", "день"),
-                                                                  years=(datetime.datetime.now().year,
-                                                                         datetime.datetime.now().year + 1)))
+    sz_category = forms.ModelChoiceField(queryset=query_set_category, empty_label='Категория не выбрана',
+                                         label='Категория заказа', required=True)  # выбор категории
+    sz_datetime_done = forms.DateField(label='Планируемая дата готовности', required=True,
+                                       widget=forms.SelectDateWidget(empty_label=("год", "месяц", "день"),
+                                                                     years=(datetime.datetime.now().year,
+                                                                            datetime.datetime.now().year + 1)))
     sz_order_model_query = forms.CharField(max_length=50,
                                            widget=forms.TextInput(attrs={'hidden': "true"}))
 

@@ -89,7 +89,7 @@
                     <div class="form_inner_div">{{ send_form.sz_text }}</div>
                     <br>
                     <div>
-                        <button class="form_button" onclick="tableDataToJSON('id_table', 'http://127.0.0.1:8000/scheduler/create_st/')">
+                        <button class="form_button" onclick="tableDataToJSON('id_table', '{% url "st_from_spec" %}')">
                             <p class="red_word">Отправить заявку</p>
                         </button>
                     </div>
@@ -442,8 +442,7 @@
                         sz_number: document.getElementById("id_sz_number").value,
                         product_name: document.getElementById("id_product_name").value,
                         sz_text: document.getElementById("id_sz_text").value,
-                        need_date: document.getElementById("id_need_date").value,
-                        author: '{{ request.user }}'
+                        need_date: document.getElementById("id_need_date").value
                     },
                     products: products
                 }
@@ -455,6 +454,7 @@
                         localStorage.clear();
                         window.location.href='{% url "specification" %}';
                     } else {
+                        alert("Заполните все поля служебной записки")
                         console.log("не OK")
                     }
                   });

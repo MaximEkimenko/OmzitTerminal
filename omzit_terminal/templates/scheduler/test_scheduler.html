@@ -172,59 +172,58 @@
         </div>
         <!--форма планирования по служебной с составом-->
         <div id="plan_bid" class="modal">
-            <form
+            <div
                 id="id_plan_bid_form"
-                action="{% url 'scheduler' %}"
-                method="post"
-                enctype="multipart/form-data"
-                class="form_form modal-content"
-            >
+                class="form_form modal-content">
                 <div class="add_to_plan">
                     <h3>Форма для планирования служебной записки</h3>
                     <div class="form_inner_div">{{ form_plan_bid.sz_order_model_query }}</div>
-                    <div class="form_inner_label">{{ form_plan_bid.order_query.label }}</div>
-                    <div class="form_inner_div">{{ form_plan_bid.order_query }}</div>
+                    <div class="form_inner_label">{{ form_plan_bid.sz_order_query.label }}</div>
+                    <div class="form_inner_div">{{ form_plan_bid.sz_order_query }}</div>
                     <br />
-                    <div class="form_inner_label">{{ form_plan_bid.model_query.label }}</div>
-                    <div class="form_inner_div">{{ form_plan_bid.model_query }}</div>
+                    <div class="form_inner_label">{{ form_plan_bid.sz_model_query.label }}</div>
+                    <div class="form_inner_div">{{ form_plan_bid.sz_model_query }}</div>
                     <br />
-                    <div class="form_inner_label">{{ form_plan_bid.workshop.label }}</div>
-                    <div class="form_inner_div">{{ form_plan_bid.workshop }}</div>
+                    <div class="form_inner_label">{{ form_plan_bid.sz_workshop.label }}</div>
+                    <div class="form_inner_div">{{ form_plan_bid.sz_workshop }}</div>
                     <br />
-                    <div class="form_inner_label">{{ form_plan_bid.category.label }}</div>
-                    <div class="form_inner_div">{{ form_plan_bid.category }}</div>
+                    <div class="form_inner_label">{{ form_plan_bid.sz_category.label }}</div>
+                    <div class="form_inner_div">{{ form_plan_bid.sz_category }}</div>
                     <br />
-                    <div class="form_inner_label">{{ form_plan_bid.datetime_done.label }}</div>
-                    <div class="form_inner_div">{{ form_plan_bid.datetime_done }}</div>
+                    <div class="form_inner_label">{{ form_plan_bid.sz_datetime_done.label }}</div>
+                    <div class="form_inner_div">{{ form_plan_bid.sz_datetime_done }}</div>
                     <br />
                     <div class="form_inner_label">Распределение изготовления заготовки:</div>                      
-                    <div class="scroll_div_back" id="id_sz_st"></div>
+                    <div class="scroll_div_back"><div class="scroll_div" id="id_sz_st"></div></div>
                     <div>
-                        <button class="form_button" onclick="tableDataToJSON('id_table', 'http://127.0.0.1:8000/scheduler/create_st/')">
+                        <button class="form_button" id="id_plan_bid_form_btn" onclick="tableDataToJSON('id_st_table', '{% url "confirm_sz_planning" %}')">
                             <p class="green_word">Запланировать</p>
                         </button>
                     </div>
                 </div>
-            </form>
+            </div>
         </div>
 
         <script>
             // кнопки планирования Служебки
             document.addEventListener("DOMContentLoaded", function () {
                 // При загрузке документа
-                // const sel = id_plan_bid_form.elements.model_order_query; // Получаем все селекты
                 const buttons = document.querySelectorAll(".id_plan_bid_btn"); // Получаем кнопки с классом
                 buttons.forEach(function (c) {
                     // Для каждой кнопки
                     c.onclick = function () {
                         // Слушаем нажатие
-                        // Если нажата, то выбирает тот option, который в тексте кнопки.
                         const modal = document.querySelector("#plan_bid");
                         modal.style.display = "block";
                         renderSzShiftTasks(c.dataset.orderModel)
-                        // for (var n = 0; n < sel.length; n++) {
-                        //     if (sel.options[n].text == c.value) sel.options[n].selected = true;
-                        // }
+                        {% for query in td_queries %}
+                        if (c.dataset.orderModel == '{{ query.model_order_query }}') {
+                            let date = '{{ query.sz.need_date }}'.split(".")
+                            document.getElementById("id_sz_datetime_done_day").value = Number(date[0])
+                            document.getElementById("id_sz_datetime_done_month").value = Number(date[1])
+                            document.getElementById("id_sz_datetime_done_year").value = Number(date[2])
+                        }
+                        {% endfor %}
                         window.onclick = function (event) {
                             if (event.target == modal) {
                                 modal.style.display = "none";
@@ -238,26 +237,25 @@
                 console.log(orderModel)
                 var szShiftTasksDiv = document.getElementById("id_sz_st")
                 var html = `
-                    <table title="Сменные задания" class="table">   
+                    <table title="Сменные задания" class="table" id="id_st_table">   
                             <tr class="table_header_row">
-                                <td class="td_cell" style="width:257px;">Наименование</td>
-                                <td class="td_cell" style="width:375px;">Материал</td>
-                                <td class="td_cell" style="width:75px;">Длина</td>
-                                <td class="td_cell" style="width:140px;">Количество</td>
-                                <td class="td_cell" style="width:120px;">Цех</td>
+                                <td class="td_cell">№</td>
+                                <td class="td_cell">Наименование</td>
+                                <td class="td_cell">Материал</td>
+                                <td class="td_cell">Длина</td>
+                                <td class="td_cell">Количество</td>
+                                <td class="td_cell">Цех</td>
                             </tr>
-                    </table>
-                    <div class="scroll_div">
-                        <table title="Сменные задания" class="table">
                 `
                 {% for st in sz_st %}
                 if (orderModel == "{{ st.model_order_query }}") {
                     html += `<tr class="table_row">
-                        <td class="td_cell" style="width:257px;">{{ st.workpiece.name }}</td>
-                        <td class="td_cell" style="width:375px;">{{ st.workpiece.material }}</td>
-                        <td class="td_cell" style="width:75px;">{{ st.workpiece.length }}</td>
-                        <td class="td_cell" style="width:140px;">{{ st.workpiece.count }}</td>
-                        <td class="td_cell" style="width:120px;">
+                        <td class="td_cell">{{ st.id }}</td>
+                        <td class="td_cell">{{ st.workpiece.name }}</td>
+                        <td class="td_cell">{{ st.workpiece.material }}</td>
+                        <td class="td_cell">{{ st.workpiece.length }}</td>
+                        <td class="td_cell">{{ st.workpiece.count }}</td>
+                        <td class="td_cell">
                             <select name="select">
                     `
                     
@@ -300,53 +298,35 @@
                 });
                 return await response.json();
             }
-
+            
             function tableDataToJSON(tableID, url) {
                 var table = document.getElementById(tableID)
 
                 const rowsCount = table.rows.length
-                var products = []
+                var shiftTasks = new Object()
                 for (let i = 2; i < rowsCount; i++) {
-                        let draw = getCellText(table, i, 0)
-                        let name = getCellText(table, i, 1)
-                        if (draw != "Выберите чертеж" && draw != "Все чертежи" && name != "Выберите изделие по наименованию") {
-                            var text = ""
-                            text += name + " " + getCellText(table, i, 2)
-                            let length = getCellText(table, i, 4)
-                            let count = getCellText(table, i, 3)
-                            if (length != "") {
-                                text += " L=" + length
-                            }
-                            if (count != "") {
-                                text += " (" + count + " шт.)"
-                            }
-                            products.push({
-                                draw: draw,
-                                name: getCellText(table, i, 1),
-                                material: getCellText(table, i, 2),
-                                length: getCellText(table, i, 4),
-                                count: getCellText(table, i, 3),
-                                text: text
-                            })
-                        }
+                        let workshop = table.rows[i].cells[5].lastChild.value
+                        let idShiftTask = table.rows[i].cells[0].innerHTML
+                        shiftTasks[idShiftTask] = workshop
                 }
+                
                 var data = {
-                    sz: {
-                        sz_number: document.getElementById("id_sz_number").value,
-                        product_name: document.getElementById("id_product_name").value,
-                        sz_text: document.getElementById("id_sz_text").value,
-                        need_date: document.getElementById("id_need_date").value,
-                        author: '{{ request.user }}'
-                    },
-                    products: products
+                    orderModel: document.getElementById("id_sz_order_model_query").value,
+                    newOrder: document.getElementById("id_sz_order_query").value,
+                    newModel: document.getElementById("id_sz_model_query").value,
+                    category: document.getElementById("id_sz_category").value,
+                    workshop: document.getElementById("id_sz_workshop").value,
+                    dateDone: document.getElementById("id_sz_datetime_done_day").value + "." + document.getElementById("id_sz_datetime_done_month").value + "." + document.getElementById("id_sz_datetime_done_year").value,
+                    st: shiftTasks
                 }
+                console.log(data)
                 
                 postData(url, data).then((data) => {
                     if (data['STATUS'] == 'OK') {
                         console.log("OK")
                         alert("Заявка успешно создана!")
                         localStorage.clear();
-                        window.location.href='{% url "specification" %}';
+                        window.location.href='{% url "test_scheduler" %}';
                     } else {
                         console.log("не OK")
                     }

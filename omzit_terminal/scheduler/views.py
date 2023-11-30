@@ -202,28 +202,27 @@ def schedulerwp(request):
     )
     workplace_schedule = (ShiftTask.objects.values(*shift_task_fields).all().exclude(datetime_done=None)
                           .order_by("ws_number", "model_name", ))
-    f = get_filterset(data=request.GET, queryset=workplace_schedule, fields=shift_task_fields)
     alert_message = ''
     if request.method == 'POST':
         form_workplace_plan = SchedulerWorkplace(request.POST)
         form_report = ReportForm()
         if form_workplace_plan.is_valid():
+            print(form_workplace_plan.cleaned_data)
             ws_number = form_workplace_plan.cleaned_data['ws_number'].ws_number
-            datetime_done = form_workplace_plan.cleaned_data['datetime_done'].datetime_done
-            print(ws_number, datetime_done)
+            model_order_query = form_workplace_plan.cleaned_data['model_order_query'].model_order_query
             try:
                 filtered_workplace_schedule = (
                     ShiftTask.objects.values(*shift_task_fields)
-                    .filter(ws_number=str(ws_number), datetime_done=datetime_done, next_shift_task=None)
+                    .filter(ws_number=str(ws_number), model_order_query=model_order_query, next_shift_task=None)
                     .filter(Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
                 )
             except Exception as e:
                 filtered_workplace_schedule = dict()
                 print('Ошибка получения filtered_workplace_schedule', e)
             if filtered_workplace_schedule:
-                return redirect(f'/scheduler/schedulerfio{ws_number}_{datetime_done}')
+                return redirect(f'/scheduler/schedulerfio{ws_number}_{model_order_query}')
             else:
-                alert_message = f'Для Т{ws_number} на {datetime_done} нераспределённые задания отсутствуют.'
+                alert_message = f'Для Т{ws_number} на {model_order_query} нераспределённые задания отсутствуют.'
                 form_workplace_plan = SchedulerWorkplace()
     else:
         form_workplace_plan = SchedulerWorkplace()
@@ -233,7 +232,6 @@ def schedulerwp(request):
         'form_workplace_plan': form_workplace_plan,
         'form_report': form_report,
         'alert_message': alert_message,
-        # 'filter': f
     }
     return render(request, fr"schedulerwp/schedulerwp.html", context=context)
 
@@ -463,7 +461,7 @@ def test_scheduler(request):
     filter_fields = ['model_order_query', 'query_prior', 'td_status', 'order_status']
     f_q = get_filterset(data=request.GET, queryset=td_queries, fields=filter_fields, index=2)
 
-    sz_shift_tasks = ShiftTask.objects.values("workpiece", 'model_order_query').filter()
+    sz_shift_tasks = ShiftTask.objects.values("id", "workpiece", 'model_order_query').filter()
 
     # форма запроса КД
     form_query_draw = QueryDraw()
@@ -821,9 +819,10 @@ def create_shift_tasks_from_spec(request):
 
         json_data = request.body
         data = json.loads(json_data)
-        if data:
-            model_name = str(datetime.datetime.now().timestamp())[:7]
+        if data["products"] and all(value for value in data["sz"].values()):
+            model_name = str(int(datetime.datetime.now().timestamp()))
             order = data["sz"]["sz_number"]
+            data["sz"]["author"] = request.user.username
             model_order_query = f"{order}_{model_name}"
             WorkshopSchedule.objects.create(
                 model_name=model_name,
@@ -841,4 +840,53 @@ def create_shift_tasks_from_spec(request):
                     workpiece=product,
                 ))
             ShiftTask.objects.bulk_create(shift_tasks)
-        return JsonResponse({"STATUS": "OK"})
+            return JsonResponse({"STATUS": "OK"})
+        else:
+            return JsonResponse({"STATUS": "No data"})
+
+
+def confirm_sz_planning(request):
+    if request.method == "POST":
+
+        # Удаляем файлы спецификаций
+        json_data = request.body
+        data = json.loads(json_data)
+        print(data)
+        if data.values():
+            model_order_query = f"{data['newOrder']}_{data['newModel']}"
+            ws = WorkshopSchedule.objects.filter(model_order_query=data["orderModel"])
+            print(list(map(int, data["st"].keys())))
+            shift_tasks = ShiftTask.objects.filter(
+                model_order_query=data["orderModel"],
+                id__in=list(map(int, data["st"].keys()))
+            )
+            print(shift_tasks)
+            ws.update(
+                datetime_done=make_aware(datetime.datetime.strptime(data['dateDone'], "%d.%m.%Y")),
+                workshop=data['workshop'],
+                product_category=data["category"],
+                order_status='запланировано',
+                dispatcher_plan_ws_fio=f'{request.user.first_name} {request.user.last_name}',
+                model_order_query=model_order_query,
+                model_name=data['newModel'],
+                order=data['newOrder'],
+            )
+            for st in shift_tasks:
+                attrs = {
+                    "datetime_done": make_aware(datetime.datetime.strptime(data['dateDone'], "%d.%m.%Y")),
+                    "workshop": data['st'][str(st.pk)],
+                    "product_category": data["category"],
+                    "order_status": 'запланировано',
+                    "model_order_query": model_order_query,
+                    "model_name": data['newModel'],
+                    "order": data['newOrder'],
+                }
+                for attr, value in attrs.items():
+                    setattr(st, attr, value)
+                st.save()
+            return JsonResponse({"STATUS": "OK"})
+        else:
+            return JsonResponse({"STATUS": "No data"})
+
+def report():
+    pass
