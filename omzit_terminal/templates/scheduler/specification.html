@@ -71,7 +71,7 @@
         <script type="text/javascript">window.__admin_media_prefix__ = "{% static 'admin/' %}";</script>
         {{ send_form.media }}
         <div id="id_modal_spec_send" class="">
-            <div
+            <form
                 id="id_spec_send_form"
                 class="form_form"
             >
@@ -94,7 +94,7 @@
                         </button>
                     </div>
                 </div>
-            </div>
+            </form>
         </div>
         <br />
         <br />
@@ -130,7 +130,6 @@
                         }
                     }
                     let lastRow = rows[lastRowIndex].cells
-                    console.log(lastRow[2].innerHTML)
                     if (lastRow[2].innerHTML == "" && lastRow[3].innerHTML == "" && lastRow[4].innerHTML == "") {
                         DeleteRow(lastRow[5].firstChild)
                     } else {
@@ -409,10 +408,13 @@
             }
 
             function tableDataToJSON(tableID, url) {
-                var table = document.getElementById(tableID)
-
+                let table = document.getElementById(tableID)
+                let product_name = document.getElementById("id_product_name")
+                let sz_number = document.getElementById("id_sz_number")
+                let sz_text = document.getElementById("id_sz_text")
+                let need_date = document.getElementById("id_need_date")
                 const rowsCount = table.rows.length
-                var products = []
+                let products = []
                 for (let i = 2; i < rowsCount; i++) {
                         let draw = getCellText(table, i, 0)
                         let name = getCellText(table, i, 1)
@@ -437,27 +439,29 @@
                             })
                         }
                 }
-                var data = {
-                    sz: {
-                        sz_number: document.getElementById("id_sz_number").value,
-                        product_name: document.getElementById("id_product_name").value,
-                        sz_text: document.getElementById("id_sz_text").value,
-                        need_date: document.getElementById("id_need_date").value
-                    },
-                    products: products
-                }
-                
-                postData(url, data).then((data) => {
-                    if (data['STATUS'] == 'OK') {
-                        console.log("OK")
-                        alert("Заявка успешно создана!")
-                        localStorage.clear();
-                        window.location.href='{% url "specification" %}';
-                    } else {
-                        alert("Заполните все поля служебной записки")
-                        console.log("не OK")
+                if (product_name.checkValidity() && sz_number.checkValidity() && sz_text.checkValidity() && need_date.checkValidity()) {
+                    var data = {
+                        sz: {
+                            sz_number: sz_number.value,
+                            product_name: product_name.value,
+                            sz_text: sz_text.value,
+                            need_date: need_date.value
+                        },
+                        products: products
                     }
-                  });
+                    
+                    postData(url, data).then((data) => {
+                        if (data['STATUS'] == 'OK') {
+                            console.log("OK")
+                            alert("Заявка успешно создана!")
+                            localStorage.clear();
+                            window.location.href='{% url "specification" %}';
+                        } else {
+                            alert("Заполните все поля служебной записки")
+                            console.log("не OK")
+                        }
+                      });
+                }
             }
 
             function getCellText(table, i, j) {

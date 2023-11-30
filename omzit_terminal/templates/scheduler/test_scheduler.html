@@ -51,7 +51,7 @@
                     <tr class="table_header_row">
                         <td class="td_cell">{{ filter_q.form.model_order_query }} Заказ-модель</td>
                         <td class="td_cell">{{ filter_q.form.query_prior }}Приоритет</td>
-                        <td class="td_cell">{{ filter_q.form.td_status }}Статус завяки</td>
+                        <td class="td_cell">{{ filter_q.form.td_status }}Статус заявки</td>
                         <td class="td_cell">Действие</td>
                     </tr>
                 </form>
@@ -84,27 +84,29 @@
             <p>
                 <input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр" />
             </p>
-            <table title="Перечеь заявок" class="table">
+            <table title="Перечень заявок" class="table">
                 <form method="get" id="filter_form1">
                     <tr class="table_header_row">
-                        <td class="td_cell">{{ filter_w.form.workshop }}№ служебной</td>
-                        <td class="td_cell">{{ filter_w.form.order }} Заказчик</td>
-                        <td class="td_cell">{{ filter_w.form.model_name }} Изделие</td>
-                        <td class="td_cell">{{ filter_w.form.datetime_done }} Дата потребности</td>
-                        <td class="td_cell">{{ filter_w.form.datetime_done }} Статус</td>
+                        <td class="td_cell">{{ filter_q.form.sz__sz_number }} № служебной</td>
+                        <td class="td_cell">Заказчик</td>
+                        <td class="td_cell">Изделие</td>
+                        <td class="td_cell">Дата потребности</td>
+                        <td class="td_cell">{{ filter_q.form.order_status }} Статус</td>
                         <td class="td_cell">Действие</td>
                     </tr>
                 </form>
-                {% for query in td_queries %}
+                {% for query in filter_q.qs %}
                     {% if query.sz %}
                         <tr class="table_row">
                             <td class="td_cell">{{ query.sz.sz_number }}</td>
                             <td class="td_cell">{{ query.sz.author }}</td>
                             <td class="td_cell">{{ query.sz.product_name }}</td>
                             <td class="td_cell">{{ query.sz.need_date }}</td>
-                            <td class="td_cell">{{ query.td_status }}</td>
+                            <td class="td_cell">{{ query.order_status }}</td>
                             <td class="td_cell">
+                                {% if query.order_status == "не запланировано" %}
                                 <button class="id_plan_bid_btn btn" value="" data-order-model="{{ query.model_order_query }}" title="Запланировать">Запланировать</button>
+                                {% endif %}
                             </td>
                         </tr>
                     {% endif %}
@@ -172,7 +174,7 @@
         </div>
         <!--форма планирования по служебной с составом-->
         <div id="plan_bid" class="modal">
-            <div
+            <form
                 id="id_plan_bid_form"
                 class="form_form modal-content">
                 <div class="add_to_plan">
@@ -201,7 +203,7 @@
                         </button>
                     </div>
                 </div>
-            </div>
+            </form>
         </div>
 
         <script>
@@ -234,7 +236,6 @@
             });
 
             function renderSzShiftTasks (orderModel) {
-                console.log(orderModel)
                 var szShiftTasksDiv = document.getElementById("id_sz_st")
                 var html = `
                     <table title="Сменные задания" class="table" id="id_st_table">   
@@ -282,7 +283,6 @@
                 html += `</table></div>`
                 var szOrderModel = document.getElementById("id_sz_order_model_query")
                 szOrderModel.value = orderModel
-                console.log(szOrderModel.value)
                 szShiftTasksDiv.innerHTML = html
             }
 
@@ -300,38 +300,64 @@
             }
             
             function tableDataToJSON(tableID, url) {
-                var table = document.getElementById(tableID)
-
+                let table = document.getElementById(tableID)
+                let order = document.getElementById("id_sz_order_query")
+                let model = document.getElementById("id_sz_model_query")
                 const rowsCount = table.rows.length
-                var shiftTasks = new Object()
-                for (let i = 2; i < rowsCount; i++) {
+                let shiftTasks = new Object()
+                for (let i = 1; i < rowsCount; i++) {
                         let workshop = table.rows[i].cells[5].lastChild.value
                         let idShiftTask = table.rows[i].cells[0].innerHTML
                         shiftTasks[idShiftTask] = workshop
                 }
-                
-                var data = {
-                    orderModel: document.getElementById("id_sz_order_model_query").value,
-                    newOrder: document.getElementById("id_sz_order_query").value,
-                    newModel: document.getElementById("id_sz_model_query").value,
-                    category: document.getElementById("id_sz_category").value,
-                    workshop: document.getElementById("id_sz_workshop").value,
-                    dateDone: document.getElementById("id_sz_datetime_done_day").value + "." + document.getElementById("id_sz_datetime_done_month").value + "." + document.getElementById("id_sz_datetime_done_year").value,
-                    st: shiftTasks
+
+                if (order.checkValidity() && model.checkValidity()) {
+                    let data = {
+                        orderModel: document.getElementById("id_sz_order_model_query").value,
+                        newOrder: order.value,
+                        newModel: model.value,
+                        category: document.getElementById("id_sz_category").value,
+                        workshop: document.getElementById("id_sz_workshop").value,
+                        dateDone: document.getElementById("id_sz_datetime_done_day").value + "." + document.getElementById("id_sz_datetime_done_month").value + "." + document.getElementById("id_sz_datetime_done_year").value,
+                        st: shiftTasks
+                    }                    
+    
+                    postData(url, data).then((data) => {
+                        if (data['STATUS'] == 'OK') {
+                            console.log("OK")
+                            alert("Заявка успешно создана!")
+                            localStorage.clear();
+                            window.location.href='{% url "test_scheduler" %}';
+                        } else {
+                            console.log("не OK")
+                        }
+                      });
                 }
-                console.log(data)
-                
-                postData(url, data).then((data) => {
-                    if (data['STATUS'] == 'OK') {
-                        console.log("OK")
-                        alert("Заявка успешно создана!")
-                        localStorage.clear();
-                        window.location.href='{% url "test_scheduler" %}';
-                    } else {
-                        console.log("не OK")
-                    }
-                  });
             }
+
+            function filter(phrase, _id, cellNumber, resetFilter) {
+                var words = phrase.value.toLowerCase().split(" ");
+                var table = document.getElementById(_id);
+                for (var r = 0; r < table.rows.length - 1; r++) {
+                   if (!resetFilter) {
+                      if (table.rows[r].cells[cellNumber].style.display === 'none') {
+                         continue
+                      }
+                   }
+                   var cellsV = table.rows[r].cells[cellNumber].innerHTML.replace(/<[^>]+>/g, "");
+                   console.log(cellsV);
+                   var displayStyle = 'none';
+                   for (var i = 0; i < words.length; i++) {
+                      if (cellsV.toLowerCase().indexOf(words[i]) >= 0)
+                         displayStyle = '';
+                      else {
+                         displayStyle = 'none';
+                         break;
+                      }
+                   }
+                   table.rows[r].style.display = displayStyle;
+                }
+             }
 
             // Кнопка планирования КД
             document.addEventListener("DOMContentLoaded", function () {

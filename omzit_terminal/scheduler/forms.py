@@ -67,10 +67,12 @@ class SchedulerWorkplace(forms.Form):
     """
     Форма для ввода графика РЦ
     """
-    query_set_wp = ShiftTask.objects.all().distinct('ws_number')
+    query_set_wp = ShiftTask.objects.exclude(
+        Q(ws_name='Плазма') | Q(ws_name='Цех №3') | Q(ws_name='')
+    ).distinct('ws_number')
     ws_number = SchedulerWorkplaceLabel(queryset=query_set_wp, empty_label='Терминал не выбран', label='Терминал')
     model_order_query_set = WorkshopSchedule.objects.filter(Q(order_status='запланировано') |
-                                                            Q(order_status='в работе'))
+                                                            Q(order_status='в работе')).exclude(td_status="завершено")
     model_order_query = SchedulerWorkplaceLabelDate(queryset=model_order_query_set,
                                                     empty_label='Не выбрано',
                                                     label='Заказ-модель')

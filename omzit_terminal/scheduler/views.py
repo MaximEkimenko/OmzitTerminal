@@ -165,7 +165,7 @@ def td_query(request):
                                          f"{form_query_draw.cleaned_data['order_query']}. Приоритет: "
                                          f"{form_query_draw.cleaned_data['query_prior']}. "
                                          f"Заявку составил: {request.user.first_name} {request.user.last_name}.")
-                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
                 # создание папки в общем доступе для чертежей модели
                 if not os.path.exists(rf'C:\draws\{model_order_query}'):
                     os.mkdir(rf'C:\draws\{model_order_query}')
@@ -446,16 +446,21 @@ def test_scheduler(request):
     # обновление процента готовности всех заказов
     # TODO модифицировать расчёт процента готовности всех заказов по взвешенной трудоёмкости
     #  сделать невозможным заполнять запрос с кириллицей
-    # фильтры в колонки графика
     # перечень запросов на КД
     td_queries_fields = ['model_order_query', 'query_prior', 'td_status', 'order_status', 'sz']  # поля таблицы
-    td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(td_status='завершено'))
-    # фильтры в колонки заявок
-    # f_w = get_filterset_second_table(data=request.GET, queryset=td_queries, fields=td_queries_fields)
-    filter_fields = ['model_order_query', 'query_prior', 'td_status', 'order_status']
+    td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(order_status='завершено'))
+    filter_fields = [
+        'model_order_query',
+        'query_prior',
+        'td_status',
+        'order_status',
+    ]
     f_q = get_filterset(data=request.GET, queryset=td_queries, fields=filter_fields, index=2)
-
-    sz_shift_tasks = ShiftTask.objects.values("id", "workpiece", 'model_order_query').filter()
+    sz_shift_tasks = ShiftTask.objects.values(
+        "id", "workpiece", 'model_order_query'
+    ).filter(
+        st_status="не запланировано"
+    )
 
     # форма запроса КД
     form_query_draw = QueryDraw()
@@ -825,7 +830,7 @@ def create_shift_tasks_from_spec(request):
                 order=order,
                 model_order_query=model_order_query,
                 sz=data["sz"],
-                td_status="передано",
+                td_status="завершено",
             )
             shift_tasks = []
             for product in data["products"]:
@@ -843,20 +848,15 @@ def create_shift_tasks_from_spec(request):
 
 def confirm_sz_planning(request):
     if request.method == "POST":
-
-        # Удаляем файлы спецификаций
         json_data = request.body
         data = json.loads(json_data)
-        print(data)
         if data.values():
             model_order_query = f"{data['newOrder']}_{data['newModel']}"
             ws = WorkshopSchedule.objects.filter(model_order_query=data["orderModel"])
-            print(list(map(int, data["st"].keys())))
             shift_tasks = ShiftTask.objects.filter(
                 model_order_query=data["orderModel"],
                 id__in=list(map(int, data["st"].keys()))
             )
-            print(shift_tasks)
             ws.update(
                 datetime_done=make_aware(datetime.datetime.strptime(data['dateDone'], "%d.%m.%Y")),
                 workshop=data['workshop'],
@@ -870,7 +870,8 @@ def confirm_sz_planning(request):
             for st in shift_tasks:
                 attrs = {
                     "datetime_done": make_aware(datetime.datetime.strptime(data['dateDone'], "%d.%m.%Y")),
-                    "workshop": data['st'][str(st.pk)],
+                    "workshop": data['workshop'],
+                    "ws_name": data['st'][str(st.pk)],
                     "product_category": data["category"],
                     "order_status": 'запланировано',
                     "model_order_query": model_order_query,
@@ -883,6 +884,7 @@ def confirm_sz_planning(request):
             return JsonResponse({"STATUS": "OK"})
         else:
             return JsonResponse({"STATUS": "No data"})
+
 
 @login_required(login_url="login")
 def report(request):
