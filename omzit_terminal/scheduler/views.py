@@ -21,8 +21,7 @@ from django.http import FileResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 
-from django.db.models import Q
-from django.utils import timezone
+from django.db.models import Q, Avg
 from django.utils.timezone import make_aware, make_naive
 
 from omzit_terminal.settings import BASE_DIR
@@ -32,7 +31,7 @@ from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw, Pl
     CdwChoiceForm, SendSZForm
 from .models import WorkshopSchedule, ShiftTask, DailyReport, MonthPlans
 
-from .services.schedule_handlers import get_all_done_rate
+from .services.schedule_handlers import get_all_done_rate, make_workshop_plan_plot
 from worker.services.master_call_function import terminal_message_to_id
 from .services.specification import connect_to_client, get_specifications_server, get_specifications_ssh
 
@@ -237,10 +236,10 @@ def schedulerwp(request):
 
 
 @login_required(login_url="login")
-def schedulerfio(request, ws_number, datetime_done):
+def schedulerfio(request, ws_number, model_order_query):
     """
     Распределение ФИО на РЦ
-    :param datetime_done:
+    :param model_order_query:
     :param ws_number:
     :param request:
     :return:
@@ -248,20 +247,17 @@ def schedulerfio(request, ws_number, datetime_done):
     if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:4]).strip() != "disp":
         raise PermissionDenied
 
-    print(ws_number)
-    print(datetime_done)
     shift_task_fields = (
-        'id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number',
-        'op_number', 'op_name_full', 'norm_tech', 'fio_doer', 'st_status'
+        'id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number', 'op_number', 'op_name_full',
+        'norm_tech', 'fio_doer', 'st_status'
     )
-    formatted_datetime_done = datetime.datetime.strptime(datetime_done, '%Y-%m-%d')
     # определения рабочего центра и id
     if not request.user.username:  # если не авторизован, то отправляется на авторизацию
         return redirect('login/')
     try:
         filtered_workplace_schedule = (
             ShiftTask.objects.values(*shift_task_fields)
-            .filter(ws_number=str(ws_number), datetime_done=formatted_datetime_done, next_shift_task=None)
+            .filter(ws_number=str(ws_number), model_order_query=model_order_query, next_shift_task=None)
             .filter(Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
         )
         f = get_filterset(data=request.GET, queryset=filtered_workplace_schedule, fields=shift_task_fields)
@@ -272,7 +268,7 @@ def schedulerfio(request, ws_number, datetime_done):
     alert_message = ''
     if request.method == 'POST':
         print('POST')
-        form_fio_doer = FioDoer(request.POST, ws_number=ws_number, datetime_done=formatted_datetime_done)
+        form_fio_doer = FioDoer(request.POST, ws_number=ws_number, model_order_query=model_order_query)
         if form_fio_doer.is_valid():
             # Получение списка без None
             fios = list(filter(
@@ -305,13 +301,12 @@ def schedulerfio(request, ws_number, datetime_done):
                     for field, value in data.items():
                         setattr(shift_task, field, value)
                 shift_task.save()
-
                 alert_message = f'Успешно распределено!'
             else:
                 alert_message = f'Исполнители дублируются. Измените исполнителей.'
                 success = 0
     else:
-        form_fio_doer = FioDoer(ws_number=ws_number, datetime_done=formatted_datetime_done)
+        form_fio_doer = FioDoer(ws_number=ws_number, model_order_query=model_order_query)
 
     context = {
         'filtered_workplace_schedule': filtered_workplace_schedule,
@@ -388,7 +383,6 @@ def plan(request):
     if request.method == 'POST':
         form_workshop_plan = SchedulerWorkshop(request.POST)
         if form_workshop_plan.is_valid():
-            print(form_workshop_plan.cleaned_data)
             # заполнение графика цеха датой готовности и цехом
             try:
                 # Планирование графика цеха
@@ -584,6 +578,7 @@ def create_shift_task_report(start, end):
         "op_name_full",  # Операция
         "fio_doer",  # Исполнители
         "decision_time",  # Дата готовности
+        "st_status",  # статус СЗ
     )
     fields_disp_report = (
         "pk",  # №
@@ -604,7 +599,7 @@ def create_shift_task_report(start, end):
     # Определяем путь к excel файлу шаблона
     exel_file_src = BASE_DIR / "ReportTemplate.xlsx"
     # Формируем название нового файла
-    new_file_name = (f"{datetime.datetime.now().strftime('%Y.%m.%d %H-%M')} report "
+    new_file_name = (f"{datetime.datetime.now().strftime('%Y.%m.%d')} report "
                      f"{start.strftime('%d.%m.%Y')}-{end.strftime('%d.%m.%Y')}.xlsx")
     # Создаем папку для хранения отчетов
     if not os.path.exists(BASE_DIR / "xlsx"):
@@ -651,6 +646,7 @@ def create_shift_task_report(start, end):
 def shift_tasks_report_view(request, start: str = "", end: str = ""):
     """
     Просмотр отчета по сменным заданиям за выбранный период
+    :param request:
     :param start: с даты (Дата распределения)
     :param end: по дату (Дата распределения)
     """
@@ -888,5 +884,89 @@ def confirm_sz_planning(request):
         else:
             return JsonResponse({"STATUS": "No data"})
 
-def report():
-    pass
+@login_required(login_url="login")
+def report(request):
+    # today = datetime.datetime(year=2023, month=12, day=1)  # произвольная дата
+    today = datetime.datetime.now()  # сегодня
+    # today = datetime.datetime(year=2023, month=11, day=22)
+    yesterday = today - datetime.timedelta(days=1)  # вчера
+    start_date = yesterday.replace(day=1)  # первый день текущего месяца
+    _, last_day = calendar.monthrange(yesterday.year, yesterday.month)  # последний день текущего месяца
+    end_date = datetime.datetime(year=yesterday.year, month=yesterday.month, day=last_day)  # последняя дата месяца)
+    # список дат дней месяца
+    daterange = [(start_date + datetime.timedelta(days=x)) for x in range(0, end_date.day)]
+    # print(daterange[0].date(), yesterday.date())
+    # TODO перенести добавление плановых данных и дней месяца в отдельную функцию или по расписанию
+    # days_dict = dict()
+    # days_list = []
+    # for i in range(1, MonthPlans.objects.filter(month_plan=daterange[0]).count() + 1):  # цикл по всем цехам
+    #     month_plan = MonthPlans.objects.get(workshop=i, month_plan=daterange[0])  # план цеха
+    #     day_plan = month_plan.month_plan_amount / len(daterange)  # план на каждый день месяца
+    #     plan_sum = 0  # сумма планового нч на день
+    #     for date in daterange:
+    #         plan_sum += day_plan
+    #         days_dict.update({'calendar_day': date, 'day_plan': day_plan, 'plan_sum': plan_sum, 'workshop': i})
+    #         days_list.append(DailyReport(**days_dict))
+    # TODO добавить при создании записей ForeignKey планов модели MonthPlans, например в цикле по цехам:
+    #  record_object = DailyReport.objects.filter(workshop=1)
+    #  record_object.update(month_plan_data=MonthPlans.objects.get(workshop=1, month_plan=yesterday.date()))
+    # DailyReport.objects.bulk_create(days_list)
+    #
+    # TODO end
+    workshop = int(request.GET.get('workshop')) if request.GET else 1  # № цеха по умолчанию
+    report_days = (DailyReport.objects.filter(calendar_day__gte=today - datetime.timedelta(days=4),
+                                              calendar_day__lte=today + datetime.timedelta(days=3), workshop=workshop)
+                   .order_by('calendar_day'))
+
+    report_days_for_plot = (DailyReport.objects.filter(workshop=workshop, calendar_day__lte=yesterday)
+                            .order_by('calendar_day'))
+    aver_fact = report_days_for_plot.aggregate(average=Avg('day_plan_rate'))
+
+    plot_lists = report_days_for_plot.values('calendar_day', 'day_plan_rate')
+    days_list = []
+    fact_list = []
+    for plot_list in plot_lists:
+        days_list.append(plot_list['calendar_day'].strftime('%d.%m'))
+        fact_list.append(float(plot_list['day_plan_rate']))
+
+    make_workshop_plan_plot(workshop=1, days_list=days_list, fact_list=fact_list, aver_fact=aver_fact['average'])
+    if request.method == 'POST':
+        report_form = DailyReportForm(request.POST)
+        if report_form.is_valid():
+            try:
+                previous_day_data = DailyReport.objects.get(
+                    calendar_day=(yesterday - datetime.timedelta(days=1)).date(),
+                    workshop=workshop)
+                fact_sum = previous_day_data.fact_sum + report_form.cleaned_data['day_fact']
+            except Exception as e:
+                fact_sum = report_form.cleaned_data['day_fact']
+
+            yesterday_data = DailyReport.objects.select_related('month_plan_data').get(calendar_day=yesterday,
+                                                                                       workshop=workshop)
+
+            day_plan_rate = 100 * report_form.cleaned_data['day_fact'] / yesterday_data.day_plan
+            # plan_done_rate = 100 * fact_sum / yesterday_data.plan_sum
+            plan_done_rate = 100 * yesterday_data.plan_sum / yesterday_data.month_plan_data.month_plan_amount
+            fact_done_rate = 100 * fact_sum / yesterday_data.month_plan_data.month_plan_amount
+            plan_loos_rate = fact_done_rate - plan_done_rate
+
+            record_object = DailyReport.objects.filter(calendar_day=yesterday.date(), workshop=workshop)
+            record_object.update(fact_sum=fact_sum, day_fact=report_form.cleaned_data['day_fact'],
+                                 day_plan_rate=day_plan_rate, plan_done_rate=plan_done_rate,
+                                 fact_done_rate=fact_done_rate, plan_loos_rate=plan_loos_rate)
+
+            report_days = (DailyReport.objects.filter(calendar_day__gte=today - datetime.timedelta(days=4),
+                                                      calendar_day__lte=today + datetime.timedelta(days=4))
+                           .order_by('calendar_day'))
+
+            context = {'report_form': report_form, 'report_days': report_days, 'yesterday': yesterday.date(),
+                       'workshop': workshop}
+
+            return render(request, r"scheduler/report.html", context=context)
+        else:
+            print('not_valid_form')
+    else:
+        report_form = DailyReportForm()
+    context = {'report_form': report_form, 'report_days': report_days, 'yesterday': yesterday.date(),
+               'workshop': workshop}
+    return render(request, r"scheduler/report.html", context=context)
