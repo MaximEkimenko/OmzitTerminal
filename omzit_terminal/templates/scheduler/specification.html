@@ -44,7 +44,7 @@
                     <div class="form_inner_label">{{ draw_form.cdw_files.label }}</div>
                     <div class="form_inner_div">{{ draw_form.cdw_files }}</div>
                     <div>
-                        <button type="submit" class="form_button">
+                        <button type="submit"  name="form" value="td_kd_form" class="form_button">
                             <p class="red_word">Загрузить чертежи</p>
                         </button>
                     </div>
@@ -71,7 +71,7 @@
         <script type="text/javascript">window.__admin_media_prefix__ = "{% static 'admin/' %}";</script>
         {{ send_form.media }}
         <div id="id_modal_spec_send" class="">
-            <form
+            <div
                 id="id_spec_send_form"
                 class="form_form"
             >
@@ -94,7 +94,7 @@
                         </button>
                     </div>
                 </div>
-            </form>
+            </div>
         </div>
         <br />
         <br />
@@ -404,7 +404,7 @@
                 },
                 body: JSON.stringify(data)
                 });
-                return await response.json();
+                return await response;
             }
 
             function tableDataToJSON(tableID, url) {
@@ -450,17 +450,16 @@
                         products: products
                     }
                     
-                    postData(url, data).then((data) => {
-                        if (data['STATUS'] == 'OK') {
-                            console.log("OK")
-                            alert("Заявка успешно создана!")
-                            localStorage.clear();
-                            window.location.href='{% url "specification" %}';
-                        } else {
-                            alert("Заполните все поля служебной записки")
-                            console.log("не OK")
-                        }
+                    postData(url, data)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        alert("Заявка успешно создана!")
+                        localStorage.clear();
+                        var file = window.URL.createObjectURL(blob);
+                        window.location.assign(file);
                       });
+                } else {
+                    alert("Заполните все поля служебной записки!")
                 }
             }
 

@@ -325,10 +325,11 @@
                     postData(url, data).then((data) => {
                         if (data['STATUS'] == 'OK') {
                             console.log("OK")
-                            alert("Заявка успешно создана!")
+                            alert("Запланировано!")
                             localStorage.clear();
-                            window.location.href='{% url "test_scheduler" %}';
+                            window.location.href='{% url "specification" %}';
                         } else {
+                            alert("Заполните все поля служебной записки")
                             console.log("не OK")
                         }
                       });

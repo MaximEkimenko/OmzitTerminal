@@ -34,6 +34,7 @@ from .models import WorkshopSchedule, ShiftTask, DailyReport, MonthPlans
 from .services.schedule_handlers import get_all_done_rate, make_workshop_plan_plot
 from worker.services.master_call_function import terminal_message_to_id
 from .services.specification import connect_to_client, get_specifications_server, get_specifications_ssh
+from .services.sz_to_pdf import create_pdf_sz
 
 TERMINAL_GROUP_ID = os.getenv('ADMIN_TELEGRAM_ID')
 SPEC_CREATION_PROCESS = dict()
@@ -720,8 +721,8 @@ def create_specification(request):
         alert = "Выполняется формирование спецификации..."
         context = {'spec': spec, "send_form": send_form, 'alert': alert, "draw_form": draw_form}
         return render(request, r"scheduler/specification.html", context=context)
-
-    if request.method == "POST":
+    form_submit = request.POST.get("form", "")
+    if request.method == "POST" and form_submit == "td_kd_form":
         draw_form = CdwChoiceForm(request.POST, request.FILES)
         files = []
         if draw_form.is_valid():
@@ -808,6 +809,7 @@ def create_shift_tasks_from_spec(request):
     """
     Создает сменные задания из спецификации
     """
+    pdf_sz_filename = BASE_DIR / "example.pdf"
     if request.method == "POST":
 
         # Удаляем файлы спецификаций
@@ -820,10 +822,15 @@ def create_shift_tasks_from_spec(request):
 
         json_data = request.body
         data = json.loads(json_data)
+
         if data["products"] and all(value for value in data["sz"].values()):
+            data["sz"]["author"] = request.user.username
+
+            # Создание служебной записки в pdf
+            create_pdf_sz(data=data, filename=pdf_sz_filename)
+
             model_name = str(int(datetime.datetime.now().timestamp()))
             order = data["sz"]["sz_number"]
-            data["sz"]["author"] = request.user.username
             model_order_query = f"{order}_{model_name}"
             WorkshopSchedule.objects.create(
                 model_name=model_name,
@@ -841,7 +848,7 @@ def create_shift_tasks_from_spec(request):
                     workpiece=product,
                 ))
             ShiftTask.objects.bulk_create(shift_tasks)
-            return JsonResponse({"STATUS": "OK"})
+            return FileResponse(open(pdf_sz_filename, 'rb'))
         else:
             return JsonResponse({"STATUS": "No data"})
 
