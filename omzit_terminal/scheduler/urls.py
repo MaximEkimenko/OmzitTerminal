@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (scheduler, schedulerwp, schedulerfio, LoginUser, logout_user, td_query, show_workshop_scheme, plan,
-                    test_scheduler, report, shift_tasks_reports, shift_tasks_report_view)
+                    test_scheduler, report, shift_tasks_reports, shift_tasks_report_view, plan_resort)
 from constructor.views import show_instruction
 
 urlpatterns = [
@@ -15,7 +15,8 @@ urlpatterns = [
     path('plan/', plan, name='plan'),
     # TODO удалить после тестов
     path('test_scheduler/', test_scheduler, name='test_scheduler'),
-    path('report/', report, name='report'),
+    path('report<int:workshop>/', report, name='report'),
     path('st_report_<str:start>_<str:end>/', shift_tasks_reports, name='st_reports'),
     path('view_st_report_<str:start>_<str:end>/', shift_tasks_report_view, name='view_st_report'),
+    path('plan_resort/', plan_resort, name='plan_resort'),
 ]
