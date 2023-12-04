@@ -103,8 +103,18 @@ h4 {
     height: 38px;
 }
 
-.td_cell input:hover {
+/* .td_cell input:hover {
     background-color: red;
+} */
+
+.changed_plan {
+    width: 120px;
+    height: 30px;
+    font-weight: bold;
+    color: red;
+    font-size: 22px;
+    padding: 0;
+    margin: 0;
 }
 
 .yesterday {
@@ -112,6 +122,11 @@ h4 {
     color: orange;
     font-size: 1.8em;
     /* width: 100px; */
+}
+
+#day_fact_filled {
+    color: green;
+    font-weight: bold;
 }
 
 .cell_text {
@@ -327,6 +342,7 @@ input {
     height: 30px;
 }
 
+<<<<<<< HEAD
 .name_input {
     font-size: 16px;
     padding: 3px;
@@ -389,4 +405,42 @@ input {
 .scroll_div {
     height:300px;
     overflow-y:scroll;
+=======
+.future {
+    width: 70px;
+    height: 30px;
+    /* color: red; */
+    background-color: red;
+    font-weight: bold;
+    color: white;
+    font-size: 22px;
+    padding: 0;
+    margin: 0;
+}
+
+.past {
+    width: 70px;
+    font-weight: bold;
+    font-size: 22px;
+    padding: 0;
+    margin: 0;
+}
+
+.message_table {
+    border: 1px solid orange;
+    font-size: 20px;
+    font-weight: bold;
+    padding: 10px 5px 10px 5px;
+    margin: 10px 5px 10px 5px;
+}
+
+.line_plan_table {
+    border: 1px solid orange;
+    display: inline-block;
+    margin: 10px 1px 10px 0;
+    padding: 0;
+}
+.message_table_pos {
+    margin: 0 auto;
+>>>>>>> c27c98fff0b2e266a8efe0b20fd8cad32bca49c0
 }

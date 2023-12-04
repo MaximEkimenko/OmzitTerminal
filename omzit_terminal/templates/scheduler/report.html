@@ -7,38 +7,139 @@
         <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
     </head>
     <body>
-        <h1>Заполнение отчётов</h1>
+        <h1>
+            Заполнение отчётов
+            <input type="button" onclick="window.location.href = `{% url 'report' 1 %}`;" value="Цех1" />
+            <input type="button" onclick="window.location.href = `{% url 'report' 2 %}`;" value="Цех2" />
+            <input type="button" onclick="window.location.href = `{% url 'report' 3 %}`;" value="Цех3" />
+            <input type="button" onclick="window.location.href = `{% url 'report' 4 %}`;" value="Цех4" />
+        </h1>
         {% if request.user.is_authenticated %}
         <div class="legend">
             <div>
                 <p>Пользователь: {{ user.username }} | <a href="{% url 'logout' %}" class="legend_link"> Выйти </a></p>
                 <p><a href="{% url 'instruction' %}">Инструкция</a></p>
                 <p>Папка с чертежами: \\SVR-003\draws</p>
+                <button type="submit" class="fil_days_btn">
+                    <p class="red_word">Заполнить план</p></button
+                ><br /><br />
+                <button type="button" class="" onclick="set_changeable()">
+                    <p class="red_word">Редактировать</p>
+                </button>
+
+                <a href="" id="graph_link">
+                    <p>График</p>
+                </a>
             </div>
         </div>
         {% else %}
         <a href="{% url 'login' %}"> Войти </a>
         <!-- prettier-ignore -->
-        {%endif %} 
-        {% if alert %}
+        {%endif %}
         <script>
-            function showNotification({ top = 0, right = 0, html, class_name }) {
-                let notification = document.createElement("div");
-                notification.className = class_name;
-                notification.innerHTML = html;
-                document.body.append(notification);
-                // setTimeout(() => (notification.style.opacity = 0), 10000);
-                setTimeout(() => notification.remove(), 10000);
+            // обработка уже заполненных значений факта
+            function change_readonly(element_id) {
+                let html_element = document.getElementById(element_id);
+                html_element.removeAttribute("readonly");
+                html_element.style.color = "white";
+                html_element.style.backgroundColor = "red";
             }
-            showNotification({
-                html: "<p class='alert_gone'> {{ alert }} </p>",
-                class_name: "notification",
+            function set_changeable() {
+                // функция разрешения на корректировку
+                change_readonly("id_day_fact");
+                change_readonly("id_personal_total");
+                change_readonly("id_personal_shift");
+
+                change_readonly("id_personal_total_welders");
+                change_readonly("id_personal_shift_welders");
+                change_readonly("id_personal_night_welders");
+
+                change_readonly("id_personal_total_locksmiths");
+                change_readonly("id_personal_shift_locksmiths");
+                change_readonly("id_personal_night_locksmiths");
+
+                change_readonly("id_personal_total_painters");
+                change_readonly("id_personal_shift_painters");
+                change_readonly("id_personal_night_painters");
+
+                change_readonly("id_personal_total_turners");
+                change_readonly("id_personal_shift_turners");
+                change_readonly("id_personal_night_turners");
+            }
+            // функкция подстановки уже имеющийся данных
+            function element_value_insert(element_id, element_value_string) {
+                let element_html = document.getElementById(element_id);
+
+                let element_value = element_value_string.replace(",", ".");
+
+                if (element_value != 0) {
+                    element_html.setAttribute("value", element_value);
+                    element_html.setAttribute("readonly", "true");
+                    element_html.style.color = "white";
+                    element_html.style.backgroundColor = "green";
+                    element_html.style.fontSize = "20px";
+                    element_html.style.fontWeight = "bold";
+                } else {
+                    element_html.style.color = "white";
+                    element_html.style.backgroundColor = "red";
+                    element_html.style.fontSize = "20px";
+                    element_html.style.fontWeight = "bold";
+                }
+            }
+
+            document.addEventListener("DOMContentLoaded", function () {
+                // {% for line in report_days %}
+                // {% if line.workshop == workshop %}
+                // {% if line.calendar_day == yesterday %}
+                let element_value = "{{ line.day_fact }}".replace(",", ".");
+                element_value_insert("id_day_fact", element_value);
+
+                element_value = "{{ line.personal_total }}".replace(",", ".");
+                element_value_insert("id_personal_total", element_value);
+
+                element_value = "{{ line.personal_shift }}".replace(",", ".");
+                element_value_insert("id_personal_shift", element_value);
+
+                element_value = "{{ line.personal_total_welders }}".replace(",", ".");
+                element_value_insert("id_personal_total_welders", element_value);
+                element_value = "{{ line.personal_shift_welders }}".replace(",", ".");
+                element_value_insert("id_personal_shift_welders", element_value);
+                element_value = "{{ line.personal_night_welders }}".replace(",", ".");
+                element_value_insert("id_personal_night_welders", element_value);
+
+                element_value = "{{ line.personal_total_locksmiths }}".replace(",", ".");
+                element_value_insert("id_personal_total_locksmiths", element_value);
+                element_value = "{{ line.personal_shift_locksmiths }}".replace(",", ".");
+                element_value_insert("id_personal_shift_locksmiths", element_value);
+                element_value = "{{ line.personal_night_locksmiths }}".replace(",", ".");
+                element_value_insert("id_personal_night_locksmiths", element_value);
+
+                element_value = "{{ line.personal_total_painters }}".replace(",", ".");
+                element_value_insert("id_personal_total_painters", element_value);
+                element_value = "{{ line.personal_shift_painters }}".replace(",", ".");
+                element_value_insert("id_personal_shift_painters", element_value);
+                element_value = "{{ line.personal_night_painters }}".replace(",", ".");
+                element_value_insert("id_personal_night_painters", element_value);
+
+                element_value = "{{ line.personal_total_turners }}".replace(",", ".");
+                element_value_insert("id_personal_total_turners", element_value);
+                element_value = "{{ line.personal_shift_turners }}".replace(",", ".");
+                element_value_insert("id_personal_shift_turners", element_value);
+                element_value = "{{ line.personal_night_turners }}".replace(",", ".");
+                element_value_insert("id_personal_night_turners", element_value);
+
+                // {% endif %}
+                // {% endif %}
+                // {% endfor %}
             });
         </script>
-        {%endif %}
         <!-- Основная таблица интерфейса -->
-        <h3 class="table_h3">Таблица данных отчётов цеха №{{ workshop }} за {{yesterday|date:"m.Y" }}</h3>
-        <table class="table" title="Заявки на документацию">
+        <h3 class="table_h3">
+            Таблица данных отчётов цеха № <span style="color: white; font-size: 40px"> {{ workshop }} </span> за
+            {{yesterday|date:"m.Y" }}
+        </h3>
+        <table class="table" title="Заполлнение отчёта">
+            <!--  Шапка дат -->
             <tr class="table_header_row">
                 <td class="td_cell">Дата</td>
                 <!-- prettier-ignore -->
@@ -67,13 +168,7 @@
                     {% endif %}
                     {% endfor %}
             </tr>
-            <form
-                id="id_send_form"
-                action="{% url 'report' %}"
-                method="post"
-                enctype="multipart/form-data"
-                class="send_form"
-            >
+            <form id="id_send_form" action="" method="post" enctype="multipart/form-data" class="send_form">
                 {% csrf_token %}
                 <tr class="table_row">
                     <td class="td_cell">Факт нч день</td>
@@ -86,8 +181,8 @@
                     <td class="td_cell">{{ line.day_fact }}</td>
                     <!-- prettier-ignore -->
                     {% endif %} 
-                        {% endif %}
-                        {% endfor %}
+                    {% endif %}
+                    {% endfor %}
                 </tr>
 
                 <tr class="table_row">
@@ -105,7 +200,7 @@
                         {% endfor %}
                 </tr>
                 <tr class="table_row">
-                    <td class="td_cell">Факт нч от начала</td>
+                    <td class="td_cell">Факт от начала, нч</td>
                     <!-- prettier-ignore -->
                     {% for line in report_days %}
                         {% if line.workshop == workshop %}
@@ -118,6 +213,22 @@
                         {% endif %}
                         {% endfor %}
                 </tr>
+
+                <tr class="table_row">
+                    <td class="td_cell">Среднее выполнение плана от начала, %</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                        {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">{{ line.aver_fact }}</td>
+                    {% else %}
+                    <td class="td_cell">{{ line.aver_fact }}</td>
+                    <!-- prettier-ignore -->
+                    {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+
                 <tr class="table_row">
                     <td class="td_cell">% выполнения плана в день</td>
                     <!-- prettier-ignore -->
@@ -189,7 +300,7 @@
                         {% endfor %}
                 </tr>
                 <tr class="table_row">
-                    <td class="td_cell">Случаев брака</td>
+                    <td class="td_cell">Случаев нарушений ОТ</td>
                     <!-- prettier-ignore -->
                     {% for line in report_days %}
                         {% if line.workshop == workshop %}
@@ -203,86 +314,96 @@
                         {% endfor %}
                 </tr>
                 <tr class="table_row">
-                    <td class="td_cell">Всего персонала</td>
-                    <!-- prettier-ignore -->
-                    {% for line in report_days %}
-                    {% if line.workshop == workshop %}
-                        {% if line.calendar_day == yesterday %}
-                    <td class="td_cell yesterday">{{ report_form.personal_total }}</td>
-                    {% else %}
-                    <td class="td_cell">{{ line.personal_total }}</td>
-                    <!-- prettier-ignore -->
-                    {% endif %} 
-                        {% endif %}
-                        {% endfor %}
-                </tr>
-                <tr class="table_row">
-                    <td class="td_cell">Выход персонала</td>
-                    <!-- prettier-ignore -->
-                    {% for line in report_days %}
-                    {% if line.workshop == workshop %}
-                        {% if line.calendar_day == yesterday %}
-                    <td class="td_cell yesterday">{{ report_form.personal_shift }}</td>
-                    {% else %}
-                    <td class="td_cell">{{ line.personal_shift }}</td>
-                    <!-- prettier-ignore -->
-                    {% endif %} 
-                        {% endif %}
-                        {% endfor %}
-                </tr>
-                <tr class="table_row">
-                    <td class="td_cell">Всего сварщиков</td>
-                    <!-- prettier-ignore -->
-                    {% for line in report_days %}
-                    {% if line.workshop == workshop %}
-                        {% if line.calendar_day == yesterday %}
-                    <td class="td_cell yesterday">{{ report_form.personal_total_welders }}</td>
-                    {% else %}
-                    <td class="td_cell">{{ line.personal_total_welders}}</td>
-                    <!-- prettier-ignore -->
-                    {% endif %} 
-                        {% endif %}
-                        {% endfor %}
-                </tr>
-                <tr class="table_row">
-                    <td class="td_cell">Выход сварщиков</td>
-                    <!-- prettier-ignore -->
-                    {% for line in report_days %}
-                    {% if line.workshop == workshop %}
-                        {% if line.calendar_day == yesterday %}
-                    <td class="td_cell yesterday">{{ report_form.personal_shift_welders }}</td>
-                    {% else %}
-                    <td class="td_cell">{{ line.personal_shift_welders }}</td>
-                    <!-- prettier-ignore -->
-                    {% endif %} 
-                        {% endif %}
-                        {% endfor %}
-                </tr>
-                <tr class="table_row">
-                    <td class="td_cell">Всего слесарей</td>
-                    <!-- prettier-ignore -->
-                    {% for line in report_days %}
-                    {% if line.workshop == workshop %}
-                        {% if line.calendar_day == yesterday %}
-                    <td class="td_cell yesterday">{{ report_form.personal_total_locksmiths }}</td>
-                    {% else %}
-                    <td class="td_cell">{{ line.personal_total_locksmiths}}</td>
-                    <!-- prettier-ignore -->
-                    {% endif %} 
-                        {% endif %}
-                        {% endfor %}
-                </tr>
-                <tr class="table_row">
-                    <td class="td_cell">Выход слесарей</td>
+                    <td class="td_cell">Всего | выход персонала</td>
                     <!-- prettier-ignore -->
                     {% for line in report_days %}
                     {% if line.workshop == workshop %}
                         {% if line.calendar_day == yesterday %}
                     <td class="td_cell yesterday">
-                        <div>{{ report_form.personal_shift_locksmiths }}</div>
+                        {{ report_form.personal_total }} | {{ report_form.personal_shift }}
                     </td>
                     {% else %}
-                    <td class="td_cell">{{ line.personal_shift_locksmiths }}</td>
+                    <td class="td_cell">{{ line.personal_total }} | {{ line.personal_shift }}</td>
+                    <!-- prettier-ignore -->
+                    {% endif %} 
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">Всего | выход | ночь сварщиков</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                    {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">
+                        <!-- prettier-ignore -->
+                        {{ report_form.personal_total_welders }} | {{ report_form.personal_shift_welders }} | {{ report_form.personal_night_welders }}
+                    </td>
+                    {% else %}
+                    <td class="td_cell">
+                        <!-- prettier-ignore -->
+                        {{ line.personal_total_welders}} | {{ line.personal_shift_welders }} | {{ line.personal_night_welders }}
+                    </td>
+                    <!-- prettier-ignore -->
+                    {% endif %} 
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">Всего | выход | ночь слесарей</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                    {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">
+                        <!-- prettier-ignore -->
+                        {{ report_form.personal_total_locksmiths }} | {{ report_form.personal_shift_locksmiths }} | {{ report_form.personal_night_locksmiths }}
+                    </td>
+                    {% else %}
+                    <td class="td_cell">
+                        <!-- prettier-ignore -->
+                        {{ line.personal_total_locksmiths}} | {{ line.personal_shift_locksmiths }} | {{line.personal_night_locksmiths }}
+                    </td>
+                    <!-- prettier-ignore -->
+                    {% endif %} 
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">Всего | выход | ночь маляров</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                    {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">
+                        <!-- prettier-ignore -->
+                        {{ report_form.personal_total_painters }} | {{ report_form.personal_shift_painters }} | {{ report_form.personal_night_painters }}
+                    </td>
+                    {% else %}
+                    <td class="td_cell">
+                        <!-- prettier-ignore -->
+                        {{ line.personal_total_painters}} | {{ line.personal_shift_painters }} | {{ line.personal_night_painters }}
+                    </td>
+                    <!-- prettier-ignore -->
+                    {% endif %} 
+                        {% endif %}
+                        {% endfor %}
+                </tr>
+                <tr class="table_row">
+                    <td class="td_cell">Всего | выход | ночь токарей</td>
+                    <!-- prettier-ignore -->
+                    {% for line in report_days %}
+                    {% if line.workshop == workshop %}
+                        {% if line.calendar_day == yesterday %}
+                    <td class="td_cell yesterday">
+                        <!-- prettier-ignore -->
+                        {{ report_form.personal_total_turners }} | {{ report_form.personal_shift_turners }} | {{ report_form.personal_night_turners }}
+                    </td>
+                    {% else %}
+                    <td class="td_cell">
+                        <!-- prettier-ignore -->
+                        {{ line.personal_total_locksmiths}} | {{ line.personal_shift_locksmiths }} | {{ line.personal_night_turners }}
+                    </td>
                     <!-- prettier-ignore -->
                     {% endif %} 
                         {% endif %}
@@ -290,114 +411,290 @@
                 </tr>
             </form>
         </table>
+        <br />
         <button type="submit" class="btn" form="id_send_form">
             <p class="red_word">Заполнить данные</p>
         </button>
-        <p>plan{{ workshop }}-{{yesterday|date:'m' }}.jpg</p>
-        <a href="{% static 'scheduler/jpg/plan1-11.jpg' %}">
-            <img src="{% static 'scheduler/jpg/plan1-11.jpg' %}" height="100px" />
-        </a>
+        <div id="fil_days_div" class="modal">
+            <form
+                id="fil_days_form"
+                class="form_form modal-content"
+                action="{% url 'plan_resort' %}"
+                method="post"
+                enctype="multipart/form-data"
+            >
+                {% csrf_token %}
+                <div>{{hidden_field.as_p}}</div>
 
-        <!-- function open_photo(photo) {
-            document.getElementById("big-photo").innerHTML =
-              ("<img onclick='close_photo()' style='position: absolute;' src='" + photo + "'>")
-          }
-          
-          function close_photo() {
-            document.getElementById("big-photo").innerHTML = ""
-          } -->
+                <div class="add_to_plan">
+                    <h3>Форма заполнения плана на месяц для цеха {{ workshop }}</h3>
 
-        <!-- <table class="table" title="Заявки на документацию">
-                <tr class="table_header_row">
-                    <td class="td_cell">Цех</td>
-                    <td class="td_cell">Дата</td>
-                    <td class="td_cell">План нч день</td>
-                    <td class="td_cell">Факт нч день</td>
-                    <td class="td_cell">План нч от начала месяця</td>
-                    <td class="td_cell">Факт нч от начала месяця</td>
-                    <td class="td_cell">% выполнения плана в день</td>
-                    <td class="td_cell">% выполнения плана от начала месяца</td>
-                    <td class="td_cell">% оставания/опережения плана</td>
-                    <td class="td_cell">Случаев брака</td>
-                    <td class="td_cell">Нарушений ОТПБ</td>
-                    <td class="td_cell">Всего персонала</td>
-                    <td class="td_cell">Выход персонала</td>
-                    <td class="td_cell">Всего сварщиков</td>
-                    <td class="td_cell">Выход сварщиков</td>
-                    <td class="td_cell">Всего слесарей</td>
-                    <td class="td_cell">Выход слесарей</td>
-                    <td class="td_cell">Всего маляров</td>
-                    <td class="td_cell">Выход маляров</td>
-                </tr>
-                prettier-ignore
+                    <div>
+                        <div class="form_inner_label">Изменить план на месяц</div>
+                        <input
+                            id="changed_plan"
+                            onchange="new_plan_calculate()"
+                            value=" {{ month_plan.month_plan_amount }} "
+                            class="changed_plan"
+                        />
+                    </div>
+                    <br />
 
-                {% for line in report_days %}
-   
-                {% if line.calendar_day == yesterday %}
+                    <!-- prettier-ignore -->
+                    {% for line in report_days_for_plans %}
 
-                <tr class="table_row">
-                    <form id="" action="{% url 'report' %}" method="post" enctype="multipart/form-data" class="">
-                        {% csrf_token %}
-                        <td class="td_cell">{{ line.workshop }}</td>
-                        <td class="td_cell">{{ line.calendar_day|date:"d.m.Y" }}</td>
-                        <td class="td_cell">{{ line.day_plan }}</td>
-                        <td class="td_cell">{{ report_form.day_fact }}</td>
-                        <td class="td_cell">{{ line.plan_sum }}</td>
-                        <td class="td_cell">{{ line.fact_sum }}</td>
-                        <td class="td_cell">{{ line.plan_done_rate }}</td>
-                        <td class="td_cell">CALC</td>
-                        <td class="td_cell">CALC</td>
-                        <td class="td_cell">{{ line.day_fails }}</td>
-                        <td class="td_cell">{{ line.day_save_violations }}</td>
-                        <td class="td_cell">{{ report_form.personal_total }}</td>
-                        <td class="td_cell">{{ report_form.personal_shift }}</td>
-                        <td class="td_cell">{{ report_form.personal_total_welders }}</td>
-                        <td class="td_cell">{{ report_form.personal_shift_welders }}</td>
-                        <td class="td_cell">{{ report_form.personal_total_locksmiths }}</td>
-                        <td class="td_cell">{{ report_form.personal_shift_locksmiths }}</td>
-                        <td class="td_cell">TO ADD</td>
-                        <td class="td_cell">TO ADD</td>
-                    </form>
-
-                    {% endif %}
-                    <td class="td_cell">{{ line.workshop }}</td>
-                    <td class="td_cell">{{ line.calendar_day|date:"d.m.Y" }}</td>
-                    <td class="td_cell">{{ line.day_plan }}</td>
-                    <td class="td_cell">{{ line.day_fact }}</td>
-                    <td class="td_cell">{{ line.plan_sum }}</td>
-                    <td class="td_cell">{{ line.fact_sum }}</td>
-                    <td class="td_cell">{{ line.plan_done_rate }}</td>
-                    <td class="td_cell">CALC</td>
-                    <td class="td_cell">CALC</td>
-                    <td class="td_cell">{{ line.day_fails }}</td>
-                    <td class="td_cell">{{ line.day_save_violations }}</td>
-                    <td class="td_cell">{{ line.personal_total }}</td>
-                    <td class="td_cell">{{ line.personal_shift }}</td>
-                    <td class="td_cell">{{ line.personal_total_welders }}</td>
-                    <td class="td_cell">{{ line.personal_shift_welders }}</td>
-                    <td class="td_cell">{{ line.personal_total_locksmiths }}</td>
-                    <td class="td_cell">{{ line.personal_shift_locksmiths }}</td>
-                    <td class="td_cell">TO ADD</td>
-                    <td class="td_cell">TO ADD</td>
-                </tr>
-                {% endfor %}
-                <button type="submit" class="form_button">
-                    <p class="red_word">Заполнить данные</p>
-                </button>
-            </table> -->
-
-        <!-- Форма заполнения отчёта -->
-
-        <!-- <div id="" class="">
-            <form id="" action="{% url 'report' %}" method="post" enctype="multipart/form-data" class="">
-                {% csrf_token %} {% for elem in report_form%} {{ elem.label }} {{ elem }} {% endfor %}
-                <div>
-                    <button type="submit" class="form_button">
-                        <p class="red_word">Заполнить данные</p>
+                    {% if line.calendar_day|date:"d" == '06' %}
+                    <br />
+                    {%endif%}
+                    <!-- prettier-ignore -->
+                    {% if line.calendar_day|date:"d" == '11' %}
+                    <br />
+                    {%endif%}
+                    <!-- prettier-ignore -->
+                    {% if line.calendar_day|date:"d" == '16' %}
+                    <br />
+                    {%endif%}
+                    <!-- prettier-ignore -->
+                    {% if line.calendar_day|date:"d" == '21' %}
+                    <br />
+                    {%endif%}
+                    <!-- prettier-ignore -->
+                    {% if line.calendar_day|date:"d" == '26' %}
+                    <br />
+                    {%endif%}
+                    <!-- prettier-ignore -->
+                    {% if line.calendar_day|date:"d" > yesterday|date:"d" %}
+                    <div class="line_plan_table">
+                        <div class="form_inner_label date_label">{{ line.calendar_day|date:"d.m" }}</div>
+                        <input
+                            type="number"
+                            placeholder="{{ line.day_plan }}"
+                            class="future"
+                            id="{{ line.calendar_day|date:'d' }}"
+                            onchange="plan_calculate()"
+                        />
+                    </div>
+                    {%else%}
+                    <div class="line_plan_table">
+                        <div class="form_inner_label date_label">{{ line.calendar_day|date:"d.m" }}</div>
+                        <div class="form_inner_div past">{{ line.day_plan }}</div>
+                    </div>
+                    <!-- prettier-ignore -->
+                    {% endif %} 
+                    {% endfor %}
+                    <table class="message_table_pos">
+                        <tr>
+                            <td class="message_table">
+                                <div class="message_line">
+                                    Запланировано на месяц:
+                                    <span id="total_plan">{{month_plan.month_plan_amount}}</span> нч
+                                </div>
+                            </td>
+                            <td class="message_table">
+                                <div class="message_line">
+                                    Запланировано ранее НЧ на сегодня: <span id="plan_on_today"> </span> нч
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="message_table">
+                                <div class="message_line">
+                                    Доступно НЧ для планирования: <span id="plan_remain"> </span> нч
+                                </div>
+                            </td>
+                            <td class="message_table">
+                                <div class="message_line">НЧ запланировано: <span id="plan_planned"> </span> нч</div>
+                            </td>
+                        </tr>
+                    </table>
+                    <div id="alert_message" hidden class="message_table"></div>
+                    <button type="button" class="form_button" onclick="send_data()" id="send_data_btn">
+                        <p class="red_word">Заполнить план</p>
                     </button>
                 </div>
             </form>
-        </div> -->
+        </div>
+
+        <script>
+            // первоначальные значения
+            const past = document.getElementsByClassName("past"); // объект прошедшие дни
+            const future = document.getElementsByClassName("future"); // объект будущие дни
+            let total_plan_html = document.getElementById("total_plan");
+            let changed_plan = Number(document.getElementById("changed_plan").value.replace(",", ".")); // план на месяц
+            let total_plan = changed_plan; // если изменился
+            // первоначальная подстановка значений для распределения по среднему
+            let future_plan = new Array();
+            for (let i = 0; i < future.length; i++) {
+                future_plan.push(Number(future[i].value));
+            }
+            let past_plan = new Array();
+            for (let i = 0; i < past.length; i++) {
+                // console.log(past[i].innerHTML);
+                past_plan.push(Number(Number(past[i].innerHTML.replace(",", ".")).toFixed(1)));
+            }
+            // запланировано на сегодня
+            let plan_on_today_html = document.getElementById("plan_on_today");
+            let sum_plan_on_today = 0;
+            past_plan.forEach(function (num) {
+                sum_plan_on_today += num;
+            });
+            plan_on_today_html.innerHTML = Number(sum_plan_on_today.toFixed(1));
+            // осталось запланировать
+            let plan_remain = total_plan - sum_plan_on_today;
+            let plan_remain_html = document.getElementById("plan_remain");
+            plan_remain_html.innerHTML = Number(plan_remain.toFixed(1));
+            // запланировано: первоначальное значение
+            let plan_planned = sum_plan_on_today;
+            let plan_planned_html = document.getElementById("plan_planned");
+            plan_planned_html.innerHTML = Number(plan_planned.toFixed(1));
+            // подстановка в инпуты среднего по каждому дню
+            let day_plan_value = plan_remain / future.length;
+            for (let i = 0; i < future.length; i++) {
+                future[i].value = day_plan_value;
+            }
+            let all_plan = past_plan.concat(future_plan); // полный план
+            // пересчёт планов
+            sum_plan_on_today = 0;
+            all_plan.forEach(function (num) {
+                sum_plan_on_today += num;
+            });
+
+            // функция пересчёта нового плана
+            function new_plan_calculate() {
+                // функция перераспределяет по среденму между будущими днями
+                let total_plan_html = document.getElementById("total_plan");
+                let changed_plan = Number(document.getElementById("changed_plan").value.replace(",", ".")); // план на месяц
+                let total_plan = changed_plan; // если изменился
+                total_plan_html.innerHTML = total_plan;
+                // осталось запланировать
+                let plan_remain = total_plan - sum_plan_on_today;
+                let plan_remain_html = document.getElementById("plan_remain");
+                plan_remain_html.innerHTML = Number(plan_remain.toFixed(1));
+                // подстановка в инпуты среднего по каждому дню
+                let day_plan_value = plan_remain / future.length;
+                for (let i = 0; i < future.length; i++) {
+                    future[i].value = day_plan_value;
+                }
+            }
+
+            // функция расчёта плана
+            function plan_calculate() {
+                // функция дает подсказку при перераспределении в input плана//
+                const past = document.getElementsByClassName("past"); // объект прошедшие дни
+                const future = document.getElementsByClassName("future"); // объект будущие дни
+                const changed_plan_html = document.getElementsByClassName("future"); // объект будущие дни
+                let changed_plan = Number(document.getElementById("changed_plan").value.replace(",", ".")); // план на месяц
+                let total_plan = changed_plan; // если изменился
+
+                // выполненный план за прошедшие дни
+                let past_plan = new Array();
+                for (let i = 0; i < past.length; i++) {
+                    // console.log(past[i].innerHTML);
+                    past_plan.push(Number(Number(past[i].innerHTML.replace(",", ".")).toFixed(1)));
+                }
+                // запланировано на сегодня
+                let plan_on_today_html = document.getElementById("plan_on_today");
+                let sum_plan_on_today = 0;
+                past_plan.forEach(function (num) {
+                    sum_plan_on_today += num;
+                });
+                plan_on_today_html.innerHTML = Number(sum_plan_on_today.toFixed(1));
+                // осталось запланировать
+                let plan_remain = total_plan - sum_plan_on_today;
+                let plan_remain_html = document.getElementById("plan_remain");
+                plan_remain_html.innerHTML = Number(plan_remain.toFixed(1));
+                // запланировано: первоначальное значение
+                let plan_planned = sum_plan_on_today;
+                let plan_planned_html = document.getElementById("plan_planned");
+                plan_planned_html.innerHTML = Number(plan_planned.toFixed(1));
+
+                plan_remain = Number((total_plan - sum_plan_on_today).toFixed(1));
+                plan_remain_html.innerHTML = Number(plan_remain.toFixed(1));
+                plan_planned = Number(sum_plan_on_today.toFixed(1));
+                plan_planned_html.innerHTML = Number(plan_planned.toFixed(1));
+
+                let future_plan = new Array();
+                for (let i = 0; i < future.length; i++) {
+                    future_plan.push(Number(future[i].value));
+                }
+                let all_plan = past_plan.concat(future_plan); // полный план
+                // пересчёт планов - замена значений в html
+                sum_plan_on_today = 0;
+                all_plan.forEach(function (num) {
+                    sum_plan_on_today += num;
+                });
+                plan_remain = Number((total_plan - sum_plan_on_today).toFixed(1));
+                plan_remain_html.innerHTML = Number(plan_remain.toFixed(1));
+                plan_planned = Number(sum_plan_on_today.toFixed(1));
+                plan_planned_html.innerHTML = Number(plan_planned.toFixed(1));
+                // Обработка значений планов - выдача подсказки
+                if (Number(sum_plan_on_today.toFixed(1)) > Number(total_plan.toFixed(1))) {
+                    let alert_message = document.getElementById("alert_message");
+                    alert_message.innerHTML = `Превышение от первоначального плана на ${(
+                        sum_plan_on_today - total_plan
+                    ).toFixed(1)} нч.`;
+                    alert_message.hidden = false;
+                    alert_message.style = "color: red";
+                } else if (Number(sum_plan_on_today.toFixed(1)) < Number(total_plan.toFixed(1))) {
+                    let alert_message = document.getElementById("alert_message");
+                    alert_message.innerHTML = `Недозапланировано ${(total_plan - sum_plan_on_today).toFixed(1)} нч.`;
+                    alert_message.hidden = false;
+                    alert_message.style = "color: red";
+                } else {
+                    let alert_message = document.getElementById("alert_message");
+                    alert_message.innerHTML = "План распределен равномерно.";
+                    alert_message.hidden = false;
+                    alert_message.style = "color: green";
+                }
+
+                // заполнение скрытого поля для передачи на сервер
+                const date_labels = document.getElementsByClassName("date_label");
+                let days_arr = new Array();
+                // let dictionary = Object.create(null);
+                for (let i = 0; i < date_labels.length; i++) {
+                    days_arr[i] = date_labels[i].innerHTML + ".{{  report_days.0.calendar_day|date:'Y'  }}";
+                }
+                days_arr.push("|");
+                all_plan.push("{{ workshop }}");
+
+                const result_arr = days_arr.concat(all_plan);
+                let hidden_field = document.getElementById("id_hidden_input");
+                hidden_field.setAttribute("value", result_arr);
+                return hidden_field;
+            }
+
+            // Вызов модального окна
+            const buttons = document.querySelectorAll(".fil_days_btn");
+            buttons.forEach(function (c) {
+                // Для каждой кнопки
+                c.onclick = function () {
+                    const modal = document.querySelector("#fil_days_div");
+                    modal.style.display = "block";
+                    window.onclick = function (event) {
+                        if (event.target == modal) {
+                            modal.style.display = "none";
+                        }
+                    };
+                };
+            });
+            // функция отправки формы - кнопка
+            function send_data() {
+                hidden_field = plan_calculate();
+                const send_form = document.getElementById("fil_days_form");
+                if (hidden_field.value) {
+                    send_form.submit();
+                }
+            }
+            document.addEventListener("DOMContentLoaded", function () {
+                // подстановка ссылок на отчёты
+                let graph_link = document.getElementById("graph_link");
+                let graph_img = document.getElementById("graph_img");
+                link_name = "{% static 'scheduler/pdf/' %}" + "plan{{ workshop }}-{{yesterday|date:'m' }}.pdf";
+                // link_name = "{% static 'scheduler/jpg/' %}" + "test_table.pdf";
+                graph_link.setAttribute("href", link_name);
+                // graph_img.setAttribute("src", link_name);
+            });
+        </script>
 
         <div style="height: 150px"></div>
     </body>

@@ -37,7 +37,7 @@
                     <td class="td_cell">{{ filter.form.ws_number }} Номер Т</td>
                     <td class="td_cell">{{ filter.form.op_number }} Номер операции</td>
                     <td class="td_cell">{{ filter.form.op_name_full }} Операция</td>
-                    <td class="td_cell">Норма времени</td>
+                    <td class="td_cell">{{ filter.form.norm_tech }} Норма времени</td>
                     <td class="td_cell">{{ filter.form.fio_doer }} Фио исполнителя</td>
                     <td class="td_cell">{{ filter.form.datetime_assign_wp }} Дата распределения</td>
                     <td class="td_cell">{{ filter.form.st_status }} Статус СЗ</td>
@@ -58,6 +58,6 @@
             }
         </script>
         <div style="height: 150px"></div>
-        <script src="{% static 'scheduler/js/schedulerwp.js' %}"></script>
+        <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
     </body>
 </html>

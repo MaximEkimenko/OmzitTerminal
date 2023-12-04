@@ -14,7 +14,7 @@
                 <p>Пользователь: {{ user.username }} | <a href="{% url 'logout' %}" class="legend_link"> Выйти </a></p>
                 <p><a href="{% url 'instruction' %}">Инструкция</a></p>
                 <p>Папка с чертежами: \\SVR-003\draws</p>
-                <p><a href="{% url 'report' %}" class="legend_link"> Заполнение отчётов</a></p>
+                <p><a href="{% url 'report' 1 %}" class="legend_link"> Заполнение отчётов</a></p>
             </div>
         </div>
         {% else %}

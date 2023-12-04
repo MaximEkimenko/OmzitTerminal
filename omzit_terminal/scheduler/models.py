@@ -2,6 +2,7 @@ import datetime
 
 from django.core.validators import RegexValidator
 from django.db import models
+from django.db.models import Avg
 from django.forms import ModelChoiceField
 from django.utils import timezone
 
@@ -180,6 +181,9 @@ class DailyReport(models.Model):
     day_plan = models.DecimalField(decimal_places=1, max_digits=10, verbose_name="План на день", default=0)
     day_fact = models.DecimalField(decimal_places=1, max_digits=10, verbose_name="Факт за день", default=0)
 
+    aver_fact = models.DecimalField(decimal_places=2, max_digits=10, verbose_name="Отставание/опережение плана",
+                                    default=0)
+
     day_plan_rate = models.DecimalField(decimal_places=2, max_digits=10, verbose_name="% выполнения плана за день",
                                         default=0)
 
@@ -196,17 +200,28 @@ class DailyReport(models.Model):
     day_save_violations = models.PositiveSmallIntegerField(verbose_name="Случаев нарушений ОТПБ за день", default=0)
     month_plan_data = models.ForeignKey(to='MonthPlans', on_delete=models.PROTECT,
                                         related_name="month_plan_table",
-                                        # null=True, blank=True,
+                                        null=True, blank=True,
                                         verbose_name="Месяц планирования")
-    personal_total = models.PositiveSmallIntegerField(verbose_name='Всего персонала в цехе 1', default=0)
-    personal_shift = models.PositiveSmallIntegerField(verbose_name='Выход в дату персонала в цехе 1', default=0)
-    personal_total_welders = models.PositiveSmallIntegerField(verbose_name='Всего сварщиков в цехе 1', default=0)
-    personal_shift_welders = models.PositiveSmallIntegerField(verbose_name='Выход в дату сварщиков в цехе 1',
-                                                              default=0)
-    personal_total_locksmiths = models.PositiveSmallIntegerField(verbose_name='Всего слесарей в цехе 1', default=0)
-    personal_shift_locksmiths = models.PositiveSmallIntegerField(verbose_name='Выход в дату слесарей в цехе 1',
-                                                                 default=0)
     workshop = models.PositiveSmallIntegerField(verbose_name="Цех", default=0)
+    # работники
+    personal_total = models.PositiveSmallIntegerField(verbose_name='Всего персонала в цехе', default=0)
+    personal_shift = models.PositiveSmallIntegerField(verbose_name='Выход в дату персонала', default=0)
+
+    personal_total_welders = models.PositiveSmallIntegerField(verbose_name='Всего сварщиков', default=0)
+    personal_shift_welders = models.PositiveSmallIntegerField(verbose_name='Выход в дату сварщиков', default=0)
+    personal_night_welders = models.PositiveSmallIntegerField(verbose_name='Выход ночь сварщики', default=0)
+
+    personal_total_locksmiths = models.PositiveSmallIntegerField(verbose_name='Всего слесарей', default=0)
+    personal_shift_locksmiths = models.PositiveSmallIntegerField(verbose_name='Выход в дату слесарей', default=0)
+    personal_night_locksmiths = models.PositiveSmallIntegerField(verbose_name='Выход ночь слесаря', default=0)
+
+    personal_total_painters = models.PositiveSmallIntegerField(verbose_name='Всего маляров', default=0)
+    personal_shift_painters = models.PositiveSmallIntegerField(verbose_name='Выход маляров', default=0)
+    personal_night_painters = models.PositiveSmallIntegerField(verbose_name='Выход ночь маляры', default=0)
+
+    personal_total_turners = models.PositiveSmallIntegerField(verbose_name='Всего токарей', default=0)
+    personal_shift_turners = models.PositiveSmallIntegerField(verbose_name='Выход токарей', default=0)
+    personal_night_turners = models.PositiveSmallIntegerField(verbose_name='Выход ночь токаря', default=0)
 
     class Meta:
         db_table = "report"

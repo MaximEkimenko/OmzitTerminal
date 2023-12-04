@@ -27,11 +27,12 @@ from django.utils.timezone import make_aware, make_naive
 from omzit_terminal.settings import BASE_DIR
 from tehnolog.services.service_handlers import handle_uploaded_file
 from .filters import get_filterset
-from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw, PlanBid, DailyReportForm, ReportForm, \
-    CdwChoiceForm, SendSZForm
+from .forms import (SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw, PlanBid, DailyReportForm, ReportForm,
+    CdwChoiceForm, SendSZForm, PlanResortHiddenForm)
 from .models import WorkshopSchedule, ShiftTask, DailyReport, MonthPlans
 
-from .services.schedule_handlers import get_all_done_rate, make_workshop_plan_plot
+from .services.schedule_handlers import (get_all_done_rate, make_workshop_plan_plot, simple_report_read,
+                                         create_pdf_report)
 from worker.services.master_call_function import terminal_message_to_id
 from .services.specification import connect_to_client, get_specifications_server, get_specifications_ssh
 from .services.sz_to_pdf import create_pdf_sz
@@ -226,7 +227,9 @@ def schedulerwp(request):
                 form_workplace_plan = SchedulerWorkplace()
     else:
         form_workplace_plan = SchedulerWorkplace()
-        form_report = ReportForm()
+        form_report = ReportForm(initial={'date_end': datetime.datetime.now(),
+                                          'date_start': datetime.datetime.now()
+                                 .replace(day=1, hour=0, minute=0, second=0, microsecond=0)})
     context = {
         'workplace_schedule': workplace_schedule,
         'form_workplace_plan': form_workplace_plan,
@@ -320,7 +323,7 @@ def schedulerfio(request, ws_number, model_order_query):
 
 
 # авторизация пользователей
-class LoginUser(LoginView):
+class LoginUser(LoginView):  # TODO перенести в service
     form_class = AuthenticationForm
     template_name = 'scheduler/login.html'
 
@@ -336,12 +339,12 @@ class LoginUser(LoginView):
         print(self.request.user.username)
 
 
-def logout_user(request):  # разлогинивание пользователя
+def logout_user(request):  # разлогинивание пользователя  # TODO перенести в service
     logout(request)
     return redirect('login')
 
 
-def show_workshop_scheme(request):
+def show_workshop_scheme(request):  # TODO перенести в service
     """
     Загрузка планировки
     :param request:
@@ -359,10 +362,10 @@ def show_workshop_scheme(request):
 @login_required(login_url="login")
 def plan(request):
     """
-            Планирование графика цеха и создание запросов на КД
-            :param request:
-            :return:
-            """
+    Планирование графика цеха и создание запросов на КД
+    :param request:
+    :return:
+    """
     if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:4]).strip() != "disp":
         raise PermissionDenied
     group_id = TERMINAL_GROUP_ID  # тг группа
@@ -520,9 +523,10 @@ def test_scheduler(request):
     return render(request, r"scheduler/test_scheduler.html", context=context)
 
 
-def shift_tasks_reports(request, start: str = "", end: str = ""):
+def shift_tasks_reports(request, start: str = "", end: str = ""):  # TODO перенести в service
     """
     Загружает файл отчета по сменным заданиям
+    :param request:
     :param start: с даты (дата распределения)
     :param end: по дату (дата распределения)
     :return: excel-файл
@@ -532,7 +536,7 @@ def shift_tasks_reports(request, start: str = "", end: str = ""):
     return FileResponse(open(exel_file, 'rb'))
 
 
-def shift_tasks_auto_report():
+def shift_tasks_auto_report():  # TODO перенести в service
     """
     Отправляет отчет по сменным заданиям на электронную почту и в папку O:/Расчет эффективности/Отчёты по СЗ
     """
@@ -559,7 +563,7 @@ def shift_tasks_auto_report():
     email.send()
 
 
-def create_shift_task_report(start, end):
+def create_shift_task_report(start, end):  # TODO перенести в service
     """
     Создает excel-файл отчета по сменным заданиям в папке xslx в корне проекта
     :param start: с даты (дата распределения)
@@ -679,7 +683,7 @@ def shift_tasks_report_view(request, start: str = "", end: str = ""):
     return render(request, fr"schedulerwp/view_report.html", context=context)
 
 
-def get_start_end_st_report(start: str, end: str) -> Tuple:
+def get_start_end_st_report(start: str, end: str) -> Tuple:  # TODO перенести в service
     """
     Преобразует полученные от пользователя строки с датами или null в дату и время
     :param start: с даты (Дата распределения)
@@ -894,10 +898,17 @@ def confirm_sz_planning(request):
 
 
 @login_required(login_url="login")
-def report(request):
-    # today = datetime.datetime(year=2023, month=12, day=1)  # произвольная дата
-    today = datetime.datetime.now()  # сегодня
-    # today = datetime.datetime(year=2023, month=11, day=22)
+def report(request, workshop):
+    """
+    Отображение формы для заполнения ежедневного отчёта. Построение и сохранение графика отчётов по цехам.
+    :param workshop: Номер цеха
+    :param request:
+    :return:
+    """
+    if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:4]).strip() != "disp":
+        raise PermissionDenied
+    # today = datetime.datetime.now()  # сегодня
+    today = datetime.datetime(year=2023, month=11, day=25)
     yesterday = today - datetime.timedelta(days=1)  # вчера
     start_date = yesterday.replace(day=1)  # первый день текущего месяца
     _, last_day = calendar.monthrange(yesterday.year, yesterday.month)  # последний день текущего месяца
@@ -922,26 +933,24 @@ def report(request):
     # DailyReport.objects.bulk_create(days_list)
     #
     # TODO end
-    workshop = int(request.GET.get('workshop')) if request.GET else 1  # № цеха по умолчанию
+    # workshop = int(request.GET.get('workshop'))  # № цеха по умолчанию
+    # workshop = 2
+    month_plan = MonthPlans.objects.get(workshop=workshop, month_plan=daterange[0])  # план цеха на месяц
     report_days = (DailyReport.objects.filter(calendar_day__gte=today - datetime.timedelta(days=4),
                                               calendar_day__lte=today + datetime.timedelta(days=3), workshop=workshop)
                    .order_by('calendar_day'))
 
     report_days_for_plot = (DailyReport.objects.filter(workshop=workshop, calendar_day__lte=yesterday)
                             .order_by('calendar_day'))
-    aver_fact = report_days_for_plot.aggregate(average=Avg('day_plan_rate'))
+    report_days_for_plans = (DailyReport.objects.filter(workshop=workshop).order_by('calendar_day'))
 
-    plot_lists = report_days_for_plot.values('calendar_day', 'day_plan_rate')
-    days_list = []
-    fact_list = []
-    for plot_list in plot_lists:
-        days_list.append(plot_list['calendar_day'].strftime('%d.%m'))
-        fact_list.append(float(plot_list['day_plan_rate']))
-
-    make_workshop_plan_plot(workshop=1, days_list=days_list, fact_list=fact_list, aver_fact=aver_fact['average'])
     if request.method == 'POST':
+        # print(f'{request.POST=}')
         report_form = DailyReportForm(request.POST)
+        hidden_field = PlanResortHiddenForm()
+
         if report_form.is_valid():
+            print(f'{report_form.cleaned_data=}')
             try:
                 previous_day_data = DailyReport.objects.get(
                     calendar_day=(yesterday - datetime.timedelta(days=1)).date(),
@@ -958,24 +967,120 @@ def report(request):
             plan_done_rate = 100 * yesterday_data.plan_sum / yesterday_data.month_plan_data.month_plan_amount
             fact_done_rate = 100 * fact_sum / yesterday_data.month_plan_data.month_plan_amount
             plan_loos_rate = fact_done_rate - plan_done_rate
+            # получение данных ОТК и ОТПБ из excel файлов
+            otk_excel_file = r'M:\Xranenie\ПТО\1 Екименко М.А\Брак.xlsx'
+            otpb_excel_file = r'M:\Xranenie\ПТО\1 Екименко М.А\Нарушения ТБ.xlsx'
+            all_fails = simple_report_read(otk_excel_file)
+            all_save_violations = simple_report_read(otpb_excel_file)
+            day_fails = all_fails[f'c{workshop}']['день_сумма'][0]
+            day_save_violations = all_save_violations[f'c{workshop}']['день_сумма'][0]
+            day_fails_str = all_fails[f'c{workshop}']['результат']
+            day_save_violations_str = all_save_violations[f'c{workshop}']['результат']
 
-            record_object = DailyReport.objects.filter(calendar_day=yesterday.date(), workshop=workshop)
-            record_object.update(fact_sum=fact_sum, day_fact=report_form.cleaned_data['day_fact'],
-                                 day_plan_rate=day_plan_rate, plan_done_rate=plan_done_rate,
-                                 fact_done_rate=fact_done_rate, plan_loos_rate=plan_loos_rate)
-
+            # интервал для отчёта
             report_days = (DailyReport.objects.filter(calendar_day__gte=today - datetime.timedelta(days=4),
                                                       calendar_day__lte=today + datetime.timedelta(days=4))
                            .order_by('calendar_day'))
-
+            # формирование отчёта
+            aver_fact = report_days_for_plot.aggregate(average=Avg('day_plan_rate'))
+            plot_lists = report_days_for_plot.values('calendar_day', 'day_plan_rate')
+            days_list = []
+            fact_list = []
+            for plot_list in plot_lists:
+                days_list.append(plot_list['calendar_day'].strftime('%d.%m'))
+                fact_list.append(float(plot_list['day_plan_rate']))
+            # обновление БД
+            record_object = DailyReport.objects.filter(calendar_day=yesterday.date(), workshop=workshop)
+            record_object.update(fact_sum=fact_sum, day_fact=report_form.cleaned_data['day_fact'],
+                                 day_plan_rate=day_plan_rate, plan_done_rate=plan_done_rate,
+                                 fact_done_rate=fact_done_rate, plan_loos_rate=plan_loos_rate,
+                                 aver_fact=aver_fact['average'], day_fails=day_fails,
+                                 day_save_violations=day_save_violations,
+                                 personal_total=report_form.cleaned_data['personal_total'],
+                                 personal_shift=report_form.cleaned_data['personal_shift'],
+                                 personal_total_welders=report_form.cleaned_data['personal_total_welders'],
+                                 personal_shift_welders=report_form.cleaned_data['personal_shift_welders'],
+                                 personal_night_welders=report_form.cleaned_data['personal_night_welders'],
+                                 personal_total_locksmiths=report_form.cleaned_data['personal_total_locksmiths'],
+                                 personal_shift_locksmiths=report_form.cleaned_data['personal_shift_locksmiths'],
+                                 personal_night_locksmiths=report_form.cleaned_data['personal_night_locksmiths'],
+                                 personal_total_painters=report_form.cleaned_data['personal_total_painters'],
+                                 personal_shift_painters=report_form.cleaned_data['personal_shift_painters'],
+                                 personal_night_painters=report_form.cleaned_data['personal_night_painters'],
+                                 personal_total_turners=report_form.cleaned_data['personal_total_turners'],
+                                 personal_shift_turners=report_form.cleaned_data['personal_shift_turners'],
+                                 personal_night_turners=report_form.cleaned_data['personal_night_turners'],
+                                 )
+            # формирование графика
+            make_workshop_plan_plot(workshop=workshop, days_list=days_list, fact_list=fact_list,
+                                    aver_fact=aver_fact['average'],
+                                    start_day=start_date, end_day=end_date, yesterday=yesterday)
+            # формирование результирующего отчёта pdf
+            filename = f'plan{workshop}-{yesterday.month}.pdf'
+            image_path = rf'scheduler\static\scheduler\jpg\plan{workshop}-{yesterday.month}.jpg'
+            output_dir = rf'scheduler\static\scheduler\pdf'
+            personal_data = DailyReport.objects.get(workshop=workshop, calendar_day=yesterday)
+            header_text = f"Данные для цеха {workshop} на {yesterday.strftime('%d.%m.%y')}"
+            table_data = (('Персонал', 'Cварщики', 'Слесаря', 'Маляры', 'Токари', 'Случаев брака', 'Нарушений ОТ'),
+                          (f'{personal_data.personal_total} | {personal_data.personal_shift}',
+                           f'{personal_data.personal_total_welders} | {personal_data.personal_shift_welders} | '
+                           f'{personal_data.personal_night_welders}',
+                           f'{personal_data.personal_total_locksmiths} | {personal_data.personal_shift_locksmiths} | '
+                           f'{personal_data.personal_night_locksmiths}',
+                           f'{personal_data.personal_total_painters} | {personal_data.personal_shift_painters} | '
+                           f'{personal_data.personal_night_painters}',
+                           f'{personal_data.personal_total_turners} | {personal_data.personal_shift_turners} | '
+                           f'{personal_data.personal_night_turners}',
+                           day_fails_str, day_save_violations_str))
+            footer_text = f"*Обозначение для ячеек персонала: 'ВСЕГО | ВЫХОД | ВЫХОД НОЧЬ'"
+            create_pdf_report(filename=filename, image_path=image_path, output_dir=output_dir, table_data=table_data,
+                              header_text=header_text, footer_text=footer_text)
             context = {'report_form': report_form, 'report_days': report_days, 'yesterday': yesterday.date(),
-                       'workshop': workshop}
-
+                       'workshop': workshop, 'report_days_for_plot': report_days_for_plot, 'month_plan': month_plan,
+                       'report_days_for_plans': report_days_for_plans, 'hidden_field': hidden_field}
+            # print(report_form.cleaned_data)
             return render(request, r"scheduler/report.html", context=context)
         else:
             print('not_valid_form')
     else:
         report_form = DailyReportForm()
+        hidden_field = PlanResortHiddenForm()
     context = {'report_form': report_form, 'report_days': report_days, 'yesterday': yesterday.date(),
-               'workshop': workshop}
+               'workshop': workshop, 'report_days_for_plot': report_days_for_plot, 'month_plan': month_plan,
+               'report_days_for_plans': report_days_for_plans, 'hidden_field': hidden_field}
     return render(request, r"scheduler/report.html", context=context)
+
+
+def plan_resort(request):
+    """
+    Обработка заполнения плана на каждый день по месяцам
+    :param request:
+    :return:
+    """
+
+    if request.method == 'POST':
+        hidden_field = PlanResortHiddenForm(request.POST)
+        if hidden_field.is_valid():
+            # получение данных из скрытого поля
+            raw_data = hidden_field.cleaned_data['day_plan_sum'].split('|')
+            # даты
+            dates = [datetime.datetime.strptime(x, "%d.%m.%Y").date() for x in raw_data[0].split(",") if x != '']
+            plans = [float(x) for x in raw_data[1].split(",") if x != '']  # планы
+            workshop = int(plans.pop())
+            new_plan = round(sum(plans), 1)  # новый план
+            date_plan_dict = dict(zip(dates, plans))
+            # обновление БД
+            records = []
+            for _date, _plan in date_plan_dict.items():
+                record = DailyReport.objects.get(calendar_day=_date, workshop=workshop)
+                record.day_plan = _plan
+                records.append(record)
+            DailyReport.objects.bulk_update(records, ['day_plan'])
+            MonthPlans.objects.filter(workshop=workshop, month_plan=dates[0]).update(month_plan_amount=new_plan)
+
+
+        else:
+            print('FFFFFFFFFUUUUUUUUUU, NOT_VALID')
+            print(f'{hidden_field.errors=}')
+
+    return redirect('report', workshop=1)  # обновление страницы при успехе

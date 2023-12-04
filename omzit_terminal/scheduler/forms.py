@@ -156,12 +156,24 @@ class DailyReportForm(forms.Form):
 
     day_plan = forms.DecimalField(min_value=0, max_digits=10, decimal_places=1, label='План день', required=False)
     day_fact = forms.DecimalField(min_value=0, max_digits=10, decimal_places=1, label='Факт день')
-    personal_total = forms.IntegerField(min_value=0, label='Всего персонала', initial=1)
-    personal_shift = forms.IntegerField(min_value=0, label='Выход в дату персонала', initial=1)
-    personal_total_welders = forms.IntegerField(min_value=0, label='Всего сварщиков', initial=1)
-    personal_shift_welders = forms.IntegerField(min_value=0, label='Выход в дату сварщиков', initial=1)
-    personal_total_locksmiths = forms.IntegerField(min_value=0, label='Всего слесарей', initial=1)
-    personal_shift_locksmiths = forms.IntegerField(min_value=0, label='Выход в дату слесарей', initial=1)
+
+    personal_total = forms.IntegerField(min_value=0, label='Всего персонала', initial=0)
+    personal_shift = forms.IntegerField(min_value=0, label='Выход в дату персонала', initial=0)
+    personal_total_welders = forms.IntegerField(min_value=0, label='Всего сварщиков', initial=0)
+    personal_shift_welders = forms.IntegerField(min_value=0, label='Выход в дату сварщиков', initial=0)
+    personal_night_welders = forms.IntegerField(min_value=0, label='Всего сварщиков', initial=0)
+
+    personal_total_locksmiths = forms.IntegerField(min_value=0, label='Всего слесарей', initial=0)
+    personal_shift_locksmiths = forms.IntegerField(min_value=0, label='Выход в дату слесарей', initial=0)
+    personal_night_locksmiths = forms.IntegerField(min_value=0, label='Всего слесарей', initial=0)
+
+    personal_total_painters = forms.IntegerField(min_value=0, label='Всего сварщиков', initial=0)
+    personal_shift_painters = forms.IntegerField(min_value=0, label='Выход в дату сварщиков', initial=0)
+    personal_night_painters = forms.IntegerField(min_value=0, label='Всего сварщиков', initial=0)
+
+    personal_total_turners = forms.IntegerField(min_value=0, label='Всего слесарей', initial=0)
+    personal_shift_turners = forms.IntegerField(min_value=0, label='Выход в дату слесарей', initial=0)
+    personal_night_turners = forms.IntegerField(min_value=0, label='Выход в дату слесарей', initial=0)
 
 
 class ReportForm(forms.Form):
@@ -171,12 +183,12 @@ class ReportForm(forms.Form):
     date_start = forms.DateField(
         widget=widgets.AdminDateWidget(attrs={"class": "vDateField report_input"}),
         label='c',
-        initial=make_aware(datetime.datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0))
+        # initial=datetime.datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     )
     date_end = forms.DateField(
         widget=widgets.AdminDateWidget(attrs={"class": "vDateField report_input"}),
         label='по',
-        initial=make_aware(datetime.datetime.now())
+        # initial=datetime.datetime.now()
     )
 
     class Media:
@@ -224,3 +236,8 @@ class SendSZForm(forms.Form):
             '/admin/jsi18n/',
             '/static/admin/js/core.js',
         ]
+
+
+class PlanResortHiddenForm(forms.Form):
+    day_plan_sum = forms.CharField(widget=forms.HiddenInput(attrs={"id": "id_hidden_input", 'form': "fil_days_form"}),
+                                   required=True)
