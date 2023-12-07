@@ -1,7 +1,10 @@
 from django import forms
+from django.forms import ModelChoiceField, formset_factory, ChoiceField
+
 from .models import ProductCategory
-from scheduler.models import WorkshopSchedule, model_pattern, model_error_text, order_pattern, order_error_text
-from constructor.forms import QueryAnswerForm
+from scheduler.models import WorkshopSchedule, model_pattern, model_error_text, order_pattern, order_error_text, Doers, \
+    ShiftTask
+from constructor.forms import QueryAnswerForm, MultipleFileField, MultipleFileInput
 
 
 class GetTehDataForm(forms.Form):
@@ -41,3 +44,46 @@ class SendDrawBack(forms.Form):
                                         label='Заказ модель', required=False)
     td_remarks = forms.CharField(widget=forms.Textarea, label='Содержание замечания')
 
+
+class TehnologChoice(forms.Form):
+    """Выбор технолога для распределения (Плазма)"""
+    fios_tehnolog = Doers.objects.filter(job_title="Технолог")
+    fio = ModelChoiceField(
+        fios_tehnolog,
+        label='Технолог',
+        required=False,
+        widget=forms.Select(attrs={'class': 'name_select_option tehnolog_select'})
+    )
+
+
+class DoerChoice(forms.Form):
+    """Выбор исполнителя для распределения (Плазма)"""
+    fios_doer = Doers.objects.exclude(job_title="Технолог")
+    fio = ModelChoiceField(
+        fios_doer,
+        label='Исполнитель',
+        required=False,
+        widget=forms.Select(attrs={'class': 'name_select_option doer_select'})
+    )
+
+
+WS_PLASMA_CHOICES = ((None, "-"), (1, 1), (2, 2))
+
+
+class WorkshopPlasmaChoice(forms.Form):
+    """Выбор цеха плазмы"""
+    ws = ChoiceField(
+        choices=WS_PLASMA_CHOICES,
+        label='Цех плазмы',
+        required=False,
+        widget=forms.Select(attrs={'class': 'name_select_option plasma_select'})
+    )
+
+
+class LayoutUpload(forms.Form):
+    """
+    Загрузка раскладки
+    """
+
+    file = MultipleFileField(label='Файл раскладки (cnc/csv)',
+                             widget=MultipleFileInput(attrs={'accept': ".cnc,.csv"}))

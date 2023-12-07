@@ -85,6 +85,8 @@ class Doers(models.Model):
     """
     objects = models.Manager()  # явное указание метода для pycharm
     doers = models.CharField(max_length=255, unique=True, verbose_name='ФИО исполнителей')
+    job_title = models.CharField(max_length=255, null=True, blank=True, verbose_name='Должность')
+    ws_plasma = models.PositiveSmallIntegerField(verbose_name='Цех плазмы (по умолчанию)', null=True, blank=True)
 
     class Meta:
         db_table = "doers"
@@ -161,10 +163,18 @@ class ShiftTask(models.Model):
     # "name": "Б1-1",
     # "text": "Б1-1 Швеллер 30П ГОСТ 8240-97 С255-4 ГОСТ 27772-2015 L=7500 (2 шт.)",
     # "count": "2",
+    # "layout_name": "4SP №order1 B-26 Balka №26 2", имя детали
+    # "layouts": {'12ГС-43.CNC': 1}
+    # "layouts_total": 1 количество на всех раскладках
     # "length": "7500",
     # "material": "Швеллер 30П ГОСТ 8240-97 С255-4 ГОСТ 27772-2015"
     # }
     workpiece = models.JSONField(null=True, blank=True, verbose_name='Заготовка')
+    fio_tehnolog = models.CharField(max_length=255, null=True, blank=True,
+                                    default='не распределено', verbose_name='ФИО технолога')
+    plasma_layout = models.CharField(max_length=255, null=True, blank=True,
+                                     default='Не выполнена', verbose_name='Раскладка')
+    workshop_plasma = models.PositiveSmallIntegerField(verbose_name='Цех плазмы', null=True, blank=True)
 
     class Meta:
         db_table = "shift_task"

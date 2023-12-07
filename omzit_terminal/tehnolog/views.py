@@ -1,18 +1,35 @@
+import csv
 import datetime
 import json
 import os
 import asyncio
+import re
+import shutil
+import io
+from zipfile import ZipFile
+
+import openpyxl
 from django.contrib.auth.decorators import login_required
+from django.forms import formset_factory
+from django.http import FileResponse
 from django.shortcuts import render, redirect
+from django.utils.timezone import make_naive
+from odf import text, teletype
+from odf.opendocument import load
+from transliterate import translit
 
 from constructor.forms import QueryAnswer
+from omzit_terminal.settings import BASE_DIR
+from .services.plasma_utils import STEELS
 from .services.service_handlers import handle_uploaded_file, handle_uploaded_draw_file
 from .services.tech_data_get import tech_data_get
-from .forms import GetTehDataForm, ChangeOrderModel, SendDrawBack
-from scheduler.models import WorkshopSchedule
+from .forms import GetTehDataForm, ChangeOrderModel, SendDrawBack, TehnologChoice, DoerChoice, LayoutUpload, \
+    WorkshopPlasmaChoice
+from scheduler.models import WorkshopSchedule, ShiftTask, Doers
 from worker.services.master_call_function import terminal_message_to_id
 from django.core.exceptions import PermissionDenied
-from scheduler.filters import get_filterset
+from scheduler.filters import get_filterset, filterset_plasma
+
 # ADMIN_TELEGRAM_ID
 TERMINAL_GROUP_ID = os.getenv('ADMIN_TELEGRAM_ID')
 
@@ -233,3 +250,232 @@ def upload_draws(request, draws_path, group_id):
         draw_files_upload_form = QueryAnswer()
     context = {'draw_files_upload_form': draw_files_upload_form, 'upload_alert': alert}
     return context
+
+
+def plasma_tehnolog_distribution(request):
+    queryset = ShiftTask.objects.values(
+        'id', 'model_order_query', 'workpiece', 'fio_doer',
+        'fio_tehnolog', 'plasma_layout', 'datetime_done', 'workshop_plasma',
+    ).filter(ws_name='Плазма').exclude(st_status='завершено').order_by("id")
+
+    filter_set = filterset_plasma(request=request, queryset=queryset)
+    pk = 0
+
+    if request.method == "POST":
+        form_submit = request.POST.get("form", "")
+        if "tehnolog" in form_submit:
+            tehnolog_choice_form = TehnologChoice(request.POST)
+            if tehnolog_choice_form.is_valid():
+                tehnolog = tehnolog_choice_form.cleaned_data.get('fio')
+                if not tehnolog:
+                    tehnolog = "Не распределено"
+                    ws_plasma = None
+                else:
+                    ws_plasma = Doers.objects.get(doers=str(tehnolog)).ws_plasma
+                if "id" in form_submit:
+                    pk = int(form_submit.split("_")[2])
+                    filter_set.qs.filter(pk=pk).update(fio_tehnolog=str(tehnolog), workshop_plasma=ws_plasma)
+                else:
+                    filter_set.qs.update(fio_tehnolog=str(tehnolog), workshop_plasma=ws_plasma)
+
+        elif "doer" in form_submit:
+            doer_choice_form = DoerChoice(request.POST)
+            if doer_choice_form.is_valid():
+                doer = doer_choice_form.cleaned_data.get('fio')
+                if not doer:
+                    doer = "Не распределено"
+                if "id" in form_submit:
+                    pk = int(form_submit.split("_")[2])
+                    filter_set.qs.filter(pk=pk).update(fio_doer=str(doer))
+                else:
+                    filter_set.qs.update(fio_doer=str(doer))
+
+        elif 'workshop' in form_submit:
+            ws_plasma_choice_form = WorkshopPlasmaChoice(request.POST)
+            if ws_plasma_choice_form.is_valid():
+                ws_plasma = ws_plasma_choice_form.cleaned_data.get('ws')
+                if not ws_plasma:
+                    ws_plasma = None
+                if "id" in form_submit:
+                    pk = int(form_submit.split("_")[2])
+                    filter_set.qs.filter(pk=pk).update(workshop_plasma=ws_plasma)
+                else:
+                    filter_set.qs.update(workshop_plasma=ws_plasma)
+
+    tehnolog_choice_form = TehnologChoice()
+    doer_choice_form = DoerChoice()
+    ws_plasma_choice_form = WorkshopPlasmaChoice()
+
+    filter_set = filterset_plasma(request=request, queryset=queryset)
+    context = {
+        "filter": filter_set,
+        "tehnolog_form": tehnolog_choice_form,
+        "doer_form": doer_choice_form,
+        "ws_plasma_form": ws_plasma_choice_form,
+        "focus_id": pk,
+    }
+
+    return render(request, template_name='tehnolog/plasma_tehnolog_distribution.html', context=context)
+
+
+def plasma_tehnolog(request):
+    user_name = request.user.first_name
+    queryset = ShiftTask.objects.values(
+        'id', 'model_order_query', 'workpiece', 'fio_doer',
+        'fio_tehnolog', 'plasma_layout', 'datetime_done', 'workshop_plasma',
+    ).filter(ws_name='Плазма', fio_tehnolog=user_name).exclude(st_status='завершено').order_by("id")
+
+    for st in queryset:
+        workpiece = st['workpiece']
+        if not workpiece.get('layout_name'):
+            workpiece['layout_name'] = create_part_name(
+                workpiece,
+                workpiece['name'],
+                workpiece['material'],
+                workpiece['count'],
+                st['model_order_query'],
+            )
+            workpiece['layouts_total'] = 0
+            workpiece['layouts'] = {}
+            queryset.filter(pk=st['id']).update(workpiece=workpiece)
+    pk = 0
+    filter_set = filterset_plasma(request=request, queryset=queryset)
+
+    if request.method == "POST":
+        form_submit = request.POST.get("form", "")
+        if "download" in form_submit:
+            filter_set.qs.update(plasma_layout="В работе")
+            file_xlsx = create_layout_xlsx(filter_set.qs)
+            return FileResponse(open(file_xlsx, 'rb'))
+
+        if "upload" in form_submit:
+            layout_upload_form = LayoutUpload(request.POST, request.FILES)
+            if layout_upload_form.is_valid():
+                files = dict(request.FILES).get("file")
+                for file in files:
+                    counter = read_plasma_layout(file)
+                    for part, value in counter.items():
+                        part_st = filter_set.qs.filter(workpiece__layout_name=part)
+                        if part_st:
+                            workpiece = part_st[0]['workpiece']
+                            workpiece['layouts'].update(value)
+                            workpiece['layouts_total'] = sum(workpiece['layouts'].values())
+                            part_st.update(workpiece=workpiece)
+
+        if 'workshop' in form_submit:
+            ws_plasma_choice_form = WorkshopPlasmaChoice(request.POST)
+            if ws_plasma_choice_form.is_valid():
+                ws_plasma = ws_plasma_choice_form.cleaned_data.get('ws')
+                if not ws_plasma:
+                    ws_plasma = None
+                if "id" in form_submit:
+                    pk = int(form_submit.split("_")[2])
+                    filter_set.qs.filter(pk=pk).update(workshop_plasma=ws_plasma)
+                else:
+                    filter_set.qs.update(workshop_plasma=ws_plasma)
+
+        if 'delete' in form_submit:
+            _, pk, layout = form_submit.split("_")
+            workpiece = filter_set.qs.filter(pk=int(pk))[0]['workpiece']
+            layout_count = workpiece['layouts'].pop(layout)
+            workpiece['layouts_total'] -= layout_count
+            filter_set.qs.filter(pk=int(pk)).update(workpiece=workpiece)
+
+    ws_plasma_choice_form = WorkshopPlasmaChoice()
+    layout_upload_form = LayoutUpload()
+
+    filter_set = filterset_plasma(request=request, queryset=queryset)
+
+    context = {
+        "filter": filter_set,
+        "form": layout_upload_form,
+        "ws_plasma_form": ws_plasma_choice_form,
+        "focus_id": pk,
+    }
+    return render(request, template_name='tehnolog/plasma_tehnolog.html', context=context)
+
+
+def create_layout_xlsx(queryset):  # TODO перенести в service
+    """
+    Создает excel-файл по выбранным заготовкам для выполнения раскладки
+    :param queryset: выбранные заготовки
+    :return:
+    """
+    exel_file_src = BASE_DIR / "LayoutPlasmaTemplate.xlsx"
+    new_file_name = f"{datetime.datetime.now().strftime('%Y.%m.%d %H-%M-%S')} layout.xlsx"
+    # Создаем папку для хранения отчетов
+    if not os.path.exists(BASE_DIR / "xlsx"):
+        os.mkdir(BASE_DIR / "xlsx")
+    # Формируем путь к новому файлу
+    exel_file_dst = BASE_DIR / "xlsx" / new_file_name
+    # Копируем шаблон в новый файл отчета
+    shutil.copy(exel_file_src, exel_file_dst)
+
+    ex_wb = openpyxl.load_workbook(exel_file_src, data_only=True)
+    ex_sh = ex_wb["Раскладка"]
+    # Данные
+    for i, row in enumerate(queryset):
+        row.update(row.pop('workpiece'))
+        # Пропускаем столбцы
+        for field in ('text', 'length', 'fio_doer'):
+            row.pop(field)
+        for j, key in enumerate(row):
+            cell = ex_sh.cell(row=i + 2, column=j + 1)
+            cell.value = str(row[key])
+    ex_wb.save(exel_file_dst)
+    return exel_file_dst
+
+
+def read_plasma_layout(layout_file):
+    file = layout_file.read().decode('Windows-1251')
+    reader = io.StringIO(file)
+    counter = {}
+    if layout_file.name.lower().endswith(".csv"):
+        for row in reader:
+            dxf = re.match(r"^.*[,]+(.*(SS |SP |GS )[^,]*)[\s,]+([\d]+)", row)
+            if dxf:
+                part = dxf.group(1).strip()
+                counter[part] = {layout_file.name: int(dxf.group(3))}
+    elif layout_file.name.lower().endswith(".cnc"):
+        for row in reader:
+            dxf = re.match(r"^\"PART (.*)\s([\d]+)\s[\d]+\s[\d.]+\s[\d.]+", row)
+            if dxf and "$REST_CUT" not in dxf.group(1):
+                part = dxf.group(1).strip()
+                counter[part] = counter.get(part, {layout_file.name: set()})
+                counter[part][layout_file.name].add(dxf.group(2))
+        for part, part_value in counter.items():
+            for key, value in part_value.items():
+                part_value[key] = len(value)
+    elif layout_file.name.lower().endswith(".odt"):
+        pass
+    return counter
+
+
+def create_part_name(workshop, name, material, count, order_model):
+    order, model = order_model.split("_")
+
+    # Толщина
+    match = re.match(r"^.*?([\d]+).*", material)
+    if match:
+        thickness = match.group(1)
+    else:
+        thickness = ""
+
+    # Наименование
+    match = re.match(r"(^.+?)\s\d+х\d+.*", name)
+    if match:
+        name = match.group(1)
+
+    # Сталь
+    steel = ""
+    for key, value in STEELS.items():
+        if key in material:
+            steel = value
+
+    if workshop == 1:
+        part_name = f"{thickness}{steel} №{order} {name.strip()} {count}"
+    else:
+        part_name = f"№{order} {thickness}{steel} {name.strip()} {count}"
+
+    part_name = translit(part_name, language_code='ru', reversed=True)
+    return part_name

@@ -1,12 +1,11 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en" class="fullScreen">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Рабочее место планировщика</title>
-        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
-    </head>
-    <body>
+
+{% block title %}
+    Рабочее место планировщика
+{% endblock %}
+
+{% block body %}
         <h1>Рабочее место планировщика. ПЛАНИРОВАНИЕ.</h1>
         {% if request.user.is_authenticated %}
         <div class="legend">
@@ -267,13 +266,13 @@
                        
                     if (("{{ st.workpiece.material }}".search(/.*Лист.*/) != -1) || (pipe_dia != -1) && (pipe_dia>=219 && pipe_dia <= 426)) {
                         html += `
-                        <option value="3">Цех 3</option>
-                        <option value="10" selected>Плазма</option>
+                        <option value="Цех 3">Цех 3</option>
+                        <option value="Плазма" selected>Плазма</option>
                         `
                     } else {
                         html +=`
-                        <option value="3" selected>Цех 3</option>
-                        <option value="10">Плазма</option>
+                        <option value="Цех 3" selected>Цех 3</option>
+                        <option value="Плазма">Плазма</option>
                         `
                     }
                     
@@ -413,5 +412,4 @@
                 document.getElementById("filter_form2").submit();
             }
         </script>
-    </body>
-</html>
+{% endblock %}

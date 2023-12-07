@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'constructor.apps.ConstructorConfig',
     'django_filters',
     'django_apscheduler',
+    'widget_tweaks',
 
 ]
 

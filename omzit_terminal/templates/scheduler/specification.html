@@ -1,14 +1,16 @@
+{% extends 'base.html' %}
 {% load static %}
 {% load i18n %}
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Рабочее место заявителя</title>
-        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
-        <link type="text/css" href="{% static 'tehnolog/css/tehnolog.css' %}" rel="stylesheet" />
-    </head>
-    <body>
+
+{% block title %}
+    Рабочее место заявителя
+{% endblock %}
+{% block links %}
+    <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
+<link type="text/css" href="{% static 'tehnolog/css/tehnolog.css' %}" rel="stylesheet" />
+{% endblock %}
+
+{% block body %}
         {% if request.user.is_authenticated %}
         <div class="legend">
             <div>
@@ -480,5 +482,4 @@
         </script>
 
         <div style="height: 150px"></div>
-    </body>
-</html>
+{% endblock %}

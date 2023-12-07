@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}
+Рабочее место технолога. Плазма
+{% endblock %}
+
+{% block body %}
+<h1>Рабочее место технолога. Плазма</h1>
+{% if filter.qs %}
+<form method="post" id="id_upload_form" enctype="multipart/form-data" class="form_form">
+    {% csrf_token %}
+    <div class="add_to_plan">
+        <h3>Форма загрузки раскладки</h3>
+        <div class="form-error">{{ form.non_field_errors }}</div>
+        {% for each_form in form %}
+        <div class="form_inner_label">
+            <label for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
+        </div>
+        <div class="form_inner_div">{{ each_form }}</div>
+        <div class="form-error">{{ each_form.errors }}</div>
+        {% endfor %}
+        <button
+                type="submit"
+                class="btn"
+                name="form"
+                value="upload"
+        >
+            Загрузить раскладку
+        </button>
+
+    </div>
+</form>
+{% endif %}
+<div class="col">
+    <h3 class="table_h3">Раскладки</h3>
+    {% if filter.qs %}
+    <p>
+        <input type="button" onclick="submitForm('id_filter_form')" value="Применить фильтр"/>
+        <input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр"/>
+    </p>
+    <table title="Перечень заявок" class="table">
+        <tr class="table_header_row">
+            <td class="td_cell">СЗ</td>
+            <td class="td_cell">Заказ-модель</td>
+            <td class="td_cell">Дата потребности</td>
+            <td class="td_cell">Наименование</td>
+            <td class="td_cell">Материал</td>
+            <td class="td_cell">Кол-во</td>
+            <td class="td_cell">Чертеж</td>
+            <td class="td_cell">Технолог</td>
+            <td class="td_cell">Цех плазмы
+                <form method="post" id="id_ws_plasma_form">
+                    {% csrf_token %}
+                    <p>{% render_field ws_plasma_form.ws class='name_select_option' %}</p>
+                    <button
+                            type="submit"
+                            class="btn"
+                            name="form"
+                            value="workshop_form"
+                    >
+                        Распределить всё
+                    </button>
+                </form>
+            </td>
+            <td class="td_cell">
+                <p>Раскладка</p>
+                <form method="post" id="id_download_form">
+                    {% csrf_token %}
+                    <button
+                            type="submit"
+                            class="btn"
+                            name="form"
+                            value="download"
+                    >
+                        Загрузить в xlsx
+                    </button>
+                </form>
+            </td>
+            <td class="td_cell">Имя в раскладке</td>
+            <td class="td_cell">Кол-во<br>на раскладках</td>
+            <td class="td_cell">Действия</td>
+        </tr>
+
+        <form method="get" id="id_filter_form">
+            <tr>
+                <td class="td_cell">{{ filter.form.id }}</td>
+                <td class="td_cell">{{ filter.form.model_order_query }}</td>
+                <td class="td_cell">{{ filter.form.datetime_done }}</td>
+                <td class="td_cell">{{ filter.form.workpiece__name }}</td>
+                <td class="td_cell">{{ filter.form.workpiece__material_1 }}{{ filter.form.workpiece__material_2 }}</td>
+                <td class="td_cell">{{ filter.form.workpiece__count }}</td>
+                <td class="td_cell">{{ filter.form.workpiece__draw }}</td>
+                <td class="td_cell">{{ filter.form.fio_tehnolog }}</td>
+                <td class="td_cell">{{ filter.form.workshop_plasma }}</td>
+                <td class="td_cell">{{ filter.form.plasma_layout }}</td>
+                <td class="td_cell"></td>
+                <td class="td_cell"></td>
+                <td class="td_cell"></td>
+            </tr>
+        </form>
+        {% for query in filter.qs %}
+        <tr class="table_row">
+            <td class="td_cell">{{ query.id }}</td>
+            <td class="td_cell">{{ query.model_order_query }}</td>
+            <td class="td_cell">{{ query.datetime_done }}</td>
+            <td class="td_cell">{{ query.workpiece.name }}</td>
+            <td class="td_cell">{{ query.workpiece.material }}</td>
+            <td class="td_cell"
+                {% if query.workpiece.count  < query.workpiece.layouts_total %}
+                    style="background-color: red;"
+                {% endif %}
+            >
+            {{ query.workpiece.count }}
+            </td>
+            <td class="td_cell">{{ query.workpiece.draw }}</td>
+            <td class="td_cell">{{ query.fio_tehnolog }}</td>
+            <td class="td_cell">
+                <form method="post" id="id_workshop_{{ query.id }}_form">
+                    {% csrf_token %}
+                    <p>{% if not query.workshop_plasma %}Не определен{% else %}{{ query.workshop_plasma }}{% endif %}
+                        {% render_field ws_plasma_form.ws id=query.id %}</p>
+                    <input type="hidden" name="form"/>
+                </form>
+            </td>
+            <td class="td_cell">
+                {% if query.workpiece.count <= query.workpiece.layouts_total %}
+                Выполнена
+                {% else %}
+                {{ query.plasma_layout }}
+                {% endif %}
+            </td>
+            <td class="td_cell">{{ query.workpiece.layout_name }}</td>
+            <td class="td_cell">{{ query.workpiece.layouts_total }}</td>
+            <td class="td_cell">
+                {% if query.workpiece.count <= query.workpiece.layouts_total %}
+                <form method="post" id="id_layout_done_form">
+                    {% csrf_token %}
+                    <button
+                            type="submit"
+                            class="btn"
+                            name="form"
+                            value="done_{{query.id}}"
+                    >
+                        В работу
+                    </button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% if query.workpiece.layouts|length > 0 %}
+        {% for layout, count in query.workpiece.layouts.items %}
+        <tr style="background-color: #4A4D55;">
+            <td class="td_cell">{{ query.id }}-{{ forloop.counter }}</td>
+            <td class="td_cell">{{ query.model_order_query }}</td>
+            <td class="td_cell">{{ query.datetime_done }}</td>
+            <td class="td_cell">{{ query.workpiece.name }}</td>
+            <td class="td_cell">{{ query.workpiece.material }}</td>
+            <td class="td_cell">-</td>
+            <td class="td_cell">{{ query.workpiece.draw }}</td>
+            <td class="td_cell">{{ query.fio_tehnolog }}</td>
+            <td class="td_cell">
+                <form method="post" id="id_workshop_{{ query.id }}_form">
+                    {% csrf_token %}
+                    <p>{% if not query.workshop_plasma %}Не определен{% else %}{{ query.workshop_plasma }}{% endif %}
+                        {% render_field ws_plasma_form.ws id=query.id %}</p>
+                    <input type="hidden" name="form"/>
+                </form>
+            </td>
+            <td class="td_cell">
+                <p>{{ layout }}</p>
+                <form method="post" id="id_layout_delete_form">
+                    {% csrf_token %}
+                    <button
+                            type="submit"
+                            class="btn_delete"
+                            name="form"
+                            value="delete_{{ query.id }}_{{ layout }}"
+                    >
+                        Удалить
+                    </button>
+                </form>
+            </td>
+            <td class="td_cell">{{ query.workpiece.layout_name }}</td>
+            <td class="td_cell">{{ count }}</td>
+            <td class="td_cell">
+                <form method="post" id="id_layout_part_done_form">
+                    {% csrf_token %}
+                    <button
+                            type="submit"
+                            class="btn_part"
+                            name="form"
+                            value="done_{{query.id}}_{{ layout }}"
+                    >
+                        В работу частично
+                    </button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+        {% endif %}
+        {% endfor %}
+    </table>
+    {% else %}
+    Распределения отсутствуют
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ws_selects = document.querySelectorAll(".plasma_select") // Получаем селекты цеха плазмы
+        ws_selects.forEach(function (c) {
+            // При изменении любого селекта технолога
+            c.onchange = function () {
+                    let form = c.parentNode.parentNode
+                    console.log(form)
+                    console.log(form.elements)
+                    form.elements.form.value = form.id
+                    form.submit()
+            }
+        })
+        const focus_select = document.getElementById("{{focus_id}}").focus()
+    })
+
+    function submitForm(id) {
+            const form = document.getElementById(id)
+            console.log(form, id)
+            form.submit()
+        }
+</script>
+
+{% endblock %}

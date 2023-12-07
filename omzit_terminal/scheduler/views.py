@@ -845,6 +845,7 @@ def create_shift_tasks_from_spec(request):
             )
             shift_tasks = []
             for product in data["products"]:
+                product['count'] = int(product['count'])
                 shift_tasks.append(ShiftTask(
                     model_name=model_name,
                     order=order,

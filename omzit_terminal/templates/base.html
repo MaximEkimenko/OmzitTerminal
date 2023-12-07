@@ -1,0 +1,45 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="fullScreen">
+<head>
+    <meta charset="UTF-8">
+    <title>
+        {% block title %}
+        {% endblock %}
+    </title>
+    {% block links %}
+    <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet"/>
+    {% endblock %}
+</head>
+<body>
+<header role="banner">
+  <div class="navbar">
+    <ul>
+        <li class="dropdown">
+            <a href="javascript:void(0)" class="dropbtn">Меню</a>
+            <div class="dropdown-content">
+                <a href="{% url 'specification' %}"> Заявитель </a>
+                <a href="{% url 'scheduler' %}"> Планировщик </a>
+                <a href="{% url 'constructor' %}"> Конструктор </a>
+                <a href="{% url 'tehnolog' %}"> Технолог </a>
+                <a href="{% url 'schedulerwp' %}"> Планировщик РЦ (Мастер) </a>
+                <a href="{% url 'worker_choose' %}"> Терминал (общий) </a>
+                <a href="{% url 'plan' %}"> План производства </a>
+                <a href="{% url 'test_scheduler' %}"> test </a>
+                <a href="{% url 'plasma_tehnolog_distribution' %}"> Распределение технологов на плазму </a>
+                <a href="{% url 'plasma_tehnolog' %}"> Технолог. Плазма </a>
+            </div>
+        </li>
+        {% if request.user.is_authenticated %}
+        <li><a href="{% url 'instruction' %}">Инструкция</a></li>
+        <li style="float:right"><a href="{% url 'logout' %}">Выйти</a></li>
+        <li style="float:right; text-align:center;"><span>Пользователь {{ user.username }} |</span></li>
+        {% else %}
+        <li><a href="{% url 'login' %}">Войти</a></li>
+        {%endif %}
+    </ul>
+</div>
+{% block body %}
+{% endblock %}
+</body>
+</html>
