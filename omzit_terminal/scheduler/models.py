@@ -6,8 +6,6 @@ from django.db.models import Avg
 from django.forms import ModelChoiceField
 from django.utils import timezone
 
-from tehnolog.models import ProductCategory
-
 model_pattern = r"^[\-A-Za-z0-9]+$"
 model_error_text = "Имя модели может содержать только цифры и буквы латинского алфавита и знак '-' тире"
 
@@ -220,7 +218,8 @@ class MonthPlans(models.Model):
     """
     objects = models.Manager()
     month_plan = models.DateField(verbose_name="Месяц планирования")
-    month_plan_amount = models.DecimalField(decimal_places=1, max_digits=10, verbose_name="План на месяц в н/ч")
+    month_plan_amount = models.DecimalField(decimal_places=1, max_digits=10, verbose_name="План на месяц в н/ч",
+                                            default=0)
     workshop = models.PositiveSmallIntegerField(verbose_name="Цех", default=0)
 
     class Meta:
