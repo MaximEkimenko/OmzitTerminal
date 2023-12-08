@@ -153,7 +153,7 @@ class ShiftTask(models.Model):
         'ShiftTask',
         on_delete=models.PROTECT,
         related_name="previous_shift_task",
-        verbose_name='Новое СЗ на исправление брака',
+        verbose_name='Новое СЗ',
         null=True,
         blank=True
     )

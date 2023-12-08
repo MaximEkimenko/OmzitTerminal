@@ -67,7 +67,7 @@ class DoerChoice(forms.Form):
     )
 
 
-WS_PLASMA_CHOICES = ((None, "-"), (1, 1), (2, 2))
+WS_PLASMA_CHOICES = (("", 'Не определен'), ("102", 1), ("202", 2))
 
 
 class WorkshopPlasmaChoice(forms.Form):

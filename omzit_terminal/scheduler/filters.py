@@ -75,7 +75,7 @@ def filterset_plasma(request, queryset):
         'workpiece__draw',
         'fio_doer',
         'fio_tehnolog',
-        'workshop_plasma',
+        'ws_number',
         'plasma_layout',
         'datetime_done'
     ]
@@ -88,9 +88,7 @@ def filterset_plasma(request, queryset):
             for value in values:
                 filter_field_material = filter_field_material | Q(**{f"{field}__icontains": value})
         else:
-            for value in values:
-                filter_field = {f"{field}": value}
-                choices = choices.filter(**filter_field)
+            choices = choices.filter(**{f"{field}__in": values})
     choices = choices.filter(filter_field_material)
 
     fields_values = {field: set() for field in fields}

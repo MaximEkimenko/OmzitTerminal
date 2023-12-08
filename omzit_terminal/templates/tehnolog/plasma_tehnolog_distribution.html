@@ -39,7 +39,7 @@
                         </button>
                     </form>
                 </td>
-                <td class="td_cell">Цех плазмы
+                <td class="td_cell">Цех
                     <form method="post" id="id_ws_plasma_form">
                         {% csrf_token %}
                         <p>{% render_field ws_plasma_form.ws class='name_select_option' %}</p>
@@ -81,7 +81,7 @@
                 <td class="td_cell">{{ filter.form.workpiece__count }}</td>
                 <td class="td_cell">{{ filter.form.workpiece__draw }}</td>
                 <td class="td_cell">{{ filter.form.fio_tehnolog }}</td>
-                <td class="td_cell">{{ filter.form.workshop_plasma }}</td>
+                <td class="td_cell">{{ filter.form.ws_number }}</td>
                 <td class="td_cell">{{ filter.form.plasma_layout }}</td>
                 <td class="td_cell">{{ filter.form.fio_doer }}</td>
             </tr>
@@ -105,8 +105,20 @@
             <td class="td_cell">
                 <form method="post" id="id_workshop_{{ query.id }}_form">
                     {% csrf_token %}
-                    <p>{% if not query.workshop_plasma %}Не определен{% else %}{{ query.workshop_plasma }}{% endif %}
-                        {% render_field ws_plasma_form.ws id=query.id %}</p>
+                    <p>{% if not query.ws_number %}Не определен{% else %}{{ query.ws_number|slice:":1" }}{% endif %}
+                        <select name="ws" class="name_select_option plasma_select" id="{{ query.id }}">
+                            {% for value, text in ws_plasma_form.fields.ws.choices %}
+                            <option
+                                    value="{{ value }}"
+                                    {% if value == query.ws_number %}
+                                        selected
+                                    {% endif %}
+                            >
+                                {{ text }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </p>
                     <input type="hidden" name="form"/>
                 </form>
             </td>

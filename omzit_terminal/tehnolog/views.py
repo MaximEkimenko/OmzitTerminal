@@ -255,7 +255,7 @@ def upload_draws(request, draws_path, group_id):
 def plasma_tehnolog_distribution(request):
     queryset = ShiftTask.objects.values(
         'id', 'model_order_query', 'workpiece', 'fio_doer',
-        'fio_tehnolog', 'plasma_layout', 'datetime_done', 'workshop_plasma',
+        'fio_tehnolog', 'plasma_layout', 'datetime_done', 'ws_number',
     ).filter(ws_name='Плазма').exclude(st_status='завершено').order_by("id")
 
     filter_set = filterset_plasma(request=request, queryset=queryset)
@@ -269,14 +269,14 @@ def plasma_tehnolog_distribution(request):
                 tehnolog = tehnolog_choice_form.cleaned_data.get('fio')
                 if not tehnolog:
                     tehnolog = "Не распределено"
-                    ws_plasma = None
+                    ws_plasma = ""
                 else:
-                    ws_plasma = Doers.objects.get(doers=str(tehnolog)).ws_plasma
+                    ws_plasma = Doers.objects.get(doers=str(tehnolog)).ws_plasma * 100 + 2
                 if "id" in form_submit:
                     pk = int(form_submit.split("_")[2])
-                    filter_set.qs.filter(pk=pk).update(fio_tehnolog=str(tehnolog), workshop_plasma=ws_plasma)
+                    filter_set.qs.filter(pk=pk).update(fio_tehnolog=str(tehnolog), ws_number=ws_plasma)
                 else:
-                    filter_set.qs.update(fio_tehnolog=str(tehnolog), workshop_plasma=ws_plasma)
+                    filter_set.qs.update(fio_tehnolog=str(tehnolog), ws_number=ws_plasma)
 
         elif "doer" in form_submit:
             doer_choice_form = DoerChoice(request.POST)
@@ -295,12 +295,12 @@ def plasma_tehnolog_distribution(request):
             if ws_plasma_choice_form.is_valid():
                 ws_plasma = ws_plasma_choice_form.cleaned_data.get('ws')
                 if not ws_plasma:
-                    ws_plasma = None
+                    ws_plasma = ""
                 if "id" in form_submit:
                     pk = int(form_submit.split("_")[2])
-                    filter_set.qs.filter(pk=pk).update(workshop_plasma=ws_plasma)
+                    filter_set.qs.filter(pk=pk).update(ws_number=ws_plasma)
                 else:
-                    filter_set.qs.update(workshop_plasma=ws_plasma)
+                    filter_set.qs.update(ws_number=ws_plasma)
 
     tehnolog_choice_form = TehnologChoice()
     doer_choice_form = DoerChoice()
@@ -322,7 +322,7 @@ def plasma_tehnolog(request):
     user_name = request.user.first_name
     queryset = ShiftTask.objects.values(
         'id', 'model_order_query', 'workpiece', 'fio_doer',
-        'fio_tehnolog', 'plasma_layout', 'datetime_done', 'workshop_plasma',
+        'fio_tehnolog', 'plasma_layout', 'datetime_done', 'ws_number',
     ).filter(ws_name='Плазма', fio_tehnolog=user_name).exclude(st_status='завершено').order_by("id")
 
     for st in queryset:
@@ -338,7 +338,9 @@ def plasma_tehnolog(request):
             workpiece['layouts_total'] = 0
             workpiece['layouts'] = {}
             queryset.filter(pk=st['id']).update(workpiece=workpiece)
-    pk = 0
+    focus_id = 0
+    layout = None
+    layout_action = None
     filter_set = filterset_plasma(request=request, queryset=queryset)
 
     if request.method == "POST":
@@ -359,7 +361,7 @@ def plasma_tehnolog(request):
                         if part_st:
                             workpiece = part_st[0]['workpiece']
                             workpiece['layouts'].update(value)
-                            workpiece['layouts_total'] = sum(workpiece['layouts'].values())
+                            workpiece['layouts_total'] = sum(map(sum, workpiece['layouts'].values()))
                             part_st.update(workpiece=workpiece)
 
         if 'workshop' in form_submit:
@@ -367,19 +369,32 @@ def plasma_tehnolog(request):
             if ws_plasma_choice_form.is_valid():
                 ws_plasma = ws_plasma_choice_form.cleaned_data.get('ws')
                 if not ws_plasma:
-                    ws_plasma = None
+                    ws_plasma = ""
                 if "id" in form_submit:
-                    pk = int(form_submit.split("_")[2])
-                    filter_set.qs.filter(pk=pk).update(workshop_plasma=ws_plasma)
+                    pk = focus_id = int(form_submit.split("_")[2])
+                    filter_set.qs.filter(pk=pk).update(ws_number=ws_plasma)
                 else:
-                    filter_set.qs.update(workshop_plasma=ws_plasma)
+                    filter_set.qs.update(ws_number=ws_plasma)
 
         if 'delete' in form_submit:
-            _, pk, layout = form_submit.split("_")
-            workpiece = filter_set.qs.filter(pk=int(pk))[0]['workpiece']
-            layout_count = workpiece['layouts'].pop(layout)
-            workpiece['layouts_total'] -= layout_count
-            filter_set.qs.filter(pk=int(pk)).update(workpiece=workpiece)
+            _, pk, layout = form_submit.split("|")
+            focus_id = pk
+            queryset = queryset.filter(workpiece__icontains=layout)
+            if len(queryset):
+                layout_action = 'delete'
+            else:
+                workpiece = filter_set.qs.filter(pk=int(pk))[0]['workpiece']
+                layout_counts = workpiece['layouts'][layout].pop()
+                if not workpiece['layouts'][layout]:
+                    workpiece['layouts'].pop(layout)
+                workpiece['layouts_total'] -= layout_counts
+                filter_set.qs.filter(pk=int(pk)).update(workpiece=workpiece)
+
+        if "done" in form_submit:
+            _, pk, layout = form_submit.split("|")
+            focus_id = pk
+            queryset = queryset.filter(workpiece__icontains=layout)
+            layout_action = 'done'
 
     ws_plasma_choice_form = WorkshopPlasmaChoice()
     layout_upload_form = LayoutUpload()
@@ -390,7 +405,9 @@ def plasma_tehnolog(request):
         "filter": filter_set,
         "form": layout_upload_form,
         "ws_plasma_form": ws_plasma_choice_form,
-        "focus_id": pk,
+        "focus_id": focus_id,
+        "layout": layout,
+        "layout_action": layout_action,
     }
     return render(request, template_name='tehnolog/plasma_tehnolog.html', context=context)
 
@@ -430,12 +447,18 @@ def read_plasma_layout(layout_file):
     file = layout_file.read().decode('Windows-1251')
     reader = io.StringIO(file)
     counter = {}
+
     if layout_file.name.lower().endswith(".csv"):
+        layout_duplicates = 1  # количество листов с одинаковой раскладкой
         for row in reader:
+            duplicates_match = re.match(r"^.*Кол-во листов с одинаковой раскладкой[,]+([\d])+.*", row)
+            if duplicates_match:
+                layout_duplicates = int(duplicates_match.group(1))
             dxf = re.match(r"^.*[,]+(.*(SS |SP |GS )[^,]*)[\s,]+([\d]+)", row)
             if dxf:
                 part = dxf.group(1).strip()
-                counter[part] = {layout_file.name: int(dxf.group(3))}
+                counter[part] = {layout_file.name: [int(dxf.group(3))] * layout_duplicates}
+
     elif layout_file.name.lower().endswith(".cnc"):
         for row in reader:
             dxf = re.match(r"^\"PART (.*)\s([\d]+)\s[\d]+\s[\d.]+\s[\d.]+", row)
@@ -445,9 +468,19 @@ def read_plasma_layout(layout_file):
                 counter[part][layout_file.name].add(dxf.group(2))
         for part, part_value in counter.items():
             for key, value in part_value.items():
-                part_value[key] = len(value)
+                part_value[key] = [len(value)]
+
     elif layout_file.name.lower().endswith(".odt"):
         pass
+    # Пример структуры counter {
+    # "№order1 3SP B-30 Balka №30 3": {  наименование детали
+    #             '12ГС-43.csv': [1],  раскладка: количество
+    #             '10ГС-40.csv': [3, 3, 3, 3], количество листов с одинаковой раскладкой - 4
+    #       },
+    # "№order1 3SP B-31 Balka №31 1": {
+    #             '10ГС-С отхода 2280х480 к 21-1.csv': [15],
+    #       }
+    # }
     return counter
 
 

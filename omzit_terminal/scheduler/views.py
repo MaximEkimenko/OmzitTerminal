@@ -260,7 +260,7 @@ def schedulerfio(request, ws_number, model_order_query):
         return redirect('login/')
     try:
         filtered_workplace_schedule = (
-            ShiftTask.objects.values(*shift_task_fields)
+            ShiftTask.objects.values(*shift_task_fields).exclude(st_status='раскладка')
             .filter(ws_number=str(ws_number), model_order_query=model_order_query, next_shift_task=None)
             .filter(Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
         )
@@ -883,13 +883,24 @@ def confirm_sz_planning(request):
                 attrs = {
                     "datetime_done": make_aware(datetime.datetime.strptime(data['dateDone'], "%d.%m.%Y")),
                     "workshop": data['workshop'],
-                    "ws_name": data['st'][str(st.pk)],
                     "product_category": data["category"],
                     "order_status": 'запланировано',
                     "model_order_query": model_order_query,
                     "model_name": data['newModel'],
                     "order": data['newOrder'],
                 }
+                if data['st'][str(st.pk)] == "Плазма":
+                    attrs.update({
+                        'ws_number': "",
+                        'ws_name': "Плазма",
+                        "st_status": "раскладка"
+                    })
+                else:
+                    attrs.update({
+                        'ws_number': data['st'][str(st.pk)],
+                        "st_status": "запланировано"
+                    })
+
                 for attr, value in attrs.items():
                     setattr(st, attr, value)
                 st.save()
