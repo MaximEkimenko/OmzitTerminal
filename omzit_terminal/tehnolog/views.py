@@ -302,11 +302,12 @@ def plasma_tehnolog_distribution(request):
                 else:
                     filter_set.qs.update(ws_number=ws_plasma)
 
+        filter_set = filterset_plasma(request=request, queryset=queryset)
+
     tehnolog_choice_form = TehnologChoice()
     doer_choice_form = DoerChoice()
     ws_plasma_choice_form = WorkshopPlasmaChoice()
 
-    filter_set = filterset_plasma(request=request, queryset=queryset)
     context = {
         "filter": filter_set,
         "tehnolog_form": tehnolog_choice_form,
@@ -329,7 +330,7 @@ def plasma_tehnolog(request):
         workpiece = st['workpiece']
         if not workpiece.get('layout_name'):
             workpiece['layout_name'] = create_part_name(
-                workpiece,
+                st['ws_number'],
                 workpiece['name'],
                 workpiece['material'],
                 workpiece['count'],
@@ -337,10 +338,11 @@ def plasma_tehnolog(request):
             )
             workpiece['layouts_total'] = 0
             workpiece['layouts'] = {}
+            workpiece['layouts_done'] = {}
             queryset.filter(pk=st['id']).update(workpiece=workpiece)
     focus_id = 0
     layout = None
-    layout_action = None
+    action = None
     filter_set = filterset_plasma(request=request, queryset=queryset)
 
     if request.method == "POST":
@@ -361,7 +363,8 @@ def plasma_tehnolog(request):
                         if part_st:
                             workpiece = part_st[0]['workpiece']
                             workpiece['layouts'].update(value)
-                            workpiece['layouts_total'] = sum(map(sum, workpiece['layouts'].values()))
+                            workpiece['layouts_total'] = (sum(map(sum, workpiece['layouts'].values())) +
+                                                          sum(map(sum, workpiece['layouts_done'].values())))
                             part_st.update(workpiece=workpiece)
 
         if 'workshop' in form_submit:
@@ -376,30 +379,55 @@ def plasma_tehnolog(request):
                 else:
                     filter_set.qs.update(ws_number=ws_plasma)
 
-        if 'delete' in form_submit:
-            _, pk, layout = form_submit.split("|")
-            focus_id = pk
+        if "confirm_delete" in form_submit:
+            _, layout = form_submit.split("|")
             queryset = queryset.filter(workpiece__icontains=layout)
-            if len(queryset):
-                layout_action = 'delete'
-            else:
-                workpiece = filter_set.qs.filter(pk=int(pk))[0]['workpiece']
-                layout_counts = workpiece['layouts'][layout].pop()
-                if not workpiece['layouts'][layout]:
-                    workpiece['layouts'].pop(layout)
-                workpiece['layouts_total'] -= layout_counts
-                filter_set.qs.filter(pk=int(pk)).update(workpiece=workpiece)
+            for st in queryset:
+                workpiece = st['workpiece']
+                layout_counts = workpiece['layouts'][layout]
+                workpiece['layouts'].pop(layout)
+                workpiece['layouts_total'] -= sum(layout_counts)
+                queryset.filter(pk=st['id']).update(workpiece=workpiece)
+            return redirect('plasma_tehnolog')
+        elif 'delete' in form_submit:
+            _, pk, layout = form_submit.split("|")
+            queryset = queryset.filter(workpiece__icontains=layout)
+            action = 'confirm_delete'
 
-        if "done" in form_submit:
-            _, pk, layout = form_submit.split("|")
-            focus_id = pk
+        if "confirm_done" in form_submit:
+            _, layout = form_submit.split("|")
             queryset = queryset.filter(workpiece__icontains=layout)
-            layout_action = 'done'
+            for st in queryset:
+                workpiece = st['workpiece']
+                layout_done = workpiece['layouts'].pop(layout)
+                workpiece['layouts_done'].update({layout: layout_done})
+                queryset.filter(pk=st['id']).update(workpiece=workpiece, st_status='запланировано')
+            return redirect('plasma_tehnolog')
+        elif "done" in form_submit:
+            _, pk, layout = form_submit.split("|")
+            queryset = queryset.filter(workpiece__icontains=layout)
+            action = 'confirm_done'
+
+        if "confirm_return" in form_submit:
+            _, layout = form_submit.split("|")
+            queryset = queryset.filter(workpiece__icontains=layout)
+            for st in queryset:
+                workpiece = st['workpiece']
+                layout_return = workpiece['layouts_done'].pop(layout)
+                layout_counts = workpiece['layouts'].get(layout, [])
+                layout_counts.extend(layout_return)
+                workpiece['layouts'][layout] = layout_counts
+                queryset.filter(pk=st['id']).update(workpiece=workpiece, st_status='раскладка')
+            return redirect('plasma_tehnolog')
+        elif "return" in form_submit:
+            _, pk, layout = form_submit.split("|")
+            queryset = queryset.filter(workpiece__icontains=layout)
+            action = 'confirm_return'
+
+        filter_set = filterset_plasma(request=request, queryset=queryset)
 
     ws_plasma_choice_form = WorkshopPlasmaChoice()
     layout_upload_form = LayoutUpload()
-
-    filter_set = filterset_plasma(request=request, queryset=queryset)
 
     context = {
         "filter": filter_set,
@@ -407,7 +435,7 @@ def plasma_tehnolog(request):
         "ws_plasma_form": ws_plasma_choice_form,
         "focus_id": focus_id,
         "layout": layout,
-        "layout_action": layout_action,
+        "action": action,
     }
     return render(request, template_name='tehnolog/plasma_tehnolog.html', context=context)
 
@@ -457,7 +485,11 @@ def read_plasma_layout(layout_file):
             dxf = re.match(r"^.*[,]+(.*(SS |SP |GS )[^,]*)[\s,]+([\d]+)", row)
             if dxf:
                 part = dxf.group(1).strip()
-                counter[part] = {layout_file.name: [int(dxf.group(3))] * layout_duplicates}
+                counter[part] = {layout_file.name: [int(dxf.group(3)) * layout_duplicates]}
+                # counter[part] = {layout_file.name: [int(dxf.group(3))] * layout_duplicates}
+                # counter[part] = {}
+                # for i in range(layout_duplicates):
+                #     counter[part].update({f'{layout_file.name}({i + 1})': [int(dxf.group(3))]})
 
     elif layout_file.name.lower().endswith(".cnc"):
         for row in reader:
@@ -505,7 +537,7 @@ def create_part_name(workshop, name, material, count, order_model):
         if key in material:
             steel = value
 
-    if workshop == 1:
+    if workshop == 102:
         part_name = f"{thickness}{steel} №{order} {name.strip()} {count}"
     else:
         part_name = f"№{order} {thickness}{steel} {name.strip()} {count}"

@@ -260,7 +260,8 @@ def schedulerfio(request, ws_number, model_order_query):
         return redirect('login/')
     try:
         filtered_workplace_schedule = (
-            ShiftTask.objects.values(*shift_task_fields).exclude(st_status='раскладка')
+            ShiftTask.objects.values(*shift_task_fields, 'workpiece__text', 'workpiece__layouts_done')
+            .exclude(st_status='раскладка')
             .filter(ws_number=str(ws_number), model_order_query=model_order_query, next_shift_task=None)
             .filter(Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
         )
@@ -270,47 +271,66 @@ def schedulerfio(request, ws_number, model_order_query):
         print('Ошибка получения filtered_workplace_schedule', e)
     success = 1
     alert_message = ''
+    action = None
+    layout = None
+    pk = None
     if request.method == 'POST':
-        print('POST')
-        form_fio_doer = FioDoer(request.POST, ws_number=ws_number, model_order_query=model_order_query)
-        if form_fio_doer.is_valid():
-            # Получение списка без None
-            fios = list(filter(
-                lambda x: x != 'None',
-                (str(form_fio_doer.cleaned_data[f'fio_{i}']) for i in range(1, 5))
-            ))
-            unique_fios = set(fios)
-            doers_fios = ', '.join(unique_fios)  # получение уникального списка
-            print('DOERS-', doers_fios)
-            if len(fios) == len(unique_fios):  # если есть повторения в списке fios
-                shift_task = ShiftTask.objects.get(pk=form_fio_doer.cleaned_data['st_number'].id)
-                data = {
-                    'fio_doer': doers_fios,
-                    'datetime_assign_wp': datetime.datetime.now(),
-                    'st_status': 'запланировано',
-                    'datetime_job_start': None,
-                    'decision_time': None,
-                    'master_assign_wp_fio': f'{request.user.first_name} {request.user.last_name}'
-                }
-                if shift_task.st_status == "брак":
-                    #  создаем дубликат СЗ с браком
-                    new_shift_task = ShiftTask.objects.get(pk=form_fio_doer.cleaned_data['st_number'].id)
-                    new_shift_task.pk = None
-                    for field, value in data.items():
-                        setattr(new_shift_task, field, value)
-                    new_shift_task.save()
-                    #  добавляем в СЗ с браком ссылку на новое СЗ для исправления брака
-                    shift_task.next_shift_task = new_shift_task
+        form_submit = request.POST.get("form", "")
+        if 'confirm' in form_submit:
+            _, pk, layout = form_submit.split("|")
+            form_fio_doer = FioDoer(request.POST, ws_number=ws_number, model_order_query=model_order_query)
+            if form_fio_doer.is_valid():
+                # Получение списка без None
+                fios = list(filter(
+                    lambda x: x != 'None',
+                    (str(form_fio_doer.cleaned_data[f'fio_{i}']) for i in range(1, 5))
+                ))
+                unique_fios = set(fios)
+                doers_fios = ', '.join(unique_fios)  # получение уникального списка
+                print('DOERS-', doers_fios)
+                if len(fios) == len(unique_fios):  # если есть повторения в списке fios
+                    if pk != '':
+                        shift_task = ShiftTask.objects.get(pk=form_fio_doer.cleaned_data['st_number'].id)
+                        data = {
+                            'fio_doer': doers_fios,
+                            'datetime_assign_wp': datetime.datetime.now(),
+                            'st_status': 'запланировано',
+                            'datetime_job_start': None,
+                            'decision_time': None,
+                            'master_assign_wp_fio': f'{request.user.first_name} {request.user.last_name}'
+                        }
+                        if shift_task.st_status == "брак":
+                            #  создаем дубликат СЗ с браком
+                            new_shift_task = ShiftTask.objects.get(pk=form_fio_doer.cleaned_data['st_number'].id)
+                            new_shift_task.pk = None
+                            for field, value in data.items():
+                                setattr(new_shift_task, field, value)
+                            new_shift_task.save()
+                            #  добавляем в СЗ с браком ссылку на новое СЗ для исправления брака
+                            shift_task.next_shift_task = new_shift_task
+                        else:
+                            for field, value in data.items():
+                                setattr(shift_task, field, value)
+                        shift_task.save()
+                        alert_message = f'Успешно распределено!'
+                    else:
+                        pass
                 else:
-                    for field, value in data.items():
-                        setattr(shift_task, field, value)
-                shift_task.save()
-                alert_message = f'Успешно распределено!'
+                    alert_message = f'Исполнители дублируются. Измените исполнителей.'
+                    success = 0
+        elif 'distribute' in form_submit:
+            _, pk, layout = form_submit.split("|")
+            if layout != '':
+                filtered_workplace_schedule = filtered_workplace_schedule.filter(
+                    workpiece__layouts_done__icontains=layout
+                )
             else:
-                alert_message = f'Исполнители дублируются. Измените исполнителей.'
-                success = 0
-    else:
-        form_fio_doer = FioDoer(ws_number=ws_number, model_order_query=model_order_query)
+                filtered_workplace_schedule = filtered_workplace_schedule.filter(pk=pk)
+            action = 'distribute'
+
+        f = get_filterset(data=request.GET, queryset=filtered_workplace_schedule, fields=shift_task_fields)
+
+    form_fio_doer = FioDoer(ws_number=ws_number, model_order_query=model_order_query)
 
     context = {
         'filtered_workplace_schedule': filtered_workplace_schedule,
@@ -318,6 +338,9 @@ def schedulerfio(request, ws_number, model_order_query):
         'alert_message': alert_message,
         'success': success,
         'filter': f,
+        'action': action,
+        'layout': layout,
+        'pk': pk,
     }
     return render(request, r"schedulerfio/schedulerfio.html", context=context)
 

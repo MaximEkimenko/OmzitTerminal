@@ -1,13 +1,12 @@
-{% load static %} {% load i18n %}
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Рабочее место планировщика рабочих центров</title>
-        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
-    </head>
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
 
-    <body>
+{% block title %}
+Рабочее место планировщика рабочих центров
+{% endblock %}
+
+{% block body %}
         {% if request.user.is_authenticated %}
         <div class="legend">
             <div>
@@ -98,5 +97,5 @@
         </script>
         <div style="height: 150px"></div>
         <script src="{% static 'scheduler/js/schedulerwp.js' %}"></script>
-    </body>
+{% endblock %}
 </html>

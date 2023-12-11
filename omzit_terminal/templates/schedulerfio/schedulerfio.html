@@ -1,13 +1,11 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Распределение ФИО для РЦ</title>
-        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
-    </head>
 
-    <body>
+{% block title %}
+Распределение ФИО для РЦ
+{% endblock %}
+
+{% block body %}
         {% if request.user.is_authenticated %}
         <div class="legend">
             <div>
@@ -62,21 +60,75 @@
                     <td class="td_cell">Норма времени</td>
                     <td class="td_cell">{{ filter.form.fio_doer }} Фио исполнителя</td>
                     <td class="td_cell">{{ filter.form.st_status }} Статус СЗ</td>
+                    <td class="td_cell">Деталь</td>
+                    <td class="td_cell">Раскладка</td>
+                    <td class="td_cell">Кол-во на раскладке</td>
                 </tr>
             </form>
             {% for line in filter.qs %}
+                {% if layout %}
+                        {% for layout_done, counts in line.workpiece__layouts_done.items %}
+                            {% if layout_done == layout %}
+                                {% for count in counts %}
+                                <tr class="table_row">
+                                    <td class="td_cell"></td>
+                                    {% for key, el in line.items %}
+                                        {% if key == 'workpiece__layouts_done' %}
+                                            <td class="td_cell">{{ layout_done }}</td>
+                                            <td class="td_cell">{{ count }}</td>
+                                        {% else %}
+                                            <td class="td_cell">{% firstof el "-" %}</td>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
 
-            <tr class="table_row">
-                <td class="td_cell">
-                    <button class="id_plan_fio_btn btn" value="{{ line.id }}" title="Распределить">Распределить</button>
-                </td>
-                {% for el in line.values %}
-                <td class="td_cell">{{ el }}</td>
-                {% endfor %}
-            </tr>
-            <!-- prettier-ignore -->
+                {% else %}
+                    {% if line.workpiece__layouts_done %}
+                        {% for layout_done, counts in line.workpiece__layouts_done.items %}
+                                {% for count in counts %}
+                                <tr class="table_row">
+                                    <td class="td_cell">
+                                        <form method="post" id="id_distribute_btn_form">
+                                            {% csrf_token %}
+                                            <button class="id_plan_fio_btn btn" name="form" value="distribute||{{ layout_done }}" title="Распределить">Распределить</button>
+                                        </form>
+                                    </td>
+                                    {% for key, el in line.items %}
+                                        {% if key == 'workpiece__layouts_done' %}
+                                            <td class="td_cell">{{ layout_done }}</td>
+                                            <td class="td_cell">{{ count }}</td>
+                                        {% else %}
+                                            <td class="td_cell">{% firstof el "-" %}</td>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                        {% endfor %}
+
+                    {% else %}
+                        <tr class="table_row">
+                            <td class="td_cell">
+                                {% if not pk %}
+                                <form method="post" id="id_distribute_btn_form">
+                                    {% csrf_token %}
+                                    <button class="id_plan_fio_btn btn" name="form" value="distribute|{{ line.id }}|" title="Распределить">Распределить</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                            {% for key, el in line.items %}
+                                <td class="td_cell">{% firstof el "-" %}</td>
+                            {% endfor %}
+                                <td class="td_cell">-</td>
+                        </tr>
+                    {% endif %}
+                
+                {% endif %}
+
             {% endfor %}
-            {{ st_number }}
+            
         </table>
 
         {% else %}
@@ -86,26 +138,19 @@
         <!--форма выбора ФИО-->
 
         {% if filtered_workplace_schedule %}
+        {% if action %}
         <!-- Форма распределения -->
-        <div class="modal" id="plan_fio">
+        <div class="" id="plan_fio">
             <form
                 id="id_plan_fio_form"
                 action=""
                 method="post"
                 enctype="multipart/form-data"
-                class="form_form modal-content"
+                class="form_form"
             >
                 {% csrf_token %}
                 <div class="add_to_plan">
                     <p class="alert">Распределите сменные задания:</p>
-                    <div class="form_inner_label">
-                        <label class="form-label" for="{{ form_fio_doer.id_for_label }}"
-                            >{{form_fio_doer.st_number.label}}:
-                        </label>
-                    </div>
-                    <div class="form_inner_div">{{ form_fio_doer.st_number }}</div>
-                    <br />
-
                     <div class="form_inner_label">
                         <label class="form-label" for="{{ form_fio_doer.id_for_label }}"
                             >{{form_fio_doer.fio_1.label}}:
@@ -136,39 +181,23 @@
                     <br />
                     <div class="form-error">{{ form_fio_doer.errors }}</div>
 
-                    <button class="form_button" type="submit" class="form_button">Назначить ФИО</button>
+                    <button class="form_button" type="submit" name="form" value="confirm_distribute|{{ id }}|{{ layout }}">Назначить ФИО</button>
                 </div>
             </form>
         </div>
-
         {% endif %}
-
+        {% endif %}
         <script>
             // кнопки распределения
             document.addEventListener("DOMContentLoaded", function () {
-                const sel = id_plan_fio_form.elements.st_number; // Получаем все селекты
-                const buttons = document.querySelectorAll(".id_plan_fio_btn"); // Получаем кнопки с классом
-                buttons.forEach(function (c) {
-                    // Для каждой кнопки
-                    c.onclick = function () {
-                        // Слушаем нажатие
-                        // Если нажата, то выбирает тот option, который в тексте кнопки.
-                        const modal = document.querySelector("#plan_fio");
-                        modal.style.display = "block";
-                        for (var n = 0; n < sel.length; n++) {
-                            // получение номера сменного задания из строки form_fio_doer.st_number
-                            let st_string = sel.options[n].text;
-                            let str_index = st_string.indexOf(".");
-                            let st_number = st_string.slice(0, str_index);
-                            if (st_number == c.value) sel.options[n].selected = true;
-                        }
-                        window.onclick = function (event) {
-                            if (event.target == modal) {
-                                modal.style.display = "none";
-                            }
-                        };
-                    };
-                });
+                const modal = document.querySelector("#plan_fio");
+                modal.style.display = "block";
+                window.onclick = function (event) {
+                    if (event.target == modal) {
+                        modal.style.display = "none";
+                        window.location.href='{{ request.path }}';
+                    }
+                };
             });
         </script>
 
@@ -177,8 +206,7 @@
                 document.getElementById("filter_form").submit();
             }
         </script>
-        <a href="{% url 'schedulerwp' %}">Выбор терминала</a> <br />
+        <p><a href="{% url 'schedulerwp' %}">Выбор терминала</a></p>
         <div style="height: 150px"></div>
         <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
-    </body>
-</html>
+{% endblock %}

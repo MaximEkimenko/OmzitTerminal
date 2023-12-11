@@ -165,7 +165,8 @@ class ShiftTask(models.Model):
     # "count": "2",
     # "layout_name": "4SP №order1 B-26 Balka №26 2", имя детали
     # "layouts": {'12ГС-43.CNC': 1}
-    # "layouts_total": 1 количество на всех раскладках
+    # "layouts_done": {'12ГС-44.CNC': 1}
+    # "layouts_total": 2 количество на всех раскладках
     # "length": "7500",
     # "material": "Швеллер 30П ГОСТ 8240-97 С255-4 ГОСТ 27772-2015"
     # }

@@ -73,7 +73,7 @@
                             name="form"
                             value="download"
                     >
-                        В работу выбранное
+                        В работу
                     </button>
                 </form>
             </td>
@@ -98,69 +98,11 @@
                 <td class="td_cell"></td>
             </tr>
         </form>
+
+
         {% for query in filter.qs %}
-        {% if query.workpiece.layouts|length == 1 and query.workpiece.count == query.workpiece.layouts_total %}
-        <tr class="table_row">
-            <td class="td_cell">{{ query.id }}</td>
-            <td class="td_cell">{{ query.model_order_query }}</td>
-            <td class="td_cell">{{ query.datetime_done }}</td>
-            <td class="td_cell">{{ query.workpiece.name }}</td>
-            <td class="td_cell">{{ query.workpiece.material }}</td>
-            <td class="td_cell">{{ query.workpiece.count }}</td>
-            <td class="td_cell">{{ query.workpiece.draw }}</td>
-            <td class="td_cell">
-                <form method="post" id="id_workshop_{{ query.id }}_form">
-                    {% csrf_token %}
-                    <p>{% if not query.ws_number %}Не определен{% else %}{{ query.ws_number|slice:":1" }}{% endif %}
-                        <select name="ws" class="name_select_option plasma_select" id="{{ query.id }}">
-                            {% for value, text in ws_plasma_form.fields.ws.choices %}
-                            <option
-                                    value="{{ value }}"
-                                    {% if value == query.ws_number %}
-                                        selected
-                                    {% endif %}
-                            >
-                                {{ text }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </p>
-                    <input type="hidden" name="form"/>
-                </form>
-            </td>
-            <td class="td_cell">
-                {% for layout in query.workpiece.layouts %}
-                {{ layout }}
-                <form method="post" id="id_layout_delete_form">
-                    {% csrf_token %}
-                    <button
-                            type="submit"
-                            class="btn_delete"
-                            name="form"
-                            value="delete|{{ query.id }}|{{ layout }}"
-                    >
-                        Удалить
-                    </button>
-                </form>
-                {% endfor %}
-            </td>
-            <td class="td_cell">{{ query.workpiece.layout_name }}</td>
-            <td class="td_cell">{{ query.workpiece.layouts_total }}</td>
-            <td class="td_cell">
-                <form method="post" id="id_layout_done_form">
-                    {% csrf_token %}
-                    <button
-                            type="submit"
-                            class="btn"
-                            name="form"
-                            value="done_{{query.id}}"
-                    >
-                        В цех
-                    </button>
-                </form>
-            </td>
-        </tr>
-        {% elif not layout %}
+        
+        {% if not layout %}
         <tr class="table_row">
             <td class="td_cell">{{ query.id }}</td>
             <td class="td_cell">{{ query.model_order_query }}</td>
@@ -198,24 +140,41 @@
             <td class="td_cell">{{ query.plasma_layout }}</td>
             <td class="td_cell">{{ query.workpiece.layout_name }}</td>
             <td class="td_cell">{{ query.workpiece.layouts_total }}</td>
+            <td class="td_cell"></td>
+        </tr>
+        {% endif %}
+
+        {% for key, counts in query.workpiece.layouts_done.items %}
+        {% for count in counts %}
+        <tr style="background-color: green;">
+            <td class="td_cell">{{ query.id }}-{{ forloop.counter }}</td>
+            <td class="td_cell">{{ query.model_order_query }}</td>
+            <td class="td_cell">{{ query.datetime_done }}</td>
+            <td class="td_cell">{{ query.workpiece.name }}</td>
+            <td class="td_cell">{{ query.workpiece.material }}</td>
+            <td class="td_cell">-</td>
+            <td class="td_cell">{{ query.workpiece.draw }}</td>
+            <td class="td_cell">{{ query.ws_number|slice:":1" }}</td>
+            <td class="td_cell">{{ key }}</td>
+            <td class="td_cell">{{ query.workpiece.layout_name }}</td>
+            <td class="td_cell">{{ count }}</td>
             <td class="td_cell">
-                {% if query.workpiece.count == query.workpiece.layouts_total %}
-                <form method="post" id="id_layout_done_form">
+                <form method="post" id="id_return_form">
                     {% csrf_token %}
                     <button
                             type="submit"
-                            class="btn"
+                            class="btn_delete"
                             name="form"
-                            value="done_{{query.id}}"
+                            value="return|{{query.id}}|{{ key }}"
                     >
-                        В цех
+                        Отмена
                     </button>
                 </form>
-                {% endif %}
             </td>
         </tr>
-        {% endif %}
-        {% if query.workpiece.layouts|length > 1 or query.workpiece.layouts|length == 1 and query.workpiece.count != query.workpiece.layouts_total %}
+        {% endfor %}
+        {% endfor %}
+
         {% if not layout %}
         {% for key, counts in query.workpiece.layouts.items %}
         {% for count in counts %}
@@ -279,6 +238,7 @@
         </tr>
         {% endfor %}
         {% endfor %}
+
         {% else %}
         {% for key, counts in query.workpiece.layouts.items %}
         {% if key == layout %}
@@ -320,11 +280,55 @@
         {% endif %}
         {% endfor %}
         {% endif %}
-        {% endif %}
         {% endfor %}
     </table>
     {% else %}
     Распределения отсутствуют
+    {% endif %}
+
+    {% if action == 'confirm_delete' %}
+        <p>
+            <form method="post" id="id_confirm_delete_form">
+                {% csrf_token %}
+                <button
+                        type="submit"
+                        class="btn_delete"
+                        name="form"
+                        value="confirm_delete|{{ layout }}"
+                >
+                    Подтвердить удаление раскладки
+                </button>
+            </form>
+        </p>
+
+    {% elif action == 'confirm_done' %}
+        <p>
+            <form method="post" id="id_confirm_done_form">
+                {% csrf_token %}
+                <button
+                        type="submit"
+                        class="btn"
+                        name="form"
+                        value="confirm_done|{{ layout }}"
+                >
+                    Передать раскладку в цех
+                </button>
+            </form>
+        </p>
+    {% elif action == 'confirm_return' %}
+        <p>
+            <form method="post" id="id_confirm_return_form">
+                {% csrf_token %}
+                <button
+                        type="submit"
+                        class="btn"
+                        name="form"
+                        value="confirm_return|{{ layout }}"
+                >
+                    Вернуть раскладку
+                </button>
+            </form>
+        </p>
     {% endif %}
 </div>
 
