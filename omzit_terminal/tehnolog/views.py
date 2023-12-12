@@ -31,7 +31,7 @@ from django.core.exceptions import PermissionDenied
 from scheduler.filters import get_filterset, filterset_plasma
 
 # ADMIN_TELEGRAM_ID
-TERMINAL_GROUP_ID = os.getenv('ADMIN_TELEGRAM_ID')
+TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
 
 
 @login_required(login_url="../scheduler/login/")

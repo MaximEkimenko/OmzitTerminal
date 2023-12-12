@@ -8,6 +8,11 @@
     </head>
     <body>
         <h1>
+            {% if user.username == 'admin' or user.username == 'disp1' %}
+            <!-- Секретное поле возвращение в прошлое -->
+            <input id="secret_input_id" type="text" onchange="secret_date_change()" />
+            {%endif %}
+            <!-- prettier-ignore -->
             Заполнение отчётов
             <input type="button" onclick="window.location.href = `{% url 'report' 1 %}`;" value="Цех1" />
             <input type="button" onclick="window.location.href = `{% url 'report' 2 %}`;" value="Цех2" />
@@ -37,6 +42,14 @@
         <!-- prettier-ignore -->
         {%endif %}
         <script>
+            function secret_date_change() {
+                // секретная функция возвращения в прошлое
+                let secret_input = document.getElementById("secret_input_id");
+                console.log("{% url 'report' 1 %}".slice(0, -2) + "{{ workshop }}" + "/?a=" + secret_input.value);
+                window.location.href =
+                    "{% url 'report' 1 %}".slice(0, -2) + "{{ workshop }}" + "/?a=" + secret_input.value;
+            }
+
             // обработка уже заполненных значений факта
             function change_readonly(element_id) {
                 let html_element = document.getElementById(element_id);
@@ -96,7 +109,6 @@
 
                 element_value = "{{ line.personal_total }}".replace(",", ".");
                 element_value_insert("id_personal_total", element_value);
-
                 element_value = "{{ line.personal_shift }}".replace(",", ".");
                 element_value_insert("id_personal_shift", element_value);
 
@@ -127,7 +139,6 @@
                 element_value_insert("id_personal_shift_turners", element_value);
                 element_value = "{{ line.personal_night_turners }}".replace(",", ".");
                 element_value_insert("id_personal_night_turners", element_value);
-
                 // {% endif %}
                 // {% endif %}
                 // {% endfor %}
@@ -463,7 +474,7 @@
                     <br />
                     {%endif%}
                     <!-- prettier-ignore -->
-                    {% if line.calendar_day|date:"d" > yesterday|date:"d" %}
+                    {% if line.calendar_day|date:"d" >= yesterday|date:"d" %}
                     <div class="line_plan_table">
                         <div class="form_inner_label date_label">{{ line.calendar_day|date:"d.m" }}</div>
                         <input
@@ -649,17 +660,14 @@
 
                 // заполнение скрытого поля для передачи на сервер
                 const date_labels = document.getElementsByClassName("date_label");
-                let days_arr = new Array();
-                // let dictionary = Object.create(null);
+                const dict_obj = new Object(null); // словарь результатов
                 for (let i = 0; i < date_labels.length; i++) {
-                    days_arr[i] = date_labels[i].innerHTML + ".{{  report_days.0.calendar_day|date:'Y'  }}";
+                    dict_obj[date_labels[i].innerHTML + ".{{  report_days.0.calendar_day|date:'Y'  }}"] = all_plan[i];
                 }
-                days_arr.push("|");
-                all_plan.push("{{ workshop }}");
+                dict_obj["workshop"] = "{{ workshop }}";
 
-                const result_arr = days_arr.concat(all_plan);
                 let hidden_field = document.getElementById("id_hidden_input");
-                hidden_field.setAttribute("value", result_arr);
+                hidden_field.setAttribute("value", JSON.stringify(dict_obj));
                 return hidden_field;
             }
 
