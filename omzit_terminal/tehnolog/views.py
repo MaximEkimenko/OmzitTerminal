@@ -479,7 +479,7 @@ def create_layout_xlsx(queryset):  # TODO перенести в service
     return exel_file_dst
 
 
-def read_plasma_layout(layout_file):
+def read_plasma_layout(layout_file):   # TODO перенести в service
     file = layout_file.read().decode('Windows-1251')
     reader = io.StringIO(file)
     parts_layouts = {}
@@ -540,7 +540,7 @@ def read_plasma_layout(layout_file):
     return parts_layouts
 
 
-def create_part_name(shift_task_values):
+def create_part_name(shift_task_values):   # TODO перенести в service
     workshop = shift_task_values['ws_number']
     name = shift_task_values['workpiece']['name']
     material = shift_task_values['workpiece']['material']
