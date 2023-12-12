@@ -92,25 +92,25 @@ class FioDoer(forms.Form):
     """
 
     # Создание поля в классе формы с отфильтрованными данными по РЦ и дате
-    def __init__(self, *args, **kwargs):
-        if 'ws_number' in kwargs and kwargs['ws_number'] is not None:
-            ws_number = kwargs.pop('ws_number')
-            model_order_query = kwargs.pop('model_order_query')
-            # query_set запроса СЗ
-            qs_st_number = (ShiftTask.objects.filter  # выбор "не распределено", "брак", "не принято"
-                            (Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
-                            ).filter(ws_number=ws_number, model_order_query=model_order_query, next_shift_task=None)
-        else:
-            qs_st_number = None
-        # Вызов супер класса для создания поля st_number
-        super(FioDoer, self).__init__(*args, **kwargs)
-        try:
-            self.fields['st_number'].queryset = qs_st_number
-        except NameError:
-            pass
+    # def __init__(self, *args, **kwargs):
+    #     if 'ws_number' in kwargs and kwargs['ws_number'] is not None:
+    #         ws_number = kwargs.pop('ws_number')
+    #         model_order_query = kwargs.pop('model_order_query')
+    #         # query_set запроса СЗ
+    #         qs_st_number = (ShiftTask.objects.filter  # выбор "не распределено", "брак", "не принято"
+    #                         (Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
+    #                         ).filter(ws_number=ws_number, model_order_query=model_order_query, next_shift_task=None)
+    #     else:
+    #         qs_st_number = None
+    #     # Вызов супер класса для создания поля st_number
+    #     super(FioDoer, self).__init__(*args, **kwargs)
+    #     try:
+    #         self.fields['st_number'].queryset = qs_st_number
+    #     except NameError:
+    #         pass
 
-    empty_qs = None  # запрос заглушка для создания переменной st_number в нужном виде
-    st_number = FiosLabel(empty_qs, label='Сменное задание', empty_label='СЗ не выбрано')
+    # empty_qs = None  # запрос заглушка для создания переменной st_number в нужном виде
+    # st_number = FiosLabel(empty_qs, label='Сменное задание', empty_label='СЗ не выбрано')
     qs_st_fio = Doers.objects.all()
     fio_1 = forms.ModelChoiceField(qs_st_fio, label='ФИО исполнителя 1', empty_label='ФИО не выбрано')
     fio_2 = forms.ModelChoiceField(qs_st_fio, label='ФИО исполнителя 2', empty_label='ФИО не выбрано', initial='',

@@ -9,29 +9,36 @@
 {% block body %}
 <h1>Рабочее место технолога. Плазма</h1>
 {% if filter.qs %}
-<form method="post" id="id_upload_form" enctype="multipart/form-data" class="form_form">
-    {% csrf_token %}
-    <div class="add_to_plan">
-        <h3>Форма загрузки раскладки</h3>
-        <div class="form-error">{{ form.non_field_errors }}</div>
-        {% for each_form in form %}
-        <div class="form_inner_label">
-            <label for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
-        </div>
-        <div class="form_inner_div">{{ each_form }}</div>
-        <div class="form-error">{{ each_form.errors }}</div>
-        {% endfor %}
-        <button
-                type="submit"
-                class="btn"
-                name="form"
-                value="upload"
-        >
-            Загрузить раскладку
-        </button>
+    <form method="post" id="id_upload_form" enctype="multipart/form-data" class="form_form">
+        {% csrf_token %}
+        <div class="add_to_plan">
+            <h3>Форма загрузки раскладки</h3>
+            <div class="form-error">{{ form.non_field_errors }}</div>
+            {% for each_form in form %}
+            <div class="form_inner_label">
+                <label for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
+            </div>
+            <div class="form_inner_div">{{ each_form }}</div>
+            <div class="form-error">{{ each_form.errors }}</div>
+            {% endfor %}
+            <button
+                    type="submit"
+                    class="btn"
+                    name="form"
+                    value="upload"
+            >
+                Загрузить раскладку
+            </button>
 
-    </div>
-</form>
+        </div>
+    </form>
+
+    {% if alert != '' %}
+        <div id='id_alert'>
+            <p class='alert_gone'> {{ alert }} </p>
+        </div>
+    {% endif %}
+    
 {% endif %}
 <div class="col">
     <h3 class="table_h3">Раскладки</h3>
@@ -140,7 +147,7 @@
             <td class="td_cell">{{ query.plasma_layout }}</td>
             <td class="td_cell">{{ query.workpiece.layout_name }}</td>
             <td class="td_cell">{{ query.workpiece.layouts_total }}</td>
-            <td class="td_cell"></td>
+            <td class="td_cell">{% if query.fio_doer != 'не распределено' %}Распределено{% endif %}</td>
         </tr>
         {% endif %}
 
@@ -159,17 +166,23 @@
             <td class="td_cell">{{ query.workpiece.layout_name }}</td>
             <td class="td_cell">{{ count }}</td>
             <td class="td_cell">
-                <form method="post" id="id_return_form">
-                    {% csrf_token %}
-                    <button
-                            type="submit"
-                            class="btn_delete"
-                            name="form"
-                            value="return|{{query.id}}|{{ key }}"
-                    >
-                        Отмена
-                    </button>
-                </form>
+                {% if query.fio_doer == 'не распределено' %}
+                    {% if not layout %}
+                        <form method="post" id="id_return_form">
+                            {% csrf_token %}
+                            <button
+                                    type="submit"
+                                    class="btn_delete"
+                                    name="form"
+                                    value="return|{{query.id}}|{{ key }}"
+                            >
+                                Отмена
+                            </button>
+                        </form>
+                    {% endif %}
+                {% else %}
+                    Распределено
+                {% endif %}
             </td>
         </tr>
         {% endfor %}
@@ -345,7 +358,17 @@
                     form.submit()
             }
         })
-        const focus_select = document.getElementById("{{focus_id}}").focus()
+        const focus_select = document.getElementById("{{focus_id}}")
+        if (focus_select) {
+            focus_select.focus()
+        }
+        
+        const notification = document.getElementById("id_alert")
+        if (notification) {
+            notification.focus()
+            setTimeout(() => notification.remove(), 10000)
+        }
+        
     })
 
     function submitForm(id) {

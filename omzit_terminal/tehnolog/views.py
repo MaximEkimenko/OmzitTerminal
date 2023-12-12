@@ -272,23 +272,11 @@ def plasma_tehnolog_distribution(request):
                     ws_plasma = ""
                 else:
                     ws_plasma = Doers.objects.get(doers=str(tehnolog)).ws_plasma * 100 + 2
+                shift_tasks = filter_set.qs.filter(fio_doer='не распределено')
                 if "id" in form_submit:
                     pk = int(form_submit.split("_")[2])
-                    filter_set.qs.filter(pk=pk).update(fio_tehnolog=str(tehnolog), ws_number=ws_plasma)
-                else:
-                    filter_set.qs.update(fio_tehnolog=str(tehnolog), ws_number=ws_plasma)
-
-        elif "doer" in form_submit:
-            doer_choice_form = DoerChoice(request.POST)
-            if doer_choice_form.is_valid():
-                doer = doer_choice_form.cleaned_data.get('fio')
-                if not doer:
-                    doer = "Не распределено"
-                if "id" in form_submit:
-                    pk = int(form_submit.split("_")[2])
-                    filter_set.qs.filter(pk=pk).update(fio_doer=str(doer))
-                else:
-                    filter_set.qs.update(fio_doer=str(doer))
+                    shift_tasks = shift_tasks.filter(pk=pk)
+                shift_tasks.update(fio_tehnolog=str(tehnolog), ws_number=ws_plasma)
 
         elif 'workshop' in form_submit:
             ws_plasma_choice_form = WorkshopPlasmaChoice(request.POST)
@@ -296,11 +284,11 @@ def plasma_tehnolog_distribution(request):
                 ws_plasma = ws_plasma_choice_form.cleaned_data.get('ws')
                 if not ws_plasma:
                     ws_plasma = ""
+                shift_tasks = filter_set.qs.filter(fio_doer='не распределено')
                 if "id" in form_submit:
                     pk = int(form_submit.split("_")[2])
-                    filter_set.qs.filter(pk=pk).update(ws_number=ws_plasma)
-                else:
-                    filter_set.qs.update(ws_number=ws_plasma)
+                    shift_tasks = shift_tasks.filter(pk=pk)
+                shift_tasks.update(ws_number=ws_plasma)
 
         filter_set = filterset_plasma(request=request, queryset=queryset)
 
@@ -329,27 +317,25 @@ def plasma_tehnolog(request):
     for st in queryset:
         workpiece = st['workpiece']
         if not workpiece.get('layout_name'):
-            workpiece['layout_name'] = create_part_name(
-                st['ws_number'],
-                workpiece['name'],
-                workpiece['material'],
-                workpiece['count'],
-                st['model_order_query'],
-            )
+            workpiece['layout_name'] = create_part_name(st)
             workpiece['layouts_total'] = 0
             workpiece['layouts'] = {}
             workpiece['layouts_done'] = {}
             queryset.filter(pk=st['id']).update(workpiece=workpiece)
+
     focus_id = 0
     layout = None
     action = None
+    alert = ""
+
     filter_set = filterset_plasma(request=request, queryset=queryset)
 
     if request.method == "POST":
         form_submit = request.POST.get("form", "")
         if "download" in form_submit:
-            filter_set.qs.update(plasma_layout="В работе")
-            file_xlsx = create_layout_xlsx(filter_set.qs)
+            shift_tasks = filter_set.qs.filter(plasma_layout__in=("Не выполнена", "В работе"))
+            shift_tasks.update(plasma_layout="В работе")
+            file_xlsx = create_layout_xlsx(shift_tasks)
             return FileResponse(open(file_xlsx, 'rb'))
 
         if "upload" in form_submit:
@@ -357,12 +343,12 @@ def plasma_tehnolog(request):
             if layout_upload_form.is_valid():
                 files = dict(request.FILES).get("file")
                 for file in files:
-                    counter = read_plasma_layout(file)
-                    for part, value in counter.items():
-                        part_st = filter_set.qs.filter(workpiece__layout_name=part)
+                    parts_layouts = read_plasma_layout(file)
+                    for part, layouts in parts_layouts.items():
+                        part_st = filter_set.qs.filter(workpiece__layout_name=part, fio_doer='не распределено')
                         if part_st:
                             workpiece = part_st[0]['workpiece']
-                            workpiece['layouts'].update(value)
+                            workpiece['layouts'].update(layouts)
                             workpiece['layouts_total'] = (sum(map(sum, workpiece['layouts'].values())) +
                                                           sum(map(sum, workpiece['layouts_done'].values())))
                             part_st.update(workpiece=workpiece)
@@ -373,11 +359,15 @@ def plasma_tehnolog(request):
                 ws_plasma = ws_plasma_choice_form.cleaned_data.get('ws')
                 if not ws_plasma:
                     ws_plasma = ""
+                shift_tasks = filter_set.qs.filter(fio_doer='не распределено')
                 if "id" in form_submit:
                     pk = focus_id = int(form_submit.split("_")[2])
-                    filter_set.qs.filter(pk=pk).update(ws_number=ws_plasma)
-                else:
-                    filter_set.qs.update(ws_number=ws_plasma)
+                    shift_tasks = shift_tasks.filter(pk=pk)
+                shift_tasks.update(ws_number=ws_plasma)
+                for st in shift_tasks:
+                    workpiece = st['workpiece']
+                    workpiece['layout_name'] = create_part_name(st)
+                    shift_tasks.filter(pk=st['id']).update(workpiece=workpiece)
 
         if "confirm_delete" in form_submit:
             _, layout = form_submit.split("|")
@@ -397,12 +387,15 @@ def plasma_tehnolog(request):
         if "confirm_done" in form_submit:
             _, layout = form_submit.split("|")
             queryset = queryset.filter(workpiece__icontains=layout)
-            for st in queryset:
-                workpiece = st['workpiece']
-                layout_done = workpiece['layouts'].pop(layout)
-                workpiece['layouts_done'].update({layout: layout_done})
-                queryset.filter(pk=st['id']).update(workpiece=workpiece, st_status='запланировано')
-            return redirect('plasma_tehnolog')
+            ws_number = queryset[0]['ws_number']
+            if ws_number != '' and len(queryset) == len(queryset.filter(ws_number=ws_number)):
+                for st in queryset:
+                    workpiece = st['workpiece']
+                    layout_done = workpiece['layouts'].pop(layout)
+                    workpiece['layouts_done'].update({layout: layout_done})
+                    queryset.filter(pk=st['id']).update(workpiece=workpiece, st_status='запланировано')
+                return redirect('plasma_tehnolog')
+            alert = "Необходимо выбрать один цех для данной раскладки!"
         elif "done" in form_submit:
             _, pk, layout = form_submit.split("|")
             queryset = queryset.filter(workpiece__icontains=layout)
@@ -436,6 +429,7 @@ def plasma_tehnolog(request):
         "focus_id": focus_id,
         "layout": layout,
         "action": action,
+        "alert": alert,
     }
     return render(request, template_name='tehnolog/plasma_tehnolog.html', context=context)
 
@@ -446,6 +440,20 @@ def create_layout_xlsx(queryset):  # TODO перенести в service
     :param queryset: выбранные заготовки
     :return:
     """
+    fields = (
+        'id',  # Номер СЗ
+        'model_order_query',  # Заказ-модель
+        'fio_tehnolog',  # ФИО Технолога
+        'plasma_layout',  # Раскладка
+        'datetime_done',  # Дата потребности
+        'ws_number',  # Цех плазмы
+        'draw',  # Чертеж
+        'name',  # Наименование
+        'count',  # Количество
+        'material',  # Материал
+        'layout_name',  # Имя детали на раскладке
+    )
+
     exel_file_src = BASE_DIR / "LayoutPlasmaTemplate.xlsx"
     new_file_name = f"{datetime.datetime.now().strftime('%Y.%m.%d %H-%M-%S')} layout.xlsx"
     # Создаем папку для хранения отчетов
@@ -461,12 +469,12 @@ def create_layout_xlsx(queryset):  # TODO перенести в service
     # Данные
     for i, row in enumerate(queryset):
         row.update(row.pop('workpiece'))
-        # Пропускаем столбцы
-        for field in ('text', 'length', 'fio_doer'):
-            row.pop(field)
-        for j, key in enumerate(row):
-            cell = ex_sh.cell(row=i + 2, column=j + 1)
-            cell.value = str(row[key])
+        j = 0
+        for field in row:
+            if field in fields:
+                cell = ex_sh.cell(row=i + 2, column=j + 1)
+                cell.value = str(row[field])
+                j += 1
     ex_wb.save(exel_file_dst)
     return exel_file_dst
 
@@ -474,49 +482,71 @@ def create_layout_xlsx(queryset):  # TODO перенести в service
 def read_plasma_layout(layout_file):
     file = layout_file.read().decode('Windows-1251')
     reader = io.StringIO(file)
-    counter = {}
+    parts_layouts = {}
 
     if layout_file.name.lower().endswith(".csv"):
-        layout_duplicates = 1  # количество листов с одинаковой раскладкой
+        layout_duplicates = None  # количество листов с одинаковой раскладкой
+        layout_name = None  # имя раскладки
         for row in reader:
-            duplicates_match = re.match(r"^.*Кол-во листов с одинаковой раскладкой[,]+([\d])+.*", row)
-            if duplicates_match:
-                layout_duplicates = int(duplicates_match.group(1))
+
+            if not layout_name:
+                date_pattern = (r'[,]+(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2}):(\d{1,2}):(\d{1,2})[,]+')
+                date_match = re.match(date_pattern, row)
+                if date_match:
+                    layout_name = '-'.join(date_match.group(1, 2, 3)) + ' ' + '.'.join(date_match.group(4, 5, 6))
+            else:
+                layout_name_pattern = (r'.*Имя\sпрограммы\s:\s([^,]+)')
+                layout_name_match = re.match(layout_name_pattern, row)
+                if layout_name_match:
+                    layout_name = ''.join(layout_name_match.group(1)) + ' ' + layout_name
+
+            if not layout_duplicates:
+                duplicates_match = re.match(r"^.*Кол-во листов с одинаковой раскладкой[,]+([\d])+.*", row)
+                if duplicates_match:
+                    layout_duplicates = int(duplicates_match.group(1))
+
             dxf = re.match(r"^.*[,]+(.*(SS |SP |GS )[^,]*)[\s,]+([\d]+)", row)
             if dxf:
+                if not layout_name:
+                    layout_name = layout_file.name
+                if not layout_duplicates:
+                    layout_duplicates = 1
                 part = dxf.group(1).strip()
-                counter[part] = {layout_file.name: [int(dxf.group(3)) * layout_duplicates]}
-                # counter[part] = {layout_file.name: [int(dxf.group(3))] * layout_duplicates}
-                # counter[part] = {}
-                # for i in range(layout_duplicates):
-                #     counter[part].update({f'{layout_file.name}({i + 1})': [int(dxf.group(3))]})
+                parts_layouts[part] = {layout_name: [int(dxf.group(3)) * layout_duplicates]}
 
     elif layout_file.name.lower().endswith(".cnc"):
         for row in reader:
             dxf = re.match(r"^\"PART (.*)\s([\d]+)\s[\d]+\s[\d.]+\s[\d.]+", row)
             if dxf and "$REST_CUT" not in dxf.group(1):
                 part = dxf.group(1).strip()
-                counter[part] = counter.get(part, {layout_file.name: set()})
-                counter[part][layout_file.name].add(dxf.group(2))
-        for part, part_value in counter.items():
+                parts_layouts[part] = parts_layouts.get(part, {layout_file.name: set()})
+                parts_layouts[part][layout_file.name].add(dxf.group(2))
+        for part, part_value in parts_layouts.items():
             for key, value in part_value.items():
                 part_value[key] = [len(value)]
 
     elif layout_file.name.lower().endswith(".odt"):
         pass
-    # Пример структуры counter {
+    # Пример структуры parts_layouts {
     # "№order1 3SP B-30 Balka №30 3": {  наименование детали
     #             '12ГС-43.csv': [1],  раскладка: количество
-    #             '10ГС-40.csv': [3, 3, 3, 3], количество листов с одинаковой раскладкой - 4
+    #             '10ГС-40.csv': [3, 3, 3, 3], количество листов с одинаковой раскладкой - 4 - исключили случай
+    #             '10ГС-40.csv': [12], количество листов с одинаковой раскладкой - 4
     #       },
     # "№order1 3SP B-31 Balka №31 1": {
     #             '10ГС-С отхода 2280х480 к 21-1.csv': [15],
     #       }
     # }
-    return counter
+    return parts_layouts
 
 
-def create_part_name(workshop, name, material, count, order_model):
+def create_part_name(shift_task_values):
+    workshop = shift_task_values['ws_number']
+    name = shift_task_values['workpiece']['name']
+    material = shift_task_values['workpiece']['material']
+    count = shift_task_values['workpiece']['count']
+    order_model = shift_task_values['model_order_query']
+
     order, model = order_model.split("_")
 
     # Толщина
@@ -537,7 +567,7 @@ def create_part_name(workshop, name, material, count, order_model):
         if key in material:
             steel = value
 
-    if workshop == 102:
+    if workshop == '102':
         part_name = f"{thickness}{steel} №{order} {name.strip()} {count}"
     else:
         part_name = f"№{order} {thickness}{steel} {name.strip()} {count}"

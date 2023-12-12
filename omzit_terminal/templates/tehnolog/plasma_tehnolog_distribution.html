@@ -54,21 +54,7 @@
                     </form>
                 </td>
                 <td class="td_cell">Раскладка</td>
-                <td class="td_cell">
-                    Исполнитель
-                    <form method="post" id="id_doer_form">
-                        {% csrf_token %}
-                        <p>{% render_field doer_form.fio class='name_select_option' %}</p>
-                        <button
-                                type="submit"
-                                class="btn"
-                                name="form"
-                                value="doer_form"
-                        >
-                            Распределить всё
-                        </button>
-                    </form>
-                </td>
+                <td class="td_cell">Исполнитель </td>
             </tr>
         
         <form method="get" id="id_filter_form">
@@ -123,13 +109,7 @@
                 </form>
             </td>
             <td class="td_cell">{{ query.plasma_layout }}</td>
-            <td class="td_cell">
-                <form method="post" id="id_doer_{{ query.id }}_form">
-                    {% csrf_token %}
-                    <p>{{ query.fio_doer }} {{ doer_form.fio }}</p>
-                    <input type="hidden" name="form"/>
-                </form>
-            </td>
+            <td class="td_cell">{{ query.fio_doer }}</td>
         </tr>
         {% endfor %}
     </table>
