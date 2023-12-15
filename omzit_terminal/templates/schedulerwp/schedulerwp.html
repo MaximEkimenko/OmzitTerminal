@@ -6,24 +6,10 @@
 Рабочее место планировщика рабочих центров
 {% endblock %}
 
+{% block new_header_link %}
+    <li><a href="{% url 'report' 1 %}"> Заполнение отчётов</a></li>
+{% endblock %}
 {% block body %}
-        {% if request.user.is_authenticated %}
-        <div class="legend">
-            <div>
-                <p>Пользователь: {{ user.username }} | <a href="{% url 'logout' %}" class="legend_link"> Выйти </a></p>
-                <p><a href="{% url 'instruction' %}">Инструкция</a></p>
-                <p>Папка с чертежами: \\SVR-003\draws</p>
-                <p><a href="{% url 'report' 1 %}" class="legend_link"> Заполнение отчётов</a></p>
-            </div>
-        </div>
-        {% else %}
-        <a href="{% url 'login' %}"> Войти </a>
-        <!-- prettier-ignore -->
-        {%endif %}
-        <!-- prettier-ignore -->
-        {% if user.username == 'admin' %}
-        <a href="{% url 'home' %}">Назад</a> <br />
-        {%endif %}
         <h1>Рабочее место планировщика рабочих центров</h1>
         <br /><br /><br /><br /><br />
 
@@ -78,10 +64,6 @@
         {% if workplace_schedule %} {% if alert_message != '' %}
         <p class="alert">{{ alert_message }}</p>
         {% endif %} {% endif %}
-        <!-- prettier-ignore -->
-        {% if user.username == 'admin' %}
-        <a href="{% url 'home' %}">Назад</a> <br />
-        {%endif %}
         <script>
             function getReport(url) {
                 var start = document.getElementById("id_date_start").value;

@@ -11,16 +11,6 @@
 {% endblock %}
 
 {% block body %}
-        {% if request.user.is_authenticated %}
-        <div class="legend">
-            <div>
-                <p>Пользователь: {{ user.username }} | <a href="{% url 'logout' %}" class="legend_link"> Выйти </a></p>
-                <p><a href="{% url 'instruction' %}">Инструкция</a> <br /></p>
-                <p>Папка с чертежами: \\SVR-003\draws</p>
-            </div>
-        </div>
-        {% else %} <a href="{% url 'login' %}"> Войти </a>
-        {%endif %}
         <h1>Рабочее место заявителя</h1>
         {% if alert and "Ошибка" not in alert %}
         <p class='alert_gone'> {{ alert }} </p>
@@ -46,8 +36,7 @@
                     <div class="form_inner_label">{{ draw_form.cdw_files.label }}</div>
                     <div class="form_inner_div">{{ draw_form.cdw_files }}</div>
                     <div>
-                        <button type="submit"  name="form" value="td_kd_form" class="form_button">
-                            <p class="red_word">Загрузить чертежи</p>
+                        <button type="submit"  name="form" value="td_kd_form" class="btn">Загрузить чертежи
                         </button>
                     </div>
                 </div>
@@ -91,8 +80,8 @@
                     <div class="form_inner_div">{{ send_form.sz_text }}</div>
                     <br>
                     <div>
-                        <button class="form_button" onclick="tableDataToJSON('id_table', '{% url "st_from_spec" %}')">
-                            <p class="red_word">Отправить заявку</p>
+                        <button class="btn" onclick="tableDataToJSON('id_table', '{% url "st_from_spec" %}')">
+                        Отправить заявку
                         </button>
                     </div>
                 </div>
@@ -100,11 +89,6 @@
         </div>
         <br />
         <br />
-
-        <!-- prettier-ignore -->
-        {% if user.username == 'admin' %}
-        <a href="{% url 'home' %}">Назад</a> <br />
-        {%endif %}
         <script src="{% static 'tehnolog/js/tehnolog.js' %}"></script>
         <script>
             var lastRowIndex = 0
@@ -480,6 +464,4 @@
             }
 
         </script>
-
-        <div style="height: 150px"></div>
 {% endblock %}

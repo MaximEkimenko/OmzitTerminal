@@ -418,7 +418,7 @@ def show_workshop_scheme(request):  # TODO перенести в service
     :return:
     """
     try:
-        path_to_file = r"O:\ПТО\1 Екименко М.А\Планировка\Планирока участков(цех1, цех2, цех3)+РЦ+Расписание+Виды.xlsm"
+        path_to_file = r"M:\Xranenie\ПТО\1 Екименко М.А\Планировка\Планирока участков(цех1, цех2, цех3)+РЦ+Расписание+Виды.xlsm"
         response = FileResponse(open(fr'{path_to_file}', 'rb'))
         response['X-Frame-Options'] = 'SAMEORIGIN'
         return response
@@ -900,7 +900,6 @@ def create_shift_tasks_from_spec(request):
 
         if data["products"] and all(value for value in data["sz"].values()):
             data["sz"]["author"] = request.user.username
-
             # Создание служебной записки в pdf
             create_pdf_sz(data=data, filename=pdf_sz_filename)
 

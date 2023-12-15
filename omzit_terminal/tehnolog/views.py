@@ -1,26 +1,14 @@
-import csv
 import datetime
 import json
 import os
 import asyncio
-import re
-import shutil
-import io
-from zipfile import ZipFile
 
-import openpyxl
 from django.contrib.auth.decorators import login_required
-from django.forms import formset_factory
 from django.http import FileResponse
 from django.shortcuts import render, redirect
-from django.utils.timezone import make_naive
-from odf import text, teletype
-from odf.opendocument import load
-from transliterate import translit
 
 from constructor.forms import QueryAnswer
-from omzit_terminal.settings import BASE_DIR
-from .services.plasma_utils import STEELS
+from .services.plasma_utils import create_part_name, read_plasma_layout, create_layout_xlsx
 from .services.service_handlers import handle_uploaded_file, handle_uploaded_draw_file
 from .services.tech_data_get import tech_data_get
 from .forms import GetTehDataForm, ChangeOrderModel, SendDrawBack, TehnologChoice, DoerChoice, LayoutUpload, \
@@ -253,6 +241,10 @@ def upload_draws(request, draws_path, group_id):
 
 
 def plasma_tehnolog_distribution(request):
+
+    if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:8]).strip() != "tehnolog":
+        raise PermissionDenied
+
     queryset = ShiftTask.objects.values(
         'id', 'model_order_query', 'workpiece', 'fio_doer',
         'fio_tehnolog', 'plasma_layout', 'datetime_done', 'ws_number',
@@ -308,6 +300,10 @@ def plasma_tehnolog_distribution(request):
 
 
 def plasma_tehnolog(request):
+
+    if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:8]).strip() != "tehnolog":
+        raise PermissionDenied
+
     user_name = request.user.first_name
     queryset = ShiftTask.objects.values(
         'id', 'model_order_query', 'workpiece', 'fio_doer',
@@ -336,6 +332,7 @@ def plasma_tehnolog(request):
             shift_tasks = filter_set.qs.filter(plasma_layout__in=("Не выполнена", "В работе"))
             shift_tasks.update(plasma_layout="В работе")
             file_xlsx = create_layout_xlsx(shift_tasks)
+
             return FileResponse(open(file_xlsx, 'rb'))
 
         if "upload" in form_submit:
@@ -345,13 +342,16 @@ def plasma_tehnolog(request):
                 for file in files:
                     parts_layouts = read_plasma_layout(file)
                     for part, layouts in parts_layouts.items():
+                        time = layouts.pop('time')
                         part_st = filter_set.qs.filter(workpiece__layout_name=part, fio_doer='не распределено')
                         if part_st:
                             workpiece = part_st[0]['workpiece']
                             workpiece['layouts'].update(layouts)
                             workpiece['layouts_total'] = (sum(map(sum, workpiece['layouts'].values())) +
                                                           sum(map(sum, workpiece['layouts_done'].values())))
-                            part_st.update(workpiece=workpiece)
+                            hours, minutes, seconds = map(int, time.split(':'))
+                            norm_tech = hours + ((minutes + seconds / 60) / 60)
+                            part_st.update(workpiece=workpiece, norm_tech=norm_tech)
 
         if 'workshop' in form_submit:
             ws_plasma_choice_form = WorkshopPlasmaChoice(request.POST)
@@ -378,7 +378,9 @@ def plasma_tehnolog(request):
                 workpiece['layouts'].pop(layout)
                 workpiece['layouts_total'] -= sum(layout_counts)
                 queryset.filter(pk=st['id']).update(workpiece=workpiece)
+
             return redirect('plasma_tehnolog')
+
         elif 'delete' in form_submit:
             _, pk, layout = form_submit.split("|")
             queryset = queryset.filter(workpiece__icontains=layout)
@@ -394,7 +396,9 @@ def plasma_tehnolog(request):
                     layout_done = workpiece['layouts'].pop(layout)
                     workpiece['layouts_done'].update({layout: layout_done})
                     queryset.filter(pk=st['id']).update(workpiece=workpiece, st_status='запланировано')
+
                 return redirect('plasma_tehnolog')
+
             alert = "Необходимо выбрать один цех для данной раскладки!"
         elif "done" in form_submit:
             _, pk, layout = form_submit.split("|")
@@ -411,7 +415,9 @@ def plasma_tehnolog(request):
                 layout_counts.extend(layout_return)
                 workpiece['layouts'][layout] = layout_counts
                 queryset.filter(pk=st['id']).update(workpiece=workpiece, st_status='раскладка')
+
             return redirect('plasma_tehnolog')
+
         elif "return" in form_submit:
             _, pk, layout = form_submit.split("|")
             queryset = queryset.filter(workpiece__icontains=layout)
@@ -432,145 +438,3 @@ def plasma_tehnolog(request):
         "alert": alert,
     }
     return render(request, template_name='tehnolog/plasma_tehnolog.html', context=context)
-
-
-def create_layout_xlsx(queryset):  # TODO перенести в service
-    """
-    Создает excel-файл по выбранным заготовкам для выполнения раскладки
-    :param queryset: выбранные заготовки
-    :return:
-    """
-    fields = (
-        'id',  # Номер СЗ
-        'model_order_query',  # Заказ-модель
-        'fio_tehnolog',  # ФИО Технолога
-        'plasma_layout',  # Раскладка
-        'datetime_done',  # Дата потребности
-        'ws_number',  # Цех плазмы
-        'draw',  # Чертеж
-        'name',  # Наименование
-        'count',  # Количество
-        'material',  # Материал
-        'layout_name',  # Имя детали на раскладке
-    )
-
-    exel_file_src = BASE_DIR / "LayoutPlasmaTemplate.xlsx"
-    new_file_name = f"{datetime.datetime.now().strftime('%Y.%m.%d %H-%M-%S')} layout.xlsx"
-    # Создаем папку для хранения отчетов
-    if not os.path.exists(BASE_DIR / "xlsx"):
-        os.mkdir(BASE_DIR / "xlsx")
-    # Формируем путь к новому файлу
-    exel_file_dst = BASE_DIR / "xlsx" / new_file_name
-    # Копируем шаблон в новый файл отчета
-    shutil.copy(exel_file_src, exel_file_dst)
-
-    ex_wb = openpyxl.load_workbook(exel_file_src, data_only=True)
-    ex_sh = ex_wb["Раскладка"]
-    # Данные
-    for i, row in enumerate(queryset):
-        row.update(row.pop('workpiece'))
-        j = 0
-        for field in row:
-            if field in fields:
-                cell = ex_sh.cell(row=i + 2, column=j + 1)
-                cell.value = str(row[field])
-                j += 1
-    ex_wb.save(exel_file_dst)
-    return exel_file_dst
-
-
-def read_plasma_layout(layout_file):   # TODO перенести в service
-    file = layout_file.read().decode('Windows-1251')
-    reader = io.StringIO(file)
-    parts_layouts = {}
-
-    if layout_file.name.lower().endswith(".csv"):
-        layout_duplicates = None  # количество листов с одинаковой раскладкой
-        layout_name = None  # имя раскладки
-        for row in reader:
-
-            if not layout_name:
-                date_pattern = (r'[,]+(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2}):(\d{1,2}):(\d{1,2})[,]+')
-                date_match = re.match(date_pattern, row)
-                if date_match:
-                    layout_name = '-'.join(date_match.group(1, 2, 3)) + ' ' + '.'.join(date_match.group(4, 5, 6))
-            else:
-                layout_name_pattern = (r'.*Имя\sпрограммы\s:\s([^,]+)')
-                layout_name_match = re.match(layout_name_pattern, row)
-                if layout_name_match:
-                    layout_name = ''.join(layout_name_match.group(1)) + ' ' + layout_name
-
-            if not layout_duplicates:
-                duplicates_match = re.match(r"^.*Кол-во листов с одинаковой раскладкой[,]+([\d])+.*", row)
-                if duplicates_match:
-                    layout_duplicates = int(duplicates_match.group(1))
-
-            dxf = re.match(r"^.*[,]+(.*(SS |SP |GS )[^,]*)[\s,]+([\d]+)", row)
-            if dxf:
-                if not layout_name:
-                    layout_name = layout_file.name
-                if not layout_duplicates:
-                    layout_duplicates = 1
-                part = dxf.group(1).strip()
-                parts_layouts[part] = {layout_name: [int(dxf.group(3)) * layout_duplicates]}
-
-    elif layout_file.name.lower().endswith(".cnc"):
-        for row in reader:
-            dxf = re.match(r"^\"PART (.*)\s([\d]+)\s[\d]+\s[\d.]+\s[\d.]+", row)
-            if dxf and "$REST_CUT" not in dxf.group(1):
-                part = dxf.group(1).strip()
-                parts_layouts[part] = parts_layouts.get(part, {layout_file.name: set()})
-                parts_layouts[part][layout_file.name].add(dxf.group(2))
-        for part, part_value in parts_layouts.items():
-            for key, value in part_value.items():
-                part_value[key] = [len(value)]
-
-    elif layout_file.name.lower().endswith(".odt"):
-        pass
-    # Пример структуры parts_layouts {
-    # "№order1 3SP B-30 Balka №30 3": {  наименование детали
-    #             '12ГС-43.csv': [1],  раскладка: количество
-    #             '10ГС-40.csv': [3, 3, 3, 3], количество листов с одинаковой раскладкой - 4 - исключили случай
-    #             '10ГС-40.csv': [12], количество листов с одинаковой раскладкой - 4
-    #       },
-    # "№order1 3SP B-31 Balka №31 1": {
-    #             '10ГС-С отхода 2280х480 к 21-1.csv': [15],
-    #       }
-    # }
-    return parts_layouts
-
-
-def create_part_name(shift_task_values):   # TODO перенести в service
-    workshop = shift_task_values['ws_number']
-    name = shift_task_values['workpiece']['name']
-    material = shift_task_values['workpiece']['material']
-    count = shift_task_values['workpiece']['count']
-    order_model = shift_task_values['model_order_query']
-
-    order, model = order_model.split("_")
-
-    # Толщина
-    match = re.match(r"^.*?([\d]+).*", material)
-    if match:
-        thickness = match.group(1)
-    else:
-        thickness = ""
-
-    # Наименование
-    match = re.match(r"(^.+?)\s\d+х\d+.*", name)
-    if match:
-        name = match.group(1)
-
-    # Сталь
-    steel = ""
-    for key, value in STEELS.items():
-        if key in material:
-            steel = value
-
-    if workshop == '102':
-        part_name = f"{thickness}{steel} №{order} {name.strip()} {count}"
-    else:
-        part_name = f"№{order} {thickness}{steel} {name.strip()} {count}"
-
-    part_name = translit(part_name, language_code='ru', reversed=True)
-    return part_name

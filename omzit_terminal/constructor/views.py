@@ -79,7 +79,7 @@ def constructor(request):
 
 def show_instruction(request):
     try:
-        path_to_file = r"O:\ПТО\1 Екименко М.А\Инструкции\Инструкция ТЕРМИНАЛА.pdf"
+        path_to_file = r"M:\Xranenie\ПТО\1 Екименко М.А\Инструкции\Инструкция ТЕРМИНАЛА.pdf"
         response = FileResponse(open(fr'{path_to_file}', 'rb'))
         response['X-Frame-Options'] = 'SAMEORIGIN'
         return response

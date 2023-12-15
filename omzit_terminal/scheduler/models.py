@@ -114,7 +114,7 @@ class ShiftTask(models.Model):
     ws_name = models.CharField(max_length=100, verbose_name='Имя рабочего центра')
     op_name_full = models.CharField(max_length=255, verbose_name='Полное имея операции')
     ws_number = models.CharField(max_length=10, verbose_name='Номер рабочего центра')
-    norm_tech = models.DecimalField(null=True, max_digits=10, decimal_places=2,
+    norm_tech = models.DecimalField(null=True, max_digits=13, decimal_places=5,
                                     verbose_name='Технологическая норма времени')
     datetime_techdata_create = models.DateTimeField(verbose_name='дата/время занесения технологических данных',
                                                     auto_now_add=True)
@@ -167,6 +167,7 @@ class ShiftTask(models.Model):
     # "layouts_total": 2 количество на всех раскладках
     # "length": "7500",
     # "material": "Швеллер 30П ГОСТ 8240-97 С255-4 ГОСТ 27772-2015"
+    # ""
     # }
     workpiece = models.JSONField(null=True, blank=True, verbose_name='Заготовка')
     fio_tehnolog = models.CharField(max_length=255, null=True, blank=True,

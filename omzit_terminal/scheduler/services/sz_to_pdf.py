@@ -33,16 +33,16 @@ class SzPdf(FPDF):
         self.alias_nb_pages()
         self.add_page()
         self.add_font(
-            family='DejaVu',
+            family='Arial',
             style='',
-            fname=BASE_DIR / r'scheduler/services/DejaVuSansCondensed.ttf',
+            fname=BASE_DIR / r'scheduler/services/arial.ttf',
             uni=True
         )
-        self.set_font(family='DejaVu', style='', size=14)
+        self.set_font(family='Arial', style='', size=14)
 
         # Заголовок
         self.cell(100)  # отступ слева
-        self.multi_cell(w=0, h=cell_height, txt='Петрову Петру Петровичу')
+        self.multi_cell(w=0, h=cell_height, txt='Петрову Петру Петровичу ')
         self.cell(100)  # отступ слева
         self.multi_cell(w=0, h=cell_height, txt=f'от {self.author}')
 
@@ -66,6 +66,7 @@ class SzPdf(FPDF):
         self.create_table()
 
         self.output(self.filename)
+
 
     def create_table(self):
         cell_height = 7

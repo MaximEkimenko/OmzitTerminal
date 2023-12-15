@@ -111,14 +111,39 @@ class FioDoer(forms.Form):
 
     # empty_qs = None  # запрос заглушка для создания переменной st_number в нужном виде
     # st_number = FiosLabel(empty_qs, label='Сменное задание', empty_label='СЗ не выбрано')
-    qs_st_fio = Doers.objects.all()
-    fio_1 = forms.ModelChoiceField(qs_st_fio, label='ФИО исполнителя 1', empty_label='ФИО не выбрано')
-    fio_2 = forms.ModelChoiceField(qs_st_fio, label='ФИО исполнителя 2', empty_label='ФИО не выбрано', initial='',
-                                   required=False)
-    fio_3 = forms.ModelChoiceField(qs_st_fio, label='ФИО исполнителя 3', empty_label='ФИО не выбрано', initial='',
-                                   required=False)
-    fio_4 = forms.ModelChoiceField(qs_st_fio, label='ФИО исполнителя 4', empty_label='ФИО не выбрано', initial='',
-                                   required=False)
+    qs_st_fio = Doers.objects.exclude(job_title='Технолог')
+    fio_1 = forms.ModelChoiceField(
+        qs_st_fio, label='Исполнитель 1', empty_label='ФИО не выбрано',
+        widget=forms.Select(attrs={'class': "fio_select"})
+    )
+    fio_1_percentage = forms.IntegerField(
+        min_value=0, max_value=100, label='%', initial=0,
+        widget=forms.NumberInput(attrs={'class': "fio_percentage"})
+    )
+    fio_2 = forms.ModelChoiceField(
+        qs_st_fio, label='Исполнитель 2', empty_label='ФИО не выбрано', initial='', required=False,
+        widget=forms.Select(attrs={'class': "fio_select"})
+    )
+    fio_2_percentage = forms.IntegerField(
+        min_value=0, max_value=100, label='%', initial=0,
+        widget=forms.NumberInput(attrs={'class': "fio_percentage"})
+    )
+    fio_3 = forms.ModelChoiceField(
+        qs_st_fio, label='Исполнитель 3', empty_label='ФИО не выбрано', initial='', required=False,
+        widget=forms.Select(attrs={'class': "fio_select"})
+    )
+    fio_3_percentage = forms.IntegerField(
+        min_value=0, max_value=100, label='%', initial=0,
+        widget=forms.NumberInput(attrs={'class': "fio_percentage"})
+    )
+    fio_4 = forms.ModelChoiceField(
+        qs_st_fio, label='Исполнитель 4', empty_label='ФИО не выбрано', initial='', required=False,
+        widget=forms.Select(attrs={'class': "fio_select"})
+    )
+    fio_4_percentage = forms.IntegerField(
+        min_value=0, max_value=100, label='%', initial=0,
+        widget=forms.NumberInput(attrs={'class': "fio_percentage"})
+    )
 
 
 class PlanBid(forms.Form):

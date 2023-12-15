@@ -1,13 +1,43 @@
 body {
-    font-family: Arial, Helvetica, sans-serif;
-    text-align: center;
-    color: white;
+  height: 95vh;
+  background-color: #31343c;
+  /*
+  background-image: url(../img/about-bg.jpg);
+  background-size: cover;
+  */
+  background-image: url(../img/about-bg.jpg);
+  background-size: cover;
+  font-family: Arial, Helvetica, sans-serif;
+  color: white;
+}
+#wrap {
+  position: relative;
+  min-height: 95vh;
+}
+main {
+  padding-bottom: 110px;
+  text-align: center;
+}
+footer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 80px;
+  text-align: left;
+}
 
-    background-image: url("background.png");
-    background-position: bottom left;
-    background-size: unset;
-    background-repeat: no-repeat;
-    background-color: #31343c;
+footer img {
+    height:100px;
+}
+
+.line {
+
+    margin: 0;
+	padding: 0;
+	height: 3px;
+	border: none;
+	background: radial-gradient(#EF7F1A, #31343C);
 }
 /*стили терминала*/
 
@@ -159,16 +189,36 @@ h4 {
     margin: 10px;
 }
 
-.add_to_plan {
-    border: solid green 1px;
-    margin: 10px;
-    border-radius: 10px;
-}
 .form_inner_div {
     margin: 10px;
     padding: 5px;
     display: inline-block;
 }
+
+.form_block_div {
+    margin: 10px;
+    padding: 5px;
+    display: block;
+}
+
+.form_block_div input {
+    font-size: 16px;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 7px;
+    height: 32px;
+    display: inline-block
+}
+
+.form_block_div label {
+    margin: 10px;
+    display: inline-block;
+    padding: 5px;
+    color: #ef7f1a;
+    font-size: 22px;
+    font-weight: bold;
+}
+
 .form_inner_label {
     margin: 10px;
     display: inline-block;
@@ -252,19 +302,6 @@ input {
     border-radius: 5px;
 }
 
-.legend {
-    position: absolute;
-    width: 200px;
-    /* position: sticky; */
-    top: 30px;
-    right: 10px;
-    top: 10px;
-}
-.legend_row {
-    border-bottom: 0.5px solid red;
-    margin: 2px;
-}
-
 .modal {
     display: none;
     position: fixed;
@@ -285,9 +322,19 @@ input {
 }
 
 .add_to_plan {
-    background-color: #31343c;
+    background-color: #333333;
     border: solid green 1px;
     margin: 10px;
+    padding: 0 0 10px 0;
+    border-radius: 10px;
+}
+
+.add_to_plan_center {
+    background-color: #333333;
+    border: solid green 1px;
+    align-self: center;
+    margin: 10px;
+    padding: 0 0 10px 0;
     border-radius: 10px;
 }
 
@@ -313,7 +360,7 @@ input {
 /* Стили легенды окон */
 .legend {
     position: absolute;
-    top: 10px;
+    top: 50px;
     right: 10px;
     /* display: block; */
     text-align: right;
@@ -364,6 +411,20 @@ input {
   background: #31343C;
 }
 
+.name_select::-webkit-scrollbar {
+  width: 12px;               /* ширина всей полосы прокрутки */
+}
+
+.name_select::-webkit-scrollbar-track {
+  background: #31343C;        /* цвет зоны отслеживания */
+}
+
+.name_select::-webkit-scrollbar-thumb {
+  background-color: transparent;    /* цвет бегунка */
+  border-radius: 20px;       /* округлось бегунка */
+  border: 1px solid white;  /* отступ вокруг бегунка */
+}
+
 .draw_select {
     font-size: 16px;
     padding: 3px;
@@ -377,6 +438,20 @@ input {
 .draw_select_option {
   color: white;
   background: #31343C;
+}
+
+.draw_select::-webkit-scrollbar {
+  width: 12px;               /* ширина всей полосы прокрутки */
+}
+
+.draw_select::-webkit-scrollbar-track {
+  background: #31343C;        /* цвет зоны отслеживания */
+}
+
+.draw_select::-webkit-scrollbar-thumb {
+  background-color: transparent;    /* цвет бегунка */
+  border-radius: 20px;       /* округлось бегунка */
+  border: 1px solid white;  /* отступ вокруг бегунка */
 }
 
 .table_spec {
@@ -442,6 +517,10 @@ input {
 }
 .message_table_pos {
     margin: 0 auto;
+}
+
+.navbar {
+    display: flex-box;
 }
 
 .navbar ul {
