@@ -3,11 +3,19 @@ import io
 import os
 import re
 import shutil
+import time
+
+import pyodbc
 
 import openpyxl
 from transliterate import translit
 
 from omzit_terminal.settings import BASE_DIR
+
+BD_SERVER = 'APM-0230\SIGMANEST'
+BD_USERNAME = 'SNUser'
+BD_PASSWORD = 'BestNest1445'
+BD_DATABASE = 'SNDBase'
 
 STEELS = {
     "С235": "SP",
@@ -160,8 +168,72 @@ def read_plasma_layout(layout_file):
     return parts_layouts
 
 
-def read_plasma_layout_db(dxf):
-    pass
+def read_plasma_layout_db(dxf=['4SP PB(1M)-2 Poz.8 4', ]):
+    dxf.append('')
+    query = f"""
+        SELECT 
+            c.WoNumber,
+            c.PartName, 
+            c.ProgramName,
+            c.QtyProgram, 
+            
+            c.CuttingTime, 
+            c.TotalCuttingTime, 
+            c.QtyOrdered, 
+            c.PierceQty, 
+            c.MasterPartQty
+        FROM SNDBase.dbo.PartArchive as c
+        WHERE PartName IN {tuple(dxf)}
+    """
+    parts_layouts = dict()
+    for key, values in execute_query(query, part_handler):
+        layouts = parts_layouts.get(key, {})
+        layouts.update(values)
+        parts_layouts[key] = layouts
+    # Пример структуры parts_layouts {
+    # "№order1 3SP B-30 Balka №30 3": {  наименование детали
+    #             '12ГС-43.csv': [1],  раскладка: количество
+    #             '10ГС-40.csv': [3, 3, 3, 3], количество листов с одинаковой раскладкой - 4 - исключили случай
+    #             '10ГС-40.csv': [12], количество листов с одинаковой раскладкой - 4
+    #       },
+    # "№order1 3SP B-31 Balka №31 1": {
+    #             '10ГС-С отхода 2280х480 к 21-1.csv': [15],
+    #       }
+    # }
+    return parts_layouts
+
+
+def part_handler(row):
+    key = f'№{row[0]} {row[1]}'
+    layouts = {f'{row[2]}': {
+        'count': [row[3]],
+        'time': row[4],
+    }, }
+    return key, layouts
+
+
+def execute_query(query, handler):
+    start = time.time()
+    try:
+        cnxn = pyodbc.connect(
+            f'DRIVER=SQL Server;'
+            f'SERVER={BD_SERVER};'
+            f'DATABASE={BD_DATABASE};'
+            f'UID={BD_USERNAME};'
+            f'PWD={BD_PASSWORD}',
+        )
+        cursor = cnxn.cursor()
+        cursor.execute(query)
+        row = cursor.fetchone()
+        while row:
+            result = handler(row)
+            row = cursor.fetchone()
+            yield result
+        print(f"Завершение запроса в БД. Время выполнения {time.time() - start}")
+    except Exception as ex:
+        print(f"Исключение при работе с БД: {ex}")
+    finally:
+        cnxn.close()
 
 
 def create_part_name(shift_task_values):

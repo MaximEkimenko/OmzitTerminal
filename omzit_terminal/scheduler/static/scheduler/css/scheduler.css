@@ -183,6 +183,14 @@ h4 {
     margin-right: auto;
 }
 
+.second_form {
+    width: 1000px;
+    align-self: center;
+    margin-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .td_query_block {
     border: solid red 1px;
     border-radius: 10px;
@@ -331,11 +339,14 @@ input {
 
 .add_to_plan_center {
     background-color: #333333;
+    width: 1000px;
     border: solid green 1px;
-    align-self: center;
-    margin: 10px;
+    display: flex;
+    margin-left: auto;
+    margin-right: auto;
     padding: 0 0 10px 0;
     border-radius: 10px;
+    flex-direction: column;
 }
 
 /* Стили модальных окон */

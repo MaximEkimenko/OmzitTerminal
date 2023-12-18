@@ -8,7 +8,7 @@ from django.http import FileResponse
 from django.shortcuts import render, redirect
 
 from constructor.forms import QueryAnswer
-from .services.plasma_utils import create_part_name, read_plasma_layout, create_layout_xlsx
+from .services.plasma_utils import create_part_name, read_plasma_layout, create_layout_xlsx, read_plasma_layout_db
 from .services.service_handlers import handle_uploaded_file, handle_uploaded_draw_file
 from .services.tech_data_get import tech_data_get
 from .forms import GetTehDataForm, ChangeOrderModel, SendDrawBack, TehnologChoice, DoerChoice, LayoutUpload, \
@@ -422,6 +422,10 @@ def plasma_tehnolog(request):
             _, pk, layout = form_submit.split("|")
             queryset = queryset.filter(workpiece__icontains=layout)
             action = 'confirm_return'
+
+        if 'data_base' in form_submit:
+            parts_layouts = read_plasma_layout_db()
+            print(parts_layouts)
 
         filter_set = filterset_plasma(request=request, queryset=queryset)
 

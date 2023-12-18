@@ -9,38 +9,38 @@
 {% block body %}
 <h1>Рабочее место технолога. Плазма</h1>
 {% if filter.qs %}
-    <div class="add_to_plan_center">
-        <form method="post" id="id_upload_form" enctype="multipart/form-data" class="form_form">
+<div class="add_to_plan_center">
+        <form method="post" id="id_upload_form" enctype="multipart/form-data">
             {% csrf_token %}
-            <h3>Форма загрузки файла раскладки</h3>
-            <div class="form-error">{{ form.non_field_errors }}</div>
-            {% for each_form in form %}
-            <div class="form_inner_label">
-                <label for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
-            </div>
-            <div class="form_inner_div">{{ each_form }}</div>
-            <div class="form-error">{{ each_form.errors }}</div>
-            {% endfor %}
-            <button
-                    type="submit"
-                    class="btn"
-                    name="form"
-                    value="upload"
-            >
-                Загрузить раскладку
-            </button>
-        </form>
-
-        <form method="post" id="id_upload_db_form" class="form_form">
-            {% csrf_token %}
-            <button
+                <h3>Форма загрузки файла раскладки</h3>
+                <div class="form-error">{{ form.non_field_errors }}</div>
+                {% for each_form in form %}
+                <div class="form_inner_label">
+                    <label for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
+                </div>
+                <div class="form_inner_div">{{ each_form }}</div>
+                <div class="form-error">{{ each_form.errors }}</div>
+                {% endfor %}
+                <button
                         type="submit"
                         class="btn"
                         name="form"
-                        value="data_base"
+                        value="upload"
                 >
-                    Загрузить раскладки из базы данных (цех 2)
-            </button>
+                    Загрузить раскладку
+                </button>
+        </form>
+
+        <form method="post" id="id_upload_db_form" class="second_form">
+            {% csrf_token %}
+                <button
+                            type="submit"
+                            class="btn"
+                            name="form"
+                            value="data_base"
+                    >
+                        Загрузить раскладки из базы данных (цех 2)
+                </button>
         </form>
     </div>
 
