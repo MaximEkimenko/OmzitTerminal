@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import ShiftTask, WorkshopSchedule, Doers, DailyReport, MonthPlans
+from .models import ShiftTask, WorkshopSchedule, Doers
+# from .models import DailyReport, MonthPlans  # TODO ФУНКЦИОНАЛ ОЧТЁТОВ ЗАКОНСЕРВИРОВАНО
 
 
 class SchedulerShiftTaskAdmin(admin.ModelAdmin):
@@ -41,8 +42,9 @@ class SchedulerMonthPlansAdmin(admin.ModelAdmin):
 admin.site.register(WorkshopSchedule, SchedulerWorkshopScheduleAdmin)
 admin.site.register(ShiftTask, SchedulerShiftTaskAdmin)
 admin.site.register(Doers, SchedulerDoersAdmin)
-admin.site.register(DailyReport, SchedulerDailyReportAdmin)
-admin.site.register(MonthPlans, SchedulerMonthPlansAdmin)
+# TODO ФУНКЦИОНАЛ ОЧТЁТОВ ЗАКОНСЕРВИРОВАНО
+# admin.site.register(DailyReport, SchedulerDailyReportAdmin)
+# admin.site.register(MonthPlans, SchedulerMonthPlansAdmin)
 
 admin.site.site_title = 'Управление терминалами ОмЗиТ'
 admin.site.site_header = 'Управление терминалами ОмЗиТ'

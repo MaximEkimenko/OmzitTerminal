@@ -80,52 +80,50 @@ class Command(BaseCommand):
             "Запущена еженедельная задача: 'delete_old_job_executions'."
         )
 
-        scheduler.add_job(
-            shift_tasks_auto_report,
-            trigger=CronTrigger(hour="07", minute="30"),
-            id="Получение отчета по СЗ",
-            max_instances=1,
-            replace_existing=True,
-            misfire_grace_time=1 * 60,
-        )
-        scheduler.add_job(
-            days_report_create,
-            trigger=CronTrigger(day="01", hour="00", minute="01"),
-            id="Заполнение дней следующего месяца",
-            max_instances=1,
-            replace_existing=True,
-            misfire_grace_time=1 * 60,
-        )
-        # словарь для множественного запуска report_json_create_schedule
-        run_times = {
-            "Чтение данных дуги": {"hour": "06", "minute": "05"},
-            "Чтение данных дуги, ОТК и ОТПБ 1": {"hour": "08", "minute": "30"},
-            "Чтение данных дуги, ОТК и ОТПБ 2": {"hour": "08", "minute": "44"},
-            "Чтение данных дуги, ОТК и ОТПБ 3": {"hour": "08", "minute": "53"},
-        }
-        # множественный запуск report_json_create_schedule
-        for _id in run_times:
-            scheduler.add_job(
-                report_json_create_schedule,
-                trigger=CronTrigger(**run_times[_id]),
-                id=_id,
-                max_instances=1,
-                replace_existing=True,
-                misfire_grace_time=2 * 60,
-            )
-        scheduler.add_job(
-            report_merger_schedule,
-            trigger=CronTrigger(hour="08", minute="56"),
-            id="Объединение отчётов цехов",
-            max_instances=1,
-            replace_existing=True,
-            misfire_grace_time=1 * 60,
-        )
+        # scheduler.add_job( # TODO ФУНКЦИОНАЛ ОТЧЁТОВ законсервировано пока не понадобится
+        #     shift_tasks_auto_report,
+        #     trigger=CronTrigger(hour="07", minute="30"),
+        #     id="Получение отчета по СЗ",
+        #     max_instances=1,
+        #     replace_existing=True,
+        #     misfire_grace_time=1 * 60,
+        # )
+        # scheduler.add_job(
+        #     days_report_create,
+        #     trigger=CronTrigger(day="01", hour="00", minute="01"),
+        #     id="Заполнение дней следующего месяца",
+        #     max_instances=1,
+        #     replace_existing=True,
+        #     misfire_grace_time=1 * 60,
+        # )
+        # # словарь для множественного запуска report_json_create_schedule
+        # run_times = {
+        #     "Чтение данных дуги": {"hour": "06", "minute": "05"},
+        #     "Чтение данных дуги, ОТК и ОТПБ 1": {"hour": "08", "minute": "30"},
+        #     "Чтение данных дуги, ОТК и ОТПБ 2": {"hour": "08", "minute": "44"},
+        #     "Чтение данных дуги, ОТК и ОТПБ 3": {"hour": "08", "minute": "53"},
+        # }
+        # # множественный запуск report_json_create_schedule
+        # for _id in run_times:
+        #     scheduler.add_job(
+        #         report_json_create_schedule,
+        #         trigger=CronTrigger(**run_times[_id]),
+        #         id=_id,
+        #         max_instances=1,
+        #         replace_existing=True,
+        #         misfire_grace_time=2 * 60,
+        #     )
+        # scheduler.add_job(
+        #     report_merger_schedule,
+        #     trigger=CronTrigger(hour="08", minute="56"),
+        #     id="Объединение отчётов цехов",
+        #     max_instances=1,
+        #     replace_existing=True,
+        #     misfire_grace_time=1 * 60,
+        # )
 
         logger.info("Запущена объединения отчётов")
-
         # report_merger_schedule
-
         try:
             logger.info("Starting scheduler...")
             scheduler.start()
