@@ -1,7 +1,9 @@
 from django.urls import path
 from .views import (scheduler, schedulerwp, schedulerfio, LoginUser, logout_user, td_query, show_workshop_scheme, plan,
                     create_shift_tasks_from_spec, create_specification, confirm_sz_planning,
-                    test_scheduler, report, shift_tasks_reports, shift_tasks_report_view, plan_resort)
+                    test_scheduler, shift_tasks_reports, shift_tasks_report_view)
+
+# from .views import plan_resort, report # TODO ФУНКЦИОНАЛ ОТЧЁТОВ ЗАКОНСЕРВИРОВАНО
 from constructor.views import show_instruction
 
 urlpatterns = [
@@ -16,11 +18,12 @@ urlpatterns = [
     path('plan/', plan, name='plan'),
     # TODO удалить после тестов
     path('test_scheduler/', test_scheduler, name='test_scheduler'),
-    path('report<int:workshop>/', report, name='report'),
+
     path('st_report_<str:start>_<str:end>/', shift_tasks_reports, name='st_reports'),
     path('view_st_report_<str:start>_<str:end>/', shift_tasks_report_view, name='view_st_report'),
     path('specification/', create_specification, name='specification'),
     path('create_st/', create_shift_tasks_from_spec, name='st_from_spec'),
     path('confirm_sz_planning/', confirm_sz_planning, name='confirm_sz_planning'),
-    path('plan_resort/', plan_resort, name='plan_resort'),
+    # path('report<int:workshop>/', report, name='report'), #TODO ФУНКЦИОНАЛ ОТЧЁТОВ ЗАКОНСЕРВИРОВАНО
+    # path('plan_resort/', plan_resort, name='plan_resort'),
 ]

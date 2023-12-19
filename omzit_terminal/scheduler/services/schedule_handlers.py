@@ -10,7 +10,9 @@ import os
 
 # from omzit_terminal.omzit_terminal.settings import BASE_DIR
 
-from ..models import WorkshopSchedule, ShiftTask, MonthPlans, DailyReport
+from ..models import WorkshopSchedule, ShiftTask
+# TODO ФУНКЦИОНАЛ ОЧТЁТОВ ЗАКОНСЕРВИРОВАНО
+# from ..models import MonthPlans, DailyReport
 import matplotlib.pyplot as plt
 import matplotlib
 from omzit_terminal.settings import BASE_DIR
