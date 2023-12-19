@@ -170,27 +170,28 @@ def read_plasma_layout(layout_file):
 
 
 def read_plasma_layout_db(dxf):
-    # parts = [
-    #     '10SP TM-1_D3 Plastina 42',
-    #     '10SP TM-1_D4 Rebro 168',
-    #     '10SP TM-2_D1 Plastina 2',
-    #     '10SP TM-2_D3 Plastina 2',
-    #     '10SP TM-3_D1 Plastina 1',
-    #     '10SP TM-3_D3 Plastina 1',
-    #     '10SP OB47-1  PL3a 2',
-    #     '10SP OB48-1  PL3a 2',
-    #     '10SP B24-2 Pl1 11',
-    #     '10SP OB24-2 Kc8 6',
-    #     '10SP OB28-2 Pb1 27',
-    # ]
-    # orders = ['Z572(2023)'] * 6 + ['Z579(2023)'] * 5
-    # dxf = zip(orders, parts)
+    parts = [
+        '10SP TM-1_D3 Plastina 42',
+        '10SP TM-1_D4 Rebro 168',
+        '10SP TM-2_D1 Plastina 2',
+        '10SP TM-2_D3 Plastina 2',
+        '10SP TM-3_D1 Plastina 1',
+        '10SP TM-3_D3 Plastina 1',
+        '10SP OB47-1  PL3a 2',
+        '10SP OB48-1  PL3a 2',
+        '10SP B24-2 Pl1 11',
+        '10SP OB24-2 Kc8 6',
+        '10SP OB28-2 Pb1 27',
+    ]
+    orders = ['Z572(2023)'] * 6 + ['Z579(2023)'] * 5
+    dxf = zip(orders, parts)
     condition = []
     for order, part in dxf:
         condition.append(f"WoNumber = '{order}' and PartName = '{part}'")
     text_condition = " or ".join(condition)
     query = f"""
-        SELECT 
+        SELECT *
+        FROM (SELECT 
             WoNumber,
             PartName, 
             ProgramName,
@@ -208,20 +209,14 @@ def read_plasma_layout_db(dxf):
                     SELECT SUM(CuttingLength * QtyProgram)
                     FROM SNDBase.dbo.PartArchive as b
                     WHERE b.ProgramName = a.ProgramName
-            ),
-            (
-                    SELECT SUM(CuttingLength * QtyProgram)
-                    FROM SNDBase.dbo.PartArchive as b
-                    WHERE b.ProgramName = a.ProgramName
-            )            
+            )          
         FROM SNDBase.dbo.PartArchive AS a
-        WHERE a.ProgramName = 'SP SS- 2-73122' 
         UNION
         SELECT 
             e.WONumber,
             e.PartName, 
             e.ProgramName,
-            e.QtyInProcess,
+            e.QtyInProcess * MAX(e.RepeatID),
             e.CuttingLength * (
                     SELECT j.CuttingTime
                     FROM SNDBase.dbo.ProgArchive AS j
@@ -231,25 +226,19 @@ def read_plasma_layout_db(dxf):
                         WHERE i.ProgramName = e.ProgramName
                         GROUP BY i.ProgramName
                     )
-            ) / (
-                    SELECT SUM(f.CuttingLength * f.QtyInProcess)
-                    FROM SNDBase.dbo.PIPArchive as f
-                    WHERE f.ArcDateTime = e.ArcDateTime and f.ProgramName = e.ProgramName
-                    GROUP BY f.ArcDateTime, f.PartName
-            ),
-            (
-                    SELECT SUM(f.CuttingLength * f.QtyInProcess)
-                    FROM SNDBase.dbo.PIPArchive as f
-                    WHERE f.ArcDateTime = e.ArcDateTime and f.ProgramName = e.ProgramName
-                    GROUP BY f.ArcDateTime, f.PartName
-            )           
-        FROM SNDBase.dbo.PIPArchive AS e        
-        WHERE e.ProgramName = 'SP SS- 2-73122' and e.ArcDateTime = (
-                        SELECT MAX(g.ArcDateTime)
-                        FROM SNDBase.dbo.PIPArchive AS g
-                        WHERE g.ProgramName = e.ProgramName
-                        GROUP BY g.ProgramName
+            ) / (       SELECT SUM(x.CuttingLength * x.QtyInProcess)
+                    FROM SNDBase.dbo.PIPArchive AS x
+                    WHERE x.ArcDateTime = MAX(e.ArcDateTime) and x.ProgramName = e.ProgramName and x.RepeatID = (
+                        SELECT MAX(f.RepeatID)
+                        FROM SNDBase.dbo.PIPArchive as f
+                        WHERE f.ArcDateTime = MAX(e.ArcDateTime) and f.ProgramName = e.ProgramName
+                        GROUP BY f.PartName, f.WONumber, f.ProgramName, f.QtyInProcess, f.CuttingLength
                     )
+            )
+        FROM SNDBase.dbo.PIPArchive AS e        
+        GROUP BY e.PartName, e.WONumber, e.ProgramName, e.QtyInProcess, e.CuttingLength
+        ) AS t1
+        WHERE {text_condition}
     """
 
     for row in execute_query(query, lambda x: x):
