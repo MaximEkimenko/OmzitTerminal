@@ -137,9 +137,13 @@ def read_plasma_layout(layout_file):
                 if not layout_duplicates:
                     layout_duplicates = 1
                 part = dxf.group(1).strip()
+                hours, minutes, seconds = map(int, dxf.group(4).split(':'))
+                norm_tech = hours + ((minutes + seconds / 60) / 60)
                 parts_layouts[part] = {
-                    layout_name: [int(dxf.group(3)) * layout_duplicates],
-                    'time': dxf.group(4)
+                    layout_name: {
+                        'count': [int(dxf.group(3)) * layout_duplicates],
+                        'time': norm_tech,
+                    },
                 }
 
     elif layout_file.name.lower().endswith(".cnc"):
@@ -157,34 +161,100 @@ def read_plasma_layout(layout_file):
         pass
     # Пример структуры parts_layouts {
     # "№order1 3SP B-30 Balka №30 3": {  наименование детали
-    #             '12ГС-43.csv': [1],  раскладка: количество
-    #             '10ГС-40.csv': [3, 3, 3, 3], количество листов с одинаковой раскладкой - 4 - исключили случай
-    #             '10ГС-40.csv': [12], количество листов с одинаковой раскладкой - 4
+    #             '12ГС-43.csv': {
+    #                   'count': [3],
+    #                   'time': 2.67631 в часах
+    #             }
     #       },
-    # "№order1 3SP B-31 Balka №31 1": {
-    #             '10ГС-С отхода 2280х480 к 21-1.csv': [15],
-    #       }
-    # }
     return parts_layouts
 
 
-def read_plasma_layout_db(dxf=['4SP PB(1M)-2 Poz.8 4', ]):
-    dxf.append('')
+def read_plasma_layout_db(dxf):
+    # parts = [
+    #     '10SP TM-1_D3 Plastina 42',
+    #     '10SP TM-1_D4 Rebro 168',
+    #     '10SP TM-2_D1 Plastina 2',
+    #     '10SP TM-2_D3 Plastina 2',
+    #     '10SP TM-3_D1 Plastina 1',
+    #     '10SP TM-3_D3 Plastina 1',
+    #     '10SP OB47-1  PL3a 2',
+    #     '10SP OB48-1  PL3a 2',
+    #     '10SP B24-2 Pl1 11',
+    #     '10SP OB24-2 Kc8 6',
+    #     '10SP OB28-2 Pb1 27',
+    # ]
+    # orders = ['Z572(2023)'] * 6 + ['Z579(2023)'] * 5
+    # dxf = zip(orders, parts)
+    condition = []
+    for order, part in dxf:
+        condition.append(f"WoNumber = '{order}' and PartName = '{part}'")
+    text_condition = " or ".join(condition)
     query = f"""
         SELECT 
-            c.WoNumber,
-            c.PartName, 
-            c.ProgramName,
-            c.QtyProgram, 
-            
-            c.CuttingTime, 
-            c.TotalCuttingTime, 
-            c.QtyOrdered, 
-            c.PierceQty, 
-            c.MasterPartQty
-        FROM SNDBase.dbo.PartArchive as c
-        WHERE PartName IN {tuple(dxf)}
+            WoNumber,
+            PartName, 
+            ProgramName,
+            QtyProgram,
+            CuttingLength * (
+                    SELECT d.CuttingTime
+                    FROM SNDBase.dbo.ProgArchive AS d
+                    WHERE d.AutoID = (
+                        SELECT MAX(c.AutoID)
+                        FROM SNDBase.dbo.ProgArchive AS c
+                        WHERE c.ProgramName = a.ProgramName
+                        GROUP BY c.ProgramName
+                    )
+            ) / (
+                    SELECT SUM(CuttingLength * QtyProgram)
+                    FROM SNDBase.dbo.PartArchive as b
+                    WHERE b.ProgramName = a.ProgramName
+            ),
+            (
+                    SELECT SUM(CuttingLength * QtyProgram)
+                    FROM SNDBase.dbo.PartArchive as b
+                    WHERE b.ProgramName = a.ProgramName
+            )            
+        FROM SNDBase.dbo.PartArchive AS a
+        WHERE a.ProgramName = 'SP SS- 2-73122' 
+        UNION
+        SELECT 
+            e.WONumber,
+            e.PartName, 
+            e.ProgramName,
+            e.QtyInProcess,
+            e.CuttingLength * (
+                    SELECT j.CuttingTime
+                    FROM SNDBase.dbo.ProgArchive AS j
+                    WHERE j.AutoID = (
+                        SELECT MAX(i.AutoID)
+                        FROM SNDBase.dbo.ProgArchive AS i
+                        WHERE i.ProgramName = e.ProgramName
+                        GROUP BY i.ProgramName
+                    )
+            ) / (
+                    SELECT SUM(f.CuttingLength * f.QtyInProcess)
+                    FROM SNDBase.dbo.PIPArchive as f
+                    WHERE f.ArcDateTime = e.ArcDateTime and f.ProgramName = e.ProgramName
+                    GROUP BY f.ArcDateTime, f.PartName
+            ),
+            (
+                    SELECT SUM(f.CuttingLength * f.QtyInProcess)
+                    FROM SNDBase.dbo.PIPArchive as f
+                    WHERE f.ArcDateTime = e.ArcDateTime and f.ProgramName = e.ProgramName
+                    GROUP BY f.ArcDateTime, f.PartName
+            )           
+        FROM SNDBase.dbo.PIPArchive AS e        
+        WHERE e.ProgramName = 'SP SS- 2-73122' and e.ArcDateTime = (
+                        SELECT MAX(g.ArcDateTime)
+                        FROM SNDBase.dbo.PIPArchive AS g
+                        WHERE g.ProgramName = e.ProgramName
+                        GROUP BY g.ProgramName
+                    )
     """
+
+    for row in execute_query(query, lambda x: x):
+        print(row)
+
     parts_layouts = dict()
     for key, values in execute_query(query, part_handler):
         layouts = parts_layouts.get(key, {})
@@ -192,22 +262,27 @@ def read_plasma_layout_db(dxf=['4SP PB(1M)-2 Poz.8 4', ]):
         parts_layouts[key] = layouts
     # Пример структуры parts_layouts {
     # "№order1 3SP B-30 Balka №30 3": {  наименование детали
-    #             '12ГС-43.csv': [1],  раскладка: количество
-    #             '10ГС-40.csv': [3, 3, 3, 3], количество листов с одинаковой раскладкой - 4 - исключили случай
-    #             '10ГС-40.csv': [12], количество листов с одинаковой раскладкой - 4
+    #             '12ГС-43.csv': {
+    #                   'count': [3],
+    #                   'time': 2.67631 в часах
+    #             }
     #       },
-    # "№order1 3SP B-31 Balka №31 1": {
-    #             '10ГС-С отхода 2280х480 к 21-1.csv': [15],
-    #       }
-    # }
+    layout_total_time = dict()
+    for part, layouts in parts_layouts.items():
+        for name, data in layouts.items():
+            current_total = layout_total_time.get(name, 0)
+            current_total += data['time'] * data['count'][0]
+            layout_total_time[name] = current_total
+    print(layout_total_time)
     return parts_layouts
 
 
 def part_handler(row):
+    norm_tech = float(row[4])
     key = f'№{row[0]} {row[1]}'
     layouts = {f'{row[2]}': {
         'count': [row[3]],
-        'time': row[4],
+        'time': norm_tech,
     }, }
     return key, layouts
 

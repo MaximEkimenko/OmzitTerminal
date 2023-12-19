@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import asyncio
+import re
 
 from django.contrib.auth.decorators import login_required
 from django.http import FileResponse
@@ -349,9 +350,8 @@ def plasma_tehnolog(request):
                             workpiece['layouts'].update(layouts)
                             workpiece['layouts_total'] = (sum(map(sum, workpiece['layouts'].values())) +
                                                           sum(map(sum, workpiece['layouts_done'].values())))
-                            hours, minutes, seconds = map(int, time.split(':'))
-                            norm_tech = hours + ((minutes + seconds / 60) / 60)
-                            part_st.update(workpiece=workpiece, norm_tech=norm_tech)
+
+                            part_st.update(workpiece=workpiece)
 
         if 'workshop' in form_submit:
             ws_plasma_choice_form = WorkshopPlasmaChoice(request.POST)
@@ -424,7 +424,12 @@ def plasma_tehnolog(request):
             action = 'confirm_return'
 
         if 'data_base' in form_submit:
-            parts_layouts = read_plasma_layout_db()
+            dxf = []
+            for shift_task in queryset:
+                match = re.match(r'^№([^\s]+?)\s(.*)', shift_task['workpiece']['layout_name'])
+                if match:
+                    dxf.append(match.group(1, 2))
+            parts_layouts = read_plasma_layout_db(dxf)
             print(parts_layouts)
 
         filter_set = filterset_plasma(request=request, queryset=queryset)
