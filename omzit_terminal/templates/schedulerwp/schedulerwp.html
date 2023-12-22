@@ -2,36 +2,15 @@
 {% load static %}
 {% load i18n %}
 
-<<<<<<< HEAD
 {% block title %}
 Рабочее место планировщика рабочих центров
 {% endblock %}
 
 {% block new_header_link %}
-    <li><a href="{% url 'report' 1 %}"> Заполнение отчётов</a></li>
+    <!--{#<li><a href="{% url 'report' 1 %}"> Заполнение отчётов</a></li>#}-->
 {% endblock %}
 {% block body %}
-=======
-    <body>
-        {% if request.user.is_authenticated %}
-        <div class="legend">
-            <div>
-                <p>Пользователь: {{ user.username }} | <a href="{% url 'logout' %}" class="legend_link"> Выйти </a></p>
-                <p><a href="{% url 'instruction' %}">Инструкция</a></p>
-                <p>Папка с чертежами: \\SVR-003\draws</p>
-<!--                ФУНКЦИОНАЛ ОТЧЁТОВ ЗАКОНСЕРВИРОВАНО-->
-<!--{#                <p><a href="{% url 'report' 1 %}" class="legend_link"> Заполнение отчётов</a></p>#}-->
-            </div>
-        </div>
-        {% else %}
-        <a href="{% url 'login' %}"> Войти </a>
-        <!-- prettier-ignore -->
-        {%endif %}
-        <!-- prettier-ignore -->
-        {% if user.username == 'admin' %}
-        <a href="{% url 'home' %}">Назад</a> <br />
-        {%endif %}
->>>>>>> 8859e59624d57de06239d34e55780384eab24047
+
         <h1>Рабочее место планировщика рабочих центров</h1>
         <br /><br /><br /><br /><br />
 

@@ -1,5 +1,6 @@
 import datetime
 import random
+from pathlib import Path
 
 from fpdf import FPDF
 from lorem_text import lorem
@@ -35,7 +36,7 @@ class SzPdf(FPDF):
         self.add_font(
             family='Arial',
             style='',
-            fname=BASE_DIR / r'scheduler/services/arial.ttf',
+            fname=BASE_DIR / r'scheduler\services\arial.ttf',
             uni=True
         )
         self.set_font(family='Arial', style='', size=14)
@@ -66,7 +67,6 @@ class SzPdf(FPDF):
         self.create_table()
 
         self.output(self.filename)
-
 
     def create_table(self):
         cell_height = 7
@@ -126,7 +126,8 @@ class SzPdf(FPDF):
                     else:
                         border = "LR"
                     try:
-                        self.cell(w=width, h=cell_height, txt=f"{cell[line_no]}", border=border, align=aligns[i_cell], ln=1)
+                        self.cell(w=width, h=cell_height, txt=f"{cell[line_no]}", border=border, align=aligns[i_cell],
+                                  ln=1)
                     except Exception:
                         self.cell(w=width, h=cell_height, border=border, align=aligns[i_cell], ln=1)
                 x += width
@@ -239,98 +240,97 @@ if __name__ == "__main__":
                 "material": lorem.words(5),
                 "length": random.randint(100, 99999),
                 "count": random.randint(0, 50),
-            },{
+            }, {
                 "draw": draw_2,
                 "name": lorem.words(5),
                 "material": lorem.words(5),
                 "length": random.randint(100, 99999),
                 "count": random.randint(0, 50),
-            },{
+            }, {
                 "draw": draw_2,
                 "name": lorem.words(5),
                 "material": lorem.words(5),
                 "length": random.randint(100, 99999),
                 "count": random.randint(0, 50),
-            },{
+            }, {
                 "draw": draw_2,
                 "name": lorem.words(5),
                 "material": lorem.words(5),
                 "length": random.randint(100, 99999),
                 "count": random.randint(0, 50),
-            },{
+            }, {
                 "draw": draw_2,
                 "name": lorem.words(5),
                 "material": lorem.words(5),
                 "length": random.randint(100, 99999),
                 "count": random.randint(0, 50),
-            },{
+            }, {
                 "draw": draw_2,
                 "name": lorem.words(5),
                 "material": lorem.words(5),
                 "length": random.randint(100, 99999),
                 "count": random.randint(0, 50),
-            },{
+            }, {
                 "draw": draw_2,
                 "name": lorem.words(5),
                 "material": lorem.words(5),
                 "length": random.randint(100, 99999),
                 "count": random.randint(0, 50),
-            },{
+            }, {
                 "draw": draw_2,
                 "name": lorem.words(5),
                 "material": lorem.words(5),
                 "length": random.randint(100, 99999),
                 "count": random.randint(0, 50),
-            },{
+            }, {
                 "draw": draw_2,
                 "name": lorem.words(5),
                 "material": lorem.words(5),
                 "length": random.randint(100, 99999),
                 "count": random.randint(0, 50),
-            },{
+            }, {
                 "draw": draw_2,
                 "name": lorem.words(5),
                 "material": lorem.words(5),
                 "length": random.randint(100, 99999),
                 "count": random.randint(0, 50),
-            },{
+            }, {
                 "draw": draw_2,
                 "name": lorem.words(5),
                 "material": lorem.words(5),
                 "length": random.randint(100, 99999),
                 "count": random.randint(0, 50),
-            },{
+            }, {
                 "draw": draw_2,
                 "name": lorem.words(5),
                 "material": lorem.words(5),
                 "length": random.randint(100, 99999),
                 "count": random.randint(0, 50),
-            },{
+            }, {
                 "draw": draw_2,
                 "name": lorem.words(5),
                 "material": lorem.words(5),
                 "length": random.randint(100, 99999),
                 "count": random.randint(0, 50),
-            },{
+            }, {
                 "draw": draw_2,
                 "name": lorem.words(5),
                 "material": lorem.words(5),
                 "length": random.randint(100, 99999),
                 "count": random.randint(0, 50),
-            },{
+            }, {
                 "draw": draw_2,
                 "name": lorem.words(5),
                 "material": lorem.words(5),
                 "length": random.randint(100, 99999),
                 "count": random.randint(0, 50),
-            },{
+            }, {
                 "draw": draw_2,
                 "name": lorem.words(5),
                 "material": lorem.words(5),
                 "length": random.randint(100, 99999),
                 "count": random.randint(0, 50),
             },
-
 
         ]
     }

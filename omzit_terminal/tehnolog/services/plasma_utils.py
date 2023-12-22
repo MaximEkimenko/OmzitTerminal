@@ -56,6 +56,33 @@ STEELS = {
     "12Г2СМФФАЮ": "",
 }
 
+THICKNESS_SPEED = {  # mm: mm/s
+    '0.5': 5355 / 60,
+    '1.5': 2210 / 60,
+    '1': 3615 / 60,
+    '2': 9810 / 60,
+    '3': 6145 / 60,
+    '4': 5550 / 60,
+    '5': 4297.5 / 60,
+    '6': 3045 / 60,
+    '8': 2862.5 / 60,
+    '10': 2680 / 60,
+
+    '12': 2200 / 60,
+    '14': 1843.3 / 60,
+    '16': 2938 / 60,
+    '18': 2554 / 60,
+    '20': 2170 / 60,
+    '22': 1930 / 60,
+    '24': 1766.7 / 60,
+    '25': 1685 / 60,
+    '30': 1290 / 60,
+    '36': 975 / 60,
+    '40': 790 / 60,
+    '50': 405 / 60,
+    '60': 258.3 / 60,
+}
+
 
 def create_layout_xlsx(queryset):
     """
@@ -147,16 +174,29 @@ def read_plasma_layout(layout_file):
                 }
 
     elif layout_file.name.lower().endswith(".cnc"):
+        parts_thickness = dict()
+        parts_length = dict()
         for row in reader:
-            dxf = re.match(r"^\"PART (.*)\s([\d]+)\s[\d]+\s[\d.]+\s[\d.]+", row)
+            dxf = re.match(r"^\"PART ((\d{1,2}|[^\s]+\s).*)\s([\d]+)\s([\d]+)\s[\d.]+\s[\d.]+", row)
             if dxf and "$REST_CUT" not in dxf.group(1):
-                part = dxf.group(1).strip()
-                parts_layouts[part] = parts_layouts.get(part, {layout_file.name: set()})
-                parts_layouts[part][layout_file.name].add(dxf.group(2))
-        for part, part_value in parts_layouts.items():
-            for key, value in part_value.items():
-                part_value[key] = [len(value)]
+                thickness = dxf.group(2)
+                part, number, area = dxf.group(1, 3, 4)
+                if thickness in THICKNESS_SPEED:
+                    parts_thickness[part] = thickness
+                else:
+                    parts_thickness[part] = '1'
+                part = part.strip()
+                parts_length[part] = (int(area) ** 0.5) * 4
 
+                parts_layouts[part] = parts_layouts.get(part, {layout_file.name: set()})
+                parts_layouts[part][layout_file.name].add(number)
+
+        for part, part_layouts in parts_layouts.items():
+            for layout, numbers in part_layouts.items():
+                part_layouts[layout] = {
+                    'count': [len(numbers)],
+                    'time': (parts_length[part] / THICKNESS_SPEED[parts_thickness[part]]) / 3600
+                }
     elif layout_file.name.lower().endswith(".odt"):
         pass
     # Пример структуры parts_layouts {
@@ -170,53 +210,43 @@ def read_plasma_layout(layout_file):
 
 
 def read_plasma_layout_db(dxf):
-    parts = [
-        '10SP TM-1_D3 Plastina 42',
-        '10SP TM-1_D4 Rebro 168',
-        '10SP TM-2_D1 Plastina 2',
-        '10SP TM-2_D3 Plastina 2',
-        '10SP TM-3_D1 Plastina 1',
-        '10SP TM-3_D3 Plastina 1',
-        '10SP OB47-1  PL3a 2',
-        '10SP OB48-1  PL3a 2',
-        '10SP B24-2 Pl1 11',
-        '10SP OB24-2 Kc8 6',
-        '10SP OB28-2 Pb1 27',
-    ]
-    orders = ['Z572(2023)'] * 6 + ['Z579(2023)'] * 5
-    dxf = zip(orders, parts)
     condition = []
     for order, part in dxf:
-        condition.append(f"WoNumber = '{order}' and PartName = '{part}'")
-    text_condition = " or ".join(condition)
+        condition.append(f"WoNumber = '{order}' AND PartName = '{part}'")
+    text_condition = " OR ".join(condition)
     query = f"""
-        SELECT *
+        SELECT WoNumber, PartName, ProgramName, QtyProgram, CuttingTime
         FROM (SELECT 
-            WoNumber,
-            PartName, 
-            ProgramName,
-            QtyProgram,
-            CuttingLength * (
-                    SELECT d.CuttingTime
-                    FROM SNDBase.dbo.ProgArchive AS d
-                    WHERE d.AutoID = (
-                        SELECT MAX(c.AutoID)
-                        FROM SNDBase.dbo.ProgArchive AS c
-                        WHERE c.ProgramName = a.ProgramName
-                        GROUP BY c.ProgramName
-                    )
-            ) / (
-                    SELECT SUM(CuttingLength * QtyProgram)
-                    FROM SNDBase.dbo.PartArchive as b
-                    WHERE b.ProgramName = a.ProgramName
-            )          
+                WoNumber,
+                PartName, 
+                ProgramName,
+                QtyProgram,
+                CuttingLength * (
+                            SELECT d.CuttingTime
+                            FROM SNDBase.dbo.ProgArchive AS d
+                            WHERE d.AutoID = (
+                                SELECT MAX(c.AutoID)
+                                FROM SNDBase.dbo.ProgArchive AS c
+                                WHERE c.ProgramName = a.ProgramName
+                                GROUP BY c.ProgramName
+                        )
+                ) / (
+                        SELECT SUM(CuttingLength * QtyProgram)
+                        FROM SNDBase.dbo.PartArchive as b
+                        WHERE b.ProgramName = a.ProgramName
+                ) AS CuttingTime
         FROM SNDBase.dbo.PartArchive AS a
+        WHERE (
+                SELECT SUM(CuttingLength * QtyProgram)
+                FROM SNDBase.dbo.PartArchive as b
+                WHERE b.ProgramName = a.ProgramName
+              ) <> 0
         UNION
         SELECT 
-            e.WONumber,
+            e.WONumber AS WoNumber,
             e.PartName, 
             e.ProgramName,
-            e.QtyInProcess * MAX(e.RepeatID),
+            e.QtyInProcess * MAX(e.RepeatID) AS QtyProgram,
             e.CuttingLength * (
                     SELECT j.CuttingTime
                     FROM SNDBase.dbo.ProgArchive AS j
@@ -226,29 +256,37 @@ def read_plasma_layout_db(dxf):
                         WHERE i.ProgramName = e.ProgramName
                         GROUP BY i.ProgramName
                     )
-            ) / (       SELECT SUM(x.CuttingLength * x.QtyInProcess)
-                    FROM SNDBase.dbo.PIPArchive AS x
-                    WHERE x.ArcDateTime = MAX(e.ArcDateTime) and x.ProgramName = e.ProgramName and x.RepeatID = (
-                        SELECT MAX(f.RepeatID)
-                        FROM SNDBase.dbo.PIPArchive as f
-                        WHERE f.ArcDateTime = MAX(e.ArcDateTime) and f.ProgramName = e.ProgramName
-                        GROUP BY f.PartName, f.WONumber, f.ProgramName, f.QtyInProcess, f.CuttingLength
+            ) /     (
+                        SELECT SUM(x.CuttingLength * x.QtyInProcess)
+                        FROM SNDBase.dbo.PIPArchive AS x
+                        WHERE x.ArcDateTime = MAX(e.ArcDateTime) and x.ProgramName = e.ProgramName and x.RepeatID = (
+                            SELECT MAX(f.RepeatID)
+                            FROM SNDBase.dbo.PIPArchive as f
+                            WHERE f.ProgramName = e.ProgramName
+                            GROUP BY f.ProgramName
                     )
-            )
-        FROM SNDBase.dbo.PIPArchive AS e        
+            ) AS CuttingTime
+        FROM SNDBase.dbo.PIPArchive AS e  
         GROUP BY e.PartName, e.WONumber, e.ProgramName, e.QtyInProcess, e.CuttingLength
+        HAVING (
+                        SELECT SUM(x.CuttingLength * x.QtyInProcess)
+                        FROM SNDBase.dbo.PIPArchive AS x
+                        WHERE x.ArcDateTime = MAX(e.ArcDateTime) and x.ProgramName = e.ProgramName and x.RepeatID = (
+                            SELECT MAX(f.RepeatID)
+                            FROM SNDBase.dbo.PIPArchive as f
+                            WHERE f.ProgramName = e.ProgramName
+                            GROUP BY f.ProgramName
+                    )
+        ) <> 0   
         ) AS t1
-        WHERE {text_condition}
+        WHERE ({text_condition})
     """
 
-    for row in execute_query(query, lambda x: x):
-        print(row)
-
     parts_layouts = dict()
-    for key, values in execute_query(query, part_handler):
-        layouts = parts_layouts.get(key, {})
+    for part, values in execute_query(query, part_handler):
+        layouts = parts_layouts.get(part, {})
         layouts.update(values)
-        parts_layouts[key] = layouts
+        parts_layouts[part] = layouts
     # Пример структуры parts_layouts {
     # "№order1 3SP B-30 Balka №30 3": {  наименование детали
     #             '12ГС-43.csv': {
@@ -256,24 +294,19 @@ def read_plasma_layout_db(dxf):
     #                   'time': 2.67631 в часах
     #             }
     #       },
-    layout_total_time = dict()
-    for part, layouts in parts_layouts.items():
-        for name, data in layouts.items():
-            current_total = layout_total_time.get(name, 0)
-            current_total += data['time'] * data['count'][0]
-            layout_total_time[name] = current_total
-    print(layout_total_time)
+
     return parts_layouts
 
 
 def part_handler(row):
-    norm_tech = float(row[4])
-    key = f'№{row[0]} {row[1]}'
-    layouts = {f'{row[2]}': {
-        'count': [row[3]],
+    order, part, layout, count, cutting_time = row
+    norm_tech = float(cutting_time) / 3600  # переводим в часы
+    order_part = f'№{order} {part}'
+    layouts = {layout: {
+        'count': [count],
         'time': norm_tech,
     }, }
-    return key, layouts
+    return order_part, layouts
 
 
 def execute_query(query, handler):

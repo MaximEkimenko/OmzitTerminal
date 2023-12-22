@@ -163,7 +163,7 @@
         {% endif %}
 
         {% for key, counts in query.workpiece.layouts_done.items %}
-        {% for count in counts %}
+        {% for count in counts.count %}
         <tr style="background-color: green;">
             <td class="td_cell">{{ query.id }}-{{ forloop.counter }}</td>
             <td class="td_cell">{{ query.model_order_query }}</td>
@@ -201,7 +201,7 @@
 
         {% if not layout %}
         {% for key, counts in query.workpiece.layouts.items %}
-        {% for count in counts %}
+        {% for count in counts.count %}
         <tr style="background-color: #4A4D55;">
             <td class="td_cell">{{ query.id }}-{{ forloop.counter }}</td>
             <td class="td_cell">{{ query.model_order_query }}</td>
@@ -266,7 +266,7 @@
         {% else %}
         {% for key, counts in query.workpiece.layouts.items %}
         {% if key == layout %}
-        {% for count in counts %}
+        {% for count in counts.count %}
         <tr style="background-color: #4A4D55;">
             <td class="td_cell">{{ query.id }}-{{ forloop.counter }}</td>
             <td class="td_cell">{{ query.model_order_query }}</td>

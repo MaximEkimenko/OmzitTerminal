@@ -3,8 +3,6 @@ import os
 import re
 import sys
 import time
-import tkinter
-from tkinter import filedialog as fd
 
 import psutil
 import pythoncom
@@ -146,6 +144,7 @@ class CDWReader:
                     specification[filename].extend(data)
             except Exception as ex:
                 logging.exception(ex)
+        self._app.HideMessage = self._const.ksShowMessage
         self._close_all_documents()
         self._close_kompas()
         return specification
@@ -159,7 +158,7 @@ class CDWReader:
                             значения - соответствующий текст ячейки спецификации изделия
         """
         specification = []
-        tables = document.SpecificationDescriptions
+        tables = document.SpecificationDescriptions  # Не работает без лицензии !!!
         if tables:
             for table in tables:
                 if table.ShowOnSheet:
@@ -189,7 +188,6 @@ class CDWReader:
                                 specification[i + 1] = []
                 else:
                     logging.debug(f"Третий случай: {x} строка {row}")
-
         specification = self._parsed_data_handler(specification)
         return specification
 

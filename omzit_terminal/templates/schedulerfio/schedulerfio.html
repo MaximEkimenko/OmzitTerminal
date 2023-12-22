@@ -55,13 +55,15 @@
                 {% if layout %}
                         {% for layout_done, counts in line.workpiece__layouts_done.items %}
                             {% if layout_done == layout %}
-                                {% for count in counts %}
+                                {% for count in counts.count %}
                                 <tr class="table_row">
                                     <td class="td_cell"></td>
                                     {% for key, el in line.items %}
                                         {% if key == 'workpiece__layouts_done' %}
                                             <td class="td_cell">{{ layout_done }}</td>
                                             <td class="td_cell">{{ count }}</td>
+                                        {% elif key == 'norm_tech' %}
+                                            <td class="td_cell">{% firstof el counts.total_time|floatformat:4 %}</td>
                                         {% else %}
                                             <td class="td_cell">{% firstof el "-" %}</td>
                                         {% endif %}
@@ -74,7 +76,7 @@
                 {% else %}
                     {% if line.workpiece__layouts_done %}
                         {% for layout_done, counts in line.workpiece__layouts_done.items %}
-                                {% for count in counts %}
+                                {% for count in counts.count %}
                                 <tr class="table_row">
                                     <td class="td_cell">
                                         <form method="post" id="id_distribute_btn_form">
@@ -86,6 +88,8 @@
                                         {% if key == 'workpiece__layouts_done' %}
                                             <td class="td_cell">{{ layout_done }}</td>
                                             <td class="td_cell">{{ count }}</td>
+                                        {% elif key == 'norm_tech' %}
+                                            <td class="td_cell">{% firstof el counts.total_time|floatformat:4  %}</td>
                                         {% else %}
                                             <td class="td_cell">{% firstof el "-" %}</td>
                                         {% endif %}
@@ -192,23 +196,30 @@
 
                 fioPercentageInputs.forEach(function (c) {
                     c.onchange = function () {
+                        if (Number(c.value) > 100) {
+                            c.value = 100
+                        }
                         let index = inputsIds.indexOf(c.id)
                         let diff = Number(c.value) - percentages[index]
-                        let sum = 0
-                        for (let i = 0; i < fios.length; i++) {
-                            if (i > index) {
-                                console.log(sum, fios.length, i)
-                                percentages[i] = (100 - sum) / (fios.length - i)
-                            } else {
-                                sum += Number(c.value)
-                            }
-                            
+                        percentages[index] += diff
+                        let new_index = index
+                        if (index != fios.length - 1) {
+                            new_index += 1
+                        } else {
+                            new_index = 0
                         }
-                        percentages[index] = c.value
+                        if (percentages[new_index] - diff >= 0) {
+                            percentages[new_index] = percentages[new_index] - diff
+                        } else {
+                            for (let i = 0; i < fios.length; i++) {
+                                if (i != index) {
+                                    percentages[i] = (100 - percentages[index]) / (fios.length - 1)
+                                }
+                            }
+                        }
                         for (let i = 0; i < fioPercentageInputs.length; i++) {
                             fioPercentageInputs[i].value = Math.trunc(percentages[i])
                         }
-                        console.log(percentages)
                     }
                 })
 

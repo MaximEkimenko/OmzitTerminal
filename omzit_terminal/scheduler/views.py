@@ -335,11 +335,13 @@ def schedulerfio(request, ws_number, model_order_query):
                                 })
                                 data['workpiece'] = workpiece
                                 data['plasma_layout'] = layout
+                                data['norm_tech'] = workpiece['layouts_done'][layout]['total_time']
                                 for field, value in data.items():
                                     setattr(shift_task, field, value)
                                 shift_task.save()
                             else:
-                                layout_count = sum(workpiece['layouts_done'].pop(layout))
+                                layout_data = workpiece['layouts_done'].pop(layout)
+                                layout_count = sum(layout_data['count'])
                                 workpiece['layouts_total'] -= layout_count
                                 workpiece['count'] -= layout_count
                                 shift_task.workpiece = workpiece
@@ -357,6 +359,7 @@ def schedulerfio(request, ws_number, model_order_query):
                                 })
                                 data['workpiece'] = workpiece
                                 data['plasma_layout'] = layout
+                                data['norm_tech'] = layout_data['total_time']
                                 for field, value in data.items():
                                     setattr(new_shift_task, field, value)
                                 new_shift_task.save()

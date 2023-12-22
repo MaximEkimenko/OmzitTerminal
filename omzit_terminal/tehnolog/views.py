@@ -343,14 +343,14 @@ def plasma_tehnolog(request):
                 for file in files:
                     parts_layouts = read_plasma_layout(file)
                     for part, layouts in parts_layouts.items():
-                        time = layouts.pop('time')
                         part_st = filter_set.qs.filter(workpiece__layout_name=part, fio_doer='не распределено')
                         if part_st:
                             workpiece = part_st[0]['workpiece']
                             workpiece['layouts'].update(layouts)
-                            workpiece['layouts_total'] = (sum(map(sum, workpiece['layouts'].values())) +
-                                                          sum(map(sum, workpiece['layouts_done'].values())))
-
+                            layouts_total = 0
+                            for workpiece_layouts in (workpiece['layouts'], workpiece['layouts_done']):
+                                layouts_total += sum(map(lambda x: sum(x.get('count', 0)), workpiece_layouts.values()))
+                            workpiece['layouts_total'] = layouts_total
                             part_st.update(workpiece=workpiece)
 
         if 'workshop' in form_submit:
@@ -374,7 +374,7 @@ def plasma_tehnolog(request):
             queryset = queryset.filter(workpiece__icontains=layout)
             for st in queryset:
                 workpiece = st['workpiece']
-                layout_counts = workpiece['layouts'][layout]
+                layout_counts = workpiece['layouts'][layout]['count']
                 workpiece['layouts'].pop(layout)
                 workpiece['layouts_total'] -= sum(layout_counts)
                 queryset.filter(pk=st['id']).update(workpiece=workpiece)
@@ -395,6 +395,9 @@ def plasma_tehnolog(request):
                     workpiece = st['workpiece']
                     layout_done = workpiece['layouts'].pop(layout)
                     workpiece['layouts_done'].update({layout: layout_done})
+                    count = workpiece['layouts_done'][layout]['count']
+                    layout_time = workpiece['layouts_done'][layout]['time']
+                    workpiece['layouts_done'][layout]['total_time'] = sum(count) * layout_time
                     queryset.filter(pk=st['id']).update(workpiece=workpiece, st_status='запланировано')
 
                 return redirect('plasma_tehnolog')
@@ -411,11 +414,14 @@ def plasma_tehnolog(request):
             for st in queryset:
                 workpiece = st['workpiece']
                 layout_return = workpiece['layouts_done'].pop(layout)
-                layout_counts = workpiece['layouts'].get(layout, [])
-                layout_counts.extend(layout_return)
-                workpiece['layouts'][layout] = layout_counts
+                layout_return.pop('total_time')
+                layout_data = workpiece['layouts'].get(layout)
+                if layout_data:
+                    layout_data['count'].extend(layout_return['count'])
+                    workpiece['layouts'][layout] = layout_data
+                else:
+                    workpiece['layouts'][layout] = layout_return
                 queryset.filter(pk=st['id']).update(workpiece=workpiece, st_status='раскладка')
-
             return redirect('plasma_tehnolog')
 
         elif "return" in form_submit:
@@ -430,7 +436,7 @@ def plasma_tehnolog(request):
                 if match:
                     dxf.append(match.group(1, 2))
             parts_layouts = read_plasma_layout_db(dxf)
-            print(parts_layouts)
+            # print(parts_layouts)
 
         filter_set = filterset_plasma(request=request, queryset=queryset)
 
