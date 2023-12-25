@@ -330,7 +330,7 @@ def schedulerfio(request, ws_number, model_order_query):
                                 shift_task.workpiece["fio_percentages"] = [
                                     form_fio_doer.cleaned_data[f'fio_{i}_percentage'] for i in range(1, 5)
                                 ]
-                                shift_task.fio_doers = doers_fios
+                                shift_task.fio_doer = doers_fios
                                 shift_task.save()
                         else:
                             shift_tasks = ShiftTask.objects.filter(
