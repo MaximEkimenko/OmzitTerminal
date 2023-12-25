@@ -160,8 +160,7 @@
             <td class="td_cell">{{ query.workpiece.layouts_total }}</td>
             <td class="td_cell">{% if query.fio_doer != 'не распределено' %}Распределено{% endif %}</td>
         </tr>
-        {% endif %}
-
+        
         {% for key, counts in query.workpiece.layouts_done.items %}
         {% for count in counts.count %}
         <tr style="background-color: green;">
@@ -199,7 +198,6 @@
         {% endfor %}
         {% endfor %}
 
-        {% if not layout %}
         {% for key, counts in query.workpiece.layouts.items %}
         {% for count in counts.count %}
         <tr style="background-color: #4A4D55;">
@@ -264,6 +262,26 @@
         {% endfor %}
 
         {% else %}
+        {% for key, counts in query.workpiece.layouts_done.items %}
+        {% if key == layout %}
+        {% for count in counts.count %}
+        <tr style="background-color: green;">
+            <td class="td_cell">{{ query.id }}-{{ forloop.counter }}</td>
+            <td class="td_cell">{{ query.model_order_query }}</td>
+            <td class="td_cell">{{ query.datetime_done }}</td>
+            <td class="td_cell">{{ query.workpiece.name }}</td>
+            <td class="td_cell">{{ query.workpiece.material }}</td>
+            <td class="td_cell">-</td>
+            <td class="td_cell">{{ query.workpiece.draw }}</td>
+            <td class="td_cell">{{ query.ws_number|slice:":1" }}</td>
+            <td class="td_cell">{{ key }}</td>
+            <td class="td_cell">{{ query.workpiece.layout_name }}</td>
+            <td class="td_cell">{{ count }}</td>
+            <td class="td_cell"></td>
+        </tr>
+        {% endfor %}
+        {% endif %}
+        {% endfor %}
         {% for key, counts in query.workpiece.layouts.items %}
         {% if key == layout %}
         {% for count in counts.count %}
@@ -303,8 +321,8 @@
         {% endfor %}
         {% endif %}
         {% endfor %}
-        {% endif %}
-        {% endfor %}
+    {% endif %}
+    {% endfor %}
     </table>
     {% else %}
     Распределения отсутствуют

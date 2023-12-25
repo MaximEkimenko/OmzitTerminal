@@ -166,8 +166,8 @@ class ShiftTask(models.Model):
     # "layouts_done": {'12ГС-44.CNC': 1}
     # "layouts_total": 2 количество на всех раскладках
     # "length": "7500",
-    # "material": "Швеллер 30П ГОСТ 8240-97 С255-4 ГОСТ 27772-2015"
-    # ""
+    # "material": "Швеллер 30П ГОСТ 8240-97 С255-4 ГОСТ 27772-2015",
+    # "fio_percentages": ['50', '50', '0', '0'],
     # }
     workpiece = models.JSONField(null=True, blank=True, verbose_name='Заготовка')
     fio_tehnolog = models.CharField(max_length=255, null=True, blank=True,

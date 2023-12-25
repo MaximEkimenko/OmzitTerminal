@@ -117,7 +117,7 @@ class FioDoer(forms.Form):
         widget=forms.Select(attrs={'class': "fio_select"})
     )
     fio_1_percentage = forms.IntegerField(
-        min_value=0, max_value=100, label='%', initial=0,
+        min_value=0, max_value=100, label='%', initial=100,
         widget=forms.NumberInput(attrs={'class': "fio_percentage"})
     )
     fio_2 = forms.ModelChoiceField(

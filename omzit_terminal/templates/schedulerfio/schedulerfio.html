@@ -5,6 +5,13 @@
 Распределение ФИО для РЦ
 {% endblock %}
 
+{% block new_header_link %}
+    <form method="post" id="id_change_distribution_form">
+        {% csrf_token %}
+        <li><button type="submit" name="form" value="change_distribution">Изменить распределение</button></li>
+    </form>
+{% endblock %}
+
 {% block body %}
         <div class="legend">
             <div>
@@ -47,32 +54,35 @@
                     <td class="td_cell">{{ filter.form.fio_doer }} Фио исполнителя</td>
                     <td class="td_cell">{{ filter.form.st_status }} Статус СЗ</td>
                     <td class="td_cell">Деталь</td>
-                    <td class="td_cell">Раскладка</td>
+                    <td class="td_cell">{{ filter.form.plasma_layout }} Раскладка</td>
                     <td class="td_cell">Кол-во на раскладке</td>
                 </tr>
             </form>
             {% for line in filter.qs %}
-                {% if layout %}
+                {% if layout and line.workpiece__layouts_done %}
                         {% for layout_done, counts in line.workpiece__layouts_done.items %}
                             {% if layout_done == layout %}
                                 {% for count in counts.count %}
                                 <tr class="table_row">
                                     <td class="td_cell"></td>
-                                    {% for key, el in line.items %}
-                                        {% if key == 'workpiece__layouts_done' %}
-                                            <td class="td_cell">{{ layout_done }}</td>
-                                            <td class="td_cell">{{ count }}</td>
-                                        {% elif key == 'norm_tech' %}
-                                            <td class="td_cell">{% firstof el counts.total_time|floatformat:4 %}</td>
-                                        {% else %}
-                                            <td class="td_cell">{% firstof el "-" %}</td>
-                                        {% endif %}
-                                    {% endfor %}
+                                    <td class="td_cell">{{ line.id }}</td>
+                                    <td class="td_cell">{{ line.workshop }}</td>
+                                    <td class="td_cell">{{ line.order }}</td>
+                                    <td class="td_cell">{{ line.model_name }}</td>
+                                    <td class="td_cell">{{ line.datetime_done }}</td>
+                                    <td class="td_cell">{{ line.ws_number }}</td>
+                                    <td class="td_cell">{{ line.op_number }}</td>
+                                    <td class="td_cell">{{ line.op_name_full }}</td>
+                                    <td class="td_cell">{% firstof el counts.total_time|floatformat:4  %}</td>
+                                    <td class="td_cell">{{ line.fio_doer }}</td>
+                                    <td class="td_cell">{{ line.st_status }}</td>
+                                    <td class="td_cell">{% firstof line.workpiece__text "-" %}</td>
+                                    <td class="td_cell">{{ layout_done }}</td>
+                                    <td class="td_cell">{{ count }}</td>
                                 </tr>
                                 {% endfor %}
                             {% endif %}
                         {% endfor %}
-
                 {% else %}
                     {% if line.workpiece__layouts_done %}
                         {% for layout_done, counts in line.workpiece__layouts_done.items %}
@@ -81,19 +91,27 @@
                                     <td class="td_cell">
                                         <form method="post" id="id_distribute_btn_form">
                                             {% csrf_token %}
-                                            <button class="id_plan_fio_btn btn" name="form" value="distribute||{{ layout_done }}" title="Распределить">Распределить</button>
+                                            {% if action == 'change_distribution' %}
+                                                <button class="id_plan_fio_btn btn" name="form" value="redistribute||{{ layout_done }}" title="Перераспределить">Перераспределить</button>
+                                            {% else %}
+                                                <button class="id_plan_fio_btn btn" name="form" value="distribute||{{ layout_done }}" title="Распределить">Распределить</button>
+                                            {% endif %}
                                         </form>
                                     </td>
-                                    {% for key, el in line.items %}
-                                        {% if key == 'workpiece__layouts_done' %}
-                                            <td class="td_cell">{{ layout_done }}</td>
-                                            <td class="td_cell">{{ count }}</td>
-                                        {% elif key == 'norm_tech' %}
-                                            <td class="td_cell">{% firstof el counts.total_time|floatformat:4  %}</td>
-                                        {% else %}
-                                            <td class="td_cell">{% firstof el "-" %}</td>
-                                        {% endif %}
-                                    {% endfor %}
+                                    <td class="td_cell">{{ line.id }}</td>
+                                    <td class="td_cell">{{ line.workshop }}</td>
+                                    <td class="td_cell">{{ line.order }}</td>
+                                    <td class="td_cell">{{ line.model_name }}</td>
+                                    <td class="td_cell">{{ line.datetime_done }}</td>
+                                    <td class="td_cell">{{ line.ws_number }}</td>
+                                    <td class="td_cell">{{ line.op_number }}</td>
+                                    <td class="td_cell">{{ line.op_name_full }}</td>
+                                    <td class="td_cell">{% firstof el counts.total_time|floatformat:4  %}</td>
+                                    <td class="td_cell">{{ line.fio_doer }}</td>
+                                    <td class="td_cell">{{ line.st_status }}</td>
+                                    <td class="td_cell">{% firstof line.workpiece__text "-" %}</td>
+                                    <td class="td_cell">{{ layout_done }}</td>
+                                    <td class="td_cell">{{ count }}</td>
                                 </tr>
                                 {% endfor %}
                         {% endfor %}
@@ -104,14 +122,32 @@
                                 {% if not pk %}
                                 <form method="post" id="id_distribute_btn_form">
                                     {% csrf_token %}
-                                    <button class="id_plan_fio_btn btn" name="form" value="distribute|{{ line.id }}|" title="Распределить">Распределить</button>
+                                    {% if action == 'change_distribution' %}
+                                        {% if line.plasma_layout != "Не выполнена" %}
+                                            <button class="id_plan_fio_btn btn" name="form" value="redistribute|{{ line.id }}|{{ line.plasma_layout }}" title="Перераспределить">Перераспределить</button>
+                                        {% else %}
+                                            <button class="id_plan_fio_btn btn" name="form" value="redistribute|{{ line.id }}|" title="Перераспределить">Перераспределить</button>
+                                        {% endif %}
+                                    {% else %}
+                                        <button class="id_plan_fio_btn btn" name="form" value="distribute|{{ line.id }}|" title="Распределить">Распределить</button>
+                                    {% endif %}
                                 </form>
                                 {% endif %}
                             </td>
-                            {% for key, el in line.items %}
-                                <td class="td_cell">{% firstof el "-" %}</td>
-                            {% endfor %}
-                                <td class="td_cell">-</td>
+                            <td class="td_cell">{{ line.id }}</td>
+                            <td class="td_cell">{{ line.workshop }}</td>
+                            <td class="td_cell">{{ line.order }}</td>
+                            <td class="td_cell">{{ line.model_name }}</td>
+                            <td class="td_cell">{{ line.datetime_done }}</td>
+                            <td class="td_cell">{{ line.ws_number }}</td>
+                            <td class="td_cell">{{ line.op_number }}</td>
+                            <td class="td_cell">{{ line.op_name_full }}</td>
+                            <td class="td_cell">{{ line.norm_tech }}</td>
+                            <td class="td_cell">{{ line.fio_doer }}</td>
+                            <td class="td_cell">{{ line.st_status }}</td>
+                            <td class="td_cell">{% firstof line.workpiece__text "-" %}</td>
+                            <td class="td_cell">{% firstof line.plasma_layout "-" %}</td>
+                            <td class="td_cell">{% firstof line.workpiece__count "-" %}</td>
                         </tr>
                     {% endif %}
                 
@@ -128,7 +164,7 @@
         <!--форма выбора ФИО-->
 
         {% if filtered_workplace_schedule %}
-        {% if action %}
+        {% if action and action != 'change_distribution' %}
         <!-- Форма распределения -->
         <div class="" id="plan_fio">
             <form
@@ -153,7 +189,11 @@
                         {% endif %}
                     {% endfor %}
                     <button class="btn_part" type="button" onclick="cancelModal()">Отмена</button>
-                    <button class="btn" type="submit" name="form" value="confirm_distribute|{{ id }}|{{ layout }}">Назначить ФИО</button>
+                    {% if action == 'redistribute' %}
+                        <button class="btn" type="submit" name="form" value="confirm_redistribute|{{ pk }}|{{ layout }}">Назначить ФИО</button>
+                    {% else %}
+                        <button class="btn" type="submit" name="form" value="confirm_distribute|{{ pk }}|{{ layout }}">Назначить ФИО</button>
+                    {% endif %}
                     
                 </div>
             </form>
@@ -226,6 +266,27 @@
                 let fios = []
                 let currentValue = ''
                 let percentages = [0, 0, 0, 0]
+                let percentages_index = 0
+
+                {% for fio in fios_doers %}
+                    fioDivs[percentages_index].style.display = 'block'
+                    fioDivs[percentages_index].children[2].style.display = 'inline-block'
+                    fioDivs[percentages_index].children[3].style.display = 'inline-block'
+                    for (let i = 0; i < fioSelects[percentages_index].options.length; i++) {
+                        if (fioSelects[percentages_index][i].innerText == '{{ fio }}') {
+                            fioSelects[percentages_index].value = fioSelects[percentages_index].item(i).value
+                        }
+                    }
+                    percentages_index += 1
+                {% endfor %}
+
+                percentages_index = 0
+
+                {% for i in percentages %}
+                    percentages[percentages_index] = Number('{{ i }}')
+                    fioPercentageInputs[percentages_index].value = Number('{{ i }}')
+                    percentages_index += 1
+                {% endfor %}
 
                 fioSelects.forEach(function (c) {
                     c.onclick = function () {
@@ -249,6 +310,7 @@
                         }
                         hideFioDivs()
                         for (let i = 0; i < fios.length; i++) {
+                            percentages = [0, 0, 0, 0]
                             if (fios.length > 1) {
                                 fioDivs[i].children[2].style.display = 'inline-block'
                                 fioDivs[i].children[3].style.display = 'inline-block'

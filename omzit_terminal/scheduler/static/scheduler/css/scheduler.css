@@ -546,7 +546,7 @@ input {
     float: left;
 }
 
-li a, li span, .dropbtn {
+li a, li span, li button, .dropbtn {
     display: inline-block;
     color: white;
     text-align: center;
@@ -554,7 +554,13 @@ li a, li span, .dropbtn {
     text-decoration: none;
 }
 
-li a:hover, .dropdown:hover .dropbtn {
+li button{
+    border: none;
+    font-size: 1em;
+    background-color: transparent;
+}
+
+li a:hover, li button:hover, .dropdown:hover .dropbtn {
     background-color: darkslategray;
 }
 

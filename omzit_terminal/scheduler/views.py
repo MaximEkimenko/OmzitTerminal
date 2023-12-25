@@ -222,11 +222,11 @@ def schedulerwp(request):
             except Exception as e:
                 filtered_workplace_schedule = dict()
                 print('Ошибка получения filtered_workplace_schedule', e)
-            if filtered_workplace_schedule:
-                return redirect(f'/scheduler/schedulerfio{ws_number}_{model_order_query}')
-            else:
-                alert_message = f'Для Т{ws_number} на {model_order_query} нераспределённые задания отсутствуют.'
-                form_workplace_plan = SchedulerWorkplace()
+            # if filtered_workplace_schedule:
+            return redirect(f'/scheduler/schedulerfio{ws_number}_{model_order_query}')
+            # else:
+            #     alert_message = f'Для Т{ws_number} на {model_order_query} нераспределённые задания отсутствуют.'
+            #     form_workplace_plan = SchedulerWorkplace()
     else:
         form_workplace_plan = SchedulerWorkplace()
         form_report = ReportForm(initial={'date_end': datetime.datetime.now(),
@@ -255,14 +255,16 @@ def schedulerfio(request, ws_number, model_order_query):
 
     shift_task_fields = (
         'id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number', 'op_number', 'op_name_full',
-        'norm_tech', 'fio_doer', 'st_status'
+        'norm_tech', 'fio_doer', 'st_status', 'plasma_layout'
     )
     # определения рабочего центра и id
     if not request.user.username:  # если не авторизован, то отправляется на авторизацию
         return redirect('login/')
     try:
         filtered_workplace_schedule = (
-            ShiftTask.objects.values(*shift_task_fields, 'workpiece__text', 'workpiece__layouts_done')
+            ShiftTask.objects.values(
+                *shift_task_fields, 'workpiece__text', 'workpiece__layouts_done', 'workpiece__count'
+            )
             .exclude(st_status='раскладка')
             .filter(ws_number=str(ws_number), model_order_query=model_order_query, next_shift_task=None)
             .filter(Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
@@ -276,10 +278,23 @@ def schedulerfio(request, ws_number, model_order_query):
     action = None  # действие по нажатию кнопки в POST форме
     layout = None  # номер раскладки
     pk = None  # id сменного задания
+    percentages = None
+    fios_doers = None
+
+    form_fio_doer = FioDoer()
 
     if request.method == 'POST':
         form_submit = request.POST.get("form", "")  # форма по которой выполнен submit
-        if 'confirm' in form_submit:
+        if "change" in form_submit:
+            filtered_workplace_schedule = (
+                ShiftTask.objects.values(*shift_task_fields, 'workpiece__text', 'workpiece__layouts_done',
+                                         'workpiece__count')
+                .exclude(st_status='раскладка').exclude(fio_doer='не распределено')
+                .filter(ws_number=str(ws_number), model_order_query=model_order_query, next_shift_task=None)
+            )
+            action = 'change_distribution'
+
+        elif 'confirm' in form_submit:
             _, pk, layout = form_submit.split("|")
             form_fio_doer = FioDoer(request.POST)
             if form_fio_doer.is_valid():
@@ -292,15 +307,84 @@ def schedulerfio(request, ws_number, model_order_query):
                 doers_fios = ', '.join(unique_fios)  # получение уникального списка
                 print('DOERS-', doers_fios)
                 if len(fios) == len(unique_fios):  # если нет повторений в списке fios
-                    data = {
-                        'fio_doer': doers_fios,
-                        'datetime_assign_wp': make_aware(datetime.datetime.now()),
-                        'st_status': 'запланировано',
-                        'datetime_job_start': None,
-                        'decision_time': None,
-                        'master_assign_wp_fio': f'{request.user.first_name} {request.user.last_name}'
-                    }
-                    if pk != '':  # если распределяем по id сменного задания
+                    if 'redistribute' in form_submit:
+                        data = {
+                            'fio_doer': doers_fios,
+                            'master_assign_wp_fio': f'{request.user.first_name}'
+                        }
+                    else:
+                        data = {
+                            'fio_doer': doers_fios,
+                            'datetime_assign_wp': make_aware(datetime.datetime.now()),
+                            'st_status': 'запланировано',
+                            'datetime_job_start': None,
+                            'decision_time': None,
+                            'master_assign_wp_fio': f'{request.user.first_name}'
+                        }
+                    if layout != '':  # если распределяем по номеру раскладки
+                        # находим все сменные задания, где раскладка является ключом в выполненных раскладках
+                        if 'redistribute' in form_submit:
+                            shift_tasks = ShiftTask.objects.filter(
+                                plasma_layout=layout).exclude(fio_doer='не распределено')
+                            for shift_task in shift_tasks:
+                                shift_task.workpiece["fio_percentages"] = [
+                                    form_fio_doer.cleaned_data[f'fio_{i}_percentage'] for i in range(1, 5)
+                                ]
+                                shift_task.fio_doers = doers_fios
+                                shift_task.save()
+                        else:
+                            shift_tasks = ShiftTask.objects.filter(
+                                workpiece__layouts_done__icontains=f'"{layout}":',
+                                fio_doer='не распределено',
+                            )
+                            for shift_task in shift_tasks:
+                                workpiece = shift_task.workpiece
+                                workpiece["fio_percentages"] = [
+                                    form_fio_doer.cleaned_data[f'fio_{i}_percentage'] for i in range(1, 5)
+                                ]
+                                # если раскладка на деталь одна или последняя и полностью закрывает потребность
+                                # в количестве детали или в раскладке больше, то назначаем исполнителей
+                                # на текущее сменное задание
+                                all_layouts_done = len(workpiece['layouts']) == 0 and len(
+                                    workpiece['layouts_done']) == 1
+                                is_enough = int(workpiece['layouts_total']) >= int(workpiece['count'])
+                                if all_layouts_done and is_enough:
+                                    data['norm_tech'] = workpiece['layouts_done'][layout]['total_time']
+                                    workpiece.update({
+                                        'layouts': {},
+                                        'layouts_done': {},
+                                    })
+                                    data['workpiece'] = workpiece
+                                    data['plasma_layout'] = layout
+                                    for field, value in data.items():
+                                        setattr(shift_task, field, value)
+                                    shift_task.save()
+                                else:
+                                    layout_data = workpiece['layouts_done'].pop(layout)
+                                    layout_count = sum(layout_data['count'])
+                                    workpiece['layouts_total'] -= layout_count
+                                    workpiece['count'] -= layout_count
+                                    shift_task.workpiece = workpiece
+                                    if len(workpiece['layouts_done']) == 0:
+                                        shift_task.st_status = 'раскладка'
+                                    shift_task.save()
+
+                                    new_shift_task = ShiftTask.objects.get(pk=shift_task.id)
+                                    new_shift_task.pk = None
+
+                                    workpiece.update({
+                                        'count': layout_count,
+                                        'layouts': {},
+                                        'layouts_done': {},
+                                        'layouts_total': layout_count
+                                    })
+                                    data['workpiece'] = workpiece
+                                    data['plasma_layout'] = layout
+                                    data['norm_tech'] = layout_data['total_time']
+                                    for field, value in data.items():
+                                        setattr(new_shift_task, field, value)
+                                    new_shift_task.save()
+                    elif pk != '':  # если распределяем по id сменного задания
                         shift_task = ShiftTask.objects.get(pk=int(pk))
                         if shift_task.st_status == "брак":
                             #  создаем дубликат СЗ с браком
@@ -314,60 +398,39 @@ def schedulerfio(request, ws_number, model_order_query):
                         else:  # первичное распределение СЗ
                             for field, value in data.items():
                                 setattr(shift_task, field, value)
+                        fio_percentages = {
+                            "fio_percentages": [form_fio_doer.cleaned_data[f'fio_{i}_percentage'] for i in range(1, 5)],
+                        }
+                        if shift_task.workpiece:
+                            shift_task.workpiece.update(fio_percentages)
+                        else:
+                            shift_task.workpiece = fio_percentages
                         shift_task.save()
-                    elif layout != '':  # если распределяем по номеру раскладки
-                        # находим все сменные задания, где раскладка является ключом в выполненных раскладках
-                        shift_tasks = ShiftTask.objects.filter(
-                            workpiece__layouts_done__icontains=f'"{layout}":',
-                            fio_doer='не распределено',
-                        )
-                        for shift_task in shift_tasks:
-                            workpiece = shift_task.workpiece
-                            # если раскладка на деталь одна или последняя и полностью закрывает потребность
-                            # в количестве детали или в раскладке больше, то назначаем исполнителей
-                            # на текущее сменное задание
-                            all_layouts_done = len(workpiece['layouts']) == 0 and len(workpiece['layouts_done']) == 1
-                            is_enough = int(workpiece['layouts_total']) >= int(workpiece['count'])
-                            if all_layouts_done and is_enough:
-                                workpiece.update({
-                                    'layouts': {},
-                                    'layouts_done': {},
-                                })
-                                data['workpiece'] = workpiece
-                                data['plasma_layout'] = layout
-                                data['norm_tech'] = workpiece['layouts_done'][layout]['total_time']
-                                for field, value in data.items():
-                                    setattr(shift_task, field, value)
-                                shift_task.save()
-                            else:
-                                layout_data = workpiece['layouts_done'].pop(layout)
-                                layout_count = sum(layout_data['count'])
-                                workpiece['layouts_total'] -= layout_count
-                                workpiece['count'] -= layout_count
-                                shift_task.workpiece = workpiece
-                                shift_task.st_status = 'раскладка'
-                                shift_task.save()
 
-                                new_shift_task = ShiftTask.objects.get(pk=shift_task.id)
-                                new_shift_task.pk = None
-
-                                workpiece.update({
-                                    'count': layout_count,
-                                    'layouts': {},
-                                    'layouts_done': {},
-                                    'layouts_total': layout_count
-                                })
-                                data['workpiece'] = workpiece
-                                data['plasma_layout'] = layout
-                                data['norm_tech'] = layout_data['total_time']
-                                for field, value in data.items():
-                                    setattr(new_shift_task, field, value)
-                                new_shift_task.save()
                     alert_message = f'Успешно распределено!'
                 else:  # если есть повторения в списке fios
                     alert_message = f'Исполнители дублируются. Измените исполнителей.'
                     success = 0
             pk = layout = None
+
+        elif "redistribute" in form_submit:
+            filtered_workplace_schedule = (
+                ShiftTask.objects.values(*shift_task_fields, 'workpiece__text', 'workpiece__layouts_done',
+                                         'workpiece__count')
+                .exclude(st_status='раскладка').exclude(fio_doer='не распределено')
+                .filter(ws_number=str(ws_number), model_order_query=model_order_query, next_shift_task=None)
+            )
+            _, pk, layout = form_submit.split("|")
+            shift_tasks = ShiftTask.objects.values_list('workpiece__fio_percentages', 'fio_doer')
+            if layout != '':
+                percentages, fios = shift_tasks.filter(plasma_layout=layout)[0]
+                filtered_workplace_schedule = filtered_workplace_schedule.filter(plasma_layout=layout)
+            else:
+                percentages, fios = shift_tasks.filter(pk=pk)[0]
+                filtered_workplace_schedule = filtered_workplace_schedule.filter(pk=pk)
+            fios_doers = fios.split(', ')
+            action = 'redistribute'
+
         elif 'distribute' in form_submit:
             _, pk, layout = form_submit.split("|")
             if layout != '':
@@ -380,8 +443,6 @@ def schedulerfio(request, ws_number, model_order_query):
 
         f = get_filterset(data=request.GET, queryset=filtered_workplace_schedule, fields=shift_task_fields)
 
-    form_fio_doer = FioDoer()
-
     context = {
         'filtered_workplace_schedule': filtered_workplace_schedule,
         'form_fio_doer': form_fio_doer,
@@ -391,6 +452,8 @@ def schedulerfio(request, ws_number, model_order_query):
         'action': action,
         'layout': layout,
         'pk': pk,
+        'percentages': percentages,
+        'fios_doers': fios_doers
     }
     return render(request, r"schedulerfio/schedulerfio.html", context=context)
 
@@ -983,7 +1046,6 @@ def confirm_sz_planning(request):
             return JsonResponse({"STATUS": "OK"})
         else:
             return JsonResponse({"STATUS": "No data"})
-
 
 # @login_required(login_url="login")
 # def report(request, workshop):
