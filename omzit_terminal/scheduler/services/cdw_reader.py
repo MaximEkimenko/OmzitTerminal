@@ -16,16 +16,6 @@ logging.basicConfig(filename=os.path.join("cdw_reader.log"), filemode='a',
                     level=logging.DEBUG)
 
 
-def work_time(func):
-    def wrapped(*args):
-        start = time.time()
-        res = func(*args)
-        logging.debug(f"{func.__name__}: {time.time() - start}")
-        return res
-
-    return wrapped
-
-
 class CDWReader:
     """
     Класс обработчика cdw чертежей для получения спецификаций.
@@ -289,11 +279,27 @@ class CDWReader:
                 else:
                     common_material = None
                     data[i_row] = None
-        filtered_data = []
+        unique_data = dict()
         for i, row in enumerate(data):
             if row:
-                filtered_row = {k: row.get(k, "") for k in self.allowed_titles}
-                filtered_data.append(filtered_row)
+                filtered_row = {}
+                position_number = row.get("@", "")  # номер позиции
+                # формируем уникальный ключ строки по разрешенным столбцам и номеру позиции
+                row_key = ''.join((row.get(title, "") for title in self.allowed_titles)) + position_number
+                if row_key not in unique_data:
+                    # разбиваем строку по разрешенным столбцам
+                    for k in self.allowed_titles:
+                        value = row.get(k, "")
+                        if k == "Наименование" and position_number.isdigit():
+                            value = " ".join((position_number, value))  # добавляем номер позиции к наименованию
+                        filtered_row[k] = value
+                    unique_data[row_key] = filtered_row
+                else:
+                    # добавляем количество к уже существующей детали
+                    unique_data[row_key]["Количество"] = str(sum(map(
+                        int, (unique_data[row_key]["Количество"], row["Количество"])
+                    )))
+        filtered_data = list(unique_data.values())
         return filtered_data
 
     def _titles_handler(self, titles):
@@ -320,14 +326,11 @@ class CDWReader:
             try:
                 with open(json_path, 'r') as json_file:
                     spec = json.load(json_file)
-                spec.update(data)
             except Exception as ex:
                 logging.error(f"При чтении json файла вызвано исключение: {ex}")
+        spec.update(data)
         with open(json_path, "w") as json_file:
-            if spec:
-                json.dump(spec, json_file)
-            else:
-                json.dump(data, json_file)
+            json.dump(spec, json_file)
 
     def create_xlsx(self, xlsx_path):
         """

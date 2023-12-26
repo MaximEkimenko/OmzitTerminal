@@ -18,7 +18,7 @@ class SzPdf(FPDF):
         self.product_name = data["sz"]["product_name"]
         self.sz_text = data["sz"]["sz_text"]
         self.need_date = data["sz"]["need_date"]
-        self.author = data["sz"]["author"]
+        self.sz_author = data["sz"]["author"]
         self.products = [((
                               str(i + 1),
                               product["name"],
@@ -42,17 +42,18 @@ class SzPdf(FPDF):
         self.set_font(family='Arial', style='', size=14)
 
         # Заголовок
+        self.cell(w=0, h=21, ln=5)  # отступ
+        # self.cell(100)  # отступ слева
+        # self.multi_cell(w=0, h=cell_height, txt='Петрову Петру Петровичу ')
         self.cell(100)  # отступ слева
-        self.multi_cell(w=0, h=cell_height, txt='Петрову Петру Петровичу ')
-        self.cell(100)  # отступ слева
-        self.multi_cell(w=0, h=cell_height, txt=f'от {self.author}')
+        self.multi_cell(w=0, h=cell_height, txt=f'от {self.sz_author}')
 
         self.cell(w=0, h=10, ln=2)  # отступ
         self.multi_cell(w=100, h=cell_height, txt=self.product_name)
 
         # Служебная записка
         self.cell(w=0, h=10, ln=2)  # отступ
-        self.cell(w=0, h=cell_height, txt='Служебная записка', ln=2, align="C")
+        self.cell(w=0, h=cell_height, txt='СЛУЖЕБНАЯ ЗАПИСКА', ln=2, align="C")
         self.cell(w=0, h=10, ln=2)  # отступ
 
         # Текст СЗ
@@ -65,7 +66,8 @@ class SzPdf(FPDF):
 
         # Перечень деталей
         self.create_table()
-
+        #
+        self.image(r"D:\Projects\OmzitTerminal\omzit_terminal\scheduler\services\lavart_logo.jpg", x=5, y=3)
         self.output(self.filename)
 
     def create_table(self):

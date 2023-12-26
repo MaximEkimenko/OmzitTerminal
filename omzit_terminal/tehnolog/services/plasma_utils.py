@@ -339,6 +339,7 @@ def create_part_name(shift_task_values):
     material = shift_task_values['workpiece']['material']
     count = shift_task_values['workpiece']['count']
     order_model = shift_task_values['model_order_query']
+    shift_task = shift_task_values['id']
 
     order, model = order_model.split("_")
 
@@ -365,5 +366,5 @@ def create_part_name(shift_task_values):
     else:
         part_name = f"№{order} {thickness}{steel} {name.strip()} {count}"
 
-    part_name = translit(part_name, language_code='ru', reversed=True)
+    part_name = translit(part_name, language_code='ru', reversed=True).replace("'", "")
     return part_name

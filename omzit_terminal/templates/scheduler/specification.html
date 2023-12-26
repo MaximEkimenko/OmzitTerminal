@@ -36,7 +36,7 @@
                     <div class="form_inner_label">{{ draw_form.cdw_files.label }}</div>
                     <div class="form_inner_div">{{ draw_form.cdw_files }}</div>
                     <div>
-                        <button type="submit"  name="form" value="td_kd_form" class="btn">Загрузить чертежи
+                        <button type="submit" name="form" value="td_kd_form" class="btn">Загрузить чертежи
                         </button>
                     </div>
                 </div>
@@ -45,6 +45,13 @@
         <!-- Основная таблица интерфейса -->
             <div class="table_div" >
                 <h3>Изделия</h3>
+                <div>
+                    <form method="post" id="id_clear_form">
+                        {% csrf_token %}
+                        <button type="submit" name="form" value="clear_form" class="form_button" onclick="localStorage.clear()">Очистить таблицу</button>
+                    </form>
+                </div>
+                <br>
                 <table title="Спецификация" class="table_spec" id="id_table">
                     <tr class="table_header_row">
                         <td class="td_cell">Чертеж</td>

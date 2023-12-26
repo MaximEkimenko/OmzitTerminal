@@ -17,6 +17,7 @@ from django.contrib.auth.views import LoginView
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import PermissionDenied
 from django.core.mail import EmailMessage
+from django.db import IntegrityError
 from django.http import FileResponse, JsonResponse
 
 from django.shortcuts import render, redirect
@@ -866,7 +867,13 @@ def create_specification(request):
         context = {'spec': spec, "send_form": send_form, 'alert': alert, "draw_form": draw_form}
         return render(request, r"scheduler/specification.html", context=context)
     form_submit = request.POST.get("form", "")
-    if request.method == "POST" and form_submit == "td_kd_form":
+    if request.method == "POST" and form_submit == "clear_form":  # очистка таблицы
+        if os.path.exists(shared_folder):
+            try:
+                shutil.rmtree(shared_folder)
+            except Exception as ex:
+                print(f"Во время удаления папки {shared_folder} возникло исключение: {ex}")
+    elif request.method == "POST" and form_submit == "td_kd_form":  # добавление файлов
         draw_form = CdwChoiceForm(request.POST, request.FILES)
         files = []
         if draw_form.is_valid():
@@ -968,7 +975,7 @@ def create_shift_tasks_from_spec(request):
         data = json.loads(json_data)
 
         if data["products"] and all(value for value in data["sz"].values()):
-            data["sz"]["author"] = request.user.username
+            data["sz"]["author"] = request.user.first_name
             # Создание служебной записки в pdf
             create_pdf_sz(data=data, filename=pdf_sz_filename)
 
@@ -984,7 +991,7 @@ def create_shift_tasks_from_spec(request):
             )
             shift_tasks = []
             for product in data["products"]:
-                product['count'] = int(product['count'])
+                product['count'] = int(product['count']) if product['count'].isdigit() else 0
                 shift_tasks.append(ShiftTask(
                     model_name=model_name,
                     order=order,
@@ -998,6 +1005,7 @@ def create_shift_tasks_from_spec(request):
 
 
 def confirm_sz_planning(request):
+    alert = ""
     if request.method == "POST":
         json_data = request.body
         data = json.loads(json_data)
@@ -1008,16 +1016,22 @@ def confirm_sz_planning(request):
                 model_order_query=data["orderModel"],
                 id__in=list(map(int, data["st"].keys()))
             )
-            ws.update(
-                datetime_done=make_aware(datetime.datetime.strptime(data['dateDone'], "%d.%m.%Y")),
-                workshop=data['workshop'],
-                product_category=data["category"],
-                order_status='запланировано',
-                dispatcher_plan_ws_fio=f'{request.user.first_name} {request.user.last_name}',
-                model_order_query=model_order_query,
-                model_name=data['newModel'],
-                order=data['newOrder'],
-            )
+            try:
+                ws.update(
+                    datetime_done=make_aware(datetime.datetime.strptime(data['dateDone'], "%d.%m.%Y")),
+                    workshop=data['workshop'],
+                    product_category=data["category"],
+                    order_status='запланировано',
+                    dispatcher_plan_ws_fio=f'{request.user.first_name} {request.user.last_name}',
+                    model_order_query=model_order_query,
+                    model_name=data['newModel'],
+                    order=data['newOrder'],
+                )
+            except IntegrityError as ex:
+                alert = f"Ошибка! Заказ-модель {model_order_query} уже существует!"
+                print(f"При обновлении записей {ws} возникло исключение: {ex}")
+                return JsonResponse({"STATUS": alert})
+
             for st in shift_tasks:
                 attrs = {
                     "datetime_done": make_aware(datetime.datetime.strptime(data['dateDone'], "%d.%m.%Y")),
@@ -1045,7 +1059,7 @@ def confirm_sz_planning(request):
                 st.save()
             return JsonResponse({"STATUS": "OK"})
         else:
-            return JsonResponse({"STATUS": "No data"})
+            return JsonResponse({"STATUS": alert})
 
 # @login_required(login_url="login")
 # def report(request, workshop):

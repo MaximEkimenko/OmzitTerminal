@@ -242,6 +242,9 @@ def upload_draws(request, draws_path, group_id):
 
 
 def plasma_tehnolog_distribution(request):
+    """
+    Распределение сменных заданий по технологам для выполнения раскладок для плазмы
+    """
 
     if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:8]).strip() != "tehnolog":
         raise PermissionDenied
@@ -252,11 +255,11 @@ def plasma_tehnolog_distribution(request):
     ).filter(ws_name='Плазма').exclude(st_status='завершено').order_by("id")
 
     filter_set = filterset_plasma(request=request, queryset=queryset)
-    pk = 0
+    pk = 0  # id СЗ, для которого выполнены изменения
 
     if request.method == "POST":
         form_submit = request.POST.get("form", "")
-        if "tehnolog" in form_submit:
+        if "tehnolog" in form_submit:  # действие по select.onchange для выбора технолога
             tehnolog_choice_form = TehnologChoice(request.POST)
             if tehnolog_choice_form.is_valid():
                 tehnolog = tehnolog_choice_form.cleaned_data.get('fio')
@@ -264,21 +267,24 @@ def plasma_tehnolog_distribution(request):
                     tehnolog = "Не распределено"
                     ws_plasma = ""
                 else:
+                    # выбираем номер плазмы по умолчанию для технолога
                     ws_plasma = Doers.objects.get(doers=str(tehnolog)).ws_plasma * 100 + 2
+                # переназначить технолога можно только до распределения СЗ в цех
                 shift_tasks = filter_set.qs.filter(fio_doer='не распределено')
-                if "id" in form_submit:
+                if "id" in form_submit:  # если выбран технолог в строке конкретного СЗ
                     pk = int(form_submit.split("_")[2])
                     shift_tasks = shift_tasks.filter(pk=pk)
                 shift_tasks.update(fio_tehnolog=str(tehnolog), ws_number=ws_plasma)
 
-        elif 'workshop' in form_submit:
+        elif 'workshop' in form_submit:  # действие по select.onchange для выбора цеха плазмы
             ws_plasma_choice_form = WorkshopPlasmaChoice(request.POST)
             if ws_plasma_choice_form.is_valid():
                 ws_plasma = ws_plasma_choice_form.cleaned_data.get('ws')
                 if not ws_plasma:
                     ws_plasma = ""
+                # переназначить цех можно только до распределения СЗ в цех
                 shift_tasks = filter_set.qs.filter(fio_doer='не распределено')
-                if "id" in form_submit:
+                if "id" in form_submit:  # если выбран цех в строке конкретного СЗ
                     pk = int(form_submit.split("_")[2])
                     shift_tasks = shift_tasks.filter(pk=pk)
                 shift_tasks.update(ws_number=ws_plasma)
@@ -286,13 +292,11 @@ def plasma_tehnolog_distribution(request):
         filter_set = filterset_plasma(request=request, queryset=queryset)
 
     tehnolog_choice_form = TehnologChoice()
-    doer_choice_form = DoerChoice()
     ws_plasma_choice_form = WorkshopPlasmaChoice()
 
     context = {
         "filter": filter_set,
         "tehnolog_form": tehnolog_choice_form,
-        "doer_form": doer_choice_form,
         "ws_plasma_form": ws_plasma_choice_form,
         "focus_id": pk,
     }
@@ -301,6 +305,9 @@ def plasma_tehnolog_distribution(request):
 
 
 def plasma_tehnolog(request):
+    """
+    Рабочее место технолога плазмы
+    """
 
     if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:8]).strip() != "tehnolog":
         raise PermissionDenied
@@ -311,6 +318,7 @@ def plasma_tehnolog(request):
         'fio_tehnolog', 'plasma_layout', 'datetime_done', 'ws_number',
     ).filter(ws_name='Плазма', fio_tehnolog=user_name).exclude(st_status='завершено').order_by("id")
 
+    # если в СЗ нет имени dxf (layout_name) то создаем
     for st in queryset:
         workpiece = st['workpiece']
         if not workpiece.get('layout_name'):
@@ -321,25 +329,26 @@ def plasma_tehnolog(request):
             queryset.filter(pk=st['id']).update(workpiece=workpiece)
 
     focus_id = 0
-    layout = None
-    action = None
+    layout = None  # имя раскладки
+    action = None  # текущее действие
     alert = ""
 
     filter_set = filterset_plasma(request=request, queryset=queryset)
 
     if request.method == "POST":
         form_submit = request.POST.get("form", "")
-        if "download" in form_submit:
+        if "download" in form_submit:  # скачать xlsx файл с СЗ для выполнения раскладок
             shift_tasks = filter_set.qs.filter(plasma_layout__in=("Не выполнена", "В работе"))
             shift_tasks.update(plasma_layout="В работе")
             file_xlsx = create_layout_xlsx(shift_tasks)
 
             return FileResponse(open(file_xlsx, 'rb'))
 
-        if "upload" in form_submit:
+        if "upload" in form_submit:  # загрузить файлы раскладок
             layout_upload_form = LayoutUpload(request.POST, request.FILES)
             if layout_upload_form.is_valid():
                 files = dict(request.FILES).get("file")
+                unknown_parts = []  # детали на раскладках, отсутствующие в сменных заданиях
                 for file in files:
                     parts_layouts = read_plasma_layout(file)
                     for part, layouts in parts_layouts.items():
@@ -349,9 +358,16 @@ def plasma_tehnolog(request):
                             workpiece['layouts'].update(layouts)
                             layouts_total = 0
                             for workpiece_layouts in (workpiece['layouts'], workpiece['layouts_done']):
-                                layouts_total += sum(map(lambda x: sum(x.get('count', 0)), workpiece_layouts.values()))
+                                layouts_total += sum(map(
+                                    lambda x: sum(x.get('count', [0])),
+                                    workpiece_layouts.values()
+                                ))
                             workpiece['layouts_total'] = layouts_total
                             part_st.update(workpiece=workpiece)
+                        else:
+                            unknown_parts.append(part)
+                if unknown_parts:
+                    alert = f'На следующие детали с раскладок отсутствуют заявки: {", ".join(unknown_parts)}'
 
         if 'workshop' in form_submit:
             ws_plasma_choice_form = WorkshopPlasmaChoice(request.POST)
@@ -429,14 +445,26 @@ def plasma_tehnolog(request):
             queryset = queryset.filter(workpiece__icontains=layout)
             action = 'confirm_return'
 
-        if 'data_base' in form_submit:
+        if 'data_base' in form_submit:  # загрузить раскладки из БД Sigma
             dxf = []
             for shift_task in queryset:
                 match = re.match(r'^№([^\s]+?)\s(.*)', shift_task['workpiece']['layout_name'])
                 if match:
                     dxf.append(match.group(1, 2))
             parts_layouts = read_plasma_layout_db(dxf)
-            # print(parts_layouts)
+            for part, layouts in parts_layouts.items():
+                part_st = filter_set.qs.filter(workpiece__layout_name=part, fio_doer='не распределено')
+                if part_st:
+                    workpiece = part_st[0]['workpiece']
+                    workpiece['layouts'].update(layouts)
+                    layouts_total = 0
+                    for workpiece_layouts in (workpiece['layouts'], workpiece['layouts_done']):
+                        layouts_total += sum(map(
+                            lambda x: sum(x.get('count', [0])),
+                            workpiece_layouts.values()
+                        ))
+                    workpiece['layouts_total'] = layouts_total
+                    part_st.update(workpiece=workpiece)
 
         filter_set = filterset_plasma(request=request, queryset=queryset)
 

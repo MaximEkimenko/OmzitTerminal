@@ -319,9 +319,9 @@
                             console.log("OK")
                             alert("Запланировано!")
                             localStorage.clear();
-                            window.location.href='{% url "specification" %}';
+                            window.location.href='{% url "test_scheduler" %}';
                         } else {
-                            alert("Заполните все поля служебной записки")
+                            alert(data['STATUS'])
                             console.log("не OK")
                         }
                       });

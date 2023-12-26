@@ -52,6 +52,7 @@ class TehnologChoice(forms.Form):
         fios_tehnolog,
         label='Технолог',
         required=False,
+        empty_label='Не распределено',
         widget=forms.Select(attrs={'class': 'name_select_option tehnolog_select'})
     )
 
