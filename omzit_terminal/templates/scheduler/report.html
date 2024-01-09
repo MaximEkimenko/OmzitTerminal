@@ -1,12 +1,11 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en" class="fullScreen">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Рабочее место диспетчера</title>
-        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
-    </head>
-    <body>
+
+{% block title %}
+Рабочее место диспетчера
+{% endblock %}
+
+{% block body %}
         <h1>
             {% if user.username == 'admin' or user.username == 'disp1' %}
             <!-- Секретное поле возвращение в прошлое -->
@@ -19,11 +18,8 @@
             <input type="button" onclick="window.location.href = `{% url 'report' 3 %}`;" value="Цех3" />
             <input type="button" onclick="window.location.href = `{% url 'report' 4 %}`;" value="Цех4" />
         </h1>
-        {% if request.user.is_authenticated %}
         <div class="legend">
             <div>
-                <p>Пользователь: {{ user.username }} | <a href="{% url 'logout' %}" class="legend_link"> Выйти </a></p>
-                <p><a href="{% url 'instruction' %}">Инструкция</a></p>
                 <p>Папка с чертежами: \\SVR-003\draws</p>
                 <button type="submit" class="fil_days_btn">
                     <p class="red_word">Заполнить план</p></button
@@ -37,10 +33,6 @@
                 </a>
             </div>
         </div>
-        {% else %}
-        <a href="{% url 'login' %}"> Войти </a>
-        <!-- prettier-ignore -->
-        {%endif %}
         <script>
             function secret_date_change() {
                 // секретная функция возвращения в прошлое
@@ -705,5 +697,4 @@
         </script>
 
         <div style="height: 150px"></div>
-    </body>
-</html>
+{% endblock %}

@@ -1,13 +1,11 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Выбор чертежей РЦ {{ ws_number }} сменное задание {{st_number}}</title>
-        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
-        <script></script>
-    </head>
-    <body>
+
+{% block title %}
+Выбор чертежей РЦ {{ ws_number }} сменное задание {{st_number}}
+{% endblock %}
+
+{% block body %}
         <h1 id="h1_tag">Выбор чертежей РЦ {{ ws_number }} сменное задание {{st_number}}</h1>
         <form action="{{ draws }}" method="POST" enctype="multipart/form-data" id="sel_1">
             {% csrf_token %}
@@ -71,5 +69,4 @@
         </script>
 
         <br />
-    </body>
-</html>
+{% endblock %}

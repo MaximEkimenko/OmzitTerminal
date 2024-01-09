@@ -1,30 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Терминал выбор РЦ</title>
-    </head>
-    <body>
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+Терминал выбор РЦ
+{% endblock %}
+
+{% block body %}
         <h1>Терминал выбор РЦ</h1>
         <br />
 
         <!-- форма выбора РЦ-->
-        <form action="{% url 'worker_choose' %}" method="post" enctype="multipart/form-data">
+        <form action="{% url 'worker_choose' %}" method="post" enctype="multipart/form-data" class="form_form">
             {% csrf_token %}
-            <div class="form-error">{{ ws_number_form.non_field_errors }}</div>
+            <div class="add_to_plan">
+                <div class="form-error">{{ ws_number_form.non_field_errors }}</div>
 
-            {% for each_form in ws_number_form %}
-            <p>
-                <label class="form-label" for="{{ ws_number_form.id_for_label }}">{{ws_number_form.label}} </label>
-                {{ ws_number_form }}
-            </p>
-            <div class="form-error">{{ ws_number_form.errors }}</div>
-            {% endfor %}
-            <button type="submit">Выбрать</button>
+                {% for each_form in ws_number_form %}
+                <div class="form_inner_label"><label for="{{ each_form.id_for_label }}">{{each_form.label}}</label></div>
+                <div class="form_inner_div">{{ each_form }}</div>
+                <div class="form-error">{{ ws_number_form.errors }}</div>
+                {% endfor %}
+                <button type="submit" class="btn">Выбрать</button>
+            </div>
         </form>
-        <!-- prettier-ignore -->
-        {% if user.username == 'admin' %}
-        <a href="{% url 'home' %}">Назад</a> <br />
-        {% endif %}
-    </body>
-</html>
+{% endblock %}

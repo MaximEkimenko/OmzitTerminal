@@ -1,31 +1,16 @@
-{% load static %} {% load i18n %}
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Рабочее место планировщика рабочих центров</title>
-        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
-    </head>
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
 
-    <body>
-        {% if request.user.is_authenticated %}
-        <div class="legend">
-            <div>
-                <p>Пользователь: {{ user.username }} | <a href="{% url 'logout' %}" class="legend_link"> Выйти </a></p>
-                <p><a href="{% url 'instruction' %}">Инструкция</a></p>
-                <p>Папка с чертежами: \\SVR-003\draws</p>
-<!--                ФУНКЦИОНАЛ ОТЧЁТОВ ЗАКОНСЕРВИРОВАНО-->
-<!--{#                <p><a href="{% url 'report' 1 %}" class="legend_link"> Заполнение отчётов</a></p>#}-->
-            </div>
-        </div>
-        {% else %}
-        <a href="{% url 'login' %}"> Войти </a>
-        <!-- prettier-ignore -->
-        {%endif %}
-        <!-- prettier-ignore -->
-        {% if user.username == 'admin' %}
-        <a href="{% url 'home' %}">Назад</a> <br />
-        {%endif %}
+{% block title %}
+Рабочее место планировщика рабочих центров
+{% endblock %}
+
+{% block new_header_link %}
+    <!--{#<li><a href="{% url 'report' 1 %}"> Заполнение отчётов</a></li>#}-->
+{% endblock %}
+{% block body %}
+
         <h1>Рабочее место планировщика рабочих центров</h1>
         <br /><br /><br /><br /><br />
 
@@ -80,10 +65,6 @@
         {% if workplace_schedule %} {% if alert_message != '' %}
         <p class="alert">{{ alert_message }}</p>
         {% endif %} {% endif %}
-        <!-- prettier-ignore -->
-        {% if user.username == 'admin' %}
-        <a href="{% url 'home' %}">Назад</a> <br />
-        {%endif %}
         <script>
             function getReport(url) {
                 var start = document.getElementById("id_date_start").value;
@@ -99,5 +80,5 @@
         </script>
         <div style="height: 150px"></div>
         <script src="{% static 'scheduler/js/schedulerwp.js' %}"></script>
-    </body>
+{% endblock %}
 </html>

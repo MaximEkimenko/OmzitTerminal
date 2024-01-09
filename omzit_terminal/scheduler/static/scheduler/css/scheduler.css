@@ -1,13 +1,43 @@
 body {
-    font-family: Arial, Helvetica, sans-serif;
-    text-align: center;
-    color: white;
+  height: 95vh;
+  background-color: #31343c;
+  /*
+  background-image: url(../img/about-bg.jpg);
+  background-size: cover;
+  */
+  background-image: url(../img/about-bg.jpg);
+  background-size: cover;
+  font-family: Arial, Helvetica, sans-serif;
+  color: white;
+}
+#wrap {
+  position: relative;
+  min-height: 95vh;
+}
+main {
+  padding-bottom: 110px;
+  text-align: center;
+}
+footer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 80px;
+  text-align: left;
+}
 
-    background-image: url("background.png");
-    background-position: bottom left;
-    background-size: unset;
-    background-repeat: no-repeat;
-    background-color: #31343c;
+footer img {
+    height:100px;
+}
+
+.line {
+
+    margin: 0;
+	padding: 0;
+	height: 3px;
+	border: none;
+	background: radial-gradient(#EF7F1A, #31343C);
 }
 /*стили терминала*/
 
@@ -153,22 +183,50 @@ h4 {
     margin-right: auto;
 }
 
+.second_form {
+    width: 1000px;
+    align-self: center;
+    margin-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .td_query_block {
     border: solid red 1px;
     border-radius: 10px;
     margin: 10px;
 }
 
-.add_to_plan {
-    border: solid green 1px;
-    margin: 10px;
-    border-radius: 10px;
-}
 .form_inner_div {
     margin: 10px;
     padding: 5px;
     display: inline-block;
 }
+
+.form_block_div {
+    margin: 10px;
+    padding: 5px;
+    display: block;
+}
+
+.form_block_div input {
+    font-size: 16px;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 7px;
+    height: 32px;
+    display: inline-block
+}
+
+.form_block_div label {
+    margin: 10px;
+    display: inline-block;
+    padding: 5px;
+    color: #ef7f1a;
+    font-size: 22px;
+    font-weight: bold;
+}
+
 .form_inner_label {
     margin: 10px;
     display: inline-block;
@@ -252,19 +310,6 @@ input {
     border-radius: 5px;
 }
 
-.legend {
-    position: absolute;
-    width: 200px;
-    /* position: sticky; */
-    top: 30px;
-    right: 10px;
-    top: 10px;
-}
-.legend_row {
-    border-bottom: 0.5px solid red;
-    margin: 2px;
-}
-
 .modal {
     display: none;
     position: fixed;
@@ -285,10 +330,23 @@ input {
 }
 
 .add_to_plan {
-    background-color: #31343c;
+    background-color: #333333;
     border: solid green 1px;
     margin: 10px;
+    padding: 0 0 10px 0;
     border-radius: 10px;
+}
+
+.add_to_plan_center {
+    background-color: #333333;
+    width: 1000px;
+    border: solid green 1px;
+    display: flex;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 0 10px 0;
+    border-radius: 10px;
+    flex-direction: column;
 }
 
 /* Стили модальных окон */
@@ -299,7 +357,7 @@ input {
     padding: 12px;
     font-size: 16px;
     cursor: pointer;
-    margin: 0 14px 0 14px;
+    margin: 0 14px 0px 14px;
     box-shadow: 10em;
 }
 .btn:hover {
@@ -313,7 +371,7 @@ input {
 /* Стили легенды окон */
 .legend {
     position: absolute;
-    top: 10px;
+    top: 50px;
     right: 10px;
     /* display: block; */
     text-align: right;
@@ -340,6 +398,98 @@ input {
     margin: 3px;
     border-radius: 7px;
     height: 30px;
+}
+
+.name_input {
+    font-size: 16px;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 7px;
+    height: 40px;
+}
+.name_select {
+    font-size: 16px;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 7px;
+    width: 400px;
+    height: 40px;
+    background-color: transparent;
+    color: white;
+}
+.name_select_option {
+  color: white;
+  background: #31343C;
+}
+
+.name_select::-webkit-scrollbar {
+  width: 12px;               /* ширина всей полосы прокрутки */
+}
+
+.name_select::-webkit-scrollbar-track {
+  background: #31343C;        /* цвет зоны отслеживания */
+}
+
+.name_select::-webkit-scrollbar-thumb {
+  background-color: transparent;    /* цвет бегунка */
+  border-radius: 20px;       /* округлось бегунка */
+  border: 1px solid white;  /* отступ вокруг бегунка */
+}
+
+.draw_select {
+    font-size: 16px;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 7px;
+    width: 300px;
+    height: 40px;
+    background-color: transparent;
+    color: white;
+}
+.draw_select_option {
+  color: white;
+  background: #31343C;
+}
+
+.draw_select::-webkit-scrollbar {
+  width: 12px;               /* ширина всей полосы прокрутки */
+}
+
+.draw_select::-webkit-scrollbar-track {
+  background: #31343C;        /* цвет зоны отслеживания */
+}
+
+.draw_select::-webkit-scrollbar-thumb {
+  background-color: transparent;    /* цвет бегунка */
+  border-radius: 20px;       /* округлось бегунка */
+  border: 1px solid white;  /* отступ вокруг бегунка */
+}
+
+.table_spec {
+    border: solid 1px orange;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    border-spacing: 2px;
+    display: inline-block;
+    vertical-align: middle;
+    width: auto;
+}
+
+.sz_textarea {
+    font-size: 1rem;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 7px;
+}
+
+.scroll_div_back {
+    width:970px;
+    overflow:hidden;
+}
+
+.scroll_div {
+    height:300px;
+    overflow-y:scroll;
 }
 
 .future {
@@ -378,4 +528,145 @@ input {
 }
 .message_table_pos {
     margin: 0 auto;
+}
+
+.navbar {
+    display: flex-box;
+}
+
+.navbar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #ec562d;
+}
+
+.navbar li {
+    float: left;
+}
+
+li a, li span, li button, .dropbtn {
+    display: inline-block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+li button{
+    border: none;
+    font-size: 1em;
+    background-color: transparent;
+}
+
+li a:hover, li button:hover, .dropdown:hover .dropbtn {
+    background-color: darkslategray;
+}
+
+li.dropdown {
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    text-align: left;
+}
+
+.dropdown-content a:hover {background-color: #f1f1f1}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.table_header_row_plasma {
+    font-weight: bold;
+    text-align: center;
+    vertical-align: top;
+    font-size: 20px;
+}
+
+.tehnolog_select {
+    width: 25px;
+    height: 25px;
+}
+
+.doer_select {
+    width: 25px;
+    height: 25px;
+}
+
+.plasma_select {
+    width: 25px;
+    height: 25px;
+}
+
+.filter_select {
+    display: inline-flex;
+    min-width: 50px;
+    height: 148px;
+}
+
+.filter_select::-webkit-scrollbar {
+  width: 12px;               /* ширина всей полосы прокрутки */
+}
+
+.filter_select::-webkit-scrollbar-track {
+  background: transparent;        /* цвет зоны отслеживания */
+}
+
+.filter_select::-webkit-scrollbar-thumb {
+  background-color: transparent;    /* цвет бегунка */
+  border-radius: 20px;       /* округлось бегунка */
+  border: 1px solid white;  /* отступ вокруг бегунка */
+}
+
+.btn_part {
+    background-color: white;
+    border: solid 2px black;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 0 14px 0px 14px;
+    box-shadow: 10em;
+}
+.btn_part:hover {
+    background-color: yellow;
+    color: black;
+    border: solid 2px black;
+    border-radius: 10px;
+    /* font-weight: bold; */
+    /* width: 15em; */
+}
+
+.btn_delete {
+    background-color: white;
+    border: solid 2px black;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 0 14px 0px 14px;
+    box-shadow: 10em;
+}
+.btn_delete:hover {
+    background-color: red;
+    color: white;
+    border: solid 2px black;
+    border-radius: 10px;
+    /* font-weight: bold; */
+    /* width: 15em; */
 }

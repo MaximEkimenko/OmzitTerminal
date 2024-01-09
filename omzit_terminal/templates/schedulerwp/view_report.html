@@ -1,26 +1,16 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Рабочее место планировщика рабочих центров</title>
-        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
-    </head>
 
-    <body>
-        {% if request.user.is_authenticated %}
+{% block title %}
+Рабочее место планировщика рабочих центров
+{% endblock %}
+
+{% block body %}
         <div class="legend">
             <div>
-                <p>Пользователь: {{ user.username }} | <a href="{% url 'logout' %}" class="legend_link"> Выйти </a></p>
-                <p><a href="{% url 'instruction' %}">Инструкция</a></p>
                 <p>Папка с чертежами: \\SVR-003\draws</p>
-                <p><button onclick="window.location.href = '{% url 'schedulerwp' %}';">Назад</button></p>
             </div>
         </div>
-        {% else %}
-        <a href="{% url 'login' %}"> Войти </a>
-        <!-- prettier-ignore -->
-        {%endif %}
         <h1>Рабочее место планировщика рабочих центров</h1>
         <br /><br />
         <p>
@@ -59,5 +49,4 @@
         </script>
         <div style="height: 150px"></div>
         <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
-    </body>
-</html>
+{% endblock %}

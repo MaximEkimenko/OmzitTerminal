@@ -56,6 +56,15 @@ class WorkshopSchedule(models.Model):
     tehnolog_query_td_fio = models.CharField(max_length=30, null=True, verbose_name='Утвердил / загрузил')
     product_category = models.CharField(max_length=30, null=True, verbose_name='Категория изделия')
 
+    # Пример структуры {
+    # "author": "admin",
+    # "sz_text": "Прошу изготовить",
+    # "need_date": "22.12.2023",
+    # "sz_number": "СЗ1",
+    # "product_name": "Блок Б57"
+    # }
+    sz = models.JSONField(null=True, blank=True, verbose_name='Данные служебной записки')
+
     # tehnolog_excel_load_fio = models.CharField(max_length=30, null=True, verbose_name='Загрузил')
 
     class Meta:
@@ -74,6 +83,8 @@ class Doers(models.Model):
     """
     objects = models.Manager()  # явное указание метода для pycharm
     doers = models.CharField(max_length=255, unique=True, verbose_name='ФИО исполнителей')
+    job_title = models.CharField(max_length=255, null=True, blank=True, verbose_name='Должность')
+    ws_plasma = models.PositiveSmallIntegerField(verbose_name='Цех плазмы (по умолчанию)', null=True, blank=True)
 
     class Meta:
         db_table = "doers"
@@ -103,7 +114,7 @@ class ShiftTask(models.Model):
     ws_name = models.CharField(max_length=100, verbose_name='Имя рабочего центра')
     op_name_full = models.CharField(max_length=255, verbose_name='Полное имея операции')
     ws_number = models.CharField(max_length=10, verbose_name='Номер рабочего центра')
-    norm_tech = models.DecimalField(null=True, max_digits=10, decimal_places=2,
+    norm_tech = models.DecimalField(null=True, max_digits=13, decimal_places=5,
                                     verbose_name='Технологическая норма времени')
     datetime_techdata_create = models.DateTimeField(verbose_name='дата/время занесения технологических данных',
                                                     auto_now_add=True)
@@ -140,10 +151,30 @@ class ShiftTask(models.Model):
         'ShiftTask',
         on_delete=models.PROTECT,
         related_name="previous_shift_task",
-        verbose_name='Новое СЗ на исправление брака',
+        verbose_name='Новое СЗ',
         null=True,
         blank=True
     )
+
+    # Пример структуры workpiece {
+    # "draw": "AGCC.287-6400-PB-01-KM1.DW-0037 - Блок Б57-1-Тип10_V18",
+    # "name": "Б1-1",
+    # "text": "Б1-1 Швеллер 30П ГОСТ 8240-97 С255-4 ГОСТ 27772-2015 L=7500 (2 шт.)",
+    # "count": "2",
+    # "layout_name": "4SP №order1 B-26 Balka №26 2", имя детали
+    # "layouts": {'12ГС-43.CNC': 1}
+    # "layouts_done": {'12ГС-44.CNC': 1}
+    # "layouts_total": 2 количество на всех раскладках
+    # "length": "7500",
+    # "material": "Швеллер 30П ГОСТ 8240-97 С255-4 ГОСТ 27772-2015",
+    # "fio_percentages": ['50', '50', '0', '0'],
+    # }
+    workpiece = models.JSONField(null=True, blank=True, verbose_name='Заготовка')
+    fio_tehnolog = models.CharField(max_length=255, null=True, blank=True,
+                                    default='не распределено', verbose_name='ФИО технолога')
+    plasma_layout = models.CharField(max_length=255, null=True, blank=True,
+                                     default='Не выполнена', verbose_name='Раскладка')
+    workshop_plasma = models.PositiveSmallIntegerField(verbose_name='Цех плазмы', null=True, blank=True)
 
     class Meta:
         db_table = "shift_task"

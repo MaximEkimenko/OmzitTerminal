@@ -2,19 +2,23 @@
 # import json
 import asyncio
 import datetime
+import json
 import os
 import shutil
+import threading
 from typing import Tuple
 # from collections import OrderedDict
 
 import openpyxl
+import psutil
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import PermissionDenied
 from django.core.mail import EmailMessage
-from django.http import FileResponse
+from django.db import IntegrityError
+from django.http import FileResponse, JsonResponse
 
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
@@ -23,15 +27,21 @@ from django.db.models import Q, Avg, Sum
 from django.utils.timezone import make_aware, make_naive
 
 from omzit_terminal.settings import BASE_DIR
+from tehnolog.services.service_handlers import handle_uploaded_file
 from .filters import get_filterset
-from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw, PlanBid,  ReportForm
+from .forms import (SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw, PlanBid, ReportForm,
+                    CdwChoiceForm, SendSZForm)
 # from .forms import DailyReportForm, PlanResortHiddenForm # TODO функционал отчётов ЗАКОНСЕРВИРОВАНО
 # from .models import  DailyReport, MonthPlans # TODO функционал отчётов ЗАКОНСЕРВИРОВАНО
 from .models import WorkshopSchedule, ShiftTask
 
 from .services.schedule_handlers import get_all_done_rate, make_workshop_plan_plot, create_pdf_report, report_merger
 from worker.services.master_call_function import terminal_message_to_id
+from .services.specification import connect_to_client, get_specifications_server, get_specifications_ssh
+from .services.sz_to_pdf import create_pdf_sz
 
+SPEC_CREATION_PROCESS = dict()
+SPEC_CREATION_THREAD = dict()
 TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
 
 
@@ -160,7 +170,7 @@ def td_query(request):
                                          f"{form_query_draw.cleaned_data['order_query']}. Приоритет: "
                                          f"{form_query_draw.cleaned_data['query_prior']}. "
                                          f"Заявку составил: {request.user.first_name} {request.user.last_name}.")
-                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
                 # создание папки в общем доступе для чертежей модели
                 if not os.path.exists(rf'C:\draws\{model_order_query}'):
                     os.mkdir(rf'C:\draws\{model_order_query}')
@@ -201,6 +211,7 @@ def schedulerwp(request):
         form_workplace_plan = SchedulerWorkplace(request.POST)
         form_report = ReportForm()
         if form_workplace_plan.is_valid():
+            print(form_workplace_plan.cleaned_data)
             ws_number = form_workplace_plan.cleaned_data['ws_number'].ws_number
             model_order_query = form_workplace_plan.cleaned_data['model_order_query'].model_order_query
             try:
@@ -212,11 +223,11 @@ def schedulerwp(request):
             except Exception as e:
                 filtered_workplace_schedule = dict()
                 print('Ошибка получения filtered_workplace_schedule', e)
-            if filtered_workplace_schedule:
-                return redirect(f'/scheduler/schedulerfio{ws_number}_{model_order_query}')
-            else:
-                alert_message = f'Для Т{ws_number} на {model_order_query} нераспределённые задания отсутствуют.'
-                form_workplace_plan = SchedulerWorkplace()
+            # if filtered_workplace_schedule:
+            return redirect(f'/scheduler/schedulerfio{ws_number}_{model_order_query}')
+            # else:
+            #     alert_message = f'Для Т{ws_number} на {model_order_query} нераспределённые задания отсутствуют.'
+            #     form_workplace_plan = SchedulerWorkplace()
     else:
         form_workplace_plan = SchedulerWorkplace()
         form_report = ReportForm(initial={'date_end': datetime.datetime.now(),
@@ -245,14 +256,17 @@ def schedulerfio(request, ws_number, model_order_query):
 
     shift_task_fields = (
         'id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number', 'op_number', 'op_name_full',
-        'norm_tech', 'fio_doer', 'st_status'
+        'norm_tech', 'fio_doer', 'st_status', 'plasma_layout'
     )
     # определения рабочего центра и id
     if not request.user.username:  # если не авторизован, то отправляется на авторизацию
         return redirect('login/')
     try:
         filtered_workplace_schedule = (
-            ShiftTask.objects.values(*shift_task_fields)
+            ShiftTask.objects.values(
+                *shift_task_fields, 'workpiece__text', 'workpiece__layouts_done', 'workpiece__count'
+            )
+            .exclude(st_status='раскладка')
             .filter(ws_number=str(ws_number), model_order_query=model_order_query, next_shift_task=None)
             .filter(Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
         )
@@ -262,47 +276,173 @@ def schedulerfio(request, ws_number, model_order_query):
         print('Ошибка получения filtered_workplace_schedule', e)
     success = 1
     alert_message = ''
+    action = None  # действие по нажатию кнопки в POST форме
+    layout = None  # номер раскладки
+    pk = None  # id сменного задания
+    percentages = None
+    fios_doers = None
+
+    form_fio_doer = FioDoer()
+
     if request.method == 'POST':
-        print('POST')
-        form_fio_doer = FioDoer(request.POST, ws_number=ws_number, model_order_query=model_order_query)
-        if form_fio_doer.is_valid():
-            # Получение списка без None
-            fios = list(filter(
-                lambda x: x != 'None',
-                (str(form_fio_doer.cleaned_data[f'fio_{i}']) for i in range(1, 5))
-            ))
-            unique_fios = set(fios)
-            doers_fios = ', '.join(unique_fios)  # получение уникального списка
-            print('DOERS-', doers_fios)
-            if len(fios) == len(unique_fios):  # если есть повторения в списке fios
-                shift_task = ShiftTask.objects.get(pk=form_fio_doer.cleaned_data['st_number'].id)
-                data = {
-                    'fio_doer': doers_fios,
-                    'datetime_assign_wp': datetime.datetime.now(),
-                    'st_status': 'запланировано',
-                    'datetime_job_start': None,
-                    'decision_time': None,
-                    'master_assign_wp_fio': f'{request.user.first_name} {request.user.last_name}'
-                }
-                if shift_task.st_status == "брак":
-                    #  создаем дубликат СЗ с браком
-                    new_shift_task = ShiftTask.objects.get(pk=form_fio_doer.cleaned_data['st_number'].id)
-                    new_shift_task.pk = None
-                    for field, value in data.items():
-                        setattr(new_shift_task, field, value)
-                    new_shift_task.save()
-                    #  добавляем в СЗ с браком ссылку на новое СЗ для исправления брака
-                    shift_task.next_shift_task = new_shift_task
-                else:
-                    for field, value in data.items():
-                        setattr(shift_task, field, value)
-                shift_task.save()
-                alert_message = f'Успешно распределено!'
+        form_submit = request.POST.get("form", "")  # форма по которой выполнен submit
+        if "change" in form_submit:
+            filtered_workplace_schedule = (
+                ShiftTask.objects.values(*shift_task_fields, 'workpiece__text', 'workpiece__layouts_done',
+                                         'workpiece__count')
+                .exclude(st_status='раскладка').exclude(fio_doer='не распределено')
+                .filter(ws_number=str(ws_number), model_order_query=model_order_query, next_shift_task=None)
+            )
+            action = 'change_distribution'
+
+        elif 'confirm' in form_submit:
+            _, pk, layout = form_submit.split("|")
+            form_fio_doer = FioDoer(request.POST)
+            if form_fio_doer.is_valid():
+                # Получение списка без None
+                fios = list(filter(
+                    lambda x: x != 'None',
+                    (str(form_fio_doer.cleaned_data[f'fio_{i}']) for i in range(1, 5))
+                ))
+                unique_fios = set(fios)
+                doers_fios = ', '.join(unique_fios)  # получение уникального списка
+                print('DOERS-', doers_fios)
+                if len(fios) == len(unique_fios):  # если нет повторений в списке fios
+                    if 'redistribute' in form_submit:
+                        data = {
+                            'fio_doer': doers_fios,
+                            'master_assign_wp_fio': f'{request.user.first_name}'
+                        }
+                    else:
+                        data = {
+                            'fio_doer': doers_fios,
+                            'datetime_assign_wp': make_aware(datetime.datetime.now()),
+                            'st_status': 'запланировано',
+                            'datetime_job_start': None,
+                            'decision_time': None,
+                            'master_assign_wp_fio': f'{request.user.first_name}'
+                        }
+                    if layout != '':  # если распределяем по номеру раскладки
+                        # находим все сменные задания, где раскладка является ключом в выполненных раскладках
+                        if 'redistribute' in form_submit:
+                            shift_tasks = ShiftTask.objects.filter(
+                                plasma_layout=layout).exclude(fio_doer='не распределено')
+                            for shift_task in shift_tasks:
+                                shift_task.workpiece["fio_percentages"] = [
+                                    form_fio_doer.cleaned_data[f'fio_{i}_percentage'] for i in range(1, 5)
+                                ]
+                                shift_task.fio_doer = doers_fios
+                                shift_task.save()
+                        else:
+                            shift_tasks = ShiftTask.objects.filter(
+                                workpiece__layouts_done__icontains=f'"{layout}":',
+                                fio_doer='не распределено',
+                            )
+                            for shift_task in shift_tasks:
+                                workpiece = shift_task.workpiece
+                                workpiece["fio_percentages"] = [
+                                    form_fio_doer.cleaned_data[f'fio_{i}_percentage'] for i in range(1, 5)
+                                ]
+                                # если раскладка на деталь одна или последняя и полностью закрывает потребность
+                                # в количестве детали или в раскладке больше, то назначаем исполнителей
+                                # на текущее сменное задание
+                                all_layouts_done = len(workpiece['layouts']) == 0 and len(
+                                    workpiece['layouts_done']) == 1
+                                is_enough = int(workpiece['layouts_total']) >= int(workpiece['count'])
+                                if all_layouts_done and is_enough:
+                                    data['norm_tech'] = workpiece['layouts_done'][layout]['total_time']
+                                    workpiece.update({
+                                        'layouts': {},
+                                        'layouts_done': {},
+                                    })
+                                    data['workpiece'] = workpiece
+                                    data['plasma_layout'] = layout
+                                    for field, value in data.items():
+                                        setattr(shift_task, field, value)
+                                    shift_task.save()
+                                else:
+                                    layout_data = workpiece['layouts_done'].pop(layout)
+                                    layout_count = sum(layout_data['count'])
+                                    workpiece['layouts_total'] -= layout_count
+                                    workpiece['count'] -= layout_count
+                                    shift_task.workpiece = workpiece
+                                    if len(workpiece['layouts_done']) == 0:
+                                        shift_task.st_status = 'раскладка'
+                                    shift_task.save()
+
+                                    new_shift_task = ShiftTask.objects.get(pk=shift_task.id)
+                                    new_shift_task.pk = None
+
+                                    workpiece.update({
+                                        'count': layout_count,
+                                        'layouts': {},
+                                        'layouts_done': {},
+                                        'layouts_total': layout_count
+                                    })
+                                    data['workpiece'] = workpiece
+                                    data['plasma_layout'] = layout
+                                    data['norm_tech'] = layout_data['total_time']
+                                    for field, value in data.items():
+                                        setattr(new_shift_task, field, value)
+                                    new_shift_task.save()
+                    elif pk != '':  # если распределяем по id сменного задания
+                        shift_task = ShiftTask.objects.get(pk=int(pk))
+                        if shift_task.st_status == "брак":
+                            #  создаем дубликат СЗ с браком
+                            new_shift_task = ShiftTask.objects.get(pk=int(pk))
+                            new_shift_task.pk = None
+                            for field, value in data.items():
+                                setattr(new_shift_task, field, value)
+                            new_shift_task.save()
+                            #  добавляем в СЗ с браком ссылку на новое СЗ для исправления брака
+                            shift_task.next_shift_task = new_shift_task
+                        else:  # первичное распределение СЗ
+                            for field, value in data.items():
+                                setattr(shift_task, field, value)
+                        fio_percentages = {
+                            "fio_percentages": [form_fio_doer.cleaned_data[f'fio_{i}_percentage'] for i in range(1, 5)],
+                        }
+                        if shift_task.workpiece:
+                            shift_task.workpiece.update(fio_percentages)
+                        else:
+                            shift_task.workpiece = fio_percentages
+                        shift_task.save()
+
+                    alert_message = f'Успешно распределено!'
+                else:  # если есть повторения в списке fios
+                    alert_message = f'Исполнители дублируются. Измените исполнителей.'
+                    success = 0
+            pk = layout = None
+
+        elif "redistribute" in form_submit:
+            filtered_workplace_schedule = (
+                ShiftTask.objects.values(*shift_task_fields, 'workpiece__text', 'workpiece__layouts_done',
+                                         'workpiece__count')
+                .exclude(st_status='раскладка').exclude(fio_doer='не распределено')
+                .filter(ws_number=str(ws_number), model_order_query=model_order_query, next_shift_task=None)
+            )
+            _, pk, layout = form_submit.split("|")
+            shift_tasks = ShiftTask.objects.values_list('workpiece__fio_percentages', 'fio_doer')
+            if layout != '':
+                percentages, fios = shift_tasks.filter(plasma_layout=layout)[0]
+                filtered_workplace_schedule = filtered_workplace_schedule.filter(plasma_layout=layout)
             else:
-                alert_message = f'Исполнители дублируются. Измените исполнителей.'
-                success = 0
-    else:
-        form_fio_doer = FioDoer(ws_number=ws_number, model_order_query=model_order_query)
+                percentages, fios = shift_tasks.filter(pk=pk)[0]
+                filtered_workplace_schedule = filtered_workplace_schedule.filter(pk=pk)
+            fios_doers = fios.split(', ')
+            action = 'redistribute'
+
+        elif 'distribute' in form_submit:
+            _, pk, layout = form_submit.split("|")
+            if layout != '':
+                filtered_workplace_schedule = filtered_workplace_schedule.filter(
+                    workpiece__layouts_done__icontains=f'"{layout}":'
+                )
+            else:
+                filtered_workplace_schedule = filtered_workplace_schedule.filter(pk=pk)
+            action = 'distribute'
+
+        f = get_filterset(data=request.GET, queryset=filtered_workplace_schedule, fields=shift_task_fields)
 
     context = {
         'filtered_workplace_schedule': filtered_workplace_schedule,
@@ -310,6 +450,11 @@ def schedulerfio(request, ws_number, model_order_query):
         'alert_message': alert_message,
         'success': success,
         'filter': f,
+        'action': action,
+        'layout': layout,
+        'pk': pk,
+        'percentages': percentages,
+        'fios_doers': fios_doers
     }
     return render(request, r"schedulerfio/schedulerfio.html", context=context)
 
@@ -343,7 +488,7 @@ def show_workshop_scheme(request):  # TODO перенести в service
     :return:
     """
     try:
-        path_to_file = r"O:\ПТО\1 Екименко М.А\Планировка\Планирока участков(цех1, цех2, цех3)+РЦ+Расписание+Виды.xlsm"
+        path_to_file = r"M:\Xranenie\ПТО\1 Екименко М.А\Планировка\Планирока участков(цех1, цех2, цех3)+РЦ+Расписание+Виды.xlsm"
         response = FileResponse(open(fr'{path_to_file}', 'rb'))
         response['X-Frame-Options'] = 'SAMEORIGIN'
         return response
@@ -442,13 +587,21 @@ def test_scheduler(request):
     # обновление процента готовности всех заказов
     # TODO модифицировать расчёт процента готовности всех заказов по взвешенной трудоёмкости
     #  сделать невозможным заполнять запрос с кириллицей
-    # фильтры в колонки графика
     # перечень запросов на КД
-    td_queries_fields = ('model_order_query', 'query_prior', 'td_status', 'order_status')  # поля таблицы
-    td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(td_status='завершено'))
-    # фильтры в колонки заявок
-    # f_q = get_filterset_second_table(data=request.GET, queryset=td_queries, fields=td_queries_fields)
-    f_q = get_filterset(data=request.GET, queryset=td_queries, fields=td_queries_fields, index=2)
+    td_queries_fields = ['model_order_query', 'query_prior', 'td_status', 'order_status', 'sz']  # поля таблицы
+    td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(order_status='завершено'))
+    filter_fields = [
+        'model_order_query',
+        'query_prior',
+        'td_status',
+        'order_status',
+    ]
+    f_q = get_filterset(data=request.GET, queryset=td_queries, fields=filter_fields, index=2)
+    sz_shift_tasks = ShiftTask.objects.values(
+        "id", "workpiece", 'model_order_query'
+    ).filter(
+        st_status="не запланировано"
+    )
 
     # форма запроса КД
     form_query_draw = QueryDraw()
@@ -502,7 +655,8 @@ def test_scheduler(request):
         # чистые формы для первого запуска
         form_workshop_plan = SchedulerWorkshop()
         context = {'form_workshop_plan': form_workshop_plan, 'td_queries': td_queries,
-                   'form_query_draw': form_query_draw, 'filter_q': f_q, 'form_plan_bid': form_plan_bid}
+                   'form_query_draw': form_query_draw, 'filter_q': f_q, 'form_plan_bid': form_plan_bid,
+                   'sz_st': sz_shift_tasks}
     return render(request, r"scheduler/test_scheduler.html", context=context)
 
 
@@ -687,6 +841,225 @@ def get_start_end_st_report(start: str, end: str) -> Tuple:  # TODO перене
         end = make_aware(datetime.datetime.strptime(end, "%d.%m.%Y").replace(hour=23, minute=59, second=59))
     return start, end
 
+
+def create_specification(request):
+    """
+    Рабочее место для создания заявки на детали по спецификации
+    """
+    alert = ""
+    spec = dict()
+    draw_form = CdwChoiceForm()  # Форма выбора файлов
+    send_form = SendSZForm()  # Форма отправки служебной записки
+    shared_folder = r"\\omzit\Shared\Temp\cdwr"
+
+    ip = request.META.get('REMOTE_ADDR')
+
+    # Проверяем, есть ли запущенный процесс загрузки чертежей для данного ip
+    pid = SPEC_CREATION_PROCESS.get(ip)
+    if pid and psutil.pid_exists(pid):
+        alert = "Выполняется формирование спецификации..."
+        context = {'spec': spec, "send_form": send_form, 'alert': alert, "draw_form": draw_form}
+        return render(request, r"scheduler/specification.html", context=context)
+
+    thr = SPEC_CREATION_THREAD.get(ip)
+    if thr and thr.is_alive():
+        alert = "Выполняется формирование спецификации..."
+        context = {'spec': spec, "send_form": send_form, 'alert': alert, "draw_form": draw_form}
+        return render(request, r"scheduler/specification.html", context=context)
+    form_submit = request.POST.get("form", "")
+    if request.method == "POST" and form_submit == "clear_form":  # очистка таблицы
+        if os.path.exists(shared_folder):
+            try:
+                shutil.rmtree(shared_folder)
+            except Exception as ex:
+                print(f"Во время удаления папки {shared_folder} возникло исключение: {ex}")
+    elif request.method == "POST" and form_submit == "td_kd_form":  # добавление файлов
+        draw_form = CdwChoiceForm(request.POST, request.FILES)
+        files = []
+        if draw_form.is_valid():
+            files = dict(request.FILES).get("cdw_files")
+
+            # Создаем директорию cdwr в папке M:\Temp
+            try:
+                os.mkdir(shared_folder)
+            except Exception as ex:
+                print(fr"При попытке создания папки {shared_folder} вызвано исключение: {ex}")
+            if os.path.exists(shared_folder):
+                files_path = shared_folder
+                # client = None
+                client = connect_to_client(ip)
+                if client:
+                    scenario = "КОМПАС на клиенте"
+                else:
+                    scenario = "КОМПАС на сервере"
+            else:  # Если нет доступа к M:\Temp, то создаем папку на сервере
+                files_path = BASE_DIR / "cdw"
+                if not os.path.exists(files_path):
+                    os.mkdir(files_path)
+                scenario = "КОМПАС на сервере"
+
+            # Загружаем файлы, добавляем полные пути в список files_paths
+            files_paths = []
+            for file in files:
+                filename = str(file)
+                try:
+                    handle_uploaded_file(f=file, filename=filename, path=files_path)
+                    files_paths.append(os.path.join(files_path, filename))
+                except Exception as ex:
+                    print(f"При загрузке файлов в {files_path} возникло исключение: {ex}")
+                    files_paths = []
+
+            print(scenario)
+            # Обработка сценария, когда КОМПАС установлен на сервере
+            if scenario == "КОМПАС на сервере":
+                pid = get_specifications_server(files_paths)
+                SPEC_CREATION_PROCESS[ip] = pid
+            elif scenario == "КОМПАС на клиенте":
+                thread = threading.Thread(target=get_specifications_ssh, args=(client, files_paths))
+                SPEC_CREATION_THREAD[ip] = thread
+                thread.start()
+
+            if files_paths:
+                alert = "Выполняется формирование спецификации..."
+            else:
+                alert = "Ошибка формирования спецификации!"
+        context = {'spec': spec, 'draw_form': draw_form, 'alert': alert, "files": files, "send_form": send_form}
+        return render(request, r"scheduler/specification.html", context=context)
+    else:  # метод GET
+        # Загружаем файл спецификации из specification.json
+        try:
+            if os.path.exists(shared_folder):
+                files_path = shared_folder
+            else:
+                files_path = BASE_DIR / "cdw"
+            json_path = os.path.join(files_path, "specification.json")
+            with open(json_path, 'r') as json_file:
+                spec = json.load(json_file)
+        except Exception:
+            print("Ошибка получения файла спецификации")
+        rows = []  # Все строки по всем чертежам
+        names = []  # Наименования для заполнения select
+        draw_names = dict()  # Соответствие наименований чертежам
+        draws = set()  # Чертежи для заполнения select
+        if spec:
+            spec.pop("columns")
+            for key, value in spec.items():
+                draw_names[key] = []
+                for row in value:
+                    draw_names[key].append(row["Наименование"])
+                    row["Чертеж"] = key
+                    draws.add(key)
+                    names.append(row["Наименование"])
+                rows.extend(value)
+    context = {'draw_names': draw_names, 'rows': rows, "names": names, "draws": draws,
+               "send_form": send_form, "draw_form": draw_form, 'alert': alert}
+    return render(request, r"scheduler/specification.html", context=context)
+
+
+def create_shift_tasks_from_spec(request):
+    """
+    Создает сменные задания из спецификации
+    """
+    pdf_sz_filename = BASE_DIR / "example.pdf"
+    if request.method == "POST":
+
+        # Удаляем файлы спецификаций
+        json_path_1 = BASE_DIR / "specification.json"
+        json_path_2 = r"\\omzit\Shared\Temp\cdwr\specification.json"
+        if os.path.exists(json_path_1):
+            os.remove(json_path_1)
+        elif os.path.exists(json_path_2):
+            os.remove(json_path_2)
+
+        json_data = request.body
+        data = json.loads(json_data)
+
+        if data["products"] and all(value for value in data["sz"].values()):
+            data["sz"]["author"] = request.user.first_name
+            # Создание служебной записки в pdf
+            create_pdf_sz(data=data, filename=pdf_sz_filename)
+
+            model_name = str(int(datetime.datetime.now().timestamp()))
+            order = data["sz"]["sz_number"]
+            model_order_query = f"{order}_{model_name}"
+            WorkshopSchedule.objects.create(
+                model_name=model_name,
+                order=order,
+                model_order_query=model_order_query,
+                sz=data["sz"],
+                td_status="завершено",
+            )
+            shift_tasks = []
+            for product in data["products"]:
+                product['count'] = int(product['count']) if product['count'].isdigit() else 0
+                shift_tasks.append(ShiftTask(
+                    model_name=model_name,
+                    order=order,
+                    model_order_query=model_order_query,
+                    workpiece=product,
+                ))
+            ShiftTask.objects.bulk_create(shift_tasks)
+            return FileResponse(open(pdf_sz_filename, 'rb'))
+        else:
+            return JsonResponse({"STATUS": "No data"})
+
+
+def confirm_sz_planning(request):
+    alert = ""
+    if request.method == "POST":
+        json_data = request.body
+        data = json.loads(json_data)
+        if data.values():
+            model_order_query = f"{data['newOrder']}_{data['newModel']}"
+            ws = WorkshopSchedule.objects.filter(model_order_query=data["orderModel"])
+            shift_tasks = ShiftTask.objects.filter(
+                model_order_query=data["orderModel"],
+                id__in=list(map(int, data["st"].keys()))
+            )
+            try:
+                ws.update(
+                    datetime_done=make_aware(datetime.datetime.strptime(data['dateDone'], "%d.%m.%Y")),
+                    workshop=data['workshop'],
+                    product_category=data["category"],
+                    order_status='запланировано',
+                    dispatcher_plan_ws_fio=f'{request.user.first_name} {request.user.last_name}',
+                    model_order_query=model_order_query,
+                    model_name=data['newModel'],
+                    order=data['newOrder'],
+                )
+            except IntegrityError as ex:
+                alert = f"Ошибка! Заказ-модель {model_order_query} уже существует!"
+                print(f"При обновлении записей {ws} возникло исключение: {ex}")
+                return JsonResponse({"STATUS": alert})
+
+            for st in shift_tasks:
+                attrs = {
+                    "datetime_done": make_aware(datetime.datetime.strptime(data['dateDone'], "%d.%m.%Y")),
+                    "workshop": data['workshop'],
+                    "product_category": data["category"],
+                    "order_status": 'запланировано',
+                    "model_order_query": model_order_query,
+                    "model_name": data['newModel'],
+                    "order": data['newOrder'],
+                }
+                if data['st'][str(st.pk)] == "Плазма":
+                    attrs.update({
+                        'ws_number': "",
+                        'ws_name': "Плазма",
+                        "st_status": "раскладка"
+                    })
+                else:
+                    attrs.update({
+                        'ws_number': data['st'][str(st.pk)],
+                        "st_status": "запланировано"
+                    })
+
+                for attr, value in attrs.items():
+                    setattr(st, attr, value)
+                st.save()
+            return JsonResponse({"STATUS": "OK"})
+        else:
+            return JsonResponse({"STATUS": alert})
 
 # @login_required(login_url="login")
 # def report(request, workshop):
