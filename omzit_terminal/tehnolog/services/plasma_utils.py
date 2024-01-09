@@ -1,21 +1,19 @@
 import datetime
 import io
+import operator
 import os
 import re
 import shutil
-import time
 
-import pyodbc
+from functools import reduce
 
 import openpyxl
+from django.db.models import Q, F, Subquery, Sum, Max, OuterRef
 from transliterate import translit
 
-from omzit_terminal.settings import BASE_DIR
+from omzit_terminal.settings import BASE_DIR, DATABASES
 
-BD_SERVER = 'APM-0230\SIGMANEST'
-BD_USERNAME = 'SNUser'
-BD_PASSWORD = 'BestNest1445'
-BD_DATABASE = 'SNDBase'
+from tehnolog.models import Pip, Program
 
 STEELS = {
     "С235": "SP",
@@ -56,7 +54,7 @@ STEELS = {
     "12Г2СМФФАЮ": "",
 }
 
-THICKNESS_SPEED = {  # mm: mm/s
+THICKNESS_SPEED = {  # mm (толщина): mm/s (скорость)
     '0.5': 5355 / 60,
     '1.5': 2210 / 60,
     '1': 3615 / 60,
@@ -67,7 +65,6 @@ THICKNESS_SPEED = {  # mm: mm/s
     '6': 3045 / 60,
     '8': 2862.5 / 60,
     '10': 2680 / 60,
-
     '12': 2200 / 60,
     '14': 1843.3 / 60,
     '16': 2938 / 60,
@@ -210,80 +207,33 @@ def read_plasma_layout(layout_file):
 
 
 def read_plasma_layout_db(dxf):
-    condition = []
-    for order, part in dxf:
-        condition.append(f"WoNumber = '{order}' AND PartName = '{part}'")
-    text_condition = " OR ".join(condition)
-    query = f"""
-        SELECT WoNumber, PartName, ProgramName, QtyProgram, CuttingTime
-        FROM (SELECT 
-                WoNumber,
-                PartName, 
-                ProgramName,
-                QtyProgram,
-                CuttingLength * (
-                            SELECT d.CuttingTime
-                            FROM SNDBase.dbo.ProgArchive AS d
-                            WHERE d.AutoID = (
-                                SELECT MAX(c.AutoID)
-                                FROM SNDBase.dbo.ProgArchive AS c
-                                WHERE c.ProgramName = a.ProgramName
-                                GROUP BY c.ProgramName
-                        )
-                ) / (
-                        SELECT SUM(CuttingLength * QtyProgram)
-                        FROM SNDBase.dbo.PartArchive as b
-                        WHERE b.ProgramName = a.ProgramName
-                ) AS CuttingTime
-        FROM SNDBase.dbo.PartArchive AS a
-        WHERE (
-                SELECT SUM(CuttingLength * QtyProgram)
-                FROM SNDBase.dbo.PartArchive as b
-                WHERE b.ProgramName = a.ProgramName
-              ) <> 0
-        UNION
-        SELECT 
-            e.WONumber AS WoNumber,
-            e.PartName, 
-            e.ProgramName,
-            e.QtyInProcess * MAX(e.RepeatID) AS QtyProgram,
-            e.CuttingLength * (
-                    SELECT j.CuttingTime
-                    FROM SNDBase.dbo.ProgArchive AS j
-                    WHERE j.AutoID = (
-                        SELECT MAX(i.AutoID)
-                        FROM SNDBase.dbo.ProgArchive AS i
-                        WHERE i.ProgramName = e.ProgramName
-                        GROUP BY i.ProgramName
-                    )
-            ) /     (
-                        SELECT SUM(x.CuttingLength * x.QtyInProcess)
-                        FROM SNDBase.dbo.PIPArchive AS x
-                        WHERE x.ArcDateTime = MAX(e.ArcDateTime) and x.ProgramName = e.ProgramName and x.RepeatID = (
-                            SELECT MAX(f.RepeatID)
-                            FROM SNDBase.dbo.PIPArchive as f
-                            WHERE f.ProgramName = e.ProgramName
-                            GROUP BY f.ProgramName
-                    )
-            ) AS CuttingTime
-        FROM SNDBase.dbo.PIPArchive AS e  
-        GROUP BY e.PartName, e.WONumber, e.ProgramName, e.QtyInProcess, e.CuttingLength
-        HAVING (
-                        SELECT SUM(x.CuttingLength * x.QtyInProcess)
-                        FROM SNDBase.dbo.PIPArchive AS x
-                        WHERE x.ArcDateTime = MAX(e.ArcDateTime) and x.ProgramName = e.ProgramName and x.RepeatID = (
-                            SELECT MAX(f.RepeatID)
-                            FROM SNDBase.dbo.PIPArchive as f
-                            WHERE f.ProgramName = e.ProgramName
-                            GROUP BY f.ProgramName
-                    )
-        ) <> 0   
-        ) AS t1
-        WHERE ({text_condition})
-    """
+    condition = reduce(
+        operator.or_,
+        (Q(wo_number=order, part_name=part) for order, part in dxf)
+    )
+
+    total_cutting_length = Pip.objects.using('sigma').values('program_name').annotate(
+        total_cutting_length=Sum(F('cutting_length') * F('qty_in_process'))
+    ).values('total_cutting_length')
+
+    max_repeat_id = Program.objects.using('sigma').values('program_name').annotate(
+        max_repeat_id=Max('repeat_id')
+    ).values('max_repeat_id', 'cutting_time')
+
+    pip_queryset = Pip.objects.using('sigma').annotate(
+        qty=Subquery(
+            max_repeat_id.filter(program_name=OuterRef('program_name')).values('max_repeat_id')[:1]
+        ) * F('qty_in_process')
+    ).annotate(
+        cut_time=Subquery(
+            max_repeat_id.filter(program_name=OuterRef('program_name')).values('cutting_time')[:1]
+        ) * F('cutting_length') / Subquery(
+            total_cutting_length.filter(program_name=OuterRef('program_name')).values('total_cutting_length')[:1]
+        )
+    ).filter(condition).values_list('wo_number', 'part_name', 'program_name', 'qty', 'cut_time')
 
     parts_layouts = dict()
-    for part, values in execute_query(query, part_handler):
+    for part, values in map(part_handler, pip_queryset):
         layouts = parts_layouts.get(part, {})
         layouts.update(values)
         parts_layouts[part] = layouts
@@ -309,44 +259,21 @@ def part_handler(row):
     return order_part, layouts
 
 
-def execute_query(query, handler):
-    start = time.time()
-    try:
-        cnxn = pyodbc.connect(
-            f'DRIVER=SQL Server;'
-            f'SERVER={BD_SERVER};'
-            f'DATABASE={BD_DATABASE};'
-            f'UID={BD_USERNAME};'
-            f'PWD={BD_PASSWORD}',
-        )
-        cursor = cnxn.cursor()
-        cursor.execute(query)
-        row = cursor.fetchone()
-        while row:
-            result = handler(row)
-            row = cursor.fetchone()
-            yield result
-        print(f"Завершение запроса в БД. Время выполнения {time.time() - start}")
-    except Exception as ex:
-        print(f"Исключение при работе с БД: {ex}")
-    finally:
-        cnxn.close()
-
-
 def create_part_name(shift_task_values):
     workshop = shift_task_values['ws_number']
     name = shift_task_values['workpiece']['name']
     material = shift_task_values['workpiece']['material']
     count = shift_task_values['workpiece']['count']
     order_model = shift_task_values['model_order_query']
-    shift_task = shift_task_values['id']
 
     order, model = order_model.split("_")
 
     # Толщина
-    match = re.match(r"^.*?([\d]+).*", material)
+    match = re.match(r"^.*?([\d]+),\d.*|^.*?([\d]+)\sГОСТ.*", material)
     if match:
         thickness = match.group(1)
+        if not thickness:
+            thickness = match.group(2)
     else:
         thickness = ""
 
@@ -358,6 +285,7 @@ def create_part_name(shift_task_values):
     # Сталь
     steel = ""
     for key, value in STEELS.items():
+        material = material.replace("C", "С")  # замена англ на рус
         if key in material:
             steel = value
 
@@ -368,3 +296,72 @@ def create_part_name(shift_task_values):
 
     part_name = translit(part_name, language_code='ru', reversed=True).replace("'", "")
     return part_name
+
+# Сырой запрос в БД SIGMA
+#
+# import time
+# import pyodbc
+#
+# def read_plasma_layout_db_raw(dxf):
+#     condition = []
+#     for order, part in dxf:
+#         condition.append(f"WoNumber = '{order}' AND PartName = '{part}'")
+#     text_condition = " OR ".join(condition)
+#     query = f"""
+#         WITH TotalCuttingLength AS (
+#             SELECT
+#                 ProgramName,
+#                 SUM(CuttingLength * QtyInProcess) AS TotalCuttingLength
+#             FROM SNDBase.dbo.PIP
+#             GROUP BY ProgramName
+#         ),
+#         MaxRepeatID AS (
+#             SELECT
+#                 ProgramName,
+#                 MAX(RepeatID) AS MaxRepeatId,
+#                 CuttingTime
+#             FROM SNDBase.dbo.Program
+#             GROUP BY ProgramName, CuttingTime
+#         )
+#         SELECT
+#             pip.WONumber,
+#             pip.PartName,
+#             pip.ProgramName,
+#             pip.QtyInProcess * mri.MaxRepeatId AS Qty,
+#             pip.CuttingLength * mri.CuttingTime / tcl.TotalCuttingLength AS CuttingTime
+#         FROM SNDBase.dbo.PIP as pip
+#         JOIN TotalCuttingLength as tcl ON tcl.ProgramName = pip.ProgramName
+#         JOIN MaxRepeatID as mri ON mri.ProgramName = pip.ProgramName
+#         WHERE ({text_condition})
+#     """
+#
+#     parts_layouts = dict()
+#     for part, values in execute_raw_query(query, part_handler):
+#         layouts = parts_layouts.get(part, {})
+#         layouts.update(values)
+#         parts_layouts[part] = layouts
+#     return parts_layouts
+#
+#
+# def execute_raw_query(query, handler):
+#     start = time.time()
+#     try:
+#         cnxn = pyodbc.connect(
+#             f'DRIVER=SQL Server;'
+#             f'SERVER={DATABASES["sigma"]["HOST"]};'
+#             f'DATABASE={DATABASES["sigma"]["NAME"]};'
+#             f'UID={DATABASES["sigma"]["USER"]};'
+#             f'PWD={DATABASES["sigma"]["PASSWORD"]}',
+#         )
+#         cursor = cnxn.cursor()
+#         cursor.execute(query)
+#         row = cursor.fetchone()
+#         while row:
+#             result = handler(row)
+#             row = cursor.fetchone()
+#             yield result
+#         print(f"Завершение запроса в БД. Время выполнения {time.time() - start}")
+#     except Exception as ex:
+#         print(f"Исключение при работе с БД: {ex}")
+#     finally:
+#         cnxn.close()

@@ -95,7 +95,14 @@ DATABASES = {
         # 'HOST': '192.168.8.163',
         # 'HOST': '192.168.8.30'
         'PORT': '',
-    }
+    },
+    'sigma': {
+        'NAME': 'SNDBase',
+        'ENGINE': 'mssql',
+        'USER': 'SNUser',
+        'PASSWORD': 'BestNest1445',
+        'HOST': r'APM-0230\SIGMANEST',
+    },
 }
 
 # Password validation
