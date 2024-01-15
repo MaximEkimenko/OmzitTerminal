@@ -1,23 +1,16 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Рабочее место технолога</title>
-        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
-        <link type="text/css" href="{% static 'tehnolog/css/tehnolog.css' %}" rel="stylesheet" />
-    </head>
-    <body>
-        {% if request.user.is_authenticated %}
+
+{% block title %}
+Рабочее место технолога
+{% endblock %}
+
+{% block body %}
         <div class="legend">
             <div>
-                <p>Пользователь: {{ user.username }} | <a href="{% url 'logout' %}" class="legend_link"> Выйти </a></p>
-                <p><a href="{% url 'instruction' %}">Инструкция</a> <br /></p>
                 <p>Папка с чертежами: \\SVR-003\draws</p>
             </div>
         </div>
-        {% else %} <a href="{% url 'login' %}"> Войти </a>
-        {%endif %}
         <h1>Рабочее место технолога</h1>
         {% if alert %}
         <script>
@@ -316,5 +309,4 @@
         </script>
 
         <div style="height: 150px"></div>
-    </body>
-</html>
+{% endblock %}

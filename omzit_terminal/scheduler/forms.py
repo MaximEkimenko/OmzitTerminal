@@ -9,7 +9,7 @@ from .models import ShiftTask, WorkshopSchedule, Doers, model_pattern, model_err
 from django.forms import ModelChoiceField
 from django.db.models import Q
 from tehnolog.models import ProductCategory
-from constructor.forms import QueryAnswerForm
+from constructor.forms import QueryAnswerForm, MultipleFileField, MultipleFileInput
 
 
 class SchedulerWorkshop(forms.Form):
@@ -67,7 +67,7 @@ class SchedulerWorkplace(forms.Form):
     """
     Форма для ввода графика РЦ
     """
-    query_set_wp = ShiftTask.objects.all().distinct('ws_number')
+    query_set_wp = ShiftTask.objects.exclude(ws_number="").distinct('ws_number')
     ws_number = SchedulerWorkplaceLabel(queryset=query_set_wp, empty_label='Терминал не выбран', label='Терминал')
     model_order_query_set = WorkshopSchedule.objects.filter(Q(order_status='запланировано') |
                                                             Q(order_status='в работе'))
@@ -92,33 +92,58 @@ class FioDoer(forms.Form):
     """
 
     # Создание поля в классе формы с отфильтрованными данными по РЦ и дате
-    def __init__(self, *args, **kwargs):
-        if 'ws_number' in kwargs and kwargs['ws_number'] is not None:
-            ws_number = kwargs.pop('ws_number')
-            model_order_query = kwargs.pop('model_order_query')
-            # query_set запроса СЗ
-            qs_st_number = (ShiftTask.objects.filter  # выбор "не распределено", "брак", "не принято"
-                            (Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
-                            ).filter(ws_number=ws_number, model_order_query=model_order_query, next_shift_task=None)
-        else:
-            qs_st_number = None
-        # Вызов супер класса для создания поля st_number
-        super(FioDoer, self).__init__(*args, **kwargs)
-        try:
-            self.fields['st_number'].queryset = qs_st_number
-        except NameError:
-            pass
+    # def __init__(self, *args, **kwargs):
+    #     if 'ws_number' in kwargs and kwargs['ws_number'] is not None:
+    #         ws_number = kwargs.pop('ws_number')
+    #         model_order_query = kwargs.pop('model_order_query')
+    #         # query_set запроса СЗ
+    #         qs_st_number = (ShiftTask.objects.filter  # выбор "не распределено", "брак", "не принято"
+    #                         (Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
+    #                         ).filter(ws_number=ws_number, model_order_query=model_order_query, next_shift_task=None)
+    #     else:
+    #         qs_st_number = None
+    #     # Вызов супер класса для создания поля st_number
+    #     super(FioDoer, self).__init__(*args, **kwargs)
+    #     try:
+    #         self.fields['st_number'].queryset = qs_st_number
+    #     except NameError:
+    #         pass
 
-    empty_qs = None  # запрос заглушка для создания переменной st_number в нужном виде
-    st_number = FiosLabel(empty_qs, label='Сменное задание', empty_label='СЗ не выбрано')
-    qs_st_fio = Doers.objects.all()
-    fio_1 = forms.ModelChoiceField(qs_st_fio, label='ФИО исполнителя 1', empty_label='ФИО не выбрано')
-    fio_2 = forms.ModelChoiceField(qs_st_fio, label='ФИО исполнителя 2', empty_label='ФИО не выбрано', initial='',
-                                   required=False)
-    fio_3 = forms.ModelChoiceField(qs_st_fio, label='ФИО исполнителя 3', empty_label='ФИО не выбрано', initial='',
-                                   required=False)
-    fio_4 = forms.ModelChoiceField(qs_st_fio, label='ФИО исполнителя 4', empty_label='ФИО не выбрано', initial='',
-                                   required=False)
+    # empty_qs = None  # запрос заглушка для создания переменной st_number в нужном виде
+    # st_number = FiosLabel(empty_qs, label='Сменное задание', empty_label='СЗ не выбрано')
+    qs_st_fio = Doers.objects.exclude(job_title='Технолог')
+    fio_1 = forms.ModelChoiceField(
+        qs_st_fio, label='Исполнитель 1', empty_label='ФИО не выбрано',
+        widget=forms.Select(attrs={'class': "fio_select"})
+    )
+    fio_1_percentage = forms.IntegerField(
+        min_value=0, max_value=100, label='%', initial=100,
+        widget=forms.NumberInput(attrs={'class': "fio_percentage"})
+    )
+    fio_2 = forms.ModelChoiceField(
+        qs_st_fio, label='Исполнитель 2', empty_label='ФИО не выбрано', initial='', required=False,
+        widget=forms.Select(attrs={'class': "fio_select"})
+    )
+    fio_2_percentage = forms.IntegerField(
+        min_value=0, max_value=100, label='%', initial=0,
+        widget=forms.NumberInput(attrs={'class': "fio_percentage"})
+    )
+    fio_3 = forms.ModelChoiceField(
+        qs_st_fio, label='Исполнитель 3', empty_label='ФИО не выбрано', initial='', required=False,
+        widget=forms.Select(attrs={'class': "fio_select"})
+    )
+    fio_3_percentage = forms.IntegerField(
+        min_value=0, max_value=100, label='%', initial=0,
+        widget=forms.NumberInput(attrs={'class': "fio_percentage"})
+    )
+    fio_4 = forms.ModelChoiceField(
+        qs_st_fio, label='Исполнитель 4', empty_label='ФИО не выбрано', initial='', required=False,
+        widget=forms.Select(attrs={'class': "fio_select"})
+    )
+    fio_4_percentage = forms.IntegerField(
+        min_value=0, max_value=100, label='%', initial=0,
+        widget=forms.NumberInput(attrs={'class': "fio_percentage"})
+    )
 
 
 class PlanBid(forms.Form):
@@ -126,21 +151,25 @@ class PlanBid(forms.Form):
     Форма для ввода графика РЦ
     """
 
-    order_query = forms.CharField(max_length=50, label='Имя заказа для служебной',
-                                  widget=forms.TextInput(attrs={'pattern': order_pattern, 'title': order_error_text}))
+    sz_order_query = forms.CharField(max_length=50, label='Имя заказа для служебной',
+                                     widget=forms.TextInput(
+                                         attrs={'pattern': order_pattern, 'title': order_error_text}))
 
-    model_query = forms.CharField(max_length=50, label='Наименование изделия служебной',
-                                  widget=forms.TextInput(attrs={'pattern': model_pattern, 'title': model_error_text}))
+    sz_model_query = forms.CharField(max_length=50, label='Наименование изделия служебной',
+                                     widget=forms.TextInput(
+                                         attrs={'pattern': model_pattern, 'title': model_error_text}))
 
-    workshop = forms.ChoiceField(choices=((0, 'Без сборки'), (1, 'Цех 1'), (2, 'Цех 2'), (3, 'Цех 3'), (4, 'Цех 4')),
-                                 label='Цех сборщик', required=False)
+    sz_workshop = forms.ChoiceField(choices=((0, 'Без сборки'), (1, 'Цех 1'), (2, 'Цех 2'), (3, 'Цех 3'), (4, 'Цех 4')),
+                                    label='Цех сборщик', required=False)
     query_set_category = ProductCategory.objects.all()
-    category = forms.ModelChoiceField(queryset=query_set_category, empty_label='Категория не выбрана',
-                                      label='Категория заказа', required=True)  # выбор категории
-    datetime_done = forms.DateField(label='Планируемая дата готовности', required=True,
-                                    widget=forms.SelectDateWidget(empty_label=("год", "месяц", "день"),
-                                                                  years=(datetime.datetime.now().year,
-                                                                         datetime.datetime.now().year + 1)))
+    sz_category = forms.ModelChoiceField(queryset=query_set_category, empty_label='Категория не выбрана',
+                                         label='Категория заказа', required=True)  # выбор категории
+    sz_datetime_done = forms.DateField(label='Планируемая дата готовности', required=True,
+                                       widget=forms.SelectDateWidget(empty_label=("год", "месяц", "день"),
+                                                                     years=(datetime.datetime.now().year,
+                                                                            datetime.datetime.now().year + 1)))
+    sz_order_model_query = forms.CharField(max_length=50,
+                                           widget=forms.TextInput(attrs={'hidden': "true"}))
 
 
 class DailyReportForm(forms.Form):
@@ -183,6 +212,41 @@ class ReportForm(forms.Form):
         widget=widgets.AdminDateWidget(attrs={"class": "vDateField report_input"}),
         label='по',
         # initial=datetime.datetime.now()
+    )
+
+    class Media:
+        css = {
+            'all': (
+                '/static/scheduler/css/widgets.css',
+            )
+        }
+        js = [
+            '/admin/jsi18n/',
+            '/static/admin/js/core.js',
+        ]
+
+
+class CdwChoiceForm(forms.Form):
+    """
+    Форма ответа на заявку КД
+    """
+    cdw_files = MultipleFileField(label='Чертежи cdw',
+                                  widget=MultipleFileInput(attrs={'accept': ".cdw"}))
+
+
+class SendSZForm(forms.Form):
+    """
+    Форма ответа на заявку КД
+    """
+    sz_number = forms.CharField(max_length=50, label='Номер заявки',
+                                widget=forms.TextInput(attrs={"class": "report_input"}))
+    product_name = forms.CharField(max_length=50, label='Изделие',
+                                   widget=forms.TextInput(attrs={"class": "report_input"}))
+    sz_text = forms.CharField(label='Текст заявки',
+                              widget=forms.Textarea(attrs={"class": "sz_textarea"}))
+    need_date = forms.DateField(
+        widget=widgets.AdminDateWidget(attrs={"class": "vDateField report_input"}),
+        label='Дата потребности',
     )
 
     class Media:

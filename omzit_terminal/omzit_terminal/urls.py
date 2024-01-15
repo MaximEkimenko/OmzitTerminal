@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.i18n import JavaScriptCatalog
 
-from .views import home, get_pdf
+from .views import home
 
 urlpatterns = [
     path('admin/', admin.site.urls, name='admin'),

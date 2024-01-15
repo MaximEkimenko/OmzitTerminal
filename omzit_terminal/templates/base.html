@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="fullScreen">
+<head>
+    <meta charset="UTF-8">
+    <title>
+        {% block title %}
+        {% endblock %}
+    </title>
+    {% block links %}
+    <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet"/>
+    {% endblock %}
+</head>
+<body>
+<div id="wrap">
+    <header role="banner">
+      <div class="navbar">
+        <ul>
+            {% if 'admin' in user.username %}
+            <li class="dropdown">
+                <a href="javascript:void(0)" class="dropbtn">Меню</a>
+                <div class="dropdown-content">
+                    <a href="{% url 'admin:index' %}" target="_blank"> Администрирование сайта </a>
+                    <a href="{% url 'specification' %}"> Заявитель </a>
+                    <a href="{% url 'scheduler' %}"> Планировщик </a>
+                    <a href="{% url 'constructor' %}"> Конструктор </a>
+                    <a href="{% url 'tehnolog' %}"> Технолог </a>
+                    <a href="{% url 'schedulerwp' %}"> Планировщик РЦ (Мастер) </a>
+                    <a href="{% url 'worker_choose' %}"> Терминал (общий) </a>
+                    <a href="{% url 'plan' %}"> План производства </a>
+                    <a href="{% url 'test_scheduler' %}"> test </a>
+                    <a href="{% url 'plasma_tehnolog_distribution' %}"> Распределение технологов на плазму </a>
+                    <a href="{% url 'plasma_tehnolog' %}"> Технолог. Плазма </a>
+                </div>
+            </li>
+            {% endif %}
+            {% if user.is_authenticated %}
+            <li><a href="{% url 'instruction' %}">Инструкция</a></li>
+            <li><a href="{% url 'scheme' %}">Планировка</a></li>
+            {% block new_header_link %}
+            {% endblock %}
+            <li style="float:right"><a href="{% url 'logout' %}">Выйти</a></li>
+            <li style="float:right; text-align:center;"><span>{% firstof user.first_name user.username %} |</span></li>
+            {% else %}
+            <li style="float:right; text-align:center;"><a href="{% url 'login' %}">Войти</a></li>
+            {%endif %}
+        </ul>
+        </div>
+    </header>
+    <main>
+        {% block body %}
+        {% endblock %}
+    </main>
+    <footer>
+        <div class="line"></div>
+        <img src="{% static 'scheduler/css/background.png' %}" alt="Лаварт">
+    </footer>
+</div>
+</body>
+</html>

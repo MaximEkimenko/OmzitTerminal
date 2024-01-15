@@ -1,25 +1,17 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en" class="fullScreen">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Рабочее место планировщика</title>
-        <link type="text/css" href="{% static 'scheduler/css/scheduler.css' %}" rel="stylesheet" />
-    </head>
-    <body>
+
+{% block title %}
+    Рабочее место планировщика
+{% endblock %}
+
+{% block body %}
         <h1>Рабочее место планировщика. ПЛАНИРОВАНИЕ.</h1>
-        {% if request.user.is_authenticated %}
         <div class="legend">
             <div>
-                <p>Пользователь: {{ user.username }} | <a href="{% url 'logout' %}" class="legend_link"> Выйти </a></p>
-                <p><a href="{% url 'instruction' %}">Инструкция</a></p>
                 <p>Папка с чертежами: \\SVR-003\draws</p>
             </div>
         </div>
-        {% else %}
-        <a href="{% url 'login' %}"> Войти </a>
-        <!-- prettier-ignore -->
-        {%endif %} 
         {% if alert %}
         <script>
             function showNotification({ top = 0, right = 0, html, class_name }) {
@@ -51,11 +43,12 @@
                     <tr class="table_header_row">
                         <td class="td_cell">{{ filter_q.form.model_order_query }} Заказ-модель</td>
                         <td class="td_cell">{{ filter_q.form.query_prior }}Приоритет</td>
-                        <td class="td_cell">{{ filter_q.form.td_status }}Статус завяки</td>
+                        <td class="td_cell">{{ filter_q.form.td_status }}Статус заявки</td>
                         <td class="td_cell">Действие</td>
                     </tr>
                 </form>
                 {% for line in filter_q.qs %}
+                {% if not line.sz %}
                 <tr class="table_row">
                     <td class="td_cell">{{ line.model_order_query }}</td>
                     <td class="td_cell">{{ line.query_prior }}</td>
@@ -73,6 +66,7 @@
                         {% endif%}
                     </td>
                 </tr>
+                {% endif %}
                 {% endfor %}
             </table>
         </div>
@@ -82,52 +76,33 @@
             <p>
                 <input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр" />
             </p>
-            <table title="Перечеь заявок" class="table">
+            <table title="Перечень заявок" class="table">
                 <form method="get" id="filter_form1">
                     <tr class="table_header_row">
-                        <td class="td_cell">{{ filter_w.form.workshop }}№ служебной</td>
-                        <td class="td_cell">{{ filter_w.form.order }} Заказчик</td>
-                        <td class="td_cell">{{ filter_w.form.model_name }} Изделие</td>
-                        <td class="td_cell">{{ filter_w.form.datetime_done }} Дата потребности</td>
+                        <td class="td_cell">{{ filter_q.form.sz__sz_number }} № служебной</td>
+                        <td class="td_cell">Заказчик</td>
+                        <td class="td_cell">Изделие</td>
+                        <td class="td_cell">Дата потребности</td>
+                        <td class="td_cell">{{ filter_q.form.order_status }} Статус</td>
                         <td class="td_cell">Действие</td>
                     </tr>
                 </form>
-                <tr class="table_row">
-                    <td class="td_cell">1</td>
-                    <td class="td_cell">АБМК</td>
-                    <td class="td_cell">Ограждение</td>
-                    <td class="td_cell">15.12.2023</td>
-                    <td class="td_cell">
-                        <button class="id_plan_bid_btn btn" value="" title="Запланировать">Запланировать</button>
-                    </td>
-                </tr>
-                <tr class="table_row">
-                    <td class="td_cell">2</td>
-                    <td class="td_cell">СГИ</td>
-                    <td class="td_cell">Кожух</td>
-                    <td class="td_cell">29.11.2023</td>
-                    <td class="td_cell">
-                        <button class="id_plan_bid_btn btn" value="" title="Запланировать">Запланировать</button>
-                    </td>
-                </tr>
-                <tr class="table_row">
-                    <td class="td_cell">3</td>
-                    <td class="td_cell">АБМК</td>
-                    <td class="td_cell">Косынки на блок</td>
-                    <td class="td_cell">05.12.2023</td>
-                    <td class="td_cell">
-                        <button class="id_plan_bid_btn btn" value="" title="Запланировать">Запланировать</button>
-                    </td>
-                </tr>
-                <tr class="table_row">
-                    <td class="td_cell">4</td>
-                    <td class="td_cell">ООО ИНКОГНИТО</td>
-                    <td class="td_cell">Обечайки</td>
-                    <td class="td_cell">31.12.2023</td>
-                    <td class="td_cell">
-                        <button class="id_plan_bid_btn btn" value="" title="Запланировать">Запланировать</button>
-                    </td>
-                </tr>
+                {% for query in filter_q.qs %}
+                    {% if query.sz %}
+                        <tr class="table_row">
+                            <td class="td_cell">{{ query.sz.sz_number }}</td>
+                            <td class="td_cell">{{ query.sz.author }}</td>
+                            <td class="td_cell">{{ query.sz.product_name }}</td>
+                            <td class="td_cell">{{ query.sz.need_date }}</td>
+                            <td class="td_cell">{{ query.order_status }}</td>
+                            <td class="td_cell">
+                                {% if query.order_status == "не запланировано" %}
+                                <button class="id_plan_bid_btn btn" value="" data-order-model="{{ query.model_order_query }}" title="Запланировать">Запланировать</button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
             </table>
         </div>
         <!-- Форма запроса КД -->
@@ -193,31 +168,29 @@
         <div id="plan_bid" class="modal">
             <form
                 id="id_plan_bid_form"
-                action="{% url 'scheduler' %}"
-                method="post"
-                enctype="multipart/form-data"
-                class="form_form modal-content"
-            >
+                class="form_form modal-content">
                 <div class="add_to_plan">
                     <h3>Форма для планирования служебной записки</h3>
-                    <div class="form_inner_label">{{ form_plan_bid.order_query.label }}</div>
-                    <div class="form_inner_div">{{ form_plan_bid.order_query }}</div>
+                    <div class="form_inner_div">{{ form_plan_bid.sz_order_model_query }}</div>
+                    <div class="form_inner_label">{{ form_plan_bid.sz_order_query.label }}</div>
+                    <div class="form_inner_div">{{ form_plan_bid.sz_order_query }}</div>
                     <br />
-                    <div class="form_inner_label">{{ form_plan_bid.model_query.label }}</div>
-                    <div class="form_inner_div">{{ form_plan_bid.model_query }}</div>
+                    <div class="form_inner_label">{{ form_plan_bid.sz_model_query.label }}</div>
+                    <div class="form_inner_div">{{ form_plan_bid.sz_model_query }}</div>
                     <br />
-                    <div class="form_inner_label">{{ form_plan_bid.workshop.label }}</div>
-                    <div class="form_inner_div">{{ form_plan_bid.workshop }}</div>
+                    <div class="form_inner_label">{{ form_plan_bid.sz_workshop.label }}</div>
+                    <div class="form_inner_div">{{ form_plan_bid.sz_workshop }}</div>
                     <br />
-                    <div class="form_inner_label">{{ form_plan_bid.category.label }}</div>
-                    <div class="form_inner_div">{{ form_plan_bid.category }}</div>
+                    <div class="form_inner_label">{{ form_plan_bid.sz_category.label }}</div>
+                    <div class="form_inner_div">{{ form_plan_bid.sz_category }}</div>
                     <br />
-                    <div class="form_inner_label">{{ form_plan_bid.datetime_done.label }}</div>
-                    <div class="form_inner_div">{{ form_plan_bid.datetime_done }}</div>
+                    <div class="form_inner_label">{{ form_plan_bid.sz_datetime_done.label }}</div>
+                    <div class="form_inner_div">{{ form_plan_bid.sz_datetime_done }}</div>
                     <br />
-                    <div class="form_inner_label">Распределение изготовления заготовки:</div>
+                    <div class="form_inner_label">Распределение изготовления заготовки:</div>                      
+                    <div class="scroll_div_back"><div class="scroll_div" id="id_sz_st"></div></div>
                     <div>
-                        <button type="submit" class="form_button">
+                        <button class="form_button" id="id_plan_bid_form_btn" onclick="tableDataToJSON('id_st_table', '{% url "confirm_sz_planning" %}')">
                             <p class="green_word">Запланировать</p>
                         </button>
                     </div>
@@ -229,18 +202,22 @@
             // кнопки планирования Служебки
             document.addEventListener("DOMContentLoaded", function () {
                 // При загрузке документа
-                // const sel = id_plan_bid_form.elements.model_order_query; // Получаем все селекты
                 const buttons = document.querySelectorAll(".id_plan_bid_btn"); // Получаем кнопки с классом
                 buttons.forEach(function (c) {
                     // Для каждой кнопки
                     c.onclick = function () {
                         // Слушаем нажатие
-                        // Если нажата, то выбирает тот option, который в тексте кнопки.
                         const modal = document.querySelector("#plan_bid");
                         modal.style.display = "block";
-                        // for (var n = 0; n < sel.length; n++) {
-                        //     if (sel.options[n].text == c.value) sel.options[n].selected = true;
-                        // }
+                        renderSzShiftTasks(c.dataset.orderModel)
+                        {% for query in td_queries %}
+                        if (c.dataset.orderModel == '{{ query.model_order_query }}') {
+                            let date = '{{ query.sz.need_date }}'.split(".")
+                            document.getElementById("id_sz_datetime_done_day").value = Number(date[0])
+                            document.getElementById("id_sz_datetime_done_month").value = Number(date[1])
+                            document.getElementById("id_sz_datetime_done_year").value = Number(date[2])
+                        }
+                        {% endfor %}
                         window.onclick = function (event) {
                             if (event.target == modal) {
                                 modal.style.display = "none";
@@ -249,6 +226,132 @@
                     };
                 });
             });
+
+            function renderSzShiftTasks (orderModel) {
+                var szShiftTasksDiv = document.getElementById("id_sz_st")
+                var html = `
+                    <table title="Сменные задания" class="table" id="id_st_table">   
+                            <tr class="table_header_row">
+                                <td class="td_cell">№</td>
+                                <td class="td_cell">Наименование</td>
+                                <td class="td_cell">Материал</td>
+                                <td class="td_cell">Длина</td>
+                                <td class="td_cell">Количество</td>
+                                <td class="td_cell">Цех</td>
+                            </tr>
+                `
+                {% for st in sz_st %}
+                if (orderModel == "{{ st.model_order_query }}") {
+                    html += `<tr class="table_row">
+                        <td class="td_cell">{{ st.id }}</td>
+                        <td class="td_cell">{{ st.workpiece.name }}</td>
+                        <td class="td_cell">{{ st.workpiece.material }}</td>
+                        <td class="td_cell">{{ st.workpiece.length }}</td>
+                        <td class="td_cell">{{ st.workpiece.count }}</td>
+                        <td class="td_cell">
+                            <select name="select">
+                    `
+                    
+                    var pipe_dia ="{{ st.workpiece.material }}".search(/.*Труба[\s]*([\d]{3})[\D]+.*/)
+                    if (pipe_dia != -1) {
+                        pipe_dia = parseInt("{{ st.workpiece.material }}".match(/.*Труба[\s]*([\d]{3})[\D]+.*/)[1])
+                    }
+                       
+                    if (("{{ st.workpiece.material }}".search(/.*Лист.*/) != -1) || (pipe_dia != -1) && (pipe_dia>=219 && pipe_dia <= 426)) {
+                        html += `
+                        <option value="31">Цех 3</option>
+                        <option value="Плазма" selected>Плазма</option>
+                        `
+                    } else {
+                        html +=`
+                        <option value="31" selected>Цех 3</option>
+                        <option value="Плазма">Плазма</option>
+                        `
+                    }
+                    
+                    html += `</select></td></tr>`
+                }
+                {% endfor %}
+                html += `</table></div>`
+                var szOrderModel = document.getElementById("id_sz_order_model_query")
+                szOrderModel.value = orderModel
+                szShiftTasksDiv.innerHTML = html
+            }
+
+            async function postData(url = '', data = {}) {
+                const csrfToken = '{{ csrf_token }}';
+                const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify(data)
+                });
+                return await response.json();
+            }
+            
+            function tableDataToJSON(tableID, url) {
+                let table = document.getElementById(tableID)
+                let order = document.getElementById("id_sz_order_query")
+                let model = document.getElementById("id_sz_model_query")
+                const rowsCount = table.rows.length
+                let shiftTasks = new Object()
+                for (let i = 1; i < rowsCount; i++) {
+                        let workshop = table.rows[i].cells[5].lastChild.value
+                        let idShiftTask = table.rows[i].cells[0].innerHTML
+                        shiftTasks[idShiftTask] = workshop
+                }
+
+                if (order.checkValidity() && model.checkValidity()) {
+                    let data = {
+                        orderModel: document.getElementById("id_sz_order_model_query").value,
+                        newOrder: order.value,
+                        newModel: model.value,
+                        category: document.getElementById("id_sz_category").value,
+                        workshop: document.getElementById("id_sz_workshop").value,
+                        dateDone: document.getElementById("id_sz_datetime_done_day").value + "." + document.getElementById("id_sz_datetime_done_month").value + "." + document.getElementById("id_sz_datetime_done_year").value,
+                        st: shiftTasks
+                    }                    
+    
+                    postData(url, data).then((data) => {
+                        if (data['STATUS'] == 'OK') {
+                            console.log("OK")
+                            alert("Запланировано!")
+                            localStorage.clear();
+                            window.location.href='{% url "test_scheduler" %}';
+                        } else {
+                            alert(data['STATUS'])
+                            console.log("не OK")
+                        }
+                      });
+                }
+            }
+
+            function filter(phrase, _id, cellNumber, resetFilter) {
+                var words = phrase.value.toLowerCase().split(" ");
+                var table = document.getElementById(_id);
+                for (var r = 0; r < table.rows.length - 1; r++) {
+                   if (!resetFilter) {
+                      if (table.rows[r].cells[cellNumber].style.display === 'none') {
+                         continue
+                      }
+                   }
+                   var cellsV = table.rows[r].cells[cellNumber].innerHTML.replace(/<[^>]+>/g, "");
+                   console.log(cellsV);
+                   var displayStyle = 'none';
+                   for (var i = 0; i < words.length; i++) {
+                      if (cellsV.toLowerCase().indexOf(words[i]) >= 0)
+                         displayStyle = '';
+                      else {
+                         displayStyle = 'none';
+                         break;
+                      }
+                   }
+                   table.rows[r].style.display = displayStyle;
+                }
+             }
+
             // Кнопка планирования КД
             document.addEventListener("DOMContentLoaded", function () {
                 // При загрузке документа
@@ -302,5 +405,4 @@
                 document.getElementById("filter_form2").submit();
             }
         </script>
-    </body>
-</html>
+{% endblock %}

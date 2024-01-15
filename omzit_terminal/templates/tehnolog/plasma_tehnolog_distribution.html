@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}
+Рабочее место технолога. Распределение. Плазма
+{% endblock %}
+
+{% block body %}
+<h1>Рабочее место технолога. Плазма</h1>
+<div class="col">
+    <h3 class="table_h3">Распределение</h3>
+    {% if filter.qs %}
+        <p>
+            <input type="button" onclick="submitForm('id_filter_form')" value="Применить фильтр"/>
+            <input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр"/>
+        </p>
+        <table title="Перечень заявок" class="table">
+                <tr class="table_header_row">
+                    <td class="td_cell">СЗ</td>
+                    <td class="td_cell">Заказ-модель</td>
+                    <td class="td_cell">Дата потребности</td>
+                    <td class="td_cell">Наименование</td>
+                    <td class="td_cell">Материал</td>
+                    <td class="td_cell">Кол-во</td>
+                    <td class="td_cell">Чертеж</td>
+
+                    <!--select выбора технолога для отфильтрованных СЗ-->
+                    <td class="td_cell">
+                        Технолог
+                        <form method="post" id="id_tehnolog_form">
+                            {% csrf_token %}
+                            <p>{% render_field tehnolog_form.fio class='name_select_option' %}</p>
+                            <button type="submit" class="btn" name="form" value="tehnolog_form">Распределить всё</button>
+                        </form>
+                    </td>
+
+                    <!--select выбора цеха плазмы для отфильтрованных СЗ-->
+                    <td class="td_cell">Цех
+                        <form method="post" id="id_ws_plasma_form">
+                            {% csrf_token %}
+                            <p>{% render_field ws_plasma_form.ws class='name_select_option' %}</p>
+                            <button type="submit" class="btn" name="form" value="workshop_form">Распределить всё</button>
+                        </form>
+                    </td>
+                    
+                    <td class="td_cell">Раскладка</td>
+                    <td class="td_cell">Исполнитель </td>
+                </tr>
+
+            <!--строка фильтров-->
+            <form method="get" id="id_filter_form">
+                <tr>
+                    <td class="td_cell">{{ filter.form.id }}</td>
+                    <td class="td_cell">{{ filter.form.model_order_query }}</td>
+                    <td class="td_cell">{{ filter.form.datetime_done }}</td>
+                    <td class="td_cell">{{ filter.form.workpiece__name }}</td>
+                    <td class="td_cell">{{ filter.form.workpiece__material_1 }}{{ filter.form.workpiece__material_2 }}</td>
+                    <td class="td_cell">{{ filter.form.workpiece__count }}</td>
+                    <td class="td_cell">{{ filter.form.workpiece__draw }}</td>
+                    <td class="td_cell">{{ filter.form.fio_tehnolog }}</td>
+                    <td class="td_cell">{{ filter.form.ws_number }}</td>
+                    <td class="td_cell">{{ filter.form.plasma_layout }}</td>
+                    <td class="td_cell">{{ filter.form.fio_doer }}</td>
+                </tr>
+            </form>
+
+            {% for query in filter.qs %}
+            <tr class="table_row">
+                <td class="td_cell">{{ query.id }}</td>
+                <td class="td_cell">{{ query.model_order_query }}</td>
+                <td class="td_cell">{{ query.datetime_done }}</td>
+                <td class="td_cell">{{ query.workpiece.name }}</td>
+                <td class="td_cell">{{ query.workpiece.material }}</td>
+                <td class="td_cell">{{ query.workpiece.count }}</td>
+                <td class="td_cell">{{ query.workpiece.draw }}</td>
+
+                <!--select выбора технолога-->
+                <td class="td_cell">
+                    <form method="post" id="id_tehnolog_{{ query.id }}_form">
+                        {% csrf_token %}
+                        <p>{{ query.fio_tehnolog }} {% render_field tehnolog_form.fio id=query.id %}</p>
+                        <!--value для input присваивается в tehnolog_selects.onchange и равен id формы-->
+                        <input type="hidden" name="form"/> 
+                    </form>
+                </td>
+
+                <!--select выбора цеха плазмы-->
+                <td class="td_cell">
+                    <form method="post" id="id_workshop_{{ query.id }}_form">
+                        {% csrf_token %}
+                        <p>{% firstof query.ws_number|slice:":1" "Не определен" %}
+                            <select name="ws" class="name_select_option plasma_select" id="{{ query.id }}">
+                                {% for value, text in ws_plasma_form.fields.ws.choices %}
+                                    {% if value == query.ws_number %}
+                                        <option value="{{ value }}" selected>{{ text }}</option>
+                                    {% else %}
+                                        <option value="{{ value }}">{{ text }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </p>
+                        <!--value для input присваивается в ws_selects.onchange и равен id формы-->
+                        <input type="hidden" name="form"/> 
+                    </form>
+                </td>
+
+                <td class="td_cell">{{ query.plasma_layout }}</td>
+                <td class="td_cell">{{ query.fio_doer }}</td>
+            </tr>
+            {% endfor %}
+
+        </table>
+    {% else %}
+    Нет заданий для распределения
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const tehnolog_selects = document.querySelectorAll(".tehnolog_select") // Получаем селекты технологов с классом
+        const ws_selects = document.querySelectorAll(".plasma_select") // Получаем селекты цеха плазмы
+        tehnolog_selects.forEach(function (c) {
+            // При изменении любого селекта технолога
+            c.onchange = function () {
+                    let form = c.parentNode.parentNode
+                    // Скрытому input с name="form" присваиваем id формы
+                    form.elements.form.value = form.id
+                    form.submit()
+            }
+        })
+        ws_selects.forEach(function (c) {
+            // При изменении любого селекта цеха
+            c.onchange = function () {
+                    let form = c.parentNode.parentNode
+                    // Скрытому input с name="form" присваиваем id формы
+                    form.elements.form.value = form.id
+                    form.submit()
+            }
+        })
+        const focus_select = document.getElementById("{{focus_id}}").focus() // фокус после обновления страницы на измененном элементе
+    })
+
+    function submitForm(id) {
+            const form = document.getElementById(id)
+            form.submit()
+        }
+
+</script>
+
+{% endblock %}
