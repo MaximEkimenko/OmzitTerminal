@@ -175,12 +175,20 @@ class ShiftTask(models.Model):
     plasma_layout = models.CharField(max_length=255, null=True, blank=True,
                                      default='Не выполнена', verbose_name='Раскладка')
     workshop_plasma = models.PositiveSmallIntegerField(verbose_name='Цех плазмы', null=True, blank=True)
+    tech_id = models.PositiveIntegerField(verbose_name='id в техпроцессе', null=True, blank=True)
 
     class Meta:
         db_table = "shift_task"
         verbose_name = 'Сменное задание'
         verbose_name_plural = 'Сменные задания'
 
+    def add_next(self, new_shift_task: 'ShiftTask'):
+        Task2Task.objects.create(previous=self, next=new_shift_task)
+
+
+class Task2Task(models.Model):
+    previous = models.ForeignKey('ShiftTask', on_delete=models.CASCADE, related_name="next")
+    next = models.ForeignKey('ShiftTask', on_delete=models.CASCADE, related_name="previous")
 
 # class DailyReport(models.Model): # TODO ФУНКЦИОНАЛ ОТЧЁТОВ ЗАКОНСЕРВИРОВАНО не используется.
 #     """

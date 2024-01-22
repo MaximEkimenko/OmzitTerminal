@@ -266,7 +266,7 @@ def schedulerfio(request, ws_number, model_order_query):
             ShiftTask.objects.values(
                 *shift_task_fields, 'workpiece__text', 'workpiece__layouts_done', 'workpiece__count'
             )
-            .exclude(st_status='раскладка')
+            .exclude(st_status='раскладка').exclude(st_status='корректировка')
             .filter(ws_number=str(ws_number), model_order_query=model_order_query, next_shift_task=None)
             .filter(Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
         )
