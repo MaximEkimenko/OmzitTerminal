@@ -561,6 +561,10 @@ def get_orders_models(request):
         orders_models_queryset = WorkshopSchedule.objects.exclude(td_status__in=('завершено', 'запрошено'))
         orders_models = []
         st_with_doers = ShiftTask.objects.exclude(fio_doer='не распределено').values_list('tech_id', flat=True)
+        st_without_doers = ShiftTask.objects.filter(
+            fio_doer='не распределено',
+            st_status='корректировка'
+        ).values_list('tech_id', flat=True)
         for order_model in orders_models_queryset:
             orders_models.append(
                 {
@@ -568,7 +572,10 @@ def get_orders_models(request):
                     "model": order_model.model_name,
                     "order_status": order_model.order_status,
                     "td_status": order_model.td_status,
-                    "has_fio_doers": list(st_with_doers.filter(model_order_query=order_model.model_order_query))
+                    "has_fio_doers": list(st_with_doers.filter(model_order_query=order_model.model_order_query)),
+                    "on_change": len(st_without_doers.filter(
+                        model_order_query=order_model.model_order_query,
+                    )) > 0
                 }
             )
         return JsonResponse(status=200, data=orders_models, safe=False)
