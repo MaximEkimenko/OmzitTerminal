@@ -527,6 +527,8 @@ def shift_task_from_tech_data(request):
                 user=allowed_host_names[host_name]
             )
             ws = WorkshopSchedule.objects.get(model_order_query=new_order_model)
+            ws.td_status = 'утверждено'
+            ws.save()
 
             ShiftTask.objects.filter(
                 model_order_query=order_model).exclude(tech_id=None).exclude(tech_id__in=tech_ids).delete()
@@ -562,7 +564,7 @@ def get_orders_models(request):
                     "model": order_model.model_name,
                     "order_status": order_model.order_status,
                     "td_status": order_model.td_status,
-                    "has_fio_doers": list(st_with_doers.filter(model_order_query=order_model.model_order_query))[1:]
+                    "has_fio_doers": list(st_with_doers.filter(model_order_query=order_model.model_order_query))
                 }
             )
         return JsonResponse(status=200, data=orders_models, safe=False)

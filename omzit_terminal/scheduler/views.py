@@ -170,7 +170,7 @@ def td_query(request):
                                          f"{form_query_draw.cleaned_data['order_query']}. Приоритет: "
                                          f"{form_query_draw.cleaned_data['query_prior']}. "
                                          f"Заявку составил: {request.user.first_name} {request.user.last_name}.")
-                # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
                 # создание папки в общем доступе для чертежей модели
                 if not os.path.exists(rf'C:\draws\{model_order_query}'):
                     os.mkdir(rf'C:\draws\{model_order_query}')
@@ -789,7 +789,7 @@ def create_shift_task_report(start, end):  # TODO перенести в service
                         row[key] = make_naive(row[key]).strftime('%Y.%m.%d %H:%M:%S')
                     except Exception:
                         pass
-                    cell.value = row[key]
+                    cell.value = str(row[key])
             ex_wb.save(exel_file_dst)
     return exel_file_dst
 
