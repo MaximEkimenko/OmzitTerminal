@@ -290,7 +290,7 @@ def schedulerfio(request, ws_number, model_order_query):
             filtered_workplace_schedule = (
                 ShiftTask.objects.values(*shift_task_fields, 'workpiece__text', 'workpiece__layouts_done',
                                          'workpiece__count')
-                .exclude(st_status='раскладка').exclude(fio_doer='не распределено')
+                .exclude(st_status='раскладка').exclude(fio_doer='не распределено').exclude(st_status='корректировка')
                 .filter(ws_number=str(ws_number), model_order_query=model_order_query, next_shift_task=None)
             )
             action = 'change_distribution'
@@ -326,7 +326,7 @@ def schedulerfio(request, ws_number, model_order_query):
                         # находим все сменные задания, где раскладка является ключом в выполненных раскладках
                         if 'redistribute' in form_submit:
                             shift_tasks = ShiftTask.objects.filter(
-                                plasma_layout=layout).exclude(fio_doer='не распределено')
+                                plasma_layout=layout).exclude(fio_doer='не распределено').exclude(st_status='корректировка')
                             for shift_task in shift_tasks:
                                 shift_task.workpiece["fio_percentages"] = [
                                     form_fio_doer.cleaned_data[f'fio_{i}_percentage'] for i in range(1, 5)
@@ -418,7 +418,7 @@ def schedulerfio(request, ws_number, model_order_query):
             filtered_workplace_schedule = (
                 ShiftTask.objects.values(*shift_task_fields, 'workpiece__text', 'workpiece__layouts_done',
                                          'workpiece__count')
-                .exclude(st_status='раскладка').exclude(fio_doer='не распределено')
+                .exclude(st_status='раскладка').exclude(fio_doer='не распределено').exclude(st_status='корректировка')
                 .filter(ws_number=str(ws_number), model_order_query=model_order_query, next_shift_task=None)
             )
             _, pk, layout = form_submit.split("|")

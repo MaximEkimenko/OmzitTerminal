@@ -540,6 +540,10 @@ def shift_task_from_tech_data(request):
                 shift_task['workshop'] = ws.workshop
                 shift_task['datetime_done'] = ws.datetime_done
                 shift_task['product_category'] = ws.product_category
+                ShiftTask.objects.filter(
+                    model_order_query=order_model,
+                    st_status='корректировка'
+                ).update(st_status='не запланировано')
                 updated_count = ShiftTask.objects.filter(
                     model_order_query=order_model,
                     tech_id=shift_task.get('tech_id')
@@ -568,3 +572,28 @@ def get_orders_models(request):
                 }
             )
         return JsonResponse(status=200, data=orders_models, safe=False)
+
+
+@csrf_exempt
+def set_shift_task_status(request):
+    allowed_host_names = {
+        'kubernetes.docker.internal': 'Чекаловец А.В.',
+    }
+    if request.method == 'POST':
+        host_name = socket.gethostbyaddr(request.META['REMOTE_ADDR'])[0]
+        if host_name in allowed_host_names:
+            json_data = request.body
+            data = json.loads(json_data)
+
+            order_model = data.get('model_order_query')
+            tech_ids = data.get('tech_ids')
+            status = data.get('status')
+
+            ShiftTask.objects.filter(
+                model_order_query=order_model,
+                tech_id__in=tech_ids
+            ).update(st_status=status)
+
+            return JsonResponse(status=200, data={'message': '✔️Данные успешно добавлены!'})
+        else:
+            return JsonResponse(status=403, data={'message': f'⛔Доступ для АРМ "{host_name}" запрещен!'})
