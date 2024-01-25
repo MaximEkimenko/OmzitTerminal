@@ -169,3 +169,6 @@ xlsx
 *.pdf
 !ReportTemplate.xlsx
 !LayoutPlasmaTemplate.xlsx
+!template.xlsx
+data/
+temp/

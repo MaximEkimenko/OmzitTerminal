@@ -563,7 +563,6 @@ def get_orders_models(request):
         st_with_doers = ShiftTask.objects.exclude(fio_doer='не распределено').values_list('tech_id', flat=True)
         st_without_doers = ShiftTask.objects.filter(
             fio_doer='не распределено',
-            st_status='корректировка'
         ).values_list('tech_id', flat=True)
         for order_model in orders_models_queryset:
             orders_models.append(
@@ -575,7 +574,11 @@ def get_orders_models(request):
                     "has_fio_doers": list(st_with_doers.filter(model_order_query=order_model.model_order_query)),
                     "on_change": len(st_without_doers.filter(
                         model_order_query=order_model.model_order_query,
-                    )) > 0
+                        st_status='корректировка'
+                    )) > 0,
+                    "st_without_doers": list(st_without_doers.filter(
+                        model_order_query=order_model.model_order_query
+                    ))
                 }
             )
         return JsonResponse(status=200, data=orders_models, safe=False)
