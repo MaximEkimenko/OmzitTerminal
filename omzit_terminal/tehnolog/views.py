@@ -3,10 +3,14 @@ import json
 import os
 import asyncio
 import re
+import socket
+from typing import Optional
 
 from django.contrib.auth.decorators import login_required
-from django.http import FileResponse
+from django.http import FileResponse, HttpResponse, JsonResponse
+from django.middleware.csrf import get_token
 from django.shortcuts import render, redirect
+from django.views.decorators.csrf import csrf_exempt
 
 from constructor.forms import QueryAnswer
 from .services.plasma_utils import create_part_name, read_plasma_layout, create_layout_xlsx, read_plasma_layout_db
@@ -154,7 +158,6 @@ def new_model_query(request):
     :param request:
     :return:
     """
-    group_id = TERMINAL_GROUP_ID  # тг группа
     if request.method == 'POST':
         change_model_query_form = ChangeOrderModel(request.POST)
         if change_model_query_form.is_valid():
@@ -162,27 +165,48 @@ def new_model_query(request):
 
             new_order = change_model_query_form.cleaned_data['order_query'].strip()
             new_model = change_model_query_form.cleaned_data['model_query'].strip()
-            new_model_order_query = f"{new_order}_{new_model}"
 
-            (WorkshopSchedule.objects.filter(model_order_query=old_model_order_query)
-             .update(order=new_order,
-                     model_name=new_model,
-                     model_order_query=new_model_order_query))
-
-            # переименование папки
-            old_folder = os.path.join("C:/", "draws", old_model_order_query)
-            new_folder = os.path.join("C:/", "draws", new_model_order_query)
-            os.rename(old_folder, new_folder)
-
-            # сообщение в группу
-            success_group_message = (f"Заказ-модель переименован технологической службой в: "
-                                     f"{new_model_order_query}. "
-                                     f"Откорректировал: {request.user.first_name} {request.user.last_name}."
-                                     )
-            asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+            change_order_model(
+                old_order_model=old_model_order_query,
+                new_order=new_order,
+                new_model=new_model,
+                user=f'{request.user.first_name} {request.user.last_name}'
+            )
         else:
             pass
     return redirect('tehnolog')  # обновление страницы при успехе
+
+
+def change_order_model(old_order_model: str, new_model: str, user: str, new_order: Optional[str] = None) -> str:
+    if new_order is None:
+        new_order = old_order_model.split('_')[0]
+
+    new_model_order_query = f"{new_order}_{new_model}"
+
+    if new_model_order_query == old_order_model:
+        return new_model_order_query
+
+    (WorkshopSchedule.objects.filter(model_order_query=old_order_model)
+     .update(order=new_order,
+             model_name=new_model,
+             model_order_query=new_model_order_query))
+
+    # переименование папки
+    old_folder = os.path.join("C:/", "draws", old_order_model)
+    new_folder = os.path.join("C:/", "draws", new_model_order_query)
+    try:
+        os.rename(old_folder, new_folder)
+
+        # сообщение в группу
+        success_group_message = (f"Заказ-модель переименован технологической службой в: "
+                                 f"{new_model_order_query}. "
+                                 f"Откорректировал: {user}."
+                                 )
+        asyncio.run(terminal_message_to_id(to_id=TERMINAL_GROUP_ID, text_message_to_id=success_group_message))
+    except Exception as ex:
+        print(f'При переименовании папки возникло исключение: {ex}')
+
+    return new_model_order_query
 
 
 def upload_draws(request, draws_path, group_id):
@@ -481,3 +505,105 @@ def plasma_tehnolog(request):
         "alert": alert,
     }
     return render(request, template_name='tehnolog/plasma_tehnolog.html', context=context)
+
+
+@csrf_exempt
+def shift_task_from_tech_data(request):
+    allowed_host_names = {
+        'kubernetes.docker.internal': 'Чекаловец А.В.',
+    }
+    if request.method == 'POST':
+        host_name = socket.gethostbyaddr(request.META['REMOTE_ADDR'])[0]
+        if host_name in allowed_host_names:
+            json_data = request.body
+            data = json.loads(json_data)
+
+            order_model = data.get('model_order_query')
+            tech_ids = [st['tech_id'] for st in data['shift_tasks']]
+
+            new_order_model = change_order_model(
+                old_order_model=order_model,
+                new_model=data.get('model_name'),
+                user=allowed_host_names[host_name]
+            )
+            ws = WorkshopSchedule.objects.get(model_order_query=new_order_model)
+            ws.td_status = 'утверждено'
+            ws.save()
+
+            ShiftTask.objects.filter(
+                model_order_query=order_model).exclude(tech_id=None).exclude(tech_id__in=tech_ids).delete()
+
+            for shift_task in data['shift_tasks']:
+                shift_task.pop('next_ids')
+                shift_task.pop('prev_ids')
+                shift_task['model_order_query'] = new_order_model
+                shift_task['workshop'] = ws.workshop
+                shift_task['datetime_done'] = ws.datetime_done
+                shift_task['product_category'] = ws.product_category
+                ShiftTask.objects.filter(
+                    model_order_query=order_model,
+                    st_status='корректировка'
+                ).update(st_status='не запланировано')
+                updated_count = ShiftTask.objects.filter(
+                    model_order_query=order_model,
+                    tech_id=shift_task.get('tech_id')
+                ).update(**shift_task)
+                if updated_count == 0:
+                    ShiftTask.objects.create(**shift_task)
+
+            return JsonResponse(status=200, data={'message': '✔️Данные успешно добавлены!'})
+        else:
+            return JsonResponse(status=403, data={'message': f'⛔Доступ для АРМ "{host_name}" запрещен!'})
+
+
+def get_orders_models(request):
+    if request.method == 'GET':
+        orders_models_queryset = WorkshopSchedule.objects.exclude(td_status__in=('завершено', 'запрошено'))
+        orders_models = []
+        st_with_doers = ShiftTask.objects.exclude(fio_doer='не распределено').values_list('tech_id', flat=True)
+        st_without_doers = ShiftTask.objects.filter(
+            fio_doer='не распределено',
+        ).values_list('tech_id', flat=True)
+        for order_model in orders_models_queryset:
+            orders_models.append(
+                {
+                    "order_model": order_model.model_order_query,
+                    "model": order_model.model_name,
+                    "order_status": order_model.order_status,
+                    "td_status": order_model.td_status,
+                    "has_fio_doers": list(st_with_doers.filter(model_order_query=order_model.model_order_query)),
+                    "on_change": len(st_without_doers.filter(
+                        model_order_query=order_model.model_order_query,
+                        st_status='корректировка'
+                    )) > 0,
+                    "st_without_doers": list(st_without_doers.filter(
+                        model_order_query=order_model.model_order_query
+                    ))
+                }
+            )
+        return JsonResponse(status=200, data=orders_models, safe=False)
+
+
+@csrf_exempt
+def set_shift_task_status(request):
+    allowed_host_names = {
+        'kubernetes.docker.internal': 'Чекаловец А.В.',
+    }
+    if request.method == 'POST':
+        host_name = socket.gethostbyaddr(request.META['REMOTE_ADDR'])[0]
+        if host_name in allowed_host_names:
+            json_data = request.body
+            data = json.loads(json_data)
+
+            order_model = data.get('model_order_query')
+            tech_ids = data.get('tech_ids')
+            status = data.get('status')
+
+            ShiftTask.objects.filter(
+                model_order_query=order_model,
+                tech_id__in=tech_ids
+            ).update(st_status=status)
+
+            return JsonResponse(status=200, data={'message': '✔️Данные успешно добавлены!'})
+        else:
+            return JsonResponse(status=403, data={'message': f'⛔Доступ для АРМ "{host_name}" запрещен!'})
