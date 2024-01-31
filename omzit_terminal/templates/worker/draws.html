@@ -6,6 +6,8 @@
 {% endblock %}
 
 {% block body %}
+{% block menu %}
+{% endblock %}
         <h1 id="h1_tag">Выбор чертежей РЦ {{ ws_number }} сменное задание {{st_number}}</h1>
         <form action="{{ draws }}" method="POST" enctype="multipart/form-data" id="sel_1">
             {% csrf_token %}
@@ -41,7 +43,7 @@
                     "--"
                 );
                 // кнопка чертёж
-                if (event.code == "KeyW") {
+                if (event.ctrlKey) {
                     //document.body.style.zoom = "100%";
                     if (right_link != 0) {
                         console.log(`pdf/${ws_number}/${draw_link}`);

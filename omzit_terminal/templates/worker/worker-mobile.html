@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+Терминал РЦ {{ ws_number }}
+{% endblock %}
+
+{% block menu %}
+{% endblock %}
+{% block body %}
+        <h1 style="font-size: 50px">Терминал {{ ws_number }}</h1>
+        {% if alert %}
+            <p class='terminal_alert' id="terminal_alert"> {{ alert }} </p>
+            <script>
+                const notification = document.getElementById("terminal_alert");
+                setTimeout(() => notification.remove(), 10000)
+            </script>
+        {% endif %}
+        <script>
+            const notification = document.getElementById("terminal_alert");
+            setTimeout(() => notification.remove(), 10000)
+        </script>
+        {% if initial_shift_tasks %}
+        <table class="table" title="График цехов" id="main_table">
+            <tr class="table_header_row">
+                <td class="td_cell"><p class="cell_text">№</p></td>
+                <td class="td_cell"><p class="cell_text">РЦ</p></td>
+                <td class="td_cell"><p class="cell_text">Изделие</p></td>
+                <td class="td_cell"><p class="cell_text">Заказ</p></td>
+                <td class="td_cell"><p class="cell_text">Номер операции</p></td>
+                <td class="td_cell"><p class="cell_text">Операция</p></td>
+                <td class="td_cell"><p class="cell_text">Трудоемкость</p></td>
+                <td class="td_cell"><p class="cell_text" style="width: 200px">Исполнители</p></td>
+                <td class="td_cell"><p class="cell_text">Статус</p></td>
+                <td class="td_cell"><p class="cell_text">Время начала работы</p></td>
+                <td class="td_cell"><p class="cell_text">Время приемки</p></td>
+            </tr>
+            {% for line in initial_shift_tasks %}
+            <tr id="row" class="table_row">
+                <td class="td_cell"><p class="cell_text"><button
+                        type="button"
+                        class="btn select_st"
+                        id="{{ line.id }}"
+                        data-send="{{ line.op_number }}--{{ line.model_name }}--{{ line.id }}"
+                        data-task="{{ line.id }}--{{ line.st_status }}--{{ line.fio_doer }}--{{ line.op_number }}--{{ line.model_name }}--{{ line.op_name_full }}"
+                >{{ line.id }}</button></p></td>
+                <td class="td_cell"><p class="cell_text">{{ line.ws_number }}</p></td>
+                <td class="td_cell"><p class="cell_text">{{ line.model_name }}</p></td>
+                <td class="td_cell"><p class="cell_text">{{ line.order }}</p></td>
+                <td class="td_cell"><p class="cell_text">{{ line.op_number }}</p></td>
+                <td class="td_cell"><p class="cell_text">{{ line.op_name_full }}</p></td>
+                <td class="td_cell"><p class="cell_text">{{ line.norm_tech }}</p></td>
+                <td class="td_cell"><p class="cell_text">{{ line.fio_doer }}</p></td>
+                <td class="td_cell"><p class="cell_text">{{ line.st_status }}</p></td>
+                <td class="td_cell"><p class="cell_text">{{ line.datetime_job_start }}</p></td>
+                <td class="td_cell"><p class="cell_text">{{ line.decision_time }}</p></td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p>Распределённые сменные задания на РЦ {{ ws_number }} отсутствуют.</p>
+        {% endif %}
+        <!-- prettier-ignore -->
+        {% if initial_shift_tasks %}
+        {% endif %}
+        <div id="id_modal" class="modal">
+            <form class="action_form modal-content" method="post" id="actions">
+                {% csrf_token %}
+                <div class="add_to_plan">
+                    <h3>Выбор действия</h3>
+                    <div>
+                        <button type="button" class="st_action_btn green" id="start_st_btn">Сменное<br>задание</button>
+                        <input type="hidden" name="task_id">
+                        <button type="button" class="st_action_btn orange" id="master_call_btn">Вызов мастера</button>
+                    </div>
+                    <div>
+                        <button type="button" class="st_action_btn green" id="select_draw_btn">Чертеж</button>
+                        <button type="button" class="st_action_btn red" id="dispatcher_call_btn">Простой</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <br /><br /><br />
+
+        <script>
+                const buttons = document.querySelectorAll(".select_st"); // Получаем кнопки с классом
+                const form_element = document.getElementById("actions");
+                let st_id
+                let tech_data
+                let task_data
+                buttons.forEach(function (c) {
+                    // Для каждой кнопки
+                    c.onclick = function () {
+                        st_id = c.id
+                        tech_data = c.dataset.send
+                        task_data = c.dataset.task
+                        console.log(st_id, tech_data)
+                        const modal = document.querySelector("#id_modal");
+                        modal.style.display = "block";
+                        window.onclick = function (event) {
+                            if (event.target == modal) {
+                                modal.style.display = "none";
+                            }
+                        };
+                    };
+
+                const ws_number = "{{ ws_number }}"
+
+                const start_st_btn = document.querySelector("#start_st_btn");
+                const select_draw_btn = document.querySelector("#select_draw_btn");
+                const master_call_btn = document.querySelector("#master_call_btn");
+                const dispatcher_call_btn = document.querySelector("#dispatcher_call_btn");
+
+                start_st_btn.onclick = function () {
+                    console.log(form_element.elements.task_id.value)
+                    form_element.elements.task_id.value = task_data
+                    form_element.submit()
+                }
+
+                select_draw_btn.onclick = function () {
+                    console.log('select_draw_btn clicked')
+                    if (st_id != "0") {
+                        const draw_link = `/worker/${ws_number}--${tech_data}`; // ссылка на страницу с чертежем
+                        location.href = draw_link; // переход по ссылке
+                    }
+                }
+
+                master_call_btn.onclick = function () {
+                    master_call_link = `/worker/${ws_number}-${st_id}/get_master`
+                    location.href = master_call_link
+                }
+
+                dispatcher_call_btn.onclick = function () {
+                    dispatcher_call_link = `/worker/${ws_number}-${st_id}/get_dispatcher`
+                    location.href = dispatcher_call_link
+                }
+            });
+
+        </script>
+        <script src="{% static 'worker/js/listener.js' %}">
+            // скрипт запуска меню выбора
+        </script>
+        <script src="{% static 'worker/js/worker.js' %}"></script>
+        <div style="height: 90px"></div>
+        <script></script>
+        <br />
+        <a class="btn" href="{% url 'worker_choose' %}">Назад</a>
+{% endblock %}

@@ -6,6 +6,8 @@
 {% endblock %}
 
 {% block body %}
+{% block menu %}
+{% endblock %}
         <h1 style="font-size: 50px">Терминал {{ ws_number }}</h1>
         <script>
             function showNotification({ top = 0, right = 0, html }) {
@@ -88,7 +90,7 @@
                 const tech_data = select_element.options[select_element.selectedIndex].dataset.send;
                 //const op_number = select_element.options[select_element.selectedIndex].op_number;
                 // кнопка выбрать чертёж
-                if (event.code == "KeyW") {
+                if (event.ctrlKey) {
                     if (st_id != "0") {
                         const draw_link = `/worker/${ws_number}--${tech_data}`; // ссылка на страницу с чертежем
                         location.href = draw_link; // переход по ссылке
