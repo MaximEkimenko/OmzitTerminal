@@ -6,19 +6,16 @@
 {% endblock %}
 
 {% block body %}
+        {% block menu %}
+        {% endblock %}
         <h1 style="font-size: 50px">Терминал {{ ws_number }}</h1>
-        <script>
-            function showNotification({ top = 0, right = 0, html }) {
-                let notification = document.createElement("div");
-                notification.className = "notification";
-                notification.innerHTML = html;
-                document.body.append(notification);
-                setTimeout(() => notification.remove(), 10000);
-            }
-            showNotification({
-                html: "<p class='terminal_alert'> {{ alert }} </p>",
-            });
-        </script>
+        {% if alert %}
+            <p class='terminal_alert' id="terminal_alert"> {{ alert }} </p>
+            <script>
+                const notification = document.getElementById("terminal_alert");
+                setTimeout(() => notification.remove(), 10000)
+            </script>
+        {% endif %}
         {% if initial_shift_tasks %}
         <table class="table" title="График цехов" id="main_table">
             <tr class="table_header_row">
@@ -88,7 +85,7 @@
                 const tech_data = select_element.options[select_element.selectedIndex].dataset.send;
                 //const op_number = select_element.options[select_element.selectedIndex].op_number;
                 // кнопка выбрать чертёж
-                if (event.code == "KeyW") {
+                if (event.ctrlKey) {
                     if (st_id != "0") {
                         const draw_link = `/worker/${ws_number}--${tech_data}`; // ссылка на страницу с чертежем
                         location.href = draw_link; // переход по ссылке

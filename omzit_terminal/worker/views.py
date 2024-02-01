@@ -5,7 +5,6 @@ import time
 import asyncio
 import socket
 from django.http import FileResponse
-from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.db.models import Q, QuerySet, F
 from django.shortcuts import render
@@ -17,7 +16,7 @@ from scheduler.models import ShiftTask
 
 from .forms import WorkplaceChoose
 from .services.master_call_db import select_master_call, select_dispatcher_call
-from .services.master_call_function import send_call_master, send_call_dispatcher, terminal_message_to_id
+from .services.master_call_function import send_call_master, send_call_dispatcher
 from .services.master_call_function import get_client_ip
 
 
@@ -56,7 +55,8 @@ def worker(request, ws_number):
                              'APM-0168',  # Отто
                              'APM-0314',  # Чекаловец
                              'APM-0168',
-                             'kubernetes'
+                             'APM-0229',
+                             '192'
                              )  # сервер 192.168.8.30
     terminal_ip = get_client_ip(request)  # определение IP терминала
     terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
@@ -140,11 +140,13 @@ def worker(request, ws_number):
             alert_message = 'Сообщение диспетчеру отправлено.'
         else:
             alert_message = ''
-    print('select_shift_task', select_shift_task)
     context = {'initial_shift_tasks': initial_shift_tasks, 'ws_number': ws_number,
                'select_shift_task': select_shift_task, 'alert': alert_message}
     # print(context)
-    return render(request, r"worker/worker.html", context=context)
+    if 'Mobile' in request.META['HTTP_USER_AGENT'] or terminal_name[:terminal_name.find('.')] == 'APM-0229':
+        return render(request, r"worker/worker-mobile.html", context=context)
+    else:
+        return render(request, r"worker/worker-mobile.html", context=context)
 
 
 def draws(request, ws_st_number: str):
@@ -180,7 +182,13 @@ def draws(request, ws_st_number: str):
             pdf_links.append({'link': fr"{draw_path}{str(draw_filename).strip()}", 'filename': draw_filename})
         print('pdf_links', pdf_links)
     context = {'ws_number': ws_number, 'st_number': st_number, 'select_draws': select_draws, 'pdf_links': pdf_links}
-    return render(request, r"worker/draws.html", context=context)
+
+    terminal_ip = get_client_ip(request)  # определение IP терминала
+    terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
+    if 'Mobile' in request.META['HTTP_USER_AGENT'] or terminal_name[:terminal_name.find('.')] == 'APM-0229':
+        return render(request, r"worker/draws-mobile.html", context=context)
+    else:
+        return render(request, r"worker/draws-mobile.html", context=context)
 
 
 def show_draw(request, ws_number, pdf_file):
