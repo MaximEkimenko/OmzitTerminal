@@ -6,8 +6,8 @@
 {% endblock %}
 
 {% block body %}
-        {% block menu %}
-        {% endblock %}
+{% block menu %}
+{% endblock %}
         <h1 id="h1_tag">Выбор чертежей РЦ {{ ws_number }} сменное задание {{st_number}}</h1>
         <form action="{{ draws }}" method="POST" enctype="multipart/form-data" id="sel_1">
             {% csrf_token %}

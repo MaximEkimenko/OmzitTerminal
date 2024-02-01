@@ -189,7 +189,8 @@ def schedulerwp(request):
     """
     # отображение графика РЦ
     # выборка из уже занесенного
-    if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:4]).strip() != "disp":
+    if (str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:4]).strip() != "disp"
+            and str(request.user.username[:5]).strip() != "termi"):
         raise PermissionDenied
     shift_task_fields = (
         'id',
@@ -473,6 +474,8 @@ class LoginUser(LoginView):  # TODO перенести в service
             return reverse_lazy('tehnolog')
         elif 'constructor' in self.request.user.username:
             return reverse_lazy('constructor')
+        elif 'termi' in self.request.user.username:
+            return reverse_lazy('worker_choose')
         print(self.request.user.username)
 
 

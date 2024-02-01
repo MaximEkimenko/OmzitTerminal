@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 import datetime
 import json
 import os
@@ -20,14 +21,16 @@ from .services.master_call_function import send_call_master, send_call_dispatche
 from .services.master_call_function import get_client_ip
 
 
+# @login_required(login_url="login")
 def ws_number_choose(request):
     """
     Выбор РЦ
     :param request:
     :return:
     """
-    if str(request.user.username).strip()[:5] != "admin":
-        raise PermissionDenied
+    # users = ('admin', 'termi')
+    # if str(request.user.username).strip()[:5] not in users:
+    #     raise PermissionDenied
     if request.method == 'POST':
         ws_number_form = WorkplaceChoose(request.POST)
         # получение номера РЦ
@@ -42,6 +45,7 @@ def ws_number_choose(request):
     return render(request, r"worker/worker_ws_choose.html", context=context)
 
 
+# @login_required(login_url="login")
 def worker(request, ws_number):
     """
     Обработка данных на странице терминала РЦ ws_number
@@ -49,15 +53,28 @@ def worker(request, ws_number):
     :param ws_number:
     :return:
     """
+    # if str(request.user.username).strip()[:5] != "admin" or str(request.user.username).strip() != "termi":
+    #     raise PermissionDenied
+    # users = ('admin', 'termi')
+    # if str(request.user.username).strip()[:5] not in users:
+    #     raise PermissionDenied
     # список разрешённых по имени компа
     allowed_terminal_list = ('APM-0036',  # Екименко
                              'SPR-008',  # Терминал №3
                              'APM-0168',  # Отто
                              'APM-0314',  # Чекаловец
                              'APM-0168',
-                             'APM-0229',
-                             '192'
-                             )  # сервер 192.168.8.30
+                             'TZ-001',  # Новые терминалы по порядку
+                             'TZ-002',
+                             'TZ-003',
+                             'TZ-004',
+                             'TZ-005',
+                             'TZ-006',
+                             'TZ-007',
+                             'TZ-008',
+                             'TZ-009',
+                             'APM-0229',  # Планшет
+                             )
     terminal_ip = get_client_ip(request)  # определение IP терминала
     terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
     if terminal_name[:terminal_name.find('.')] not in allowed_terminal_list:
@@ -142,11 +159,10 @@ def worker(request, ws_number):
             alert_message = ''
     context = {'initial_shift_tasks': initial_shift_tasks, 'ws_number': ws_number,
                'select_shift_task': select_shift_task, 'alert': alert_message}
-    # print(context)
     if 'Mobile' in request.META['HTTP_USER_AGENT'] or terminal_name[:terminal_name.find('.')] == 'APM-0229':
         return render(request, r"worker/worker-mobile.html", context=context)
     else:
-        return render(request, r"worker/worker-mobile.html", context=context)
+        return render(request, r"worker/worker.html", context=context)
 
 
 def draws(request, ws_st_number: str):
@@ -188,7 +204,7 @@ def draws(request, ws_st_number: str):
     if 'Mobile' in request.META['HTTP_USER_AGENT'] or terminal_name[:terminal_name.find('.')] == 'APM-0229':
         return render(request, r"worker/draws-mobile.html", context=context)
     else:
-        return render(request, r"worker/draws-mobile.html", context=context)
+        return render(request, r"worker/draws.html", context=context)
 
 
 def show_draw(request, ws_number, pdf_file):

@@ -712,3 +712,45 @@ li.dropdown {
     /* font-weight: bold; */
     /* width: 15em; */
 }
+
+.st_action_btn {
+    width: 200px;
+    height: 200px;
+    background-color: white;
+    border: solid 2px black;
+    border-radius: 100px;
+    color: white;
+    padding: 12px;
+    font-size: 40px;
+    cursor: pointer;
+    margin: 20px;
+    box-shadow: 10em;
+}
+
+.orange {
+    background-color: #ec562d;
+}
+
+.green {
+    background-color: green;
+}
+
+.red {
+    background-color: red;
+}
+
+.st_action_btn:hover {
+    background-color: green;
+    color: white;
+    border: solid 2px black;
+    border-radius: 100px;
+    /* font-weight: bold; */
+    /* width: 15em; */
+}
+
+.action_form {
+    width: 800px;
+    align-self: center;
+    margin-left: auto;
+    margin-right: auto;
+}
