@@ -510,10 +510,10 @@ def plasma_tehnolog(request):
 @csrf_exempt
 def shift_task_from_tech_data(request):
     allowed_host_names = {
-        'kubernetes.docker.internal': 'Чекаловец А.В.',
+        'APM-0314': 'Чекаловец А.В.',
     }
     if request.method == 'POST':
-        host_name = socket.gethostbyaddr(request.META['REMOTE_ADDR'])[0]
+        host_name = socket.gethostbyaddr(request.META['REMOTE_ADDR'])[0].split('.')[0]
         if host_name in allowed_host_names:
             json_data = request.body
             data = json.loads(json_data)
@@ -587,10 +587,10 @@ def get_orders_models(request):
 @csrf_exempt
 def set_shift_task_status(request):
     allowed_host_names = {
-        'kubernetes.docker.internal': 'Чекаловец А.В.',
+        'APM-0314': 'Чекаловец А.В.',
     }
     if request.method == 'POST':
-        host_name = socket.gethostbyaddr(request.META['REMOTE_ADDR'])[0]
+        host_name = socket.gethostbyaddr(request.META['REMOTE_ADDR'])[0].split('.')[0]
         if host_name in allowed_host_names:
             json_data = request.body
             data = json.loads(json_data)
@@ -607,3 +607,9 @@ def set_shift_task_status(request):
             return JsonResponse(status=200, data={'message': '✔️Данные успешно добавлены!'})
         else:
             return JsonResponse(status=403, data={'message': f'⛔Доступ для АРМ "{host_name}" запрещен!'})
+
+
+def get_order_model_shift_tasks(request, order_model):
+    if request.method == 'GET':
+        data = list(ShiftTask.objects.filter(model_order_query=order_model).values())
+        return JsonResponse(data, safe=False)
