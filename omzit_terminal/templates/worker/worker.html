@@ -39,7 +39,11 @@
             {% for line in initial_shift_tasks %}
             <tr id="row" class="table_row">
                 {% for el in line.values %}
-                <td class="td_cell"><p class="cell_text">{{ el }}</p></td>
+                {% if el == None %}
+                    <td class="td_cell"><p class="cell_text">-</p></td>
+                {% else %}
+                    <td class="td_cell"><p class="cell_text">{{ el }}</p></td>
+                {% endif %}
                 {% endfor %}
             </tr>
             {% endfor %}
@@ -119,6 +123,6 @@
         <br />
         <!-- prettier-ignore -->
         {% if user.username == 'admin' %}
-        <a href="{% url 'worker_choose' %}">Назад</a> <br />
+        <a href="{% url 'worker_choose' %}" class="btn">Назад</a> <br />
         {%endif %}
 {% endblock %}

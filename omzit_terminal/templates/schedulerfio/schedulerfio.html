@@ -9,6 +9,7 @@
     <form method="post" id="id_change_distribution_form">
         {% csrf_token %}
         <li><button type="submit" name="form" value="change_distribution">Изменить распределение</button></li>
+        <li><a href="{% url 'schedulerwp' %}">Выбор терминала</a></li>
     </form>
 {% endblock %}
 
@@ -47,7 +48,7 @@
                     <td class="td_cell">{{ filter.form.order }} Заказ</td>
                     <td class="td_cell">{{ filter.form.model_name }} Изделие</td>
                     <td class="td_cell">{{ filter.form.datetime_done }} Дата готовности</td>
-                    <td class="td_cell">Номер Т</td>
+                    <td class="td_cell">{{ filter.form.ws_number}} Номер Т</td>
                     <td class="td_cell">{{ filter.form.op_number }} Номер операции</td>
                     <td class="td_cell">{{ filter.form.op_name_full }} Операция</td>
                     <td class="td_cell">Норма времени</td>
@@ -344,7 +345,6 @@
             }
 
         </script>
-        <p><a href="{% url 'schedulerwp' %}">Выбор терминала</a></p>
         <div style="height: 150px"></div>
         <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
 {% endblock %}

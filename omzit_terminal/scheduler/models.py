@@ -1,10 +1,11 @@
-import datetime
-
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models import Avg
-from django.forms import ModelChoiceField
-from django.utils import timezone
+
+# TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
+# import datetime
+# from django.db.models import Avg
+# from django.forms import ModelChoiceField
+# from django.utils import timezone
 
 model_pattern = r"^[\-A-Za-z0-9]+$"
 model_error_text = "Имя модели может содержать только цифры и буквы латинского алфавита и знак '-' тире"
@@ -56,16 +57,15 @@ class WorkshopSchedule(models.Model):
     tehnolog_query_td_fio = models.CharField(max_length=30, null=True, verbose_name='Утвердил / загрузил')
     product_category = models.CharField(max_length=30, null=True, verbose_name='Категория изделия')
 
-    # Пример структуры {
-    # "author": "admin",
-    # "sz_text": "Прошу изготовить",
-    # "need_date": "22.12.2023",
-    # "sz_number": "СЗ1",
-    # "product_name": "Блок Б57"
-    # }
-    sz = models.JSONField(null=True, blank=True, verbose_name='Данные служебной записки')
-
-    # tehnolog_excel_load_fio = models.CharField(max_length=30, null=True, verbose_name='Загрузил')
+    # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
+    # # Пример структуры {
+    # # "author": "admin",
+    # # "sz_text": "Прошу изготовить",
+    # # "need_date": "22.12.2023",
+    # # "sz_number": "СЗ1",
+    # # "product_name": "Блок Б57"
+    # # }
+    # sz = models.JSONField(null=True, blank=True, verbose_name='Данные служебной записки')
 
     class Meta:
         db_table = "workshop_schedule"
@@ -83,8 +83,10 @@ class Doers(models.Model):
     """
     objects = models.Manager()  # явное указание метода для pycharm
     doers = models.CharField(max_length=255, unique=True, verbose_name='ФИО исполнителей')
-    job_title = models.CharField(max_length=255, null=True, blank=True, verbose_name='Должность')
-    ws_plasma = models.PositiveSmallIntegerField(verbose_name='Цех плазмы (по умолчанию)', null=True, blank=True)
+
+    # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
+    # job_title = models.CharField(max_length=255, null=True, blank=True, verbose_name='Должность')
+    # ws_plasma = models.PositiveSmallIntegerField(verbose_name='Цех плазмы (по умолчанию)', null=True, blank=True)
 
     class Meta:
         db_table = "doers"
@@ -156,39 +158,41 @@ class ShiftTask(models.Model):
         blank=True
     )
 
-    # Пример структуры workpiece {
-    # "draw": "AGCC.287-6400-PB-01-KM1.DW-0037 - Блок Б57-1-Тип10_V18",
-    # "name": "Б1-1",
-    # "text": "Б1-1 Швеллер 30П ГОСТ 8240-97 С255-4 ГОСТ 27772-2015 L=7500 (2 шт.)",
-    # "count": "2",
-    # "layout_name": "4SP №order1 B-26 Balka №26 2", имя детали
-    # "layouts": {'12ГС-43.CNC': 1}
-    # "layouts_done": {'12ГС-44.CNC': 1}
-    # "layouts_total": 2 количество на всех раскладках
-    # "length": "7500",
-    # "material": "Швеллер 30П ГОСТ 8240-97 С255-4 ГОСТ 27772-2015",
-    # "fio_percentages": ['50', '50', '0', '0'],
-    # }
-    workpiece = models.JSONField(null=True, blank=True, verbose_name='Заготовка')
-    fio_tehnolog = models.CharField(max_length=255, null=True, blank=True,
-                                    default='не распределено', verbose_name='ФИО технолога')
-    plasma_layout = models.CharField(max_length=255, null=True, blank=True,
-                                     default='Не выполнена', verbose_name='Раскладка')
-    workshop_plasma = models.PositiveSmallIntegerField(verbose_name='Цех плазмы', null=True, blank=True)
-    tech_id = models.PositiveIntegerField(verbose_name='id в техпроцессе', null=True, blank=True)
+    # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
+    # # Пример структуры workpiece {
+    # # "draw": "AGCC.287-6400-PB-01-KM1.DW-0037 - Блок Б57-1-Тип10_V18",
+    # # "name": "Б1-1",
+    # # "text": "Б1-1 Швеллер 30П ГОСТ 8240-97 С255-4 ГОСТ 27772-2015 L=7500 (2 шт.)",
+    # # "count": "2",
+    # # "layout_name": "4SP №order1 B-26 Balka №26 2", имя детали
+    # # "layouts": {'12ГС-43.CNC': 1}
+    # # "layouts_done": {'12ГС-44.CNC': 1}
+    # # "layouts_total": 2 количество на всех раскладках
+    # # "length": "7500",
+    # # "material": "Швеллер 30П ГОСТ 8240-97 С255-4 ГОСТ 27772-2015",
+    # # "fio_percentages": ['50', '50', '0', '0'],
+    # # }
+    # workpiece = models.JSONField(null=True, blank=True, verbose_name='Заготовка')
+    # fio_tehnolog = models.CharField(max_length=255, null=True, blank=True,
+    #                                 default='не распределено', verbose_name='ФИО технолога')
+    # plasma_layout = models.CharField(max_length=255, null=True, blank=True,
+    #                                  default='Не выполнена', verbose_name='Раскладка')
+    # workshop_plasma = models.PositiveSmallIntegerField(verbose_name='Цех плазмы', null=True, blank=True)
+    # tech_id = models.PositiveIntegerField(verbose_name='id в техпроцессе', null=True, blank=True)
 
     class Meta:
         db_table = "shift_task"
         verbose_name = 'Сменное задание'
         verbose_name_plural = 'Сменные задания'
 
-    def add_next(self, new_shift_task: 'ShiftTask'):
-        Task2Task.objects.create(previous=self, next=new_shift_task)
+    # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
+    # def add_next(self, new_shift_task: 'ShiftTask'):
+    #     Task2Task.objects.create(previous=self, next=new_shift_task)
 
-
-class Task2Task(models.Model):
-    previous = models.ForeignKey('ShiftTask', on_delete=models.CASCADE, related_name="next")
-    next = models.ForeignKey('ShiftTask', on_delete=models.CASCADE, related_name="previous")
+# TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
+# class Task2Task(models.Model):
+#     previous = models.ForeignKey('ShiftTask', on_delete=models.CASCADE, related_name="next")
+#     next = models.ForeignKey('ShiftTask', on_delete=models.CASCADE, related_name="previous")
 
 # class DailyReport(models.Model): # TODO ФУНКЦИОНАЛ ОТЧЁТОВ ЗАКОНСЕРВИРОВАНО не используется.
 #     """

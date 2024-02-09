@@ -15,23 +15,36 @@
 <div id="wrap">
     {% block menu %}
     <header role="banner">
-      <div class="navbar">
+      <div class="navbar sticky">
         <ul>
             {% if 'admin' in user.username %}
             <li class="dropdown">
                 <a href="javascript:void(0)" class="dropbtn">Меню</a>
                 <div class="dropdown-content">
                     <a href="{% url 'admin:index' %}" target="_blank"> Администрирование сайта </a>
-                    <a href="{% url 'specification' %}"> Заявитель </a>
                     <a href="{% url 'scheduler' %}"> Планировщик </a>
                     <a href="{% url 'constructor' %}"> Конструктор </a>
                     <a href="{% url 'tehnolog' %}"> Технолог </a>
                     <a href="{% url 'schedulerwp' %}"> Планировщик РЦ (Мастер) </a>
                     <a href="{% url 'worker_choose' %}"> Терминал (общий) </a>
-                    <a href="{% url 'plan' %}"> План производства </a>
+
+                    {% comment %}
+                    <a href="{% url 'specification' %}"> Заявитель </a>
                     <a href="{% url 'test_scheduler' %}"> test </a>
                     <a href="{% url 'plasma_tehnolog_distribution' %}"> Распределение технологов на плазму </a>
                     <a href="{% url 'plasma_tehnolog' %}"> Технолог. Плазма </a>
+                    <a href="{% url 'plan' %}"> План производства </a>
+                    {% endcomment %}
+
+                </div>
+            </li>
+            {% endif %}
+            {% if 'disp' in user.username %}
+            <li class="dropdown">
+                <a href="javascript:void(0)" class="dropbtn">Меню</a>
+                <div class="dropdown-content">
+                    <a href="{% url 'scheduler' %}"> Планировщик </a>
+                    <a href="{% url 'schedulerwp' %}"> Планировщик РЦ (Мастер) </a>
                 </div>
             </li>
             {% endif %}
@@ -41,12 +54,13 @@
             {% block new_header_link %}
             {% endblock %}
             <li style="float:right"><a href="{% url 'logout' %}">Выйти</a></li>
-            <li style="float:right; text-align:center;"><span>{% firstof user.first_name user.username %} |</span></li>
+            <li style="float:right; text-align:center;"><span>{% firstof user.first_name user.username %} {{ user.last_name }} |</span></li>
             {% else %}
             <li style="float:right; text-align:center;"><a href="{% url 'login' %}">Войти</a></li>
             {%endif %}
         </ul>
         </div>
+        <div> <br> <br> </div>
     </header>
     {% endblock %}
     <main>

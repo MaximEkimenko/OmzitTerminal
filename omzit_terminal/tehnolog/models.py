@@ -59,40 +59,40 @@ class TechData(models.Model):
         verbose_name = 'Технологические данные'
         verbose_name_plural = 'Технологические данные'
 
-
-# Модели базы данных SIGMA
-
-class Pip(models.Model):
-    wo_number = models.CharField(db_column='WONumber', primary_key=True, max_length=50)
-    part_name = models.CharField(db_column='PartName', max_length=100)
-    program_name = models.CharField(db_column='ProgramName', max_length=50)
-    repeat_id = models.IntegerField(db_column='RepeatID')
-    qty_in_process = models.IntegerField(db_column='QtyInProcess', blank=True, null=True)
-    cutting_time = models.FloatField(db_column='CuttingTime', blank=True, null=True)
-    cutting_length = models.FloatField(db_column='CuttingLength', blank=True, null=True)
-    pierce_qty = models.IntegerField(db_column='PierceQty', blank=True, null=True)
-    total_cutting_time = models.FloatField(db_column='TotalCuttingTime', blank=True, null=True)
-    master_part_qty = models.IntegerField(db_column='MasterPartQty', blank=True, null=True)
-    wo_state = models.IntegerField(db_column='WOState', blank=True, null=True)
-    pk_pip = models.CharField(db_column='PK_PIP', max_length=36)
-
-    class Meta:
-        managed = False
-        db_table = 'pip'
-
-
-class Program(models.Model):
-    program_name = models.CharField(db_column='ProgramName', primary_key=True, max_length=50)
-    repeat_id = models.IntegerField(db_column='RepeatID')
-    qty_in_process = models.IntegerField(db_column='QtyInProcess', blank=True, null=True)
-    cutting_time = models.FloatField(db_column='CuttingTime', blank=True, null=True)
-    pierce_qty = models.IntegerField(db_column='PierceQty', blank=True, null=True)
-    post_datetime = models.DateTimeField(db_column='PostDateTime', blank=True, null=True)
-    material = models.CharField(db_column='Material', max_length=150, blank=True, null=True)
-    thickness = models.FloatField(db_column='Thickness', blank=True, null=True)
-    posted_by_user_id = models.IntegerField(db_column='PostedByUserID', blank=True, null=True)
-    pk_program = models.CharField(db_column='PK_PROGRAM', max_length=36)
-
-    class Meta:
-        managed = False
-        db_table = 'program'
+# TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
+# # Модели базы данных SIGMA
+#
+# class Pip(models.Model):
+#     wo_number = models.CharField(db_column='WONumber', primary_key=True, max_length=50)
+#     part_name = models.CharField(db_column='PartName', max_length=100)
+#     program_name = models.CharField(db_column='ProgramName', max_length=50)
+#     repeat_id = models.IntegerField(db_column='RepeatID')
+#     qty_in_process = models.IntegerField(db_column='QtyInProcess', blank=True, null=True)
+#     cutting_time = models.FloatField(db_column='CuttingTime', blank=True, null=True)
+#     cutting_length = models.FloatField(db_column='CuttingLength', blank=True, null=True)
+#     pierce_qty = models.IntegerField(db_column='PierceQty', blank=True, null=True)
+#     total_cutting_time = models.FloatField(db_column='TotalCuttingTime', blank=True, null=True)
+#     master_part_qty = models.IntegerField(db_column='MasterPartQty', blank=True, null=True)
+#     wo_state = models.IntegerField(db_column='WOState', blank=True, null=True)
+#     pk_pip = models.CharField(db_column='PK_PIP', max_length=36)
+#
+#     class Meta:
+#         managed = False
+#         db_table = 'pip'
+#
+#
+# class Program(models.Model):
+#     program_name = models.CharField(db_column='ProgramName', primary_key=True, max_length=50)
+#     repeat_id = models.IntegerField(db_column='RepeatID')
+#     qty_in_process = models.IntegerField(db_column='QtyInProcess', blank=True, null=True)
+#     cutting_time = models.FloatField(db_column='CuttingTime', blank=True, null=True)
+#     pierce_qty = models.IntegerField(db_column='PierceQty', blank=True, null=True)
+#     post_datetime = models.DateTimeField(db_column='PostDateTime', blank=True, null=True)
+#     material = models.CharField(db_column='Material', max_length=150, blank=True, null=True)
+#     thickness = models.FloatField(db_column='Thickness', blank=True, null=True)
+#     posted_by_user_id = models.IntegerField(db_column='PostedByUserID', blank=True, null=True)
+#     pk_program = models.CharField(db_column='PK_PROGRAM', max_length=36)
+#
+#     class Meta:
+#         managed = False
+#         db_table = 'program'

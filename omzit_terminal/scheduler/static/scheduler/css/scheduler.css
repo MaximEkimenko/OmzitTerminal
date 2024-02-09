@@ -10,6 +10,11 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   color: white;
 }
+
+a {
+    text-decoration: none; /* Убираем подчёркивание */
+}
+
 #wrap {
   position: relative;
   min-height: 95vh;
@@ -589,6 +594,12 @@ li.dropdown {
 
 .dropdown:hover .dropdown-content {
     display: block;
+}
+
+.sticky {
+  position: fixed;
+  top: 0;
+  width: 100%;
 }
 
 .table_header_row_plasma {
