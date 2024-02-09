@@ -9,8 +9,8 @@
     <form method="post" id="id_change_distribution_form">
         {% csrf_token %}
         <li><button type="submit" name="form" value="change_distribution">Изменить распределение</button></li>
-        <li><a href="{% url 'schedulerwp' %}">Выбор терминала</a></li>
     </form>
+    <li><a href="{% url 'schedulerwp' %}">Выбор терминала</a></li>
 {% endblock %}
 
 {% block body %}
@@ -54,105 +54,34 @@
                     <td class="td_cell">Норма времени</td>
                     <td class="td_cell">{{ filter.form.fio_doer }} Фио исполнителя</td>
                     <td class="td_cell">{{ filter.form.st_status }} Статус СЗ</td>
-                    <td class="td_cell">Деталь</td>
-                    <td class="td_cell">{{ filter.form.plasma_layout }} Раскладка</td>
-                    <td class="td_cell">Кол-во на раскладке</td>
                 </tr>
             </form>
             {% for line in filter.qs %}
-                {% if layout and line.workpiece__layouts_done %}
-                        {% for layout_done, counts in line.workpiece__layouts_done.items %}
-                            {% if layout_done == layout %}
-                                {% for count in counts.count %}
-                                <tr class="table_row">
-                                    <td class="td_cell"></td>
-                                    <td class="td_cell">{{ line.id }}</td>
-                                    <td class="td_cell">{{ line.workshop }}</td>
-                                    <td class="td_cell">{{ line.order }}</td>
-                                    <td class="td_cell">{{ line.model_name }}</td>
-                                    <td class="td_cell">{{ line.datetime_done }}</td>
-                                    <td class="td_cell">{{ line.ws_number }}</td>
-                                    <td class="td_cell">{{ line.op_number }}</td>
-                                    <td class="td_cell">{{ line.op_name_full }}</td>
-                                    <td class="td_cell">{% firstof el counts.total_time|floatformat:4  %}</td>
-                                    <td class="td_cell">{{ line.fio_doer }}</td>
-                                    <td class="td_cell">{{ line.st_status }}</td>
-                                    <td class="td_cell">{% firstof line.workpiece__text "-" %}</td>
-                                    <td class="td_cell">{{ layout_done }}</td>
-                                    <td class="td_cell">{{ count }}</td>
-                                </tr>
-                                {% endfor %}
+                <tr class="table_row">
+                    <td class="td_cell">
+                        {% if not pk %}
+                        <form method="post" id="id_distribute_btn_form">
+                            {% csrf_token %}
+                            {% if action == 'change_distribution' %}
+                                <button class="id_plan_fio_btn btn" name="form" value="redistribute|{{ line.id }}" title="Перераспределить">Перераспределить</button>
+                            {% else %}
+                                <button class="id_plan_fio_btn btn" name="form" value="distribute|{{ line.id }}" title="Распределить">Распределить</button>
                             {% endif %}
-                        {% endfor %}
-                {% else %}
-                    {% if line.workpiece__layouts_done %}
-                        {% for layout_done, counts in line.workpiece__layouts_done.items %}
-                                {% for count in counts.count %}
-                                <tr class="table_row">
-                                    <td class="td_cell">
-                                        <form method="post" id="id_distribute_btn_form">
-                                            {% csrf_token %}
-                                            {% if action == 'change_distribution' %}
-                                                <button class="id_plan_fio_btn btn" name="form" value="redistribute||{{ layout_done }}" title="Перераспределить">Перераспределить</button>
-                                            {% else %}
-                                                <button class="id_plan_fio_btn btn" name="form" value="distribute||{{ layout_done }}" title="Распределить">Распределить</button>
-                                            {% endif %}
-                                        </form>
-                                    </td>
-                                    <td class="td_cell">{{ line.id }}</td>
-                                    <td class="td_cell">{{ line.workshop }}</td>
-                                    <td class="td_cell">{{ line.order }}</td>
-                                    <td class="td_cell">{{ line.model_name }}</td>
-                                    <td class="td_cell">{{ line.datetime_done }}</td>
-                                    <td class="td_cell">{{ line.ws_number }}</td>
-                                    <td class="td_cell">{{ line.op_number }}</td>
-                                    <td class="td_cell">{{ line.op_name_full }}</td>
-                                    <td class="td_cell">{% firstof el counts.total_time|floatformat:4  %}</td>
-                                    <td class="td_cell">{{ line.fio_doer }}</td>
-                                    <td class="td_cell">{{ line.st_status }}</td>
-                                    <td class="td_cell">{% firstof line.workpiece__text "-" %}</td>
-                                    <td class="td_cell">{{ layout_done }}</td>
-                                    <td class="td_cell">{{ count }}</td>
-                                </tr>
-                                {% endfor %}
-                        {% endfor %}
-
-                    {% else %}
-                        <tr class="table_row">
-                            <td class="td_cell">
-                                {% if not pk %}
-                                <form method="post" id="id_distribute_btn_form">
-                                    {% csrf_token %}
-                                    {% if action == 'change_distribution' %}
-                                        {% if line.plasma_layout != "Не выполнена" %}
-                                            <button class="id_plan_fio_btn btn" name="form" value="redistribute|{{ line.id }}|{{ line.plasma_layout }}" title="Перераспределить">Перераспределить</button>
-                                        {% else %}
-                                            <button class="id_plan_fio_btn btn" name="form" value="redistribute|{{ line.id }}|" title="Перераспределить">Перераспределить</button>
-                                        {% endif %}
-                                    {% else %}
-                                        <button class="id_plan_fio_btn btn" name="form" value="distribute|{{ line.id }}|" title="Распределить">Распределить</button>
-                                    {% endif %}
-                                </form>
-                                {% endif %}
-                            </td>
-                            <td class="td_cell">{{ line.id }}</td>
-                            <td class="td_cell">{{ line.workshop }}</td>
-                            <td class="td_cell">{{ line.order }}</td>
-                            <td class="td_cell">{{ line.model_name }}</td>
-                            <td class="td_cell">{{ line.datetime_done }}</td>
-                            <td class="td_cell">{{ line.ws_number }}</td>
-                            <td class="td_cell">{{ line.op_number }}</td>
-                            <td class="td_cell">{{ line.op_name_full }}</td>
-                            <td class="td_cell">{{ line.norm_tech }}</td>
-                            <td class="td_cell">{{ line.fio_doer }}</td>
-                            <td class="td_cell">{{ line.st_status }}</td>
-                            <td class="td_cell">{% firstof line.workpiece__text "-" %}</td>
-                            <td class="td_cell">{% firstof line.plasma_layout "-" %}</td>
-                            <td class="td_cell">{% firstof line.workpiece__count "-" %}</td>
-                        </tr>
-                    {% endif %}
-                
-                {% endif %}
+                        </form>
+                        {% endif %}
+                    </td>
+                    <td class="td_cell">{{ line.id }}</td>
+                    <td class="td_cell">{{ line.workshop }}</td>
+                    <td class="td_cell">{{ line.order }}</td>
+                    <td class="td_cell">{{ line.model_name }}</td>
+                    <td class="td_cell">{{ line.datetime_done }}</td>
+                    <td class="td_cell">{{ line.ws_number }}</td>
+                    <td class="td_cell">{{ line.op_number }}</td>
+                    <td class="td_cell">{{ line.op_name_full }}</td>
+                    <td class="td_cell">{{ line.norm_tech }}</td>
+                    <td class="td_cell">{{ line.fio_doer }}</td>
+                    <td class="td_cell">{{ line.st_status }}</td>
+                </tr>
 
             {% endfor %}
             
@@ -178,22 +107,19 @@
                 <div class="add_to_plan">
                     <p class="alert">Распределите сменные задания:</p>
                     {% for field in form_fio_doer %}
-                        {% if 'percentage' not in field.auto_id %}
                             <div class="form_block_div fio_div">
-                        {% endif %}
 
                         <label for="{{ field.auto_id }}">{{ field.label }}</label>
                         {{ field }}
                         
-                        {% if 'percentage' in field.auto_id %}
                             </div>
-                        {% endif %}
                     {% endfor %}
                     <button class="btn_part" type="button" onclick="cancelModal()">Отмена</button>
                     {% if action == 'redistribute' %}
-                        <button class="btn" type="submit" name="form" value="confirm_redistribute|{{ pk }}|{{ layout }}">Назначить ФИО</button>
+                        <button class="btn" type="submit" name="form" value="confirm_redistribute|{{ pk }}">Назначить ФИО</button>
+                        <button class="btn_delete" type="submit" name="form" value="cancel_distribution|{{ pk }}">Отменить распределение</button>
                     {% else %}
-                        <button class="btn" type="submit" name="form" value="confirm_distribute|{{ pk }}|{{ layout }}">Назначить ФИО</button>
+                        <button class="btn" type="submit" name="form" value="confirm_distribute|{{ pk }}">Назначить ФИО</button>
                     {% endif %}
                     
                 </div>
@@ -209,123 +135,133 @@
                 if (modal) {
                     modal.style.display = "block";
                 }
-                const fioDivs = document.querySelectorAll(".fio_div")
-                function hideFioDivs () {
-                    for (let i = 0; i < fioDivs.length; i++) {
-                        if (i > 0) {
-                            fioDivs[i].style.display = 'none'
-                        }
-                        fioDivs[i].children[2].style.display = 'none'
-                        fioDivs[i].children[3].style.display = 'none'
-                    }
-                }
 
-                hideFioDivs()
+                // const fioDivs = document.querySelectorAll(".fio_div")
+                // function hideFioDivs () {
+                //     for (let i = 0; i < fioDivs.length; i++) {
+                //         if (i > 0) {
+                //             fioDivs[i].style.display = 'none'
+                //         }
+                //         fioDivs[i].children[2].style.display = 'none'
+                //         fioDivs[i].children[3].style.display = 'none'
+                //     }
+                // }
+
+                // hideFioDivs()
                 
                 const fioSelects = document.querySelectorAll(".fio_select")
-                let selectIds = []
-                for (let i = 0; i < fioSelects.length; i++) {
-                    selectIds.push(fioSelects[i].id)
-                    
-                }
-
-                const fioPercentageInputs = document.querySelectorAll(".fio_percentage")
-                let inputsIds = []
-                for (let i = 0; i < fioPercentageInputs.length; i++) {
-                    inputsIds.push(fioPercentageInputs[i].id)
-                }
-
-                fioPercentageInputs.forEach(function (c) {
-                    c.onchange = function () {
-                        if (Number(c.value) > 100) {
-                            c.value = 100
-                        }
-                        let index = inputsIds.indexOf(c.id)
-                        let diff = Number(c.value) - percentages[index]
-                        percentages[index] += diff
-                        let new_index = index
-                        if (index != fios.length - 1) {
-                            new_index += 1
-                        } else {
-                            new_index = 0
-                        }
-                        if (percentages[new_index] - diff >= 0) {
-                            percentages[new_index] = percentages[new_index] - diff
-                        } else {
-                            for (let i = 0; i < fios.length; i++) {
-                                if (i != index) {
-                                    percentages[i] = (100 - percentages[index]) / (fios.length - 1)
-                                }
-                            }
-                        }
-                        for (let i = 0; i < fioPercentageInputs.length; i++) {
-                            fioPercentageInputs[i].value = Math.trunc(percentages[i])
-                        }
-                    }
-                })
-
-                let fios = []
-                let currentValue = ''
-                let percentages = [0, 0, 0, 0]
-                let percentages_index = 0
-
                 {% for fio in fios_doers %}
-                    fioDivs[percentages_index].style.display = 'block'
-                    fioDivs[percentages_index].children[2].style.display = 'inline-block'
-                    fioDivs[percentages_index].children[3].style.display = 'inline-block'
-                    for (let i = 0; i < fioSelects[percentages_index].options.length; i++) {
-                        if (fioSelects[percentages_index][i].innerText == '{{ fio }}') {
-                            fioSelects[percentages_index].value = fioSelects[percentages_index].item(i).value
+                    var i = Number('{{ forloop.counter }}') - 1
+                    for (let j = 0; option = fioSelects[i].options[j]; j++) {
+                        if (option.text == '{{ fio }}') {
+                            fioSelects[i].selectedIndex = j;
+                            break;
                         }
                     }
-                    percentages_index += 1
                 {% endfor %}
+                // let selectIds = []
+                // for (let i = 0; i < fioSelects.length; i++) {
+                //     selectIds.push(fioSelects[i].id)
+                    
+                // }
 
-                percentages_index = 0
+                // const fioPercentageInputs = document.querySelectorAll(".fio_percentage")
+                // let inputsIds = []
+                // for (let i = 0; i < fioPercentageInputs.length; i++) {
+                //     inputsIds.push(fioPercentageInputs[i].id)
+                // }
 
-                {% for i in percentages %}
-                    percentages[percentages_index] = Number('{{ i }}')
-                    fioPercentageInputs[percentages_index].value = Number('{{ i }}')
-                    percentages_index += 1
-                {% endfor %}
+                // fioPercentageInputs.forEach(function (c) {
+                //     c.onchange = function () {
+                //         if (Number(c.value) > 100) {
+                //             c.value = 100
+                //         }
+                //         let index = inputsIds.indexOf(c.id)
+                //         let diff = Number(c.value) - percentages[index]
+                //         percentages[index] += diff
+                //         let new_index = index
+                //         if (index != fios.length - 1) {
+                //             new_index += 1
+                //         } else {
+                //             new_index = 0
+                //         }
+                //         if (percentages[new_index] - diff >= 0) {
+                //             percentages[new_index] = percentages[new_index] - diff
+                //         } else {
+                //             for (let i = 0; i < fios.length; i++) {
+                //                 if (i != index) {
+                //                     percentages[i] = (100 - percentages[index]) / (fios.length - 1)
+                //                 }
+                //             }
+                //         }
+                //         for (let i = 0; i < fioPercentageInputs.length; i++) {
+                //             fioPercentageInputs[i].value = Math.trunc(percentages[i])
+                //         }
+                //     }
+                // })
 
-                fioSelects.forEach(function (c) {
-                    c.onclick = function () {
-                        currentValue = c.value
-                    }
-                    c.onchange = function () {
-                        if (c.value !== '') {
-                            fios.push(c.value)
-                        } else {
-                            let index = fios.indexOf(currentValue)
-                            if (index >= 0) {
-                                fios.splice(index, 1);
-                            }
-                        }  
-                        for (let i = 0; i < fioSelects.length; i++) {
-                            if (fios[i]) {
-                                fioSelects[i].value = fios[i]
-                            } else {
-                                fioSelects[i].value = ''
-                            }
-                        }
-                        hideFioDivs()
-                        for (let i = 0; i < fios.length; i++) {
-                            percentages = [0, 0, 0, 0]
-                            if (fios.length > 1) {
-                                fioDivs[i].children[2].style.display = 'inline-block'
-                                fioDivs[i].children[3].style.display = 'inline-block'
-                                fioDivs[i].children[3].value = Math.trunc(100 / fios.length)
-                                percentages[i] = 100 / fios.length
-                            }
-                            fioDivs[i].style.display = 'block'
-                            if (i+1 < fioDivs.length) {
-                                fioDivs[i+1].style.display = 'block'
-                            }
-                        }
+                // let fios = []
+                // let currentValue = ''
+                // let percentages = [0, 0, 0, 0]
+                // let percentages_index = 0
 
-                    };
-                });
+                // {% for fio in fios_doers %}
+                    // fioDivs[percentages_index].style.display = 'block'
+                    // fioDivs[percentages_index].children[2].style.display = 'inline-block'
+                    // fioDivs[percentages_index].children[3].style.display = 'inline-block'
+                //     for (let i = 0; i < fioSelects[percentages_index].options.length; i++) {
+                //         if (fioSelects[percentages_index][i].innerText == '{{ fio }}') {
+                //             fioSelects[percentages_index].value = fioSelects[percentages_index].item(i).value
+                //         }
+                //     }
+                //     percentages_index += 1
+                // {% endfor %}
+
+                // percentages_index = 0
+
+                // {% for i in percentages %}
+                //     percentages[percentages_index] = Number('{{ i }}')
+                //     fioPercentageInputs[percentages_index].value = Number('{{ i }}')
+                //     percentages_index += 1
+                // {% endfor %}
+
+                // fioSelects.forEach(function (c) {
+                //     c.onclick = function () {
+                //         currentValue = c.value
+                //     }
+                //     c.onchange = function () {
+                //         if (c.value !== '') {
+                //             fios.push(c.value)
+                //         } else {
+                //             let index = fios.indexOf(currentValue)
+                //             if (index >= 0) {
+                //                 fios.splice(index, 1);
+                //             }
+                //         }  
+                        // for (let i = 0; i < fioSelects.length; i++) {
+                        //     if (fios[i]) {
+                        //         fioSelects[i].value = fios[i]
+                        //     } else {
+                        //         fioSelects[i].value = ''
+                        //     }
+                        // }
+                        // hideFioDivs()
+                        // for (let i = 0; i < fios.length; i++) {
+                        //     percentages = [0, 0, 0, 0]
+                        //     if (fios.length > 1) {
+                        //         fioDivs[i].children[2].style.display = 'inline-block'
+                        //         fioDivs[i].children[3].style.display = 'inline-block'
+                        //         fioDivs[i].children[3].value = Math.trunc(100 / fios.length)
+                        //         percentages[i] = 100 / fios.length
+                        //     }
+                        //     fioDivs[i].style.display = 'block'
+                        //     if (i+1 < fioDivs.length) {
+                        //         fioDivs[i+1].style.display = 'block'
+                        //     }
+                        // }
+
+                //     };
+                // });
                 
                 const notification = document.getElementById("id_alert")
                 if (notification) {
