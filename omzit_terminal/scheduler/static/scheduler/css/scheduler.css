@@ -65,6 +65,11 @@ footer img {
     color: red;
 }
 
+.countdown {
+    font-size: 20px;
+    color: #EF7F1A;
+}
+
 /* стили чертежей */
 #select_draws {
     height: 300px;
@@ -723,3 +728,20 @@ li.dropdown {
     margin-left: auto;
     margin-right: auto;
 }
+
+.reason_select {
+    height: 300px;
+    width: 500px;
+}
+
+.reason_select option {
+    padding: 10px;
+    font-weight: bold;
+}
+
+.reason_select option:first-child {
+    color: #ec552d;
+    font-size: 22px;
+    font-weight: bold;
+}
+

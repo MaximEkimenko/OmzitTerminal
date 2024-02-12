@@ -168,6 +168,32 @@
             {% else %}
             <p>Заявки на КД отсутствуют отсутствуют</p>
             {% endif %}
+            <br />
+            {% if downtimes %}
+            <h3>Простои</h3>
+            <table class="table" title="Замечания на КД">
+                <tr class="table_header_row">
+                    <td class="td_cell">Терминал</td>
+                    <td class="td_cell">Заказ</td>
+                    <td class="td_cell">Модель</td>
+                    <td class="td_cell">Операция</td>
+                    <td class="td_cell">ФИО исполнителя</td>
+                    <td class="td_cell">Причина</td>
+                    <td class="td_cell">Замечание</td>
+                    <td class="td_cell">Время выдачи замечания</td>
+                    <td class="td_cell">ФИО мастера</td>
+                </tr>
+                <!-- prettier-ignore -->
+                {% for line in downtimes %}
+                <tr class="table_row">
+                    {% for data in line.values %}
+                        <td class="td_cell">{{ data }}</td>
+                    {% endfor %}
+                </tr>
+                <!-- prettier-ignore -->
+                {% endfor %}
+            </table>
+            {% endif %}
         </div>
         <br />
         <br />

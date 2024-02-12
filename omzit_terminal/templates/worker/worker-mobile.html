@@ -16,10 +16,6 @@
                 setTimeout(() => notification.remove(), 10000)
             </script>
         {% endif %}
-        <script>
-            const notification = document.getElementById("terminal_alert");
-            setTimeout(() => notification.remove(), 10000)
-        </script>
         {% if initial_shift_tasks %}
         <table class="table" title="График цехов" id="main_table">
             <tr class="table_header_row">
@@ -75,7 +71,7 @@
                     </div>
                     <div>
                         <button type="button" class="st_action_btn green" id="select_draw_btn">Чертеж</button>
-                        <button type="button" class="st_action_btn red" id="dispatcher_call_btn">Простой</button>
+                        <button type="button" class="st_action_btn red" id="choice_downtime_reason_btn">Простой</button>
                     </div>
                 </div>
             </form>
@@ -109,7 +105,7 @@
                 const start_st_btn = document.querySelector("#start_st_btn");
                 const select_draw_btn = document.querySelector("#select_draw_btn");
                 const master_call_btn = document.querySelector("#master_call_btn");
-                const dispatcher_call_btn = document.querySelector("#dispatcher_call_btn");
+                const choice_downtime_reason_btn = document.querySelector("#choice_downtime_reason_btn");
 
                 start_st_btn.onclick = function () {
                     console.log(form_element.elements.task_id.value)
@@ -130,9 +126,9 @@
                     location.href = master_call_link
                 }
 
-                dispatcher_call_btn.onclick = function () {
-                    dispatcher_call_link = `/worker/${ws_number}-${st_id}/get_dispatcher`
-                    location.href = dispatcher_call_link
+                choice_downtime_reason_btn.onclick = function () {
+                    choice_downtime_reason_link = `/worker/downtime_reason/${ws_number}-${st_id}`;
+                    location.href = choice_downtime_reason_link;
                 }
             });
 

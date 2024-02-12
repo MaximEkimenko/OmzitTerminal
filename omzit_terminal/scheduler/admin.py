@@ -1,6 +1,8 @@
 from django.contrib import admin
 
-from .models import ShiftTask, WorkshopSchedule, Doers
+from .models import ShiftTask, WorkshopSchedule, Doers, Downtime
+
+
 # from .models import DailyReport, MonthPlans  # TODO ФУНКЦИОНАЛ ОЧТЁТОВ ЗАКОНСЕРВИРОВАНО
 
 
@@ -31,6 +33,21 @@ class SchedulerDoersAdmin(admin.ModelAdmin):
     list_editable = ('doers',)
 
 
+class SchedulerDowntimeAdmin(admin.ModelAdmin):
+    save_on_top = True
+    list_display = (
+        'id',
+        'shift_task',
+        'status',
+        'reason',
+        'description',
+        'datetime_creation',
+        'datetime_start',
+        'datetime_end',
+        'master_decision_fio',
+    )
+
+
 class SchedulerDailyReportAdmin(admin.ModelAdmin):
     save_on_top = True
 
@@ -42,6 +59,7 @@ class SchedulerMonthPlansAdmin(admin.ModelAdmin):
 admin.site.register(WorkshopSchedule, SchedulerWorkshopScheduleAdmin)
 admin.site.register(ShiftTask, SchedulerShiftTaskAdmin)
 admin.site.register(Doers, SchedulerDoersAdmin)
+admin.site.register(Downtime, SchedulerDowntimeAdmin)
 # TODO ФУНКЦИОНАЛ ОЧТЁТОВ ЗАКОНСЕРВИРОВАНО
 # admin.site.register(DailyReport, SchedulerDailyReportAdmin)
 # admin.site.register(MonthPlans, SchedulerMonthPlansAdmin)

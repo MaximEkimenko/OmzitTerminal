@@ -52,7 +52,7 @@ class WorkshopSchedule(models.Model):
 
     plan_datetime = models.DateTimeField(null=True, verbose_name='дата/время выполнения планирования заказа')
     dispatcher_query_td_fio = models.CharField(max_length=30, null=True, verbose_name='Запросил КД')
-    dispatcher_plan_ws_fio = models.CharField(max_length=30, null=True, verbose_name='Запланировал')
+    dispatcher_plan_ws_fio = models.CharField(max_length=31, null=True, verbose_name='Запланировал')
     constructor_query_td_fio = models.CharField(max_length=30, null=True, verbose_name='Передал КД')
     tehnolog_query_td_fio = models.CharField(max_length=30, null=True, verbose_name='Утвердил / загрузил')
     product_category = models.CharField(max_length=30, null=True, verbose_name='Категория изделия')
@@ -144,7 +144,7 @@ class ShiftTask(models.Model):
     fio_failer = models.CharField(max_length=255, null=True, verbose_name='ФИО бракоделов')
     master_assign_wp_fio = models.CharField(max_length=30, null=True, verbose_name='Распределил')
     excel_list_name = models.CharField(max_length=100, null=True, verbose_name='Лист excel технологического процесса')
-    draw_path = models.CharField(max_length=255, null=True, blank=True, verbose_name='путь к связанным чертежам')
+    draw_path = models.CharField(max_length=254, null=True, blank=True, verbose_name='путь к связанным чертежам')
     draw_filename = models.TextField(null=True, blank=True, verbose_name='имя чертежа')
     product_category = models.CharField(null=True, verbose_name='Категория изделия')
     job_duration = models.DurationField(null=True, blank=True, verbose_name='Длительность работы')
@@ -188,6 +188,26 @@ class ShiftTask(models.Model):
     # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
     # def add_next(self, new_shift_task: 'ShiftTask'):
     #     Task2Task.objects.create(previous=self, next=new_shift_task)
+
+
+class Downtime(models.Model):
+    objects = models.Manager()
+    shift_task = models.ForeignKey(
+        'ShiftTask', on_delete=models.CASCADE, related_name='downtimes', verbose_name='СЗ'
+    )
+    status = models.CharField(max_length=254, default='не подтверждено', verbose_name='Статус')
+    reason = models.CharField(max_length=50, verbose_name='Причина')
+    description = models.CharField(max_length=254, default='', verbose_name='Описание')
+    datetime_creation = models.DateTimeField(auto_now_add=True, verbose_name='Время создания записи')
+    datetime_start = models.DateTimeField(null=True, blank=True, verbose_name='Время начала простоя')
+    datetime_end = models.DateTimeField(null=True, blank=True, verbose_name='Время окончания простоя')
+    datetime_decision = models.DateTimeField(null=True, blank=True, verbose_name='Время решения')
+    master_decision_fio = models.CharField(max_length=30, null=True, blank=True, verbose_name='ФИО мастера')
+
+    class Meta:
+        db_table = "downtime"
+        verbose_name = 'Простой'
+        verbose_name_plural = 'Простои'
 
 # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
 # class Task2Task(models.Model):

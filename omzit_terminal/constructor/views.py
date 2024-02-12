@@ -5,7 +5,7 @@ from django.http import FileResponse
 from tehnolog.services.service_handlers import handle_uploaded_file
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
-from scheduler.models import WorkshopSchedule
+from scheduler.models import WorkshopSchedule, Downtime
 from .forms import QueryAnswer
 from worker.services.master_call_function import terminal_message_to_id
 from django.core.exceptions import PermissionDenied
@@ -73,7 +73,12 @@ def constructor(request):
             alert = 'invalid form'
             context = {'filter': f, 'query_answer_form': query_answer_form, 'alert': alert}
             return render(request, r"constructor/constructor.html", context=context)
-    context = {'query_answer_form': query_answer_form, 'filter': f}
+    downtimes = Downtime.objects.filter(
+        status='подтверждено', reason='Вызов конструктора').select_related('shift_task').values(
+        'shift_task__ws_number', 'shift_task__ws_number', 'shift_task__order', 'shift_task__model_name',
+        'shift_task__op_name', 'shift_task__fio_doer', 'description', 'datetime_start', 'master_decision_fio'
+    )
+    context = {'query_answer_form': query_answer_form, 'filter': f, 'downtimes': downtimes}
     return render(request, r"constructor/constructor.html", context=context)
 
 
