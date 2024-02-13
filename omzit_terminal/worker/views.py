@@ -380,7 +380,7 @@ def downtime_reason(request, ws_number, st_number):
         'form': DowntimeReasonForm(),
         'alert': ' ',
         'shift_task': shift_task,
-        'alert_time': 30,
+        'alert_time': 30,  # время в секундах отображения сообщения
     }
     if request.method == 'POST':
         data = request.POST
@@ -412,4 +412,3 @@ def downtime_reason(request, ws_number, st_number):
         return render(request, r"worker/downtime-reasons-mobile.html", context=context)
     else:
         return render(request, r"worker/downtime-reasons.html", context=context)
-

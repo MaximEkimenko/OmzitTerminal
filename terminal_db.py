@@ -361,7 +361,10 @@ def doers_update(excel_file: str) -> None:
         con.close()
 
 
-def confirm_downtime(shift_task_number, master_fio, description):
+def confirm_downtime(shift_task_number, master_fio, description) -> None:
+    """
+    Подтверждение простоя
+    """
     try:
         # подключение к БД
         con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
@@ -391,7 +394,10 @@ def confirm_downtime(shift_task_number, master_fio, description):
         con.close()
 
 
-def reject_downtime(shift_task_number, master_fio, description):
+def reject_downtime(shift_task_number, master_fio, description) -> None:
+    """
+    Отклонение простоя
+    """
     try:
         # подключение к БД
         con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)

@@ -13,23 +13,14 @@
         </div>
         <h1>Рабочее место технолога</h1>
         {% if alert %}
-        <script>
-            function showNotification({ top = 0, right = 0, html, class_name }) {
-                let notification = document.createElement("div");
-                notification.className = class_name;
-                notification.innerHTML = html;
-                document.body.append(notification);
-                // setTimeout(() => (notification.style.opacity = 0), 10000);
-                setTimeout(() => notification.remove(), 10000);
-            }
-            showNotification({
-                // class_name: "alert_gone",
-                class_name: "notification",
-                html: "<p class='alert_gone'> {{ alert }} </p>",
-            });
-        </script>
+            <div>
+                <p class='alert_gone' id="id_alert"> {{ alert }} </p>
+                <script>
+                    const notification = document.getElementById("id_alert");
+                    setTimeout(() => notification.remove(), 10000)
+                </script>
+            </div>
         {% endif %}
-
         <!-- Форма корректировки order_model_query -->
         <div id="correction_form" class="modal">
             <form
@@ -171,24 +162,28 @@
             <br />
             {% if downtimes %}
             <h3>Простои</h3>
-            <table class="table" title="Замечания на КД">
+            <table class="table" title="">
                 <tr class="table_header_row">
-                    <td class="td_cell">Терминал</td>
-                    <td class="td_cell">Заказ</td>
-                    <td class="td_cell">Модель</td>
-                    <td class="td_cell">Операция</td>
-                    <td class="td_cell">ФИО исполнителя</td>
-                    <td class="td_cell">Причина</td>
-                    <td class="td_cell">Замечание</td>
-                    <td class="td_cell">Время выдачи замечания</td>
-                    <td class="td_cell">ФИО мастера</td>
+                    <td class="td_cell_dt">Терминал</td>
+                    <td class="td_cell_dt">Заказ</td>
+                    <td class="td_cell_dt">Модель</td>
+                    <td class="td_cell_dt">Операция</td>
+                    <td class="td_cell_dt">ФИО исполнителя</td>
+                    <td class="td_cell_dt">Причина простоя</td>
+                    <td class="td_cell_dt">Время выдачи замечания</td>
+                    <td class="td_cell_dt">ФИО мастера</td>
                 </tr>
                 <!-- prettier-ignore -->
-                {% for line in downtimes %}
+                {% for downtime in downtimes %}
                 <tr class="table_row">
-                    {% for data in line.values %}
-                        <td class="td_cell">{{ data }}</td>
-                    {% endfor %}
+                    <td class="td_cell_dt">{{ downtime.shift_task.ws_number }}</td>
+                    <td class="td_cell_dt">{{ downtime.shift_task.order }}</td>
+                    <td class="td_cell_dt">{{ downtime.shift_task.model_name }}</td>
+                    <td class="td_cell_dt">{{ downtime.shift_task.op_number }} {{ downtime.shift_task.op_name_full }}</td>
+                    <td class="td_cell_dt">{{ downtime.shift_task.fio_doer }}</td>
+                    <td class="td_cell_dt red_word">{{ downtime.reason }}: {{ downtime.description }}</td>
+                    <td class="td_cell_dt">{{ downtime.datetime_start }}</td>
+                    <td class="td_cell_dt">{{ downtime.master_decision_fio }}</td>
                 </tr>
                 <!-- prettier-ignore -->
                 {% endfor %}

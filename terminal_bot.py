@@ -377,8 +377,14 @@ async def otk_decision_register(callback_query: types.CallbackQuery):
 
 @dp.message_handler(lambda message: 'Подтвердите простой на Т' in message.reply_to_message.text)
 async def downtime_master_decision(message: types.Message):
-    st_match = re.match(r'Номер СЗ: (\d+)\.', message.reply_to_message.text)
+    """
+    Обработка решения мастера по простою
+    """
+    # получаем ФИО мастера по telegram id
     master_fio = id_fios.get(message.from_user.id, message.from_user.id)
+
+    # получаем номер сменного задания
+    st_match = re.match(r'Номер СЗ: (\d+)\.', message.reply_to_message.text)
     if st_match:
         st_number = st_match.group(1)
 

@@ -31,17 +31,17 @@
         <td class="td_cell"><p class="cell_text">Время приемки</p></td>
     </tr>
     <tr id="row" class="table_row">
-        <td class="td_cell"><p class="cell_text">{{ shift_task.id }}</p></td>
-        <td class="td_cell"><p class="cell_text">{{ shift_task.ws_number }}</p></td>
-        <td class="td_cell"><p class="cell_text">{{ shift_task.model_name }}</p></td>
-        <td class="td_cell"><p class="cell_text">{{ shift_task.order }}</p></td>
-        <td class="td_cell"><p class="cell_text">{{ shift_task.op_number }}</p></td>
-        <td class="td_cell"><p class="cell_text">{{ shift_task.op_name_full }}</p></td>
-        <td class="td_cell"><p class="cell_text">{{ shift_task.norm_tech }}</p></td>
-        <td class="td_cell"><p class="cell_text" style="width: 200px">{{ shift_task.fio_doer }}</p></td>
-        <td class="td_cell"><p class="cell_text">{{ shift_task.st_status }}</p></td>
-        <td class="td_cell"><p class="cell_text">{{ shift_task.datetime_job_start }}</p></td>
-        <td class="td_cell"><p class="cell_text">{{ shift_task.decision_time }}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.id '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.ws_number '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.model_name '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.order '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.op_number '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.op_name_full '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.norm_tech '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text" style="width: 200px">{% firstof shift_task.fio_doer '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.st_status '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.datetime_job_start '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.decision_time '-' %}</p></td>
     </tr>
 </table>
 <br>

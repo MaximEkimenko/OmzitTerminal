@@ -74,10 +74,7 @@ def constructor(request):
             context = {'filter': f, 'query_answer_form': query_answer_form, 'alert': alert}
             return render(request, r"constructor/constructor.html", context=context)
     downtimes = Downtime.objects.filter(
-        status='подтверждено', reason='Вызов конструктора').select_related('shift_task').values(
-        'shift_task__ws_number', 'shift_task__ws_number', 'shift_task__order', 'shift_task__model_name',
-        'shift_task__op_name', 'shift_task__fio_doer', 'description', 'datetime_start', 'master_decision_fio'
-    )
+        status='подтверждено', reason='Вызов конструктора').select_related('shift_task')
     context = {'query_answer_form': query_answer_form, 'filter': f, 'downtimes': downtimes}
     return render(request, r"constructor/constructor.html", context=context)
 

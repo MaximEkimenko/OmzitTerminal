@@ -138,6 +138,13 @@ h4 {
     text-align: center;
 }
 
+.td_cell_dt {
+    border: solid 1px orange;
+    background-color: transparent;
+    padding: 5px;
+    text-align: center;
+}
+
 .td_cell input {
     width: 50px;
     height: 38px;

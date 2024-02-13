@@ -117,10 +117,7 @@ def tehnolog_wp(request):
     downtimes = Downtime.objects.filter(
         status='подтверждено',
         reason__in=['Вызов конструктора', 'Вызов технолога']
-    ).select_related('shift_task').values(
-        'shift_task__ws_number', 'shift_task__ws_number', 'shift_task__order', 'shift_task__model_name',
-        'shift_task__op_name', 'shift_task__fio_doer', 'reason', 'description', 'datetime_start', 'master_decision_fio'
-    )
+    ).select_related('shift_task')
     context.update({
         'get_teh_data_form': get_teh_data_form, 'alert': alert,
         'change_model_query_form': change_model_query_form,
