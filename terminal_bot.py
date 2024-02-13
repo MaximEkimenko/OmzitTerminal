@@ -7,7 +7,8 @@ import time
 from aiogram import Bot, Dispatcher, executor, types, filters
 # работа с БД
 from terminal_db import (ws_list_get, status_change_to_otk, st_list_get, master_id_get, control_man_id_set,
-                         decision_data_set, lines_count)
+                         decision_data_set, lines_count, confirm_downtime,
+                         reject_downtime)
 
 logging.basicConfig(filename="log.log", level=logging.DEBUG, filemode='w',
                     format=' %(levelname)s - %(asctime)s; файл - %(filename)s; сообщение - %(message)s')
@@ -372,6 +373,45 @@ async def otk_decision_register(callback_query: types.CallbackQuery):
                                 f'для СЗ №{st_id}')
 
     await callback_query.answer()  # закрытие inline кнопок
+
+
+@dp.message_handler(lambda message: 'Подтвердите простой на Т' in message.reply_to_message.text)
+async def downtime_master_decision(message: types.Message):
+    """
+    Обработка решения мастера по простою
+    """
+    # получаем ФИО мастера по telegram id
+    master_fio = id_fios.get(message.from_user.id, message.from_user.id)
+    # получаем номер сменного задания
+    st_match = re.match(r'.*Номер СЗ: (\d+)\.', message.reply_to_message.text)
+    if st_match:
+        st_number = st_match.group(1)
+
+        # Проверяем правильность формата ответа
+        answer_match = re.match(r'(^\bДа\b|^\bНет\b)\s*(.*)', message.text)
+        if answer_match:
+            answer, description = answer_match.group(1, 2)
+            if answer == 'Да':
+
+                confirm_downtime(st_number, master_fio, description)
+                await message.answer(f'Простой по СЗ {st_number} подтвержден')
+
+                question_match = re.match(
+                    r'.*на (.+) по причине: (.*)\n\nДлительным.*', message.reply_to_message.text)
+                if question_match:
+                    question = f'{question_match.group(1)}. {question_match.group(2)} Описание: {description}'
+                    await bot.send_message(chat_id=terminal_group_id, text=f'{question}')
+
+            elif answer == 'Нет':
+                reject_downtime(st_number, master_fio, description)
+                await message.answer(f'Простой по СЗ {st_number} отклонен')
+
+            # удаляем исходное сообщение
+            if message.reply_to_message.message_id:
+                await bot.delete_message(chat_id=message.chat.id, message_id=message.reply_to_message.message_id)
+        else:
+            await message.reply(f'Неверный формат ответа! Введите "Да" или "Нет", '
+                                f'при необходимости через пробел укажите описание проблемы')
 
 
 # ------------------------------------------------

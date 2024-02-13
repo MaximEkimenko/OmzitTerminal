@@ -68,12 +68,14 @@ class SchedulerWorkplace(forms.Form):
     Форма для ввода графика РЦ
     """
     query_set_wp = ShiftTask.objects.exclude(ws_number="").distinct('ws_number')
-    ws_number = SchedulerWorkplaceLabel(queryset=query_set_wp, empty_label='Терминал не выбран', label='Терминал')
+    ws_number = SchedulerWorkplaceLabel(queryset=query_set_wp,
+                                        empty_label='Терминал не выбран',
+                                        label='Терминал', required=False)
     model_order_query_set = WorkshopSchedule.objects.filter(Q(order_status='запланировано') |
                                                             Q(order_status='в работе'))
     model_order_query = SchedulerWorkplaceLabelDate(queryset=model_order_query_set,
                                                     empty_label='Не выбрано',
-                                                    label='Заказ-модель')
+                                                    label='Заказ-модель', required=False)
 
 
 class FiosLabel(ModelChoiceField):  # переопределение метода отображения строки результатов для ФИО
@@ -111,39 +113,40 @@ class FioDoer(forms.Form):
 
     # empty_qs = None  # запрос заглушка для создания переменной st_number в нужном виде
     # st_number = FiosLabel(empty_qs, label='Сменное задание', empty_label='СЗ не выбрано')
-    qs_st_fio = Doers.objects.exclude(job_title='Технолог')
+    qs_st_fio = Doers.objects.all()
+    # qs_st_fio = Doers.objects.exclude(job_title='Технолог')
     fio_1 = forms.ModelChoiceField(
         qs_st_fio, label='Исполнитель 1', empty_label='ФИО не выбрано',
         widget=forms.Select(attrs={'class': "fio_select"})
     )
-    fio_1_percentage = forms.IntegerField(
-        min_value=0, max_value=100, label='%', initial=100,
-        widget=forms.NumberInput(attrs={'class': "fio_percentage"})
-    )
+    # fio_1_percentage = forms.IntegerField(
+    #     min_value=0, max_value=100, label='%', initial=100,
+    #     widget=forms.NumberInput(attrs={'class': "fio_percentage"})
+    # )
     fio_2 = forms.ModelChoiceField(
         qs_st_fio, label='Исполнитель 2', empty_label='ФИО не выбрано', initial='', required=False,
         widget=forms.Select(attrs={'class': "fio_select"})
     )
-    fio_2_percentage = forms.IntegerField(
-        min_value=0, max_value=100, label='%', initial=0,
-        widget=forms.NumberInput(attrs={'class': "fio_percentage"})
-    )
+    # fio_2_percentage = forms.IntegerField(
+    #     min_value=0, max_value=100, label='%', initial=0,
+    #     widget=forms.NumberInput(attrs={'class': "fio_percentage"})
+    # )
     fio_3 = forms.ModelChoiceField(
         qs_st_fio, label='Исполнитель 3', empty_label='ФИО не выбрано', initial='', required=False,
         widget=forms.Select(attrs={'class': "fio_select"})
     )
-    fio_3_percentage = forms.IntegerField(
-        min_value=0, max_value=100, label='%', initial=0,
-        widget=forms.NumberInput(attrs={'class': "fio_percentage"})
-    )
+    # fio_3_percentage = forms.IntegerField(
+    #     min_value=0, max_value=100, label='%', initial=0,
+    #     widget=forms.NumberInput(attrs={'class': "fio_percentage"})
+    # )
     fio_4 = forms.ModelChoiceField(
         qs_st_fio, label='Исполнитель 4', empty_label='ФИО не выбрано', initial='', required=False,
         widget=forms.Select(attrs={'class': "fio_select"})
     )
-    fio_4_percentage = forms.IntegerField(
-        min_value=0, max_value=100, label='%', initial=0,
-        widget=forms.NumberInput(attrs={'class': "fio_percentage"})
-    )
+    # fio_4_percentage = forms.IntegerField(
+    #     min_value=0, max_value=100, label='%', initial=0,
+    #     widget=forms.NumberInput(attrs={'class': "fio_percentage"})
+    # )
 
 
 class PlanBid(forms.Form):

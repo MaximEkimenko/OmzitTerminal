@@ -8,21 +8,14 @@
 {% block body %}
 <h1>Рабочее место планировщика</h1>
         {% if alert %}
-        <script>
-            function showNotification({ top = 0, right = 0, html, class_name }) {
-                let notification = document.createElement("div");
-                notification.className = class_name;
-                notification.innerHTML = html;
-                document.body.append(notification);
-                // setTimeout(() => (notification.style.opacity = 0), 10000);
-                setTimeout(() => notification.remove(), 10000);
-            }
-            showNotification({
-                html: "<p class='alert_gone'> {{ alert }} </p>",
-                class_name: "notification",
-            });
-        </script>
-        {%endif %}
+            <div>
+                <p class='alert_gone' id="id_alert"> {{ alert }} </p>
+                <script>
+                    const notification = document.getElementById("id_alert");
+                    setTimeout(() => notification.remove(), 10000)
+                </script>
+            </div>
+        {% endif %}
         <!-- Кнопка заказать КД -->
         <button class="id_make_order_query_btn btn" value="" title="Заказать КД">Заказать КД</button>
         <br />
@@ -188,9 +181,10 @@
                 });
             });
         </script>
-        <br />
-        <a href="{% url 'schedulerwp' %}">Распределение</a> <br />
+        <br> <br>
+        <a href="{% url 'schedulerwp' %}" class="btn">Распределение</a>
         <div style="height: 150px"></div>
+
 
         <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
         <script>

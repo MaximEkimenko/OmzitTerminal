@@ -40,16 +40,16 @@
                         data-send="{{ line.op_number }}--{{ line.model_name }}--{{ line.id }}"
                         data-task="{{ line.id }}--{{ line.st_status }}--{{ line.fio_doer }}--{{ line.op_number }}--{{ line.model_name }}--{{ line.op_name_full }}"
                 >{{ line.id }}</button></p></td>
-                <td class="td_cell"><p class="cell_text">{{ line.ws_number }}</p></td>
-                <td class="td_cell"><p class="cell_text">{{ line.model_name }}</p></td>
-                <td class="td_cell"><p class="cell_text">{{ line.order }}</p></td>
-                <td class="td_cell"><p class="cell_text">{{ line.op_number }}</p></td>
-                <td class="td_cell"><p class="cell_text">{{ line.op_name_full }}</p></td>
-                <td class="td_cell"><p class="cell_text">{{ line.norm_tech }}</p></td>
-                <td class="td_cell"><p class="cell_text">{{ line.fio_doer }}</p></td>
-                <td class="td_cell"><p class="cell_text">{{ line.st_status }}</p></td>
-                <td class="td_cell"><p class="cell_text">{{ line.datetime_job_start }}</p></td>
-                <td class="td_cell"><p class="cell_text">{{ line.decision_time }}</p></td>
+                <td class="td_cell"><p class="cell_text">{% firstof line.ws_number '-' %}</p></td>
+                <td class="td_cell"><p class="cell_text">{% firstof line.model_name '-' %}</p></td>
+                <td class="td_cell"><p class="cell_text">{% firstof line.order '-' %}</p></td>
+                <td class="td_cell"><p class="cell_text">{% firstof line.op_number '-' %}</p></td>
+                <td class="td_cell"><p class="cell_text">{% firstof line.op_name_full '-' %}</p></td>
+                <td class="td_cell"><p class="cell_text">{% firstof line.norm_tech '-' %}</p></td>
+                <td class="td_cell"><p class="cell_text">{% firstof line.fio_doer '-' %}</p></td>
+                <td class="td_cell"><p class="cell_text">{% firstof line.st_status '-' %}</p></td>
+                <td class="td_cell"><p class="cell_text">{% firstof line.datetime_job_start '-' %}</p></td>
+                <td class="td_cell"><p class="cell_text">{% firstof line.decision_time '-' %}</p></td>
             </tr>
             {% endfor %}
         </table>
@@ -71,7 +71,7 @@
                     </div>
                     <div>
                         <button type="button" class="st_action_btn green" id="select_draw_btn">Чертеж</button>
-                        <button type="button" class="st_action_btn red" id="dispatcher_call_btn">Простой</button>
+                        <button type="button" class="st_action_btn red" id="choice_downtime_reason_btn">Простой</button>
                     </div>
                 </div>
             </form>
@@ -105,7 +105,7 @@
                 const start_st_btn = document.querySelector("#start_st_btn");
                 const select_draw_btn = document.querySelector("#select_draw_btn");
                 const master_call_btn = document.querySelector("#master_call_btn");
-                const dispatcher_call_btn = document.querySelector("#dispatcher_call_btn");
+                const choice_downtime_reason_btn = document.querySelector("#choice_downtime_reason_btn");
 
                 start_st_btn.onclick = function () {
                     console.log(form_element.elements.task_id.value)
@@ -126,9 +126,9 @@
                     location.href = master_call_link
                 }
 
-                dispatcher_call_btn.onclick = function () {
-                    dispatcher_call_link = `/worker/${ws_number}-${st_id}/get_dispatcher`
-                    location.href = dispatcher_call_link
+                choice_downtime_reason_btn.onclick = function () {
+                    choice_downtime_reason_link = `/worker/downtime_reason/${ws_number}-${st_id}`;
+                    location.href = choice_downtime_reason_link;
                 }
             });
 

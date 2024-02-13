@@ -78,26 +78,26 @@ WSGI_APPLICATION = 'omzit_terminal.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'terminal',
-        'PASSWORD': 'Epass1',
-        'USER': 'admin',
+        # 'NAME': 'terminal',
+        # 'PASSWORD': 'Epass1',
+        # 'USER': 'admin',
 
-        # 'NAME': 'postgres',
-        # 'USER': 'postgres',
-        # 'PASSWORD': 'Valm0nts89',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'Valm0nts89',
 
-        # 'HOST': 'localhost',
-        'HOST': '192.168.8.163',
+        'HOST': 'localhost',
+        # 'HOST': '192.168.8.163',
         # 'HOST': '192.168.8.30'
         'PORT': '',
     },
-    'sigma': {
-        'NAME': 'SNDBase',
-        'ENGINE': 'mssql',
-        'USER': 'SNUser',
-        'PASSWORD': 'BestNest1445',
-        'HOST': r'APM-0230\SIGMANEST',
-    },
+    # 'sigma': {
+    #     'NAME': 'SNDBase',
+    #     'ENGINE': 'mssql',
+    #     'USER': 'SNUser',
+    #     'PASSWORD': 'BestNest1445',
+    #     'HOST': r'APM-0230\SIGMANEST',
+    # },
 }
 
 # Password validation

@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+Выбор причины простоя для сменного задания {{st_number}}
+{% endblock %}
+
+{% block menu %}
+{% endblock %}
+
+{% block body %}
+<h1 id="h1_tag">Выберите причину простоя для сменного задания {{st_number}}</h1>
+{% if alert %}
+<p class='terminal_alert' id="terminal_alert"> {{ alert }} </p>
+{% endif %}
+<p class='countdown' id="id_countdown">
+    Возврат к списку сменных заданий через {{ alert_time }} сек или по кнопке "Сменное задание"
+</p>
+<table class="table" title="График цехов" id="main_table">
+    <tr class="table_header_row">
+        <td class="td_cell"><p class="cell_text">№</p></td>
+        <td class="td_cell"><p class="cell_text">РЦ</p></td>
+        <td class="td_cell"><p class="cell_text">Изделие</p></td>
+        <td class="td_cell"><p class="cell_text">Заказ</p></td>
+        <td class="td_cell"><p class="cell_text">Номер операции</p></td>
+        <td class="td_cell"><p class="cell_text">Операция</p></td>
+        <td class="td_cell"><p class="cell_text">Трудоемкость</p></td>
+        <td class="td_cell"><p class="cell_text" style="width: 200px">Исполнители</p></td>
+        <td class="td_cell"><p class="cell_text">Статус</p></td>
+        <td class="td_cell"><p class="cell_text">Время начала работы</p></td>
+        <td class="td_cell"><p class="cell_text">Время приемки</p></td>
+    </tr>
+    <tr id="row" class="table_row">
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.id '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.ws_number '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.model_name '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.order '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.op_number '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.op_name_full '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.norm_tech '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text" style="width: 200px">{% firstof shift_task.fio_doer '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.st_status '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.datetime_job_start '-' %}</p></td>
+        <td class="td_cell"><p class="cell_text">{% firstof shift_task.decision_time '-' %}</p></td>
+    </tr>
+</table>
+<br>
+<br>
+<br>
+<form action="{{ draws }}" method="POST" enctype="multipart/form-data" id="reason_form">
+    {% csrf_token %}
+    {{ form }}
+</form>
+<script>
+    const notification = document.getElementById("id_countdown");
+    const ws_number = "{{ ws_number }}"
+    let timer = Number('{{ alert_time }}')
+    const form_element = document.getElementById("reason_form");
+    const select_element = document.getElementById("id_reason"); //select элемент
+    select_element.focus(); // фокус при загрузке
+    document.addEventListener("keydown", function (event) {
+        timer = Number('{{ alert_time }}')
+        const ws_number = "{{ ws_number }}"
+        if (event.code == "KeyC") {
+            location.href = `/worker/${ws_number}`
+        } else if (event.code == "KeyX") {
+            form_element.submit();
+        }
+    })
+    let x = setInterval(function() {
+        timer -= 1
+        notification.innerHTML = 'Возврат к списку сменных заданий через ' + timer + ' сек или по кнопке "Сменное задание"';
+      if (timer == 0) {
+        clearInterval(x);
+        location.href = `/worker/${ws_number}`;
+      }
+    }, 1000);
+</script>
+{% endblock %}

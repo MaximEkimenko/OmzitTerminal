@@ -16,6 +16,8 @@
                 setTimeout(() => notification.remove(), 10000)
             </script>
         {% endif %}
+
+        <p class='terminal_alert' id="js_alert"></p>
         {% if initial_shift_tasks %}
         <table class="table" title="График цехов" id="main_table">
             <tr class="table_header_row">
@@ -34,7 +36,11 @@
             {% for line in initial_shift_tasks %}
             <tr id="row" class="table_row">
                 {% for el in line.values %}
-                <td class="td_cell"><p class="cell_text">{{ el }}</p></td>
+                {% if el == None %}
+                    <td class="td_cell"><p class="cell_text">-</p></td>
+                {% else %}
+                    <td class="td_cell"><p class="cell_text">{{ el }}</p></td>
+                {% endif %}
                 {% endfor %}
             </tr>
             {% endfor %}
@@ -94,10 +100,17 @@
                 } else if (event.code == "KeyK") {
                     master_call_link = `/worker/${ws_number}-${st_id}/get_master`;
                     location.href = master_call_link;
-                    // кнопка вызов диспетчера
+                    // кнопка выбора причины простоя
                 } else if (event.code == "KeyX") {
-                    dispatcher_call_link = `/worker/${ws_number}-${st_id}/get_dispatcher`;
-                    location.href = dispatcher_call_link;
+                    if (st_id != 0) {
+                        choice_downtime_reason_link = `/worker/downtime_reason/${ws_number}-${st_id}`;
+                        location.href = choice_downtime_reason_link;
+                    } else {
+                        const alert = document.getElementById("js_alert")
+                        alert.display = 'block'
+                        alert.innerHTML = 'Выберите сменное задание'
+                        setTimeout(() => alert.display = 'none', 10000)
+                    }
                 }
                 // кнопка запуск СЗ
                 else if (event.code == "KeyC") {
@@ -114,6 +127,6 @@
         <br />
         <!-- prettier-ignore -->
         {% if user.username == 'admin' %}
-        <a href="{% url 'worker_choose' %}">Назад</a> <br />
+        <a href="{% url 'worker_choose' %}" class="btn">Назад</a> <br />
         {%endif %}
 {% endblock %}

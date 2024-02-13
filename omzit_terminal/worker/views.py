@@ -13,9 +13,9 @@ from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 
 from omzit_terminal.settings import BASE_DIR
-from scheduler.models import ShiftTask
+from scheduler.models import ShiftTask, Downtime
 
-from .forms import WorkplaceChoose
+from .forms import WorkplaceChoose, DowntimeReasonForm
 from .services.master_call_db import select_master_call, select_dispatcher_call
 from .services.master_call_function import send_call_master, send_call_dispatcher
 from .services.master_call_function import get_client_ip
@@ -136,11 +136,11 @@ def worker(request, ws_number):
                                                                 job_duration=datetime.timedelta(0),
                                                                 )
                     alert_message = 'Сменное задание запущенно в работу.'
-                    # return redirect(f'/worker/{ws_number}', context={'alert': alert_message})  # обновление страницы
-                # else:
-                #     print("Мастер уже вызван!")
             elif 'пауза' in request.POST['task_id']:
                 resume_work(task_id=task_id)
+            elif 'простой' in request.POST['task_id']:
+                resume_work(task_id=task_id, from_status='простой')
+                Downtime.objects.filter(shift_task=task_id).update(datetime_end=timezone.now(), status='закрыто')
             else:
                 print("Это СЗ уже взято в работу!")
         else:
@@ -270,7 +270,7 @@ def make_dispatcher_call(request, ws_st_number):
         return redirect(f'/worker/{ws_number}?call=False_wrong')
 
 
-def pause_work(task_id=None, is_lunch=False):
+def pause_work(task_id=None, is_lunch=False, to_status='пауза'):
     """
     Постановка СЗ на паузу
     Если task_id (номер СЗ) не указан, то приостанавливаются все СЗ со статусом в 'в работе'
@@ -293,7 +293,7 @@ def pause_work(task_id=None, is_lunch=False):
             print(f"При попытке отправки сообщения мастеру из функции 'pause_work' вызвано исключение: {ex}")
 
     shift_tasks.update(
-        st_status='пауза',
+        st_status=to_status,
         job_duration=F("job_duration") + (timezone.now() - F("datetime_job_resume")),
     )
 
@@ -322,14 +322,14 @@ def pause_work(task_id=None, is_lunch=False):
             print(f"Новый файл storage.json {data}")
 
 
-def resume_work(task_id=None, is_lunch=False):
+def resume_work(task_id=None, is_lunch=False, from_status='пауза'):
     """
     Возобновление работы по СЗ
     Если task_id (номер СЗ) не указан, то возобновляются все СЗ со статусом в 'пауза', остановленные в обед
     """
     shift_tasks = []
     if task_id:  # если выбрано конкретное СЗ для возобновления
-        shift_tasks = ShiftTask.objects.filter(st_status='пауза', pk=task_id)
+        shift_tasks = ShiftTask.objects.filter(st_status=from_status, pk=task_id)
     elif is_lunch:  # если возобновляем СЗ после обеда
 
         # открываем json, читаем список остановленных на время обеда СЗ
@@ -365,3 +365,51 @@ def resume_work(task_id=None, is_lunch=False):
             print(f"При попытке отправки сообщения мастеру из функции 'resume_work' вызвано исключение: {ex}")
     if isinstance(shift_tasks, QuerySet):
         shift_tasks.update(st_status='в работе', datetime_job_resume=timezone.now())
+
+
+def downtime_reason(request, ws_number, st_number):
+    """
+    Выбор причины простоя по СЗ
+    :param request:
+    :param ws_number: номер терминала
+    :param st_number: номер сменного задания
+    """
+    shift_task = ShiftTask.objects.get(pk=int(st_number))
+    context = {
+        'st_number': st_number,
+        'ws_number': ws_number,
+        'form': DowntimeReasonForm(),
+        'alert': ' ',
+        'shift_task': shift_task,
+        'alert_time': 30,  # время в секундах отображения сообщения
+    }
+    if request.method == 'POST':
+        data = request.POST
+        reason = data.get('reason')
+        if reason:
+            Downtime.objects.create(shift_task=shift_task, reason=reason)
+            message_to_master = (f"❗Подтвердите простой на Т{shift_task.ws_number} по причине: {reason}. "
+                                 f"Номер СЗ: {shift_task.id}. "
+                                 f"Заказ: {shift_task.order}. Изделие: {shift_task.model_name}. "
+                                 f"Операция: {shift_task.op_number} {shift_task.op_name_full}. "
+                                 f"Исполнители: {shift_task.fio_doer}.\n\n"
+                                 f"Длительным нажатием на данное сообщение вызовите меню и выберите 'Ответить'. "
+                                 f"Для подтверждения введите 'Да' и через пробел описание проблемы, "
+                                 f"'Нет' для отмены запроса и продолжения работы"
+                                 )
+            try:
+                pass
+                asyncio.run(send_call_master(message_to_master))
+            except Exception as ex:
+                print(f"При попытке отправки сообщения мастеру из функции 'downtime_reason' вызвано исключение: {ex}")
+            context['alert'] = f'Направлено сообщение мастеру для подтверждения простоя по причине: {reason}'
+            context['alert_time'] = 15
+        else:
+            context['alert'] = f'Выберите причину простоя'
+
+    terminal_ip = get_client_ip(request)  # определение IP терминала
+    terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
+    if 'Mobile' in request.META['HTTP_USER_AGENT'] or terminal_name[:terminal_name.find('.')] == 'APM-0229':
+        return render(request, r"worker/downtime-reasons-mobile.html", context=context)
+    else:
+        return render(request, r"worker/downtime-reasons.html", context=context)
