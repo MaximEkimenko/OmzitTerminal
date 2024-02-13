@@ -140,7 +140,7 @@ def worker(request, ws_number):
                 resume_work(task_id=task_id)
             elif 'простой' in request.POST['task_id']:
                 resume_work(task_id=task_id, from_status='простой')
-                Downtime.objects.filter(shift_task=task_id).update(datetime_end=timezone.now())
+                Downtime.objects.filter(shift_task=task_id).update(datetime_end=timezone.now(), status='закрыто')
             else:
                 print("Это СЗ уже взято в работу!")
         else:
