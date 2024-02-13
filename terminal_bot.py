@@ -400,7 +400,7 @@ async def downtime_master_decision(message: types.Message):
                     r'.*на (.+) по причине: (.*)\n\nДлительным.*', message.reply_to_message.text)
                 if question_match:
                     question = f'{question_match.group(1)}. {question_match.group(2)} Описание: {description}'
-                    await bot.send_message(chat_id=terminal_group_id, text=f'{question}')
+                    await bot.send_message(chat_id=-4027358064, text=f'{question}')
 
             elif answer == 'Нет':
                 reject_downtime(st_number, master_fio, description)
