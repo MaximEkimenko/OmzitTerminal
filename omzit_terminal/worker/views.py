@@ -391,7 +391,7 @@ def downtime_reason(request, ws_number, st_number):
                                  f"Номер СЗ: {shift_task.id}. "
                                  f"Заказ: {shift_task.order}. Изделие: {shift_task.model_name}. "
                                  f"Операция: {shift_task.op_number} {shift_task.op_name_full}. "
-                                 f"Исполнители: {shift_task.fio_doer}"
+                                 f"Исполнители: {shift_task.fio_doer}.\n\n"
                                  f"Длительным нажатием на данное сообщение вызовите меню и выберите 'Ответить'. "
                                  f"Для подтверждения введите 'Да' и через пробел описание проблемы, "
                                  f"'Нет' для отмены запроса и продолжения работы"
