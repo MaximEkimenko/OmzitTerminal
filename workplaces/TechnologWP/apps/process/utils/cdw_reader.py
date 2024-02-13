@@ -1,7 +1,6 @@
 import json
 import os
 import re
-import sys
 import time
 
 import psutil
@@ -398,10 +397,7 @@ def get_specification(files):
     try:
         logging.debug(f"Файлы: {files}")
         reader = CDWReader(files_paths=files)
-        files_path = os.path.split(files[0])[0]
-        if not os.path.exists('temp'):
-            os.mkdir('temp')
-        json_file = reader.create_json("temp/specification.json")
+        json_file = reader.create_json("data/temp/specification.json")
         return json_file
     except Exception as ex:
         logging.exception(ex)
@@ -412,15 +408,3 @@ def get_specification(files):
             if "KOMPAS" in process.name():
                 process.kill()
         logging.info(f"Завершено! Время выполнения:{time.time() - start}")
-
-
-if __name__ == "__main__":
-    # Извлекаем из переданных аргументов список файлов
-    if len(sys.argv) > 2:
-        files = " ".join(sys.argv[1:])
-    else:
-        files = sys.argv[1]
-    files = files.split("+-+")
-
-    logging.debug(f"{files}")
-    get_specification(files)
