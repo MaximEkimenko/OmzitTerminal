@@ -380,7 +380,7 @@ def confirm_downtime(shift_task_number, master_fio, description) -> None:
                                 datetime_start = '{datetime.datetime.now()}',
                                 datetime_decision = '{datetime.datetime.now()}',
                                 master_decision_fio = '{master_fio}'
-                            WHERE shift_task = '{shift_task_number}'         
+                            WHERE shift_task_id = '{shift_task_number}'         
                         """
         try:
             with con.cursor() as cur:
@@ -407,7 +407,7 @@ def reject_downtime(shift_task_number, master_fio, description) -> None:
                                 description = '{description}',
                                 datetime_decision = '{datetime.datetime.now()}',
                                 master_decision_fio = '{master_fio}'
-                            WHERE shift_task = '{shift_task_number}'         
+                            WHERE shift_task_id = '{shift_task_number}'         
                         """
         try:
             with con.cursor() as cur:
