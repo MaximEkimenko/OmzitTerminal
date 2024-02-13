@@ -18,8 +18,8 @@ dp = Dispatcher(bot)  # инициализация диспетчера
 # dispatcher_list = (admin_id, savchenko_id, pavluchenkova_id,)  # диспетчеры
 # master_list = (admin_id, ermishkin_id, posohov_id, gordii_id, kondratiev_id, achmetov_id)  # производство
 # группа мастеров
-# omzit_master_group1_id = -4005524766
-omzit_master_group1_id = -4027358064
+omzit_master_group1_id = -4005524766
+# omzit_master_group1_id = -4027358064
 
 
 async def send_call_master(message_to_master):
