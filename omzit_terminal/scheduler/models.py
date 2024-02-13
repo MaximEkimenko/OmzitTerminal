@@ -189,25 +189,25 @@ class ShiftTask(models.Model):
     # def add_next(self, new_shift_task: 'ShiftTask'):
     #     Task2Task.objects.create(previous=self, next=new_shift_task)
 
-
-class Downtime(models.Model):
-    objects = models.Manager()
-    shift_task = models.ForeignKey(
-        'ShiftTask', on_delete=models.CASCADE, related_name='downtimes', verbose_name='СЗ'
-    )
-    status = models.CharField(max_length=254, default='не подтверждено', verbose_name='Статус')
-    reason = models.CharField(max_length=50, verbose_name='Причина')
-    description = models.CharField(max_length=254, default='', verbose_name='Описание')
-    datetime_creation = models.DateTimeField(auto_now_add=True, verbose_name='Время создания записи')
-    datetime_start = models.DateTimeField(null=True, blank=True, verbose_name='Время начала простоя')
-    datetime_end = models.DateTimeField(null=True, blank=True, verbose_name='Время окончания простоя')
-    datetime_decision = models.DateTimeField(null=True, blank=True, verbose_name='Время решения')
-    master_decision_fio = models.CharField(max_length=30, null=True, blank=True, verbose_name='ФИО мастера')
-
-    class Meta:
-        db_table = "downtime"
-        verbose_name = 'Простой'
-        verbose_name_plural = 'Простои'
+# TODO ЗАКОНСЕРВИРОВАНО Функционал простоев
+# class Downtime(models.Model):
+#     objects = models.Manager()
+#     shift_task = models.ForeignKey(
+#         'ShiftTask', on_delete=models.CASCADE, related_name='downtimes', verbose_name='СЗ'
+#     )
+#     status = models.CharField(max_length=254, default='не подтверждено', verbose_name='Статус')
+#     reason = models.CharField(max_length=50, verbose_name='Причина')
+#     description = models.CharField(max_length=254, default='', verbose_name='Описание')
+#     datetime_creation = models.DateTimeField(auto_now_add=True, verbose_name='Время создания записи')
+#     datetime_start = models.DateTimeField(null=True, blank=True, verbose_name='Время начала простоя')
+#     datetime_end = models.DateTimeField(null=True, blank=True, verbose_name='Время окончания простоя')
+#     datetime_decision = models.DateTimeField(null=True, blank=True, verbose_name='Время решения')
+#     master_decision_fio = models.CharField(max_length=30, null=True, blank=True, verbose_name='ФИО мастера')
+#
+#     class Meta:
+#         db_table = "downtime"
+#         verbose_name = 'Простой'
+#         verbose_name_plural = 'Простои'
 
 # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
 # class Task2Task(models.Model):

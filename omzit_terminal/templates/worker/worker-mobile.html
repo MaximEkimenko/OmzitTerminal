@@ -126,10 +126,14 @@
                     location.href = master_call_link
                 }
 
-                choice_downtime_reason_btn.onclick = function () {
-                    choice_downtime_reason_link = `/worker/downtime_reason/${ws_number}-${st_id}`;
-                    location.href = choice_downtime_reason_link;
+                dispatcher_call_btn.onclick = function () {
+                    dispatcher_call_link = `/worker/${ws_number}-${st_id}/get_dispatcher`
+                    location.href = dispatcher_call_link
                 }
+                //choice_downtime_reason_btn.onclick = function () {
+                //    choice_downtime_reason_link = `/worker/downtime_reason/${ws_number}-${st_id}`;
+                //    location.href = choice_downtime_reason_link;
+                //}
             });
 
         </script>

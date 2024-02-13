@@ -11,7 +11,7 @@ from django.shortcuts import render, redirect
 from .services.service_handlers import handle_uploaded_file
 from .services.tech_data_get import tech_data_get
 from .forms import GetTehDataForm, ChangeOrderModel, SendDrawBack
-from scheduler.models import WorkshopSchedule, Downtime
+from scheduler.models import WorkshopSchedule
 from constructor.forms import QueryAnswer
 from worker.services.master_call_function import terminal_message_to_id
 from django.core.exceptions import PermissionDenied
@@ -29,6 +29,9 @@ from .services.service_handlers import handle_uploaded_draw_file
 # from scheduler.filters import filterset_plasma
 # from .forms import TehnologChoice, DoerChoice, LayoutUpload, WorkshopPlasmaChoice
 # from scheduler.models import ShiftTask, Doers
+
+# TODO ЗАКОНСЕРВИРОВАНО Функционал простоев
+# from scheduler.models import Downtime
 
 # ADMIN_TELEGRAM_ID
 TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
@@ -114,18 +117,21 @@ def tehnolog_wp(request):
             print(get_teh_data_form.cleaned_data)
     else:
         get_teh_data_form = GetTehDataForm()  # чистая форма для первого запуска
-    downtimes = Downtime.objects.filter(
-        status='подтверждено',
-        reason__in=['Вызов конструктора', 'Вызов технолога']
-    ).select_related('shift_task')
+
     context.update({
         'get_teh_data_form': get_teh_data_form, 'alert': alert,
         'change_model_query_form': change_model_query_form,
         'send_draw_back_form': send_draw_back_form,
         'filter': f,
         'td_queries': td_queries,
-        'downtimes': downtimes
+
     })
+    # TODO ЗАКОНСЕРВИРОВАНО Функционал простоев
+    # downtimes = Downtime.objects.filter(
+    #     status='подтверждено',
+    #     reason__in=['Вызов конструктора', 'Вызов технолога']
+    # ).select_related('shift_task')
+    # context['downtimes'] = downtimes
     return render(request, r"tehnolog/tehnolog.html", context=context)
 
 

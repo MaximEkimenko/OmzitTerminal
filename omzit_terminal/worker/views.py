@@ -13,13 +13,16 @@ from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 
 from omzit_terminal.settings import BASE_DIR
-from scheduler.models import ShiftTask, Downtime
+from scheduler.models import ShiftTask
 
-from .forms import WorkplaceChoose, DowntimeReasonForm
+from .forms import WorkplaceChoose
 from .services.master_call_db import select_master_call, select_dispatcher_call
 from .services.master_call_function import send_call_master, send_call_dispatcher
 from .services.master_call_function import get_client_ip
 
+# TODO ЗАКОНСЕРВИРОВАНО Функционал простоев
+# from scheduler.models import Downtime
+# from .forms import DowntimeReasonForm
 
 # @login_required(login_url="login")
 def ws_number_choose(request):
@@ -138,9 +141,10 @@ def worker(request, ws_number):
                     alert_message = 'Сменное задание запущенно в работу.'
             elif 'пауза' in request.POST['task_id']:
                 resume_work(task_id=task_id)
-            elif 'простой' in request.POST['task_id']:
-                resume_work(task_id=task_id, from_status='простой')
-                Downtime.objects.filter(shift_task=task_id).update(datetime_end=timezone.now(), status='закрыто')
+            # TODO ЗАКОНСЕРВИРОВАНО Функционал простоев
+            # elif 'простой' in request.POST['task_id']:
+            #     resume_work(task_id=task_id, from_status='простой')
+            #     Downtime.objects.filter(shift_task=task_id).update(datetime_end=timezone.now(), status='закрыто')
             else:
                 print("Это СЗ уже взято в работу!")
         else:
@@ -367,49 +371,50 @@ def resume_work(task_id=None, is_lunch=False, from_status='пауза'):
         shift_tasks.update(st_status='в работе', datetime_job_resume=timezone.now())
 
 
-def downtime_reason(request, ws_number, st_number):
-    """
-    Выбор причины простоя по СЗ
-    :param request:
-    :param ws_number: номер терминала
-    :param st_number: номер сменного задания
-    """
-    shift_task = ShiftTask.objects.get(pk=int(st_number))
-    context = {
-        'st_number': st_number,
-        'ws_number': ws_number,
-        'form': DowntimeReasonForm(),
-        'alert': ' ',
-        'shift_task': shift_task,
-        'alert_time': 30,  # время в секундах отображения сообщения
-    }
-    if request.method == 'POST':
-        data = request.POST
-        reason = data.get('reason')
-        if reason:
-            Downtime.objects.create(shift_task=shift_task, reason=reason)
-            message_to_master = (f"❗Подтвердите простой на Т{shift_task.ws_number} по причине: {reason}. "
-                                 f"Номер СЗ: {shift_task.id}. "
-                                 f"Заказ: {shift_task.order}. Изделие: {shift_task.model_name}. "
-                                 f"Операция: {shift_task.op_number} {shift_task.op_name_full}. "
-                                 f"Исполнители: {shift_task.fio_doer}.\n\n"
-                                 f"Длительным нажатием на данное сообщение вызовите меню и выберите 'Ответить'. "
-                                 f"Для подтверждения введите 'Да' и через пробел описание проблемы, "
-                                 f"'Нет' для отмены запроса и продолжения работы"
-                                 )
-            try:
-                pass
-                asyncio.run(send_call_master(message_to_master))
-            except Exception as ex:
-                print(f"При попытке отправки сообщения мастеру из функции 'downtime_reason' вызвано исключение: {ex}")
-            context['alert'] = f'Направлено сообщение мастеру для подтверждения простоя по причине: {reason}'
-            context['alert_time'] = 15
-        else:
-            context['alert'] = f'Выберите причину простоя'
-
-    terminal_ip = get_client_ip(request)  # определение IP терминала
-    terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
-    if 'Mobile' in request.META['HTTP_USER_AGENT'] or terminal_name[:terminal_name.find('.')] == 'APM-0229':
-        return render(request, r"worker/downtime-reasons-mobile.html", context=context)
-    else:
-        return render(request, r"worker/downtime-reasons.html", context=context)
+# TODO ЗАКОНСЕРВИРОВАНО Функционал простоев
+# def downtime_reason(request, ws_number, st_number):
+#     """
+#     Выбор причины простоя по СЗ
+#     :param request:
+#     :param ws_number: номер терминала
+#     :param st_number: номер сменного задания
+#     """
+#     shift_task = ShiftTask.objects.get(pk=int(st_number))
+#     context = {
+#         'st_number': st_number,
+#         'ws_number': ws_number,
+#         'form': DowntimeReasonForm(),
+#         'alert': ' ',
+#         'shift_task': shift_task,
+#         'alert_time': 30,  # время в секундах отображения сообщения
+#     }
+#     if request.method == 'POST':
+#         data = request.POST
+#         reason = data.get('reason')
+#         if reason:
+#             Downtime.objects.create(shift_task=shift_task, reason=reason)
+#             message_to_master = (f"❗Подтвердите простой на Т{shift_task.ws_number} по причине: {reason}. "
+#                                  f"Номер СЗ: {shift_task.id}. "
+#                                  f"Заказ: {shift_task.order}. Изделие: {shift_task.model_name}. "
+#                                  f"Операция: {shift_task.op_number} {shift_task.op_name_full}. "
+#                                  f"Исполнители: {shift_task.fio_doer}.\n\n"
+#                                  f"Длительным нажатием на данное сообщение вызовите меню и выберите 'Ответить'. "
+#                                  f"Для подтверждения введите 'Да' и через пробел описание проблемы, "
+#                                  f"'Нет' для отмены запроса и продолжения работы"
+#                                  )
+#             try:
+#                 pass
+#                 asyncio.run(send_call_master(message_to_master))
+#             except Exception as ex:
+#                 print(f"При попытке отправки сообщения мастеру из функции 'downtime_reason' вызвано исключение: {ex}")
+#             context['alert'] = f'Направлено сообщение мастеру для подтверждения простоя по причине: {reason}'
+#             context['alert_time'] = 15
+#         else:
+#             context['alert'] = f'Выберите причину простоя'
+#
+#     terminal_ip = get_client_ip(request)  # определение IP терминала
+#     terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
+#     if 'Mobile' in request.META['HTTP_USER_AGENT'] or terminal_name[:terminal_name.find('.')] == 'APM-0229':
+#         return render(request, r"worker/downtime-reasons-mobile.html", context=context)
+#     else:
+#         return render(request, r"worker/downtime-reasons.html", context=context)

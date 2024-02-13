@@ -360,65 +360,65 @@ def doers_update(excel_file: str) -> None:
     finally:
         con.close()
 
-
-def confirm_downtime(shift_task_number, master_fio, description) -> None:
-    """
-    Подтверждение простоя
-    """
-    try:
-        # подключение к БД
-        con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
-        con.autocommit = True
-        update_query = f""" UPDATE shift_task
-                            SET st_status = 'простой',
-                                job_duration = job_duration + ('{datetime.datetime.now()}' - datetime_job_resume)
-                            WHERE id='{shift_task_number}';
-                            
-                            UPDATE downtime
-                            SET status = 'подтверждено',
-                                description = '{description}',
-                                datetime_start = '{datetime.datetime.now()}',
-                                datetime_decision = '{datetime.datetime.now()}',
-                                master_decision_fio = '{master_fio}'
-                            WHERE shift_task_id = '{shift_task_number}'         
-                        """
-        try:
-            with con.cursor() as cur:
-                cur.execute(update_query)
-                con.commit()
-        except Exception as e:
-            print(e, 'ошибка выборке')
-    except Exception as e:
-        print('Ошибка подключения к базе', e)
-    finally:
-        con.close()
-
-
-def reject_downtime(shift_task_number, master_fio, description) -> None:
-    """
-    Отклонение простоя
-    """
-    try:
-        # подключение к БД
-        con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
-        con.autocommit = True
-        update_query = f""" UPDATE downtime
-                            SET status = 'отклонено',
-                                description = '{description}',
-                                datetime_decision = '{datetime.datetime.now()}',
-                                master_decision_fio = '{master_fio}'
-                            WHERE shift_task_id = '{shift_task_number}'         
-                        """
-        try:
-            with con.cursor() as cur:
-                cur.execute(update_query)
-                con.commit()
-        except Exception as e:
-            print(e, 'ошибка выборке')
-    except Exception as e:
-        print('Ошибка подключения к базе', e)
-    finally:
-        con.close()
+# TODO ЗАКОНСЕРВИРОВАНО Функционал простоев
+# def confirm_downtime(shift_task_number, master_fio, description) -> None:
+#     """
+#     Подтверждение простоя
+#     """
+#     try:
+#         # подключение к БД
+#         con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
+#         con.autocommit = True
+#         update_query = f""" UPDATE shift_task
+#                             SET st_status = 'простой',
+#                                 job_duration = job_duration + ('{datetime.datetime.now()}' - datetime_job_resume)
+#                             WHERE id='{shift_task_number}';
+#
+#                             UPDATE downtime
+#                             SET status = 'подтверждено',
+#                                 description = '{description}',
+#                                 datetime_start = '{datetime.datetime.now()}',
+#                                 datetime_decision = '{datetime.datetime.now()}',
+#                                 master_decision_fio = '{master_fio}'
+#                             WHERE shift_task_id = '{shift_task_number}'
+#                         """
+#         try:
+#             with con.cursor() as cur:
+#                 cur.execute(update_query)
+#                 con.commit()
+#         except Exception as e:
+#             print(e, 'ошибка выборке')
+#     except Exception as e:
+#         print('Ошибка подключения к базе', e)
+#     finally:
+#         con.close()
+#
+#
+# def reject_downtime(shift_task_number, master_fio, description) -> None:
+#     """
+#     Отклонение простоя
+#     """
+#     try:
+#         # подключение к БД
+#         con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
+#         con.autocommit = True
+#         update_query = f""" UPDATE downtime
+#                             SET status = 'отклонено',
+#                                 description = '{description}',
+#                                 datetime_decision = '{datetime.datetime.now()}',
+#                                 master_decision_fio = '{master_fio}'
+#                             WHERE shift_task_id = '{shift_task_number}'
+#                         """
+#         try:
+#             with con.cursor() as cur:
+#                 cur.execute(update_query)
+#                 con.commit()
+#         except Exception as e:
+#             print(e, 'ошибка выборке')
+#     except Exception as e:
+#         print('Ошибка подключения к базе', e)
+#     finally:
+#         con.close()
 
 
 if __name__ == '__main__':
