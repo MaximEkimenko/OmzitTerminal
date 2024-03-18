@@ -78,75 +78,37 @@ class SchedulerWorkplace(forms.Form):
                                                     label='Заказ-модель', required=False)
 
 
-class FiosLabel(ModelChoiceField):  # переопределение метода отображения строки результатов для ФИО
-    """
-    Класс для переопределения вывода ModelChoiceField
-    """
-
-    def label_from_instance(self, obj):
-        return (f"{obj.id}. Заказ - {obj.order}. №T-{obj.ws_number}. Изделие - {obj.model_name}. "
-                f"Статус - {obj.st_status}")
+# class FiosLabel(ModelChoiceField):  # переопределение метода отображения строки результатов для ФИО
+#     """
+#     Класс для переопределения вывода ModelChoiceField
+#     """
+#
+#     def label_from_instance(self, obj):
+#         return (f"{obj.id}. Заказ - {obj.order}. №T-{obj.ws_number}. Изделие - {obj.model_name}. "
+#                 f"Статус - {obj.st_status}")
 
 
 class FioDoer(forms.Form):
     """
     Форма для ввода ФИО
     """
-
-    # Создание поля в классе формы с отфильтрованными данными по РЦ и дате
-    # def __init__(self, *args, **kwargs):
-    #     if 'ws_number' in kwargs and kwargs['ws_number'] is not None:
-    #         ws_number = kwargs.pop('ws_number')
-    #         model_order_query = kwargs.pop('model_order_query')
-    #         # query_set запроса СЗ
-    #         qs_st_number = (ShiftTask.objects.filter  # выбор "не распределено", "брак", "не принято"
-    #                         (Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
-    #                         ).filter(ws_number=ws_number, model_order_query=model_order_query, next_shift_task=None)
-    #     else:
-    #         qs_st_number = None
-    #     # Вызов супер класса для создания поля st_number
-    #     super(FioDoer, self).__init__(*args, **kwargs)
-    #     try:
-    #         self.fields['st_number'].queryset = qs_st_number
-    #     except NameError:
-    #         pass
-
-    # empty_qs = None  # запрос заглушка для создания переменной st_number в нужном виде
-    # st_number = FiosLabel(empty_qs, label='Сменное задание', empty_label='СЗ не выбрано')
-    qs_st_fio = Doers.objects.all()
-    # qs_st_fio = Doers.objects.exclude(job_title='Технолог')
+    qs_st_fio = Doers.objects.all().order_by("doers")
     fio_1 = forms.ModelChoiceField(
         qs_st_fio, label='Исполнитель 1', empty_label='ФИО не выбрано',
         widget=forms.Select(attrs={'class': "fio_select"})
     )
-    # fio_1_percentage = forms.IntegerField(
-    #     min_value=0, max_value=100, label='%', initial=100,
-    #     widget=forms.NumberInput(attrs={'class': "fio_percentage"})
-    # )
     fio_2 = forms.ModelChoiceField(
         qs_st_fio, label='Исполнитель 2', empty_label='ФИО не выбрано', initial='', required=False,
         widget=forms.Select(attrs={'class': "fio_select"})
     )
-    # fio_2_percentage = forms.IntegerField(
-    #     min_value=0, max_value=100, label='%', initial=0,
-    #     widget=forms.NumberInput(attrs={'class': "fio_percentage"})
-    # )
     fio_3 = forms.ModelChoiceField(
         qs_st_fio, label='Исполнитель 3', empty_label='ФИО не выбрано', initial='', required=False,
         widget=forms.Select(attrs={'class': "fio_select"})
     )
-    # fio_3_percentage = forms.IntegerField(
-    #     min_value=0, max_value=100, label='%', initial=0,
-    #     widget=forms.NumberInput(attrs={'class': "fio_percentage"})
-    # )
     fio_4 = forms.ModelChoiceField(
         qs_st_fio, label='Исполнитель 4', empty_label='ФИО не выбрано', initial='', required=False,
         widget=forms.Select(attrs={'class': "fio_select"})
     )
-    # fio_4_percentage = forms.IntegerField(
-    #     min_value=0, max_value=100, label='%', initial=0,
-    #     widget=forms.NumberInput(attrs={'class': "fio_percentage"})
-    # )
 
 
 class PlanBid(forms.Form):

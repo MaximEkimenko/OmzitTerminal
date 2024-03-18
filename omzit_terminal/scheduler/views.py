@@ -16,14 +16,14 @@ from django.http import FileResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.utils.timezone import make_aware
 
 from .filters import get_filterset
 from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw, PlanBid, ReportForm
 # from .forms import DailyReportForm, PlanResortHiddenForm # TODO функционал отчётов ЗАКОНСЕРВИРОВАНО
 # from .models import  DailyReport, MonthPlans # TODO функционал отчётов ЗАКОНСЕРВИРОВАНО
-from .models import WorkshopSchedule, ShiftTask
+from .models import WorkshopSchedule, ShiftTask, Doers
 
 from .services.schedule_handlers import get_all_done_rate, make_workshop_plan_plot, create_pdf_report, report_merger
 from worker.services.master_call_function import terminal_message_to_id
@@ -386,6 +386,17 @@ def schedulerfio(request, ws_number, model_order_query):
 
         f = get_filterset(data=request.GET, queryset=filtered_workplace_schedule, fields=shift_task_fields)
 
+    doers = Doers.objects.all().order_by('doers')
+    sums_tech_norm = {}
+    for doer in doers:
+        sums_tech_norm[doer.doers] = (
+            ShiftTask.objects.filter(
+                fio_doer__contains=doer.doers
+            ).exclude(
+                st_status__in=['принято', 'не принято', 'брак']
+            ).aggregate(sum=Sum('norm_tech'))['sum']
+        )
+
     context = {
         'filtered_workplace_schedule': filtered_workplace_schedule,
         'form_fio_doer': form_fio_doer,
@@ -394,7 +405,8 @@ def schedulerfio(request, ws_number, model_order_query):
         'filter': f,
         'action': action,
         'pk': pk,
-        'fios_doers': fios_doers
+        'fios_doers': fios_doers,
+        'sums_tech_norm': sums_tech_norm
     }
     return render(request, r"schedulerfio/schedulerfio.html", context=context)
 

@@ -794,3 +794,23 @@ li.dropdown {
     font-weight: bold;
 }
 
+.sort-filter {
+    display: inline-flex;
+    width: 90%;
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+.sort-filter input {
+    margin: 2px;
+    border-radius: 7px;
+    height: 23px;
+    width: 100%;
+}
+
+.sort-filter button {
+    margin: 2px;
+    border-radius: 7px;
+    max-width: 2rem;
+    height: 100%;
+}

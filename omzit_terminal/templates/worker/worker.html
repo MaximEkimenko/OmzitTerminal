@@ -19,8 +19,11 @@
 
         <p class='terminal_alert' id="js_alert"></p>
         {% if initial_shift_tasks %}
+        <p class='countdown' id="id_countdown">
+             Обновление списка сменных заданий через 30 сек
+        </p>
         <table class="table" title="График цехов" id="main_table">
-            <tr class="table_header_row">
+            <tr class="table_header_row" tabindex="0">
                 <td class="td_cell"><p class="cell_text">№</p></td>
                 <td class="td_cell"><p class="cell_text">РЦ</p></td>
                 <td class="td_cell"><p class="cell_text">Изделие</p></td>
@@ -34,7 +37,7 @@
                 <td class="td_cell"><p class="cell_text">Время приемки</p></td>
             </tr>
             {% for line in initial_shift_tasks %}
-            <tr id="row" class="table_row">
+            <tr id="row" class="table_row" tabindex="0">
                 {% for el in line.values %}
                 {% if el == None %}
                     <td class="td_cell"><p class="cell_text">-</p></td>
@@ -49,12 +52,12 @@
         <p>Распределённые сменные задания на РЦ {{ ws_number }} отсутствуют.</p>
         {% endif %}
         <!-- prettier-ignore -->
-        {% if initial_shift_tasks %} 
+        {% if initial_shift_tasks %}
         {% endif %}
 
         <br /><br /><br />
         {% if select_shift_task %}
-        <form action="{{ ws_number }}" method="POST" enctype="multipart/form-data" id="sel_1">
+        <form action="{{ ws_number }}" method="POST" enctype="multipart/form-data" id="sel_1" hidden>
             {% csrf_token %}
             <label id="sel_2" class="form_inner_label"> Выбор сменного задания для запуска в работу: </label>
             <br />
@@ -76,20 +79,40 @@
             <!-- <button id="submit_btn" type="submit">Начать работу</button> -->
         </form>
         {% endif %}
+
         <script>
-            // перенаправление на страницу чертежей
-            // элемент select
-            const select_element = document.getElementById("sel_3");
-            // элемент form выбора СЗ
-            const form_element = document.getElementById("sel_1");
-            // элемент кнопки формы выбора СЗ
-            const btn_element = document.getElementById("submit_btn");
+
+        </script>
+<!--        <script src="{% static 'worker/js/listener.js' %}">-->
+<!--            // скрипт запуска меню выбора-->
+<!--        </script>-->
+        <script src="{% static 'worker/js/worker.js' %}"></script>
+        <script>
+            const countdown = document.getElementById("id_countdown");
+            let currentRow = 0
+            table = document.getElementById("main_table");
+            tr = table.getElementsByTagName("tr");
+            let timer = 30
             document.addEventListener("keydown", function (event) {
+                timer = 30
+                if (event.code == 'ArrowUp' && currentRow > 1) {
+                    returnColor(tr[currentRow]);
+                    currentRow -= 1
+                    tr[currentRow].focus()
+                    tr[currentRow].bgColor = 'orange';
+                }
+                if (event.code == 'ArrowDown' && currentRow < tr.length - 1) {
+                    returnColor(tr[currentRow]);
+                    currentRow += 1
+                    tr[currentRow].focus()
+                    tr[currentRow].bgColor = 'orange';
+                }
+
                 const ws_number = "{{ ws_number }}";
                 // id выбранного option
-                const st_id = select_element.options[select_element.selectedIndex].id;
-                const tech_data = select_element.options[select_element.selectedIndex].dataset.send;
-                //const op_number = select_element.options[select_element.selectedIndex].op_number;
+                const st_id = select_element.options[currentRow].id;
+                const tech_data = select_element.options[currentRow].dataset.send;
+                //const op_number = select_element.options[currentRow].op_number;
                 // кнопка выбрать чертёж
                 if (event.ctrlKey) {
                     if (st_id != "0") {
@@ -98,7 +121,9 @@
                     }
                     // кнопка вызов мастера
                 } else if (event.code == "KeyK") {
+
                     master_call_link = `/worker/${ws_number}-${st_id}/get_master`;
+                    console.log(master_call_link)
                     location.href = master_call_link;
 
                     // кнопка выбора причины простоя
@@ -120,14 +145,35 @@
                 }
                 // кнопка запуск СЗ
                 else if (event.code == "KeyC") {
+                    select_element.selectedIndex = currentRow
                     form_element.submit();
                 }
+
+            })
+
+
+            // перенаправление на страницу чертежей
+            // элемент select
+            const select_element = document.getElementById("sel_3");
+            // элемент form выбора СЗ
+            const form_element = document.getElementById("sel_1");
+            // элемент кнопки формы выбора СЗ
+            const btn_element = document.getElementById("submit_btn");
+            document.addEventListener("keydown", function (event) {
+
             });
+
+            let x = setInterval(function() {
+                timer -= 1
+                countdown.innerHTML = 'Обновление списка сменных заданий через ' + timer + ' сек';
+              if (timer == 0) {
+                clearInterval(x);
+                location.href = location.pathname;
+              }
+            }, 1000);
+
+
         </script>
-        <script src="{% static 'worker/js/listener.js' %}">
-            // скрипт запуска меню выбора
-        </script>
-        <script src="{% static 'worker/js/worker.js' %}"></script>
         <div style="height: 90px"></div>
         <script></script>
         <br />
