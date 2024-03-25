@@ -79,36 +79,37 @@
                 </table>
                 <br />
             </div>
+            {% comment %}<!--
+                {% if downtimes %}
+                <h3>Простои</h3>
+                <table class="table" title="">
+                    <tr class="table_header_row">
+                        <td class="td_cell_dt">Терминал</td>
+                        <td class="td_cell_dt">Заказ</td>
+                        <td class="td_cell_dt">Модель</td>
+                        <td class="td_cell_dt">Операция</td>
+                        <td class="td_cell_dt">ФИО исполнителя</td>
+                        <td class="td_cell_dt">Причина простоя</td>
+                        <td class="td_cell_dt">Время выдачи замечания</td>
+                        <td class="td_cell_dt">ФИО мастера</td>
+                    </tr>
 
-            {% if downtimes %}
-            <h3>Простои</h3>
-            <table class="table" title="">
-                <tr class="table_header_row">
-                    <td class="td_cell_dt">Терминал</td>
-                    <td class="td_cell_dt">Заказ</td>
-                    <td class="td_cell_dt">Модель</td>
-                    <td class="td_cell_dt">Операция</td>
-                    <td class="td_cell_dt">ФИО исполнителя</td>
-                    <td class="td_cell_dt">Причина простоя</td>
-                    <td class="td_cell_dt">Время выдачи замечания</td>
-                    <td class="td_cell_dt">ФИО мастера</td>
-                </tr>
-                <!-- prettier-ignore -->
-                {% for downtime in downtimes %}
-                <tr class="table_row">
-                    <td class="td_cell_dt">{{ downtime.shift_task.ws_number }}</td>
-                    <td class="td_cell_dt">{{ downtime.shift_task.order }}</td>
-                    <td class="td_cell_dt">{{ downtime.shift_task.model_name }}</td>
-                    <td class="td_cell_dt">{{ downtime.shift_task.op_number }} {{ downtime.shift_task.op_name_full }}</td>
-                    <td class="td_cell_dt">{{ downtime.shift_task.fio_doer }}</td>
-                    <td class="td_cell_dt red_word">{{ downtime.reason }}: {{ downtime.description }}</td>
-                    <td class="td_cell_dt">{{ downtime.datetime_start }}</td>
-                    <td class="td_cell_dt">{{ downtime.master_decision_fio }}</td>
-                </tr>
-                <!-- prettier-ignore -->
-                {% endfor %}
-            </table>
-            {% endif %}
+                    {% for downtime in downtimes %}
+                    <tr class="table_row">
+                        <td class="td_cell_dt">{{ downtime.shift_task.ws_number }}</td>
+                        <td class="td_cell_dt">{{ downtime.shift_task.order }}</td>
+                        <td class="td_cell_dt">{{ downtime.shift_task.model_name }}</td>
+                        <td class="td_cell_dt">{{ downtime.shift_task.op_number }} {{ downtime.shift_task.op_name_full }}</td>
+                        <td class="td_cell_dt">{{ downtime.shift_task.fio_doer }}</td>
+                        <td class="td_cell_dt red_word">{{ downtime.reason }}: {{ downtime.description }}</td>
+                        <td class="td_cell_dt">{{ downtime.datetime_start }}</td>
+                        <td class="td_cell_dt">{{ downtime.master_decision_fio }}</td>
+                    </tr>
+
+                    {% endfor %}
+                </table>
+                {% endif %}-->
+            {% endcomment %}
             <br />
             <!-- Форма загрузки КД -->
             <div id="query_answer" class="modal">

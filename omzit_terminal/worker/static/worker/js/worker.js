@@ -26,9 +26,10 @@ for (let i = 0; i < table_row.length; i++) {
         table_row[i].style.color = "black";
     } else if (table_row[i].innerText.includes("принято")) {
         table_row[i].bgColor = color_ok;
-    } else if (table_row[i].innerText.includes("простой")) {
-        table_row[i].bgColor = color_fail;
     }
+    //} else if (table_row[i].innerText.includes("простой")) {
+    //    table_row[i].bgColor = color_fail;
+    //}
 }
 // подкраска ячеек ожидания
 let td_cell = document.getElementsByClassName("td_cell");

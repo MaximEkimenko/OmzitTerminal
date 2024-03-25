@@ -100,17 +100,23 @@
                 } else if (event.code == "KeyK") {
                     master_call_link = `/worker/${ws_number}-${st_id}/get_master`;
                     location.href = master_call_link;
+
                     // кнопка выбора причины простоя
+                // } else if (event.code == "KeyX") {
+                //    if (st_id != 0) {
+                //        choice_downtime_reason_link = `/worker/downtime_reason/${ws_number}-${st_id}`;
+                //        location.href = choice_downtime_reason_link;
+                //      } else {
+                //        const alert = document.getElementById("js_alert")
+                //        alert.display = 'block'
+                //        alert.innerHTML = 'Выберите сменное задание'
+                //        setTimeout(() => alert.display = 'none', 10000)
+                //      }
+
+                    // кнопка вызов диспетчера
                 } else if (event.code == "KeyX") {
-                    if (st_id != 0) {
-                        choice_downtime_reason_link = `/worker/downtime_reason/${ws_number}-${st_id}`;
-                        location.href = choice_downtime_reason_link;
-                    } else {
-                        const alert = document.getElementById("js_alert")
-                        alert.display = 'block'
-                        alert.innerHTML = 'Выберите сменное задание'
-                        setTimeout(() => alert.display = 'none', 10000)
-                    }
+                    dispatcher_call_link = `/worker/${ws_number}-${st_id}/get_dispatcher`;
+                    location.href = dispatcher_call_link;
                 }
                 // кнопка запуск СЗ
                 else if (event.code == "KeyC") {
