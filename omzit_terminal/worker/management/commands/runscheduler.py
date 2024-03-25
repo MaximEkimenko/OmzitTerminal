@@ -9,9 +9,7 @@ from django_apscheduler.jobstores import DjangoJobStore
 from django_apscheduler.models import DjangoJobExecution
 from django_apscheduler import util
 
-from scheduler.views import shift_tasks_auto_report
 from worker.views import pause_work, resume_work
-from scheduler.services.schedule_handlers import days_report_create, report_json_create_schedule, report_merger_schedule
 
 logger = logging.getLogger(__name__)
 
