@@ -1,25 +1,27 @@
 <!-- prettier-ignore -->
+{% extends 'base.html' %}
+{% load static %}
 {% block title %}
 Терминал РЦ {{ ws_number }}
 {% endblock %}
 
 {% block body %}
-{% block menu %}
-{% endblock %}
-        <h1 style="font-size: 50px">Терминал {{ ws_number }}</h1>
-        {% if alert %}
-            <p class='terminal_alert' id="terminal_alert"> {{ alert }} </p>
-            <script>
-                const notification = document.getElementById("terminal_alert");
-                setTimeout(() => notification.remove(), 10000)
-            </script>
-        {% endif %}
+    {% block menu %}
+    {% endblock %}
 
-        <p class='terminal_alert' id="js_alert"></p>
-        <p class='countdown' id="id_countdown">
-             Обновление списка сменных заданий через 30 сек
-        </p>
-        {% if initial_shift_tasks %}
+    <h1 style="font-size: 50px">Терминал {{ ws_number }}</h1>
+    {% if alert %}
+        <p class='terminal_alert' id="terminal_alert"> {{ alert }} </p>
+        <script>
+            const notification = document.getElementById("terminal_alert");
+            setTimeout(() => notification.remove(), 10000)
+        </script>
+    {% endif %}
+
+    <p class='terminal_alert' id="js_alert"></p>
+    <p class='countdown' id="id_countdown">Обновление списка сменных заданий через 30 сек</p>
+
+    {% if initial_shift_tasks %}
         <table class="table" title="График цехов" id="main_table">
             <tr class="table_header_row" tabindex="0">
                 <td class="td_cell"><p class="cell_text">№</p></td>
@@ -35,30 +37,18 @@
                 <td class="td_cell"><p class="cell_text">Время приемки</p></td>
             </tr>
             {% for line in initial_shift_tasks %}
-            <tr id="row" class="table_row" tabindex="0">
-                {% for el in line.values %}
-                {% if el == None %}
-                    <td class="td_cell"><p class="cell_text">-</p></td>
-                {% else %}
-                    <td class="td_cell"><p class="cell_text">{{ el }}</p></td>
-                {% endif %}
-                {% endfor %}
-            </tr>
+                <tr id="row" class="table_row" tabindex="0">
+                    {% for el in line.values %}
+                        {% if el == None %}
+                            <td class="td_cell"><p class="cell_text">-</p></td>
+                        {% else %}
+                            <td class="td_cell"><p class="cell_text">{{ el }}</p></td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
             {% endfor %}
         </table>
-        {% else %}
-        <td class="td_cell"><p class="cell_text">{{ el }}</p></td>
-        {% endif %} {% endfor %}
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-<p>Распределённые сменные задания на РЦ {{ ws_number }} отсутствуют.</p>
-{% endif %}
-<!-- prettier-ignore -->
 
-        <br /><br /><br />
-        {% if initial_shift_tasks %}
         <form action="{{ ws_number }}" method="POST" enctype="multipart/form-data" id="sel_1" hidden>
             {% csrf_token %}
             <label id="sel_2" class="form_inner_label"> Выбор сменного задания для запуска в работу: </label>
@@ -77,99 +67,98 @@
                 {% endfor %}
             </select>
             <br />
+        </form>
 
-    <!-- <button id="submit_btn" type="submit">Начать работу</button> -->
-</form>
-{% endif %}
+    {% else %}
+        <p>Распределённые сменные задания на РЦ {{ ws_number }} отсутствуют.</p>
+    {% endif %}
 
-<script></script>
-<!--        <script src="{% static 'worker/js/listener.js' %}">-->
-<!--            // скрипт запуска меню выбора-->
-<!--        </script>-->
-        <script src="{% static 'worker/js/worker.js' %}"></script>
-        <script>
-            const countdown = document.getElementById("id_countdown");
-            let currentRow = 0
-            table = document.getElementById("main_table");
-            if (table) {
-                tr = table.getElementsByTagName("tr");
+    <script src="{% static 'worker/js/worker.js' %}"></script>
+    <script>
+        const countdown = document.getElementById("id_countdown");
+        let currentRow = 0
+        table = document.getElementById("main_table");
+        if (table) {
+            tr = table.getElementsByTagName("tr");
+        }
+        let timer = 30
+        document.addEventListener("keydown", function (event) {
+            timer = 30
+            if (event.code == 'ArrowUp' && currentRow > 1) {
+                returnColor(tr[currentRow]);
+                currentRow -= 1
+                tr[currentRow].focus()
+                tr[currentRow].bgColor = 'orange';
             }
-            let timer = 30
-            document.addEventListener("keydown", function (event) {
-                timer = 30
-                if (event.code == 'ArrowUp' && currentRow > 1) {
-                    returnColor(tr[currentRow]);
-                    currentRow -= 1
-                    tr[currentRow].focus()
-                    tr[currentRow].bgColor = 'orange';
+            if (event.code == 'ArrowDown' && currentRow < tr.length - 1) {
+                returnColor(tr[currentRow]);
+                currentRow += 1
+                tr[currentRow].focus()
+                tr[currentRow].bgColor = 'orange';
+            }
+
+            const ws_number = "{{ ws_number }}";
+            // id выбранного option
+            const st_id = select_element.options[currentRow].id;
+            const tech_data = select_element.options[currentRow].dataset.send;
+            //const op_number = select_element.options[currentRow].op_number;
+            // кнопка выбрать чертёж
+            if (event.shiftKey) {
+                if (st_id != "0") {
+                    const draw_link = `/worker/${ws_number}--${tech_data}`; // ссылка на страницу с чертежем
+                    location.href = draw_link; // переход по ссылке
                 }
-                if (event.code == 'ArrowDown' && currentRow < tr.length - 1) {
-                    returnColor(tr[currentRow]);
-                    currentRow += 1
-                    tr[currentRow].focus()
-                    tr[currentRow].bgColor = 'orange';
-                }
+                // кнопка вызов мастера
+            } else if (event.code == "KeyK") {
 
-                const ws_number = "{{ ws_number }}";
-                // id выбранного option
-                const st_id = select_element.options[currentRow].id;
-                const tech_data = select_element.options[currentRow].dataset.send;
-                //const op_number = select_element.options[currentRow].op_number;
-                // кнопка выбрать чертёж
-                if (event.shiftKey) {
-                    if (st_id != "0") {
-                        const draw_link = `/worker/${ws_number}--${tech_data}`; // ссылка на страницу с чертежем
-                        location.href = draw_link; // переход по ссылке
-                    }
-                    // кнопка вызов мастера
-                } else if (event.code == "KeyK") {
+        // кнопка выбора причины простоя
+        // } else if (event.code == "KeyX") {
+        //    if (st_id != 0) {
+        //        choice_downtime_reason_link = `/worker/downtime_reason/${ws_number}-${st_id}`;
+        //        location.href = choice_downtime_reason_link;
+        //      } else {
+        //        const alert = document.getElementById("js_alert")
+        //        alert.display = 'block'
+        //        alert.innerHTML = 'Выберите сменное задание'
+        //        setTimeout(() => alert.display = 'none', 10000)
+        //      }
 
-            // кнопка выбора причины простоя
-            // } else if (event.code == "KeyX") {
-            //    if (st_id != 0) {
-            //        choice_downtime_reason_link = `/worker/downtime_reason/${ws_number}-${st_id}`;
-            //        location.href = choice_downtime_reason_link;
-            //      } else {
-            //        const alert = document.getElementById("js_alert")
-            //        alert.display = 'block'
-            //        alert.innerHTML = 'Выберите сменное задание'
-            //        setTimeout(() => alert.display = 'none', 10000)
-            //      }
+        // кнопка вызов диспетчера
+            } else if (event.code == 'KeyX') {
+                dispatcher_call_link = `/worker/${ws_number}-${st_id}/get_dispatcher`
+                location.href = dispatcher_call_link
+            }
+            // кнопка запуск СЗ
+            else if (event.code == 'KeyC') {
+                select_element.selectedIndex = currentRow
+                form_element.submit()
+            }
+        })
 
-            // кнопка вызов диспетчера
-        } else if (event.code == 'KeyX') {
-            dispatcher_call_link = `/worker/${ws_number}-${st_id}/get_dispatcher`
-            location.href = dispatcher_call_link
-        }
-        // кнопка запуск СЗ
-        else if (event.code == 'KeyC') {
-            select_element.selectedIndex = currentRow
-            form_element.submit()
-        }
-    })
+        // перенаправление на страницу чертежей
+        // элемент select
+        const select_element = document.getElementById('sel_3')
+        // элемент form выбора СЗ
+        const form_element = document.getElementById('sel_1')
+        // элемент кнопки формы выбора СЗ
+        const btn_element = document.getElementById('submit_btn')
+        document.addEventListener('keydown', function (event) {})
 
-    // перенаправление на страницу чертежей
-    // элемент select
-    const select_element = document.getElementById('sel_3')
-    // элемент form выбора СЗ
-    const form_element = document.getElementById('sel_1')
-    // элемент кнопки формы выбора СЗ
-    const btn_element = document.getElementById('submit_btn')
-    document.addEventListener('keydown', function (event) {})
+        let x = setInterval(function () {
+            timer -= 1
+            countdown.innerHTML = 'Обновление списка сменных заданий через ' + timer + ' сек'
+            if (timer == 0) {
+                clearInterval(x)
+                location.href = location.pathname
+            }
+        }, 1000)
+    </script>
 
-    let x = setInterval(function () {
-        timer -= 1
-        countdown.innerHTML = 'Обновление списка сменных заданий через ' + timer + ' сек'
-        if (timer == 0) {
-            clearInterval(x)
-            location.href = location.pathname
-        }
-    }, 1000)
-</script>
-<div style="height: 90px"></div>
-<script></script>
-<br />
-<!-- prettier-ignore -->
-{% if user.username == 'admin' %}
-<a href="{% url 'worker_choose' %}" class="btn">Назад</a> <br />
-{%endif %} {% endblock %}
+    <div style="height: 90px"></div>
+    <script></script>
+    <br />
+    <!-- prettier-ignore -->
+    {% if user.username == 'admin' %}
+        <a href="{% url 'worker_choose' %}" class="btn">Назад</a> <br />
+    {% endif %}
+{% endblock %}
