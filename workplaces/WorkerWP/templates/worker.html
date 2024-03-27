@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Терминал РЦ {{ ws_number }}
+{% endblock %}
+
+{% block body %}
+{% block menu %}
+{% endblock %}
+        <h1 style="font-size: 50px">Терминал {{ ws_number }}</h1>
+        <p class='terminal_alert' id="terminal_alert" tabindex="0"></p>
+
+        <p class='terminal_alert' id="js_alert"></p>
+        <p class='countdown' id="id_countdown">
+             Обновление списка сменных заданий через 30 сек
+        </p>
+        <table class="table" title="График цехов" id="main_table">
+            <tr class="table_header_row" tabindex="0">
+                <td class="td_cell"><p class="cell_text">№</p></td>
+                <td class="td_cell"><p class="cell_text">РЦ</p></td>
+                <td class="td_cell"><p class="cell_text">Изделие</p></td>
+                <td class="td_cell"><p class="cell_text">Заказ</p></td>
+                <td class="td_cell"><p class="cell_text">Номер операции</p></td>
+                <td class="td_cell"><p class="cell_text">Операция</p></td>
+                <td class="td_cell"><p class="cell_text">Трудоемкость</p></td>
+                <td class="td_cell"><p class="cell_text" style="width: 200px">Исполнители</p></td>
+                <td class="td_cell"><p class="cell_text">Статус</p></td>
+                <td class="td_cell"><p class="cell_text">Время начала работы</p></td>
+                <td class="td_cell"><p class="cell_text">Время приемки</p></td>
+            </tr>
+        </table>
+        <p id="no-st"></p>
+
+        <script src="{{ url_for('static', path='js/worker.js') }}"></script>
+        <div style="height: 90px"></div>
+        <script></script>
+        <br />
+{% endblock %}

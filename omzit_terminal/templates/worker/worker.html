@@ -18,10 +18,10 @@
         {% endif %}
 
         <p class='terminal_alert' id="js_alert"></p>
-        {% if initial_shift_tasks %}
         <p class='countdown' id="id_countdown">
              Обновление списка сменных заданий через 30 сек
         </p>
+        {% if initial_shift_tasks %}
         <table class="table" title="График цехов" id="main_table">
             <tr class="table_header_row" tabindex="0">
                 <td class="td_cell"><p class="cell_text">№</p></td>
@@ -56,14 +56,14 @@
         {% endif %}
 
         <br /><br /><br />
-        {% if select_shift_task %}
+        {% if initial_shift_tasks %}
         <form action="{{ ws_number }}" method="POST" enctype="multipart/form-data" id="sel_1" hidden>
             {% csrf_token %}
             <label id="sel_2" class="form_inner_label"> Выбор сменного задания для запуска в работу: </label>
             <br />
             <select multiple id="sel_3" size="10" name="task_id">
                 <option selected id="0" class="sel_option_0">Выберите сменное задание</option>
-                {% for task in select_shift_task %}
+                {% for task in initial_shift_tasks %}
                 <option
                     id="{{ task.id }}"
                     data-send="{{ task.op_number }}--{{ task.model_name }}--{{ task.id }}"
@@ -91,7 +91,9 @@
             const countdown = document.getElementById("id_countdown");
             let currentRow = 0
             table = document.getElementById("main_table");
-            tr = table.getElementsByTagName("tr");
+            if (table) {
+                tr = table.getElementsByTagName("tr");
+            }
             let timer = 30
             document.addEventListener("keydown", function (event) {
                 timer = 30
@@ -114,7 +116,7 @@
                 const tech_data = select_element.options[currentRow].dataset.send;
                 //const op_number = select_element.options[currentRow].op_number;
                 // кнопка выбрать чертёж
-                if (event.ctrlKey) {
+                if (event.shiftKey) {
                     if (st_id != "0") {
                         const draw_link = `/worker/${ws_number}--${tech_data}`; // ссылка на страницу с чертежем
                         location.href = draw_link; // переход по ссылке

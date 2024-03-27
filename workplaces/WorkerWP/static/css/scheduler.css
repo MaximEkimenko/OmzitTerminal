@@ -1,0 +1,817 @@
+body {
+  height: 95vh;
+  background-color: #31343c;
+  /*
+  background-image: url(../img/about-bg.jpg);
+  background-size: cover;
+  */
+  background-image: url(../img/about-bg.jpg);
+  background-size: cover;
+  font-family: Arial, Helvetica, sans-serif;
+  color: white;
+}
+
+a {
+    text-decoration: none; /* Убираем подчёркивание */
+}
+
+#wrap {
+  position: relative;
+  min-height: 95vh;
+}
+main {
+  padding-bottom: 110px;
+  text-align: center;
+}
+footer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 80px;
+  text-align: left;
+}
+
+footer img {
+    height:100px;
+}
+
+.line {
+
+    margin: 0;
+	padding: 0;
+	height: 3px;
+	border: none;
+	background: radial-gradient(#EF7F1A, #31343C);
+}
+/*стили терминала*/
+
+#sel_3 {
+    height: 500px;
+}
+.sel_option_0 {
+    color: #ec552d;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.sel_option {
+    padding: 10px;
+    font-weight: bold;
+}
+
+.terminal_alert {
+    font-size: 30px;
+    color: red;
+    display: none;
+}
+
+.countdown {
+    font-size: 20px;
+    color: #EF7F1A;
+}
+
+/* стили чертежей */
+#select_draws {
+    height: 300px;
+    width: 500px;
+}
+
+h1 {
+    color: #ec562d;
+    font-weight: bold;
+    font-size: 26px;
+}
+
+h3,
+h4 {
+    color: #ec562d;
+    font-weight: bold;
+    font-size: 22px;
+}
+
+h4 {
+    font-size: 20px;
+    text-align: center;
+}
+
+.row {
+    margin: 10px;
+}
+
+.col {
+    margin: 10px;
+    display: inline-block;
+}
+
+.col-form {
+    margin: 10px;
+}
+
+.alert {
+    color: #ec552d;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+/*исчезающее сообщение*/
+.alert_gone {
+    color: green;
+    font-size: 30px;
+    font-weight: bold;
+    display: inline-block;
+}
+/*таблицы*/
+.table {
+    border: solid 1px orange;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    border-spacing: 2px;
+    display: inline-block;
+    vertical-align: middle;
+    width: auto;
+}
+
+.td_cell {
+    border: solid 1px orange;
+    background-color: transparent;
+    padding: 5px;
+    text-align: center;
+}
+
+.td_cell_dt {
+    border: solid 1px orange;
+    background-color: transparent;
+    padding: 5px;
+    text-align: center;
+}
+
+.td_cell input {
+    width: 50px;
+    height: 38px;
+}
+
+/* .td_cell input:hover {
+    background-color: red;
+} */
+
+.changed_plan {
+    width: 120px;
+    height: 30px;
+    font-weight: bold;
+    color: red;
+    font-size: 22px;
+    padding: 0;
+    margin: 0;
+}
+
+.yesterday {
+    /* font-weight: bold; */
+    color: orange;
+    font-size: 1.8em;
+    /* width: 100px; */
+}
+
+#day_fact_filled {
+    color: green;
+    font-weight: bold;
+}
+
+.cell_text {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.table_header_row {
+    font-weight: bold;
+    text-align: center;
+    font-size: 20px;
+}
+
+/* .table_h3 {
+    font-weight: bold;
+    font-size: 22px;
+} */
+
+/*блок формы */
+.form_form {
+    width: 1000px;
+    align-self: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.action_form {
+    width: 800px;
+    align-self: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.second_form {
+    width: 1000px;
+    align-self: center;
+    margin-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.td_query_block {
+    border: solid red 1px;
+    border-radius: 10px;
+    margin: 10px;
+}
+
+.form_inner_div {
+    margin: 10px;
+    padding: 5px;
+    display: inline-block;
+}
+
+.form_block_div {
+    margin: 10px;
+    padding: 5px;
+    display: block;
+}
+
+.form_block_div input {
+    font-size: 16px;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 7px;
+    height: 32px;
+    display: inline-block
+}
+
+.form_block_div label {
+    margin: 10px;
+    display: inline-block;
+    padding: 5px;
+    color: #ef7f1a;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.form_inner_label {
+    margin: 10px;
+    display: inline-block;
+    padding: 5px;
+    color: #ef7f1a;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.form-error {
+    color: red;
+}
+
+select {
+    font-size: 16px;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 7px;
+    height: 40px;
+}
+input {
+    font-size: 14px;
+    border-radius: 7px;
+    height: 22px;
+}
+.form_button {
+    font-size: 16px;
+    border-radius: 4px;
+    margin: 3px;
+    /* width: 200px;
+    height: 30px; */
+    /* height: auto; */
+    /* padding: 5px; */
+}
+.red_word {
+    color: red;
+    /* display: inline-block; */
+}
+
+.green_word {
+    color: green;
+    /* display: inline-block; */
+}
+#id_excel_file {
+    border: solid 1px orange;
+    font-size: 16px;
+    padding: 5px;
+    width: auto;
+    height: auto;
+}
+
+.form_row {
+    display: inline-block;
+}
+
+.form_div {
+    display: inline-block;
+    vertical-align: middle;
+    width: auto;
+    height: auto;
+}
+
+.table_div {
+    display: inline-block;
+    vertical-align: middle;
+    width: auto;
+    height: auto;
+}
+
+.hide_button {
+    color: white;
+    background-color: gray;
+    position: absolute;
+    padding: 5px;
+    top: 10px;
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+    width: 110px;
+    height: 70px;
+    border-radius: 5px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.add_to_plan {
+    background-color: #333333;
+    border: solid green 1px;
+    margin: 10px;
+    padding: 0 0 10px 0;
+    border-radius: 10px;
+}
+
+.add_to_plan_center {
+    background-color: #333333;
+    width: 1000px;
+    border: solid green 1px;
+    display: flex;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 0 10px 0;
+    border-radius: 10px;
+    flex-direction: column;
+}
+
+/* Стили модальных окон */
+.btn {
+    background-color: white;
+    border: solid 2px black;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 0 14px 0px 14px;
+    box-shadow: 10em;
+}
+.btn:hover {
+    background-color: green;
+    color: white;
+    border: solid 2px black;
+    border-radius: 10px;
+    /* font-weight: bold; */
+    /* width: 15em; */
+}
+
+.st_action_btn {
+    width: 200px;
+    height: 200px;
+    background-color: white;
+    border: solid 2px black;
+    border-radius: 100px;
+    color: white;
+    padding: 12px;
+    font-size: 40px;
+    cursor: pointer;
+    margin: 20px;
+    box-shadow: 10em;
+}
+
+.orange {
+    background-color: #ec562d;
+}
+
+.green {
+    background-color: green;
+}
+
+.red {
+    background-color: red;
+}
+
+.st_action_btn:hover {
+    background-color: green;
+    color: white;
+    border: solid 2px black;
+    border-radius: 100px;
+    /* font-weight: bold; */
+    /* width: 15em; */
+}
+/* Стили легенды окон */
+.legend {
+    position: absolute;
+    top: 50px;
+    right: 10px;
+    /* display: block; */
+    text-align: right;
+    width: max-content;
+}
+.legend a {
+    color: red;
+    text-align: right;
+}
+
+.notification {
+    /* position: absolute; */
+    display: block;
+}
+
+.scheduler {
+    /* float: right; */
+    display: inline-block;
+}
+
+.report_input {
+    font-size: 1rem;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 7px;
+    height: 30px;
+}
+
+.name_input {
+    font-size: 16px;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 7px;
+    height: 40px;
+}
+.name_select {
+    font-size: 16px;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 7px;
+    width: 400px;
+    height: 40px;
+    background-color: transparent;
+    color: white;
+}
+.name_select_option {
+  color: white;
+  background: #31343C;
+}
+
+.name_select::-webkit-scrollbar {
+  width: 12px;               /* ширина всей полосы прокрутки */
+}
+
+.name_select::-webkit-scrollbar-track {
+  background: #31343C;        /* цвет зоны отслеживания */
+}
+
+.name_select::-webkit-scrollbar-thumb {
+  background-color: transparent;    /* цвет бегунка */
+  border-radius: 20px;       /* округлось бегунка */
+  border: 1px solid white;  /* отступ вокруг бегунка */
+}
+
+.draw_select {
+    font-size: 16px;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 7px;
+    width: 300px;
+    height: 40px;
+    background-color: transparent;
+    color: white;
+}
+.draw_select_option {
+  color: white;
+  background: #31343C;
+}
+
+.draw_select::-webkit-scrollbar {
+  width: 12px;               /* ширина всей полосы прокрутки */
+}
+
+.draw_select::-webkit-scrollbar-track {
+  background: #31343C;        /* цвет зоны отслеживания */
+}
+
+.draw_select::-webkit-scrollbar-thumb {
+  background-color: transparent;    /* цвет бегунка */
+  border-radius: 20px;       /* округлось бегунка */
+  border: 1px solid white;  /* отступ вокруг бегунка */
+}
+
+.table_spec {
+    border: solid 1px orange;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    border-spacing: 2px;
+    display: inline-block;
+    vertical-align: middle;
+    width: auto;
+}
+
+.sz_textarea {
+    font-size: 1rem;
+    padding: 3px;
+    margin: 3px;
+    border-radius: 7px;
+}
+
+.scroll_div_back {
+    width:970px;
+    overflow:hidden;
+}
+
+.scroll_div {
+    height:300px;
+    overflow-y:scroll;
+}
+
+.future {
+    width: 70px;
+    height: 30px;
+    /* color: red; */
+    background-color: red;
+    font-weight: bold;
+    color: white;
+    font-size: 22px;
+    padding: 0;
+    margin: 0;
+}
+
+.past {
+    width: 70px;
+    font-weight: bold;
+    font-size: 22px;
+    padding: 0;
+    margin: 0;
+}
+
+.message_table {
+    border: 1px solid orange;
+    font-size: 20px;
+    font-weight: bold;
+    padding: 10px 5px 10px 5px;
+    margin: 10px 5px 10px 5px;
+}
+
+.line_plan_table {
+    border: 1px solid orange;
+    display: inline-block;
+    margin: 10px 1px 10px 0;
+    padding: 0;
+}
+.message_table_pos {
+    margin: 0 auto;
+}
+
+.navbar {
+    display: flex-box;
+}
+
+.navbar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #ec562d;
+}
+
+.navbar li {
+    float: left;
+}
+
+li a, li span, li button, .dropbtn {
+    display: inline-block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+li button{
+    border: none;
+    font-size: 1em;
+    background-color: transparent;
+}
+
+li a:hover, li button:hover, .dropdown:hover .dropbtn {
+    background-color: darkslategray;
+}
+
+li.dropdown {
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    text-align: left;
+}
+
+.dropdown-content a:hover {background-color: #f1f1f1}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.sticky {
+  position: fixed;
+  top: 0;
+  width: 100%;
+}
+
+.table_header_row_plasma {
+    font-weight: bold;
+    text-align: center;
+    vertical-align: top;
+    font-size: 20px;
+}
+
+.tehnolog_select {
+    width: 25px;
+    height: 25px;
+}
+
+.doer_select {
+    width: 25px;
+    height: 25px;
+}
+
+.plasma_select {
+    width: 25px;
+    height: 25px;
+}
+
+.filter_select {
+    display: inline-flex;
+    min-width: 50px;
+    height: 148px;
+}
+
+.filter_select::-webkit-scrollbar {
+  width: 12px;               /* ширина всей полосы прокрутки */
+}
+
+.filter_select::-webkit-scrollbar-track {
+  background: transparent;        /* цвет зоны отслеживания */
+}
+
+.filter_select::-webkit-scrollbar-thumb {
+  background-color: transparent;    /* цвет бегунка */
+  border-radius: 20px;       /* округлось бегунка */
+  border: 1px solid white;  /* отступ вокруг бегунка */
+}
+
+.btn_part {
+    background-color: white;
+    border: solid 2px black;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 0 14px 0px 14px;
+    box-shadow: 10em;
+}
+.btn_part:hover {
+    background-color: yellow;
+    color: black;
+    border: solid 2px black;
+    border-radius: 10px;
+    /* font-weight: bold; */
+    /* width: 15em; */
+}
+
+.btn_delete {
+    background-color: white;
+    border: solid 2px black;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 0 14px 0px 14px;
+    box-shadow: 10em;
+}
+.btn_delete:hover {
+    background-color: red;
+    color: white;
+    border: solid 2px black;
+    border-radius: 10px;
+    /* font-weight: bold; */
+    /* width: 15em; */
+}
+
+.st_action_btn {
+    width: 200px;
+    height: 200px;
+    background-color: white;
+    border: solid 2px black;
+    border-radius: 100px;
+    color: white;
+    padding: 12px;
+    font-size: 40px;
+    cursor: pointer;
+    margin: 20px;
+    box-shadow: 10em;
+}
+
+.orange {
+    background-color: #ec562d;
+}
+
+.green {
+    background-color: green;
+}
+
+.red {
+    background-color: red;
+}
+
+.st_action_btn:hover {
+    background-color: green;
+    color: white;
+    border: solid 2px black;
+    border-radius: 100px;
+    /* font-weight: bold; */
+    /* width: 15em; */
+}
+
+.action_form {
+    width: 800px;
+    align-self: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.reason_select {
+    height: 300px;
+    width: 500px;
+}
+
+.reason_select option {
+    padding: 10px;
+    font-weight: bold;
+}
+
+.reason_select option:first-child {
+    color: #ec552d;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.sort-filter {
+    display: inline-flex;
+    width: 90%;
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+.sort-filter input {
+    margin: 2px;
+    border-radius: 7px;
+    height: 23px;
+    width: 100%;
+}
+
+.sort-filter button {
+    margin: 2px;
+    border-radius: 7px;
+    max-width: 2rem;
+    height: 100%;
+}
