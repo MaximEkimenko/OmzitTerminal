@@ -5,10 +5,11 @@ from typing import Tuple
 
 import openpyxl
 from django.core.mail import EmailMessage
+from django.db.models import Sum
 from django.utils.timezone import make_aware, make_naive
 
 from omzit_terminal.settings import BASE_DIR
-from scheduler.models import ShiftTask
+from scheduler.models import ShiftTask, Doers
 
 
 def shift_tasks_auto_report():  # TODO перенести в service
@@ -46,6 +47,7 @@ def create_shift_task_report(start: datetime, end: datetime) -> str:  # TODO п�
     :return:
     """
     # Формируем имена столбцов для полного отчета из аттрибута модели verbose_name
+
     verbose_names = dict()
     for field in ShiftTask._meta.get_fields():
         if hasattr(field, "verbose_name"):
@@ -109,7 +111,8 @@ def create_shift_task_report(start: datetime, end: datetime) -> str:  # TODO п�
             datetime_assign_wp__gte=start,
             datetime_assign_wp__lte=end
         ),
-        "Полный отчет": queryset.values(*verbose_names)
+        "Полный отчет": queryset.values(*verbose_names),
+        "Тест": fio_st_time_counter(start, end),
     }
     for sheet_name in sheets_reports:
         ex_sh = ex_wb[sheet_name]
@@ -130,6 +133,24 @@ def create_shift_task_report(start: datetime, end: datetime) -> str:  # TODO п�
                     cell.value = str(row[key])
             ex_wb.save(exel_file_dst)
     return exel_file_dst
+
+
+def fio_st_time_counter(start: datetime, end: datetime):
+    """
+    Отчет по количеству часов по сменным заданиям по исполнителям
+    """
+    doer_job_duration = []
+    doers = Doers.objects.values_list('doers', flat=True).order_by('doers').all()
+    shift_tasks = ShiftTask.objects.filter(datetime_assign_wp__gte=start, datetime_assign_wp__lte=end)
+    for doer in doers:
+        sum_job_duration = shift_tasks.filter(
+            fio_doer__contains=doer, st_status='принято'
+        ).aggregate(duration=Sum('norm_tech'))
+        doer_job_duration.append({
+            "fio": doer,
+            "duration": sum_job_duration['duration']
+        })
+    return doer_job_duration
 
 
 def get_start_end_st_report(start: str, end: str) -> Tuple:  # TODO перенести в service

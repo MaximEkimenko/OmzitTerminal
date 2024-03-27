@@ -110,8 +110,8 @@ class CallMaserView(APIView):
                 shift_task.st_status = 'ожидание мастера'
                 shift_task.master_calls += 1
                 shift_task.save()
-                thread = threading.Thread(target=continue_work, args=(shift_task.id,))
-                thread.start()
+                # thread = threading.Thread(target=continue_work, args=(shift_task.id,))
+                # thread.start()
                 success = True
             except Exception:
                 pass

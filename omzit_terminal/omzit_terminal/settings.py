@@ -92,7 +92,7 @@ DATABASES = {
 
         'HOST': 'localhost',
         # 'HOST': '192.168.8.163',
-        # 'HOST': '192.168.8.30'
+        # 'HOST': '192.168.8.30',
         'PORT': '',
     },
     # 'sigma': {
