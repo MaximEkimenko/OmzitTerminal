@@ -1,4 +1,6 @@
 <!-- prettier-ignore -->
+{% extends 'base.html' %}
+{% load static %}
 {% block title %}
 Терминал РЦ {{ ws_number }}
 {% endblock %}
@@ -35,15 +37,15 @@
                 <td class="td_cell"><p class="cell_text">Время приемки</p></td>
             </tr>
             {% for line in initial_shift_tasks %}
-            <tr id="row" class="table_row" tabindex="0">
-                {% for el in line.values %}
-                {% if el == None %}
-                    <td class="td_cell"><p class="cell_text">-</p></td>
-                {% else %}
-                    <td class="td_cell"><p class="cell_text">{{ el }}</p></td>
-                {% endif %}
-                {% endfor %}
-            </tr>
+                <tr id="row" class="table_row" tabindex="0">
+                    {% for el in line.values %}
+                        {% if el == None %}
+                            <td class="td_cell"><p class="cell_text">-</p></td>
+                        {% else %}
+                            <td class="td_cell"><p class="cell_text">{{ el }}</p></td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
             {% endfor %}
         </table>
 
