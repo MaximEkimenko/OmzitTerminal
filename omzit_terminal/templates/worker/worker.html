@@ -1,6 +1,4 @@
-{% extends 'base.html' %}
-{% load static %}
-
+<!-- prettier-ignore -->
 {% block title %}
 Терминал РЦ {{ ws_number }}
 {% endblock %}
@@ -49,11 +47,15 @@
             {% endfor %}
         </table>
         {% else %}
-        <p>Распределённые сменные задания на РЦ {{ ws_number }} отсутствуют.</p>
-        {% endif %}
-        <!-- prettier-ignore -->
-        {% if initial_shift_tasks %}
-        {% endif %}
+        <td class="td_cell"><p class="cell_text">{{ el }}</p></td>
+        {% endif %} {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>Распределённые сменные задания на РЦ {{ ws_number }} отсутствуют.</p>
+{% endif %}
+<!-- prettier-ignore -->
 
         <br /><br /><br />
         {% if initial_shift_tasks %}
@@ -76,13 +78,11 @@
             </select>
             <br />
 
-            <!-- <button id="submit_btn" type="submit">Начать работу</button> -->
-        </form>
-        {% endif %}
+    <!-- <button id="submit_btn" type="submit">Начать работу</button> -->
+</form>
+{% endif %}
 
-        <script>
-
-        </script>
+<script></script>
 <!--        <script src="{% static 'worker/js/listener.js' %}">-->
 <!--            // скрипт запуска меню выбора-->
 <!--        </script>-->
@@ -124,63 +124,52 @@
                     // кнопка вызов мастера
                 } else if (event.code == "KeyK") {
 
-                    master_call_link = `/worker/${ws_number}-${st_id}/get_master`;
-                    console.log(master_call_link)
-                    location.href = master_call_link;
+            // кнопка выбора причины простоя
+            // } else if (event.code == "KeyX") {
+            //    if (st_id != 0) {
+            //        choice_downtime_reason_link = `/worker/downtime_reason/${ws_number}-${st_id}`;
+            //        location.href = choice_downtime_reason_link;
+            //      } else {
+            //        const alert = document.getElementById("js_alert")
+            //        alert.display = 'block'
+            //        alert.innerHTML = 'Выберите сменное задание'
+            //        setTimeout(() => alert.display = 'none', 10000)
+            //      }
 
-                    // кнопка выбора причины простоя
-                // } else if (event.code == "KeyX") {
-                //    if (st_id != 0) {
-                //        choice_downtime_reason_link = `/worker/downtime_reason/${ws_number}-${st_id}`;
-                //        location.href = choice_downtime_reason_link;
-                //      } else {
-                //        const alert = document.getElementById("js_alert")
-                //        alert.display = 'block'
-                //        alert.innerHTML = 'Выберите сменное задание'
-                //        setTimeout(() => alert.display = 'none', 10000)
-                //      }
+            // кнопка вызов диспетчера
+        } else if (event.code == 'KeyX') {
+            dispatcher_call_link = `/worker/${ws_number}-${st_id}/get_dispatcher`
+            location.href = dispatcher_call_link
+        }
+        // кнопка запуск СЗ
+        else if (event.code == 'KeyC') {
+            select_element.selectedIndex = currentRow
+            form_element.submit()
+        }
+    })
 
-                    // кнопка вызов диспетчера
-                } else if (event.code == "KeyX") {
-                    dispatcher_call_link = `/worker/${ws_number}-${st_id}/get_dispatcher`;
-                    location.href = dispatcher_call_link;
-                }
-                // кнопка запуск СЗ
-                else if (event.code == "KeyC") {
-                    select_element.selectedIndex = currentRow
-                    form_element.submit();
-                }
+    // перенаправление на страницу чертежей
+    // элемент select
+    const select_element = document.getElementById('sel_3')
+    // элемент form выбора СЗ
+    const form_element = document.getElementById('sel_1')
+    // элемент кнопки формы выбора СЗ
+    const btn_element = document.getElementById('submit_btn')
+    document.addEventListener('keydown', function (event) {})
 
-            })
-
-
-            // перенаправление на страницу чертежей
-            // элемент select
-            const select_element = document.getElementById("sel_3");
-            // элемент form выбора СЗ
-            const form_element = document.getElementById("sel_1");
-            // элемент кнопки формы выбора СЗ
-            const btn_element = document.getElementById("submit_btn");
-            document.addEventListener("keydown", function (event) {
-
-            });
-
-            let x = setInterval(function() {
-                timer -= 1
-                countdown.innerHTML = 'Обновление списка сменных заданий через ' + timer + ' сек';
-              if (timer == 0) {
-                clearInterval(x);
-                location.href = location.pathname;
-              }
-            }, 1000);
-
-
-        </script>
-        <div style="height: 90px"></div>
-        <script></script>
-        <br />
-        <!-- prettier-ignore -->
-        {% if user.username == 'admin' %}
-        <a href="{% url 'worker_choose' %}" class="btn">Назад</a> <br />
-        {%endif %}
-{% endblock %}
+    let x = setInterval(function () {
+        timer -= 1
+        countdown.innerHTML = 'Обновление списка сменных заданий через ' + timer + ' сек'
+        if (timer == 0) {
+            clearInterval(x)
+            location.href = location.pathname
+        }
+    }, 1000)
+</script>
+<div style="height: 90px"></div>
+<script></script>
+<br />
+<!-- prettier-ignore -->
+{% if user.username == 'admin' %}
+<a href="{% url 'worker_choose' %}" class="btn">Назад</a> <br />
+{%endif %} {% endblock %}
