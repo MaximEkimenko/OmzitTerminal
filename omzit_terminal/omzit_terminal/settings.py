@@ -17,7 +17,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', "lkjasj129u23lknjasdasdad1")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.8.163', '192.168.8.30', '127.0.0.1']
+ALLOWED_HOSTS = ['192.168.8.163', '192.168.8.30', '127.0.0.1', '192.168.12.52']
 
 # Application definition
 
@@ -36,12 +36,16 @@ INSTALLED_APPS = [
     'django_filters',
     'django_apscheduler',
     'widget_tweaks',
+    'api.apps.ApiConfig',
+    'rest_framework',
+    'corsheaders',
 
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -121,11 +125,12 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'ru'
+LANGUAGE_CODE = 'ru-ru'
 
 TIME_ZONE = 'Asia/Omsk'
 
 USE_I18N = True
+USE_L10N = True
 
 USE_TZ = True
 
@@ -170,3 +175,7 @@ EMAIL_HOST_USER = 'omzit-report@yandex.ru'
 EMAIL_HOST_PASSWORD = 'lacwpquciwybdxki'
 DEFAULT_FROM_EMAIL = 'omzit-report'
 DEFAULT_TO_EMAIL = 'omzit-report'
+
+CORS_ALLOWED_ORIGINS = [
+    'http://127.0.0.1:8080',
+]

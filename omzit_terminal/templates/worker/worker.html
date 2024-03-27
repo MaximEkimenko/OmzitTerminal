@@ -1,36 +1,51 @@
 <!-- prettier-ignore -->
-{% extends 'base.html' %} {% load static %} {% block title %} Терминал РЦ {{ ws_number }} 
-{%endblock %} {% block body %} {% block menu %} {% endblock %}
-<h1 style="font-size: 50px">Терминал {{ ws_number }}</h1>
-{% if alert %}
-<p class="terminal_alert" id="terminal_alert">{{ alert }}</p>
-<script>
-    const notification = document.getElementById('terminal_alert')
-    setTimeout(() => notification.remove(), 10000)
-</script>
-{% endif %}
+{% block title %}
+Терминал РЦ {{ ws_number }}
+{% endblock %}
 
-<p class="terminal_alert" id="js_alert"></p>
-{% if initial_shift_tasks %}
-<p class="countdown" id="id_countdown">Обновление списка сменных заданий через 30 сек</p>
-<table class="table" title="График цехов" id="main_table">
-    <tr class="table_header_row" tabindex="0">
-        <td class="td_cell"><p class="cell_text">№</p></td>
-        <td class="td_cell"><p class="cell_text">РЦ</p></td>
-        <td class="td_cell"><p class="cell_text">Изделие</p></td>
-        <td class="td_cell"><p class="cell_text">Заказ</p></td>
-        <td class="td_cell"><p class="cell_text">Номер операции</p></td>
-        <td class="td_cell"><p class="cell_text">Операция</p></td>
-        <td class="td_cell"><p class="cell_text">Трудоемкость</p></td>
-        <td class="td_cell"><p class="cell_text" style="width: 200px">Исполнители</p></td>
-        <td class="td_cell"><p class="cell_text">Статус</p></td>
-        <td class="td_cell"><p class="cell_text">Время начала работы</p></td>
-        <td class="td_cell"><p class="cell_text">Время приемки</p></td>
-    </tr>
-    {% for line in initial_shift_tasks %}
-    <tr id="row" class="table_row" tabindex="0">
-        {% for el in line.values %} {% if el == None %}
-        <td class="td_cell"><p class="cell_text">-</p></td>
+{% block body %}
+{% block menu %}
+{% endblock %}
+        <h1 style="font-size: 50px">Терминал {{ ws_number }}</h1>
+        {% if alert %}
+            <p class='terminal_alert' id="terminal_alert"> {{ alert }} </p>
+            <script>
+                const notification = document.getElementById("terminal_alert");
+                setTimeout(() => notification.remove(), 10000)
+            </script>
+        {% endif %}
+
+        <p class='terminal_alert' id="js_alert"></p>
+        <p class='countdown' id="id_countdown">
+             Обновление списка сменных заданий через 30 сек
+        </p>
+        {% if initial_shift_tasks %}
+        <table class="table" title="График цехов" id="main_table">
+            <tr class="table_header_row" tabindex="0">
+                <td class="td_cell"><p class="cell_text">№</p></td>
+                <td class="td_cell"><p class="cell_text">РЦ</p></td>
+                <td class="td_cell"><p class="cell_text">Изделие</p></td>
+                <td class="td_cell"><p class="cell_text">Заказ</p></td>
+                <td class="td_cell"><p class="cell_text">Номер операции</p></td>
+                <td class="td_cell"><p class="cell_text">Операция</p></td>
+                <td class="td_cell"><p class="cell_text">Трудоемкость</p></td>
+                <td class="td_cell"><p class="cell_text" style="width: 200px">Исполнители</p></td>
+                <td class="td_cell"><p class="cell_text">Статус</p></td>
+                <td class="td_cell"><p class="cell_text">Время начала работы</p></td>
+                <td class="td_cell"><p class="cell_text">Время приемки</p></td>
+            </tr>
+            {% for line in initial_shift_tasks %}
+            <tr id="row" class="table_row" tabindex="0">
+                {% for el in line.values %}
+                {% if el == None %}
+                    <td class="td_cell"><p class="cell_text">-</p></td>
+                {% else %}
+                    <td class="td_cell"><p class="cell_text">{{ el }}</p></td>
+                {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
         {% else %}
         <td class="td_cell"><p class="cell_text">{{ el }}</p></td>
         {% endif %} {% endfor %}
@@ -41,31 +56,27 @@
 <p>Распределённые сменные задания на РЦ {{ ws_number }} отсутствуют.</p>
 {% endif %}
 <!-- prettier-ignore -->
-{% if initial_shift_tasks %}
-        {% endif %}
 
-<br /><br /><br />
-{% if select_shift_task %}
-<form action="{{ ws_number }}" method="POST" enctype="multipart/form-data" id="sel_1" hidden>
-    {% csrf_token %}
-    <label id="sel_2" class="form_inner_label">
-        Выбор сменного задания для запуска в работу:
-    </label>
-    <br />
-    <select multiple id="sel_3" size="10" name="task_id">
-        <option selected id="0" class="sel_option_0">Выберите сменное задание</option>
-        {% for task in select_shift_task %}
-        <option
-            id="{{ task.id }}"
-            data-send="{{ task.op_number }}--{{ task.model_name }}--{{ task.id }}"
-            class="sel_option"
-        >
-            <!-- prettier-ignore -->
-            {{ task.id }}--{{ task.st_status }}--{{ task.fio_doer }}--{{ task.op_number }}--{{ task.model_name }}--{{ task.op_name_full }}
-        </option>
-        {% endfor %}
-    </select>
-    <br />
+        <br /><br /><br />
+        {% if initial_shift_tasks %}
+        <form action="{{ ws_number }}" method="POST" enctype="multipart/form-data" id="sel_1" hidden>
+            {% csrf_token %}
+            <label id="sel_2" class="form_inner_label"> Выбор сменного задания для запуска в работу: </label>
+            <br />
+            <select multiple id="sel_3" size="10" name="task_id">
+                <option selected id="0" class="sel_option_0">Выберите сменное задание</option>
+                {% for task in initial_shift_tasks %}
+                <option
+                    id="{{ task.id }}"
+                    data-send="{{ task.op_number }}--{{ task.model_name }}--{{ task.id }}"
+                    class="sel_option"
+                >
+                    <!-- prettier-ignore -->
+                    {{ task.id }}--{{ task.st_status }}--{{ task.fio_doer }}--{{ task.op_number }}--{{ task.model_name }}--{{ task.op_name_full }}
+                </option>
+                {% endfor %}
+            </select>
+            <br />
 
     <!-- <button id="submit_btn" type="submit">Начать работу</button> -->
 </form>
@@ -75,46 +86,43 @@
 <!--        <script src="{% static 'worker/js/listener.js' %}">-->
 <!--            // скрипт запуска меню выбора-->
 <!--        </script>-->
-<script src="{% static 'worker/js/worker.js' %}"></script>
-<script>
-    const countdown = document.getElementById('id_countdown')
-    let currentRow = 0
-    table = document.getElementById('main_table')
-    tr = table.getElementsByTagName('tr')
-    let timer = 30
-    document.addEventListener('keydown', function (event) {
-        timer = 30
-        // 'keydown'
-        // onkeydown
-        if (event.code == 'ArrowUp' && currentRow > 1) {
-            returnColor(tr[currentRow])
-            currentRow -= 1
-            tr[currentRow].focus()
-            tr[currentRow].bgColor = 'orange'
-        }
-        if (event.code == 'ArrowDown' && currentRow < tr.length - 1) {
-            returnColor(tr[currentRow])
-            currentRow += 1
-            tr[currentRow].focus()
-            tr[currentRow].bgColor = 'orange'
-        }
-
-        const ws_number = '{{ ws_number }}'
-        // id выбранного option
-        const st_id = select_element.options[currentRow].id
-        const tech_data = select_element.options[currentRow].dataset.send
-        //const op_number = select_element.options[currentRow].op_number;
-        // кнопка выбрать чертёж
-        if (event.ctrlKey) {
-            if (st_id != '0') {
-                const draw_link = `/worker/${ws_number}--${tech_data}` // ссылка на страницу с чертежем
-                location.href = draw_link // переход по ссылке
+        <script src="{% static 'worker/js/worker.js' %}"></script>
+        <script>
+            const countdown = document.getElementById("id_countdown");
+            let currentRow = 0
+            table = document.getElementById("main_table");
+            if (table) {
+                tr = table.getElementsByTagName("tr");
             }
-            // кнопка вызов мастера
-        } else if (event.code == 'KeyK') {
-            master_call_link = `/worker/${ws_number}-${st_id}/get_master`
-            console.log(master_call_link)
-            location.href = master_call_link
+            let timer = 30
+            document.addEventListener("keydown", function (event) {
+                timer = 30
+                if (event.code == 'ArrowUp' && currentRow > 1) {
+                    returnColor(tr[currentRow]);
+                    currentRow -= 1
+                    tr[currentRow].focus()
+                    tr[currentRow].bgColor = 'orange';
+                }
+                if (event.code == 'ArrowDown' && currentRow < tr.length - 1) {
+                    returnColor(tr[currentRow]);
+                    currentRow += 1
+                    tr[currentRow].focus()
+                    tr[currentRow].bgColor = 'orange';
+                }
+
+                const ws_number = "{{ ws_number }}";
+                // id выбранного option
+                const st_id = select_element.options[currentRow].id;
+                const tech_data = select_element.options[currentRow].dataset.send;
+                //const op_number = select_element.options[currentRow].op_number;
+                // кнопка выбрать чертёж
+                if (event.shiftKey) {
+                    if (st_id != "0") {
+                        const draw_link = `/worker/${ws_number}--${tech_data}`; // ссылка на страницу с чертежем
+                        location.href = draw_link; // переход по ссылке
+                    }
+                    // кнопка вызов мастера
+                } else if (event.code == "KeyK") {
 
             // кнопка выбора причины простоя
             // } else if (event.code == "KeyX") {

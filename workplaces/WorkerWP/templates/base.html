@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" class="fullScreen">
+<head>
+    <meta charset="UTF-8">
+    <title>
+        {% block title %}
+        {% endblock %}
+    </title>
+    {% block links %}
+    <link type="text/css" href="{{ url_for('static', path='css/scheduler.css') }}" rel="stylesheet"/>
+    {% endblock %}
+</head>
+<body>
+<div id="wrap">
+    {% block menu %}
+    <header role="banner">
+    </header>
+    {% endblock %}
+    <main>
+        {% block body %}
+        {% endblock %}
+    </main>
+    <footer>
+        <div class="line"></div>
+        <img src="{{ url_for('static', path='img/background.png') }}" alt="Лаварт">
+    </footer>
+</div>
+</body>
+</html>

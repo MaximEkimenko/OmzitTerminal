@@ -128,7 +128,7 @@ def worker(request, ws_number):
             task_id = request.POST['task_id'][:index]
             # статус в работе
             # если статус запланировано или пауза установка статуса в работе
-            if 'запланировано' in request.POST['task_id'] or 'пауза' in request.POST['task_id']:
+            if 'запланировано' in request.POST['task_id']:
                 # if 'ожидание мастера' not in request.POST['task_id']:  # если нет статуса ожидания мастера
                 print('task_id: ', task_id)
                 # обновление данных
@@ -238,7 +238,7 @@ def make_master_call(request, ws_st_number):
     if messages:
         print('Вызов мастера')
         for message in messages:
-            asyncio.run(send_call_master(message))  # отправка в группу мастерам телеграм ботом
+            asyncio.run(send_call_master(message, ws_number)) # отправка в группу мастерам телеграм ботом
             # отправка в группу
             # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=message))
         print('Окончание вызова')
@@ -292,7 +292,7 @@ def pause_work(task_id=None, is_lunch=False, to_status='пауза'):
                              f"Операция: {st.op_number} {st.op_name_full}. "
                              f"Исполнители: {st.fio_doer}")
         try:
-            asyncio.run(send_call_master(message_to_master))
+            asyncio.run(send_call_master(message_to_master, st.ws_number))
         except Exception as ex:
             print(f"При попытке отправки сообщения мастеру из функции 'pause_work' вызвано исключение: {ex}")
 
@@ -364,7 +364,7 @@ def resume_work(task_id=None, is_lunch=False, from_status='пауза'):
                              f"Операция: {st.op_number} {st.op_name_full}. "
                              f"Исполнители: {st.fio_doer}")
         try:
-            asyncio.run(send_call_master(message_to_master))
+            asyncio.run(send_call_master(message_to_master, st.ws_number))
         except Exception as ex:
             print(f"При попытке отправки сообщения мастеру из функции 'resume_work' вызвано исключение: {ex}")
     if isinstance(shift_tasks, QuerySet):
