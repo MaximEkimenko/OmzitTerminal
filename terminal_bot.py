@@ -95,7 +95,7 @@ pattern_dscn_otk = r'(dcsn)\d'  # шаблон принятого решения
 
 
 async def on_startup(_):  # функция выполняется при запуске бота
-    # await bot.send_message(admin_id, "Бот РСУ вышел в онлайн.")
+    await bot.send_message(admin_id, "Терминал бот вышел в онлайн.")
     print(f'Terminal_bot вышел онлайн в {datetime.datetime.now().strftime("%H:%M:%S")}.')
 
 

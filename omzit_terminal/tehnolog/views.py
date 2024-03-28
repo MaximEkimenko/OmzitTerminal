@@ -214,16 +214,18 @@ def change_order_model(old_order_model: str, new_model: str, user: str, new_orde
     new_folder = os.path.join("C:/", "draws", new_model_order_query)
     try:
         os.rename(old_folder, new_folder)
-
         # сообщение в группу
+
+    except Exception as ex:
+        print(f'При переименовании папки возникло исключение: {ex}')
+    try:
         success_group_message = (f"Заказ-модель переименован технологической службой в: "
                                  f"{new_model_order_query}. "
                                  f"Откорректировал: {user}."
                                  )
         asyncio.run(terminal_message_to_id(to_id=TERMINAL_GROUP_ID, text_message_to_id=success_group_message))
-    except Exception as ex:
-        print(f'При переименовании папки возникло исключение: {ex}')
-
+    except Exception as e:
+        print(f'Ошибка отправки telegram при переименовании {old_order_model} в {new_model_order_query} ', e)
     return new_model_order_query
 
 

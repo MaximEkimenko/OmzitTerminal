@@ -78,6 +78,20 @@ def worker(request, ws_number):
                              'TZ-008',
                              'TZ-009',
                              'APM-0229',  # Планшет
+                             'TZ-010',
+                             'TZ-011',
+                             'TZ-012',
+                             'TZ-013',
+                             'TZ-014',
+                             'TZ-015',
+                             'TZ-016',
+                             'TZ-017',
+                             'TZ-018',
+                             'TZ-019',
+                             'TZ-020',
+                             'TZ-021',
+                             'APM-0229',  # Планшет
+                             '192'
                              )
     terminal_ip = get_client_ip(request)  # определение IP терминала
     terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
@@ -253,9 +267,10 @@ def make_master_call(request, ws_st_number):
     if messages:
         print('Вызов мастера')
         for message in messages:
-            asyncio.run(send_call_master(message, ws_number))  # отправка в группу мастерам телеграм ботом
-            # отправка в группу
-            # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=message))
+            try:
+                asyncio.run(send_call_master(message, ws_number))  # отправка в группу мастерам телеграм ботом
+            except Exception as e:
+                print(f'Ошибка отправки telegram сообщения мастеру {message} ', e)
         print('Окончание вызова')
         return redirect(f'/worker/{ws_number}?call=True')
     elif st_number == '0':
@@ -280,9 +295,10 @@ def make_dispatcher_call(request, ws_st_number):
     if messages:
         print('Вызов диспетчера')
         for message in messages:
-            asyncio.run(send_call_dispatcher(message))  # отправка в группу мастерам и диспетчерам телеграм ботом
-            # отправка в группу
-            # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=message))
+            try:
+                asyncio.run(send_call_dispatcher(message, ws_number))  # отправка в группу мастерам телеграм ботом
+            except Exception as e:
+                print(f'Ошибка отправки telegram сообщения диспетчеру {message} ', e)
         print('Окончание вызова')
         return redirect(f'/worker/{ws_number}?call=True_disp')
     elif st_number == 0:

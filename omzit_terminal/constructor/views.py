@@ -70,7 +70,12 @@ def constructor(request):
                                          f"{query_answer_form.cleaned_data['model_order_query'].model_order_query}/. "
                                          f"Передал КД: {request.user.first_name} {request.user.last_name}. "
                                          f"Загружено файлов: {i}.")
-                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                try:
+                    asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                except Exception as e:
+                    print(f'Ошибка отправки сообщения телеграмом при загрузке чертежей '
+                          f'{query_answer_form.cleaned_data["model_order_query"].model_order_query} ', e)
+
             else:
                 alert = f'Ошибка загрузки файлов: {", ".join(error_files)}!'
 

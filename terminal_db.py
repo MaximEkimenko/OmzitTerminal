@@ -2,7 +2,7 @@ import datetime
 from typing import List
 
 import psycopg2
-from db_config import host, dbname, user, password
+from omzit_terminal.worker.services.db_config import host, dbname, user, password
 import openpyxl
 
 
