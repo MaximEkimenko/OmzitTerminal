@@ -20,6 +20,7 @@ from .services.master_call_db import select_master_call, select_dispatcher_call
 from .services.master_call_function import send_call_master, send_call_dispatcher
 from .services.master_call_function import get_client_ip
 
+
 # TODO ЗАКОНСЕРВИРОВАНО Функционал простоев
 # from scheduler.models import Downtime
 # from .forms import DowntimeReasonForm
@@ -121,7 +122,7 @@ def worker(request, ws_number):
             elif 'в работе' in request.POST['task_id']:
                 alert_message = 'Требуется вызов мастера'
             elif 'запланировано' in request.POST['task_id']:
-                alert_message = 'СЗ принято в работу.'
+                alert_message = 'У Вас уже есть сменное задание в работе!'
             else:
                 alert_message = 'Все ок'
             index = request.POST['task_id'].find('--')
@@ -132,12 +133,26 @@ def worker(request, ws_number):
                 # if 'ожидание мастера' not in request.POST['task_id']:  # если нет статуса ожидания мастера
                 print('task_id: ', task_id)
                 # обновление данных
+                shift_task = ShiftTask.objects.filter(pk=task_id)
+                working_doers = ShiftTask.objects.filter(st_status='в работе').values_list('fio_doer', flat=True)
+                running_st_doers = shift_task[0].fio_doer.split(',')
+                if (not ShiftTask.objects.filter(pk=task_id, st_status='в работе') and
+                        not any(doer in ', '.join(working_doers) for doer in running_st_doers)):
+                    shift_task.update(
+                        st_status='в работе',
+                        datetime_job_start=datetime.datetime.now(),
+                        datetime_job_resume=datetime.datetime.now(),
+                        job_duration=datetime.timedelta(0),
+                    )
+                    alert_message = 'Сменное задание запущенно в работу.'
+            elif 'ожидание мастера' in request.POST['task_id']:
                 if not ShiftTask.objects.filter(pk=task_id, st_status='в работе'):
-                    ShiftTask.objects.filter(pk=task_id).update(st_status='в работе',
-                                                                datetime_job_start=datetime.datetime.now(),
-                                                                datetime_job_resume=datetime.datetime.now(),
-                                                                job_duration=datetime.timedelta(0),
-                                                                )
+                    ShiftTask.objects.filter(pk=task_id).update(
+                        st_status='в работе',
+                        datetime_job_start=datetime.datetime.now(),
+                        datetime_job_resume=datetime.datetime.now(),
+                        job_duration=datetime.timedelta(0),
+                    )
                     alert_message = 'Сменное задание запущенно в работу.'
             elif 'пауза' in request.POST['task_id']:
                 resume_work(task_id=task_id)
@@ -238,7 +253,7 @@ def make_master_call(request, ws_st_number):
     if messages:
         print('Вызов мастера')
         for message in messages:
-            asyncio.run(send_call_master(message, ws_number)) # отправка в группу мастерам телеграм ботом
+            asyncio.run(send_call_master(message, ws_number))  # отправка в группу мастерам телеграм ботом
             # отправка в группу
             # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=message))
         print('Окончание вызова')
@@ -369,7 +384,6 @@ def resume_work(task_id=None, is_lunch=False, from_status='пауза'):
             print(f"При попытке отправки сообщения мастеру из функции 'resume_work' вызвано исключение: {ex}")
     if isinstance(shift_tasks, QuerySet):
         shift_tasks.update(st_status='в работе', datetime_job_resume=timezone.now())
-
 
 # TODO ЗАКОНСЕРВИРОВАНО Функционал простоев
 # def downtime_reason(request, ws_number, st_number):

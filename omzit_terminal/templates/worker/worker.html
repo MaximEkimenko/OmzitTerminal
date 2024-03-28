@@ -110,6 +110,8 @@
                 }
                 // кнопка вызов мастера
             } else if (event.code == "KeyK") {
+                master_call_link = `/worker/${ws_number}-${st_id}/get_master`;
+                location.href = master_call_link;
 
         // кнопка выбора причины простоя
         // } else if (event.code == "KeyX") {

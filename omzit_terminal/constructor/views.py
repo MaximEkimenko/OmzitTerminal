@@ -10,8 +10,10 @@ from .forms import QueryAnswer
 from worker.services.master_call_function import terminal_message_to_id
 from django.core.exceptions import PermissionDenied
 from scheduler.filters import get_filterset
+
 # ADMIN_TELEGRAM_ID
 TERMINAL_GROUP_ID = os.getenv('ADMIN_TELEGRAM_ID')
+
 
 # TODO ЗАКОНСЕРВИРОВАНО Функционал простоев
 # from scheduler.models import Downtime
@@ -35,23 +37,25 @@ def constructor(request):
             filenames = dict(request.FILES)["draw_files"]  # имя файла
             print(filenames)
             i = 0
+            success_message = len(filenames) > 0
+            order_path = query_answer_form.cleaned_data['model_order_query'].model_order_query
+            file_save_path = rf"C:\draws\{order_path}\\"
+            error_files = []
             for file in filenames:
                 i += 1
                 print('-----', str(file))
                 # TODO плавающий баг при загрузке чертежей
-                order_path = query_answer_form.cleaned_data['model_order_query'].model_order_query
-                file_save_path = rf"C:\draws\{order_path}\\"
                 # обработчик загрузки файла
                 try:
                     handle_uploaded_file(f=file, filename=str(file),
                                          path=file_save_path)
-                    alert = 'Все файлы успешно загружены.'
-                    success_message = True
                 except Exception as e:
                     print(f'Ошибка загрузки {str(file)}', e)
-                    alert = f'Ошибка загрузки {str(file)}.'
+                    error_files.append(str(file))
                     success_message = False
 
+            if success_message:
+                alert = 'Все файлы успешно загружены.'
                 # обновление данных в БД
                 WorkshopSchedule.objects.filter(model_order_query=query_answer_form.
                                                 cleaned_data['model_order_query'].model_order_query).update(
@@ -60,7 +64,6 @@ def constructor(request):
                     constructor_query_td_fio=f'{request.user.first_name} {request.user.last_name}',  # ФИО констр
                     td_remarks='')
 
-            if success_message:
                 success_group_message = (f"Передано КД. Заказ-модель "
                                          f"{query_answer_form.cleaned_data['model_order_query'].model_order_query}. "
                                          f"Открыт доступ в папке сервера: file://svr-003/draws/"
@@ -68,6 +71,8 @@ def constructor(request):
                                          f"Передал КД: {request.user.first_name} {request.user.last_name}. "
                                          f"Загружено файлов: {i}.")
                 asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+            else:
+                alert = f'Ошибка загрузки файлов: {", ".join(error_files)}!'
 
             context = {'filter': f, 'query_answer_form': query_answer_form, 'alert': alert}
             return render(request, r"constructor/constructor.html", context=context)

@@ -73,8 +73,8 @@ def select_master_call(ws_number: str, st_number) -> list or None:
                 with con.cursor() as cur:
                     cur.execute(update_query)
                     con.commit()
-                    thread = threading.Thread(target=continue_work, args=(st_number,))
-                    thread.start()
+                    # thread = threading.Thread(target=continue_work, args=(st_number,))
+                    # thread.start()
             except Exception as e:
                 print(e, 'ошибка обновления')
     except Exception as e:
