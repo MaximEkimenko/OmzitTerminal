@@ -13,6 +13,102 @@ from django.utils.timezone import make_aware, make_naive
 from omzit_terminal.settings import BASE_DIR
 from scheduler.models import ShiftTask, Doers
 
+valentina_id = 6011624527  # тест
+shkapov_id = 1890988322  # Шкапов
+omzit_chat_id = -1001507361668  # группы
+omzit_otk_chat_id = -981440150
+omzit_bot_id_report = 6015644097  # боты
+omzit_bot_id_otk = 6337176450
+savchenko_id = 2131171377
+korneychuk_id = 1014915479
+posohov_id = 2051721470  # цех 1
+gordii_id = 6374431046
+ermishkin_id = 5221029965
+kondratiev_id = 6125791135
+achmetov_id = 1153114403
+kutorov_id = 5382773351  # цех 2
+mailashov_id = 546976234
+gorojanski_id = 6299557037
+kulbashin_id = 5426476877
+pospelov_id = 1377896858
+skorobogatov_id = 5439414299
+rihmaer_id = 6305730497
+ostrijnoi_id = 5380143506
+fursov_id = 5783679882  # цех 4
+sergeev_id = 5209291574
+loshkov_id = 6243031150
+eihgorn_id = 5780975373
+lipski_id = 6424114889
+lubimov_id = 5705407706
+donskaya_id = 6359131276  # ОТК
+averkina_id = 1563020113
+dolganev_id = 1907891961
+potapova_id = 5010645397
+sofinskaya_id = 1358370501
+dubenuk_id = 1359982302
+shaparenko_id = 5283718961
+galai_id = 6591032501
+shagov_id = 1906275223
+tashbulatov_id = 6072981051
+vafin_id = 1419051027
+sheglov_id = 1501419738
+kalashnikov_id = 1121811565
+sultigova_id = 6049253475
+voronin_id = 6247745541  # плазма
+makeev_id = 258500986
+godenchuk_id = 5400346808
+erin_id = 1293843639  # цех 3
+kozukin_id = 1148106959
+procenko_id = 5782500917
+hasanov_id = 6829564468
+
+id_fios = {
+    valentina_id: 'Фадеева В.С.',  # Тест
+    procenko_id: 'Проценко В.Б.',
+    shkapov_id: 'Шкапов Д.А.',
+    savchenko_id: 'Савченко Е.Н.',
+    donskaya_id: 'Донская Ю.Г.',
+    averkina_id: 'Аверкина О.В.',  # ОТК
+    dolganev_id: 'Долганев А.Н.',
+    potapova_id: 'Потапова М. А.',
+    sofinskaya_id: 'Софинская А. Г.',
+    dubenuk_id: 'Дубенюк А. П.',
+    shaparenko_id: 'Шапаренко Т.',
+    galai_id: 'Гайлай В.',
+    shagov_id: 'Шагов И.',
+    tashbulatov_id: 'Ташбулатов Н.',
+    vafin_id: 'Вафин Р.',
+    sheglov_id: 'Щеглов В.',
+    kalashnikov_id: 'Калашников Д.',
+    sultigova_id: 'Султыгова О.',
+    posohov_id: 'Посохов О.С.',  # цех 1
+    gordii_id: 'Гордий В.В.',
+    ermishkin_id: 'Ермишкин В.М.',
+    kondratiev_id: 'Кондратьев П.В.',
+    achmetov_id: 'Ахметов К.',
+    kutorov_id: 'Куторов В.В.',  # цех 2
+    mailashov_id: 'Майлашов О.',
+    gorojanski_id: 'Горожанский Н.Н.',
+    pospelov_id: 'Поспелов К.С.',
+    kulbashin_id: 'Кульбашин Ю.А.',
+    skorobogatov_id: 'Скоробогатов А.',
+    ostrijnoi_id: 'Острижной К.',
+    rihmaer_id: 'Рихмаер Ю.С.',
+    erin_id: 'Ерин К.В.',  # цех 3
+    kozukin_id: 'Козюкин М.В.',
+    hasanov_id: 'Хасанов Е.Х.',
+    korneychuk_id: 'Корнейчук Д.А.',  # цех 4
+    fursov_id: 'Фурсов А.П.',
+    sergeev_id: 'Сергеев В.Б.',
+    loshkov_id: 'Лошков А.В.',
+    eihgorn_id: 'Эйхгорн Р.В.',
+    lipski_id: 'Липский В.',
+    lubimov_id: 'Любимов Д.',
+    voronin_id: 'Воронин И.',  # плазма
+    makeev_id: 'Макеев И.',
+    godenchuk_id: 'Годенчук А.Л.'
+}
+
 
 def shift_tasks_auto_report():  # TODO перенести в service
     """
@@ -130,6 +226,8 @@ def create_shift_task_report(start: datetime, end: datetime) -> str:  # TODO п�
             # Заполняем строки данными
             for i, row in enumerate(report):
                 for j, key in enumerate(row):
+                    if key in ["master_finish_wp", "otk_decision"] and row[key] and row[key].isdigit():
+                        row[key] = id_fios.get(int(row[key]), int(row[key]))
                     cell = ex_sh.cell(row=i + 2, column=j + 1)
                     try:
                         row[key] = make_naive(row[key])

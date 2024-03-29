@@ -17,7 +17,7 @@ COLUMNS = [
     'Расценка за объем работ, руб.',  # 12
     'Стоимость часа, руб',  # 13
     'Загрузка оборудования на 1 котел, часов',  # 14
-    'Чертеж',  # 15
+    'Ссылка на чертежи',  # 15
 ]
 
 
@@ -30,8 +30,15 @@ def sheet_handler(data):
     for title in filtered_data.columns:
         for column in COLUMNS:
             score = fuzz.ratio(str(title), column) / 100
-            if score > 0.85:
+            if score > 0.87:
                 new_columns[title] = column
+                break
+    no_columns = []
+    for column in COLUMNS:
+        if column not in new_columns.values():
+            no_columns.append(column)
+    if len(no_columns) > 0:
+        raise KeyError(f"Не найдены столбцы: {', '.join(no_columns)}")
     filtered_data = filtered_data.rename(columns=new_columns)
     filtered_data = filtered_data.iloc[1:]
     filtered_data = filtered_data.filter(items=list(new_columns.values()))
