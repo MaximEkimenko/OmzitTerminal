@@ -252,6 +252,7 @@
                             doers_counter += 1
                     }
                 }
+                addSum(c)
                 console.log('doers:', doers_counter)
                 norm_calc.innerHTML = Number(norm_tech.innerHTML.replace(",", ".")) * Number(doers_tech.innerHTML) / doers_counter
             }
@@ -379,31 +380,25 @@
         document.getElementById("filter_form").submit();
     }
 
-</script>
-<script>
-    let fioField = document.querySelectorAll('[id*="id_fio_"]')
-
-    fioField.forEach(function (c) {
-        c.onchange = function () {
-            let label_id = c.id + "_sum"
-            let find = Boolean(false)
-            {% for fio, sum in sums_tech_norm.items %}
-                if ('{{ fio }}' == c.options[c.selectedIndex].text) {
-                    console.log(label_id)
-                    if ('{{ sum }}' != 'None') {
-                        document.getElementById(label_id).innerHTML = '{{ sum }}' + ' час'
-                    } else {
-                        document.getElementById(label_id).innerHTML = ''
-                    }
-                    find = Boolean(true)
+    function addSum (c) {
+        let label_id = c.id + "_sum"
+        let find = Boolean(false)
+        {% for fio, sum in sums_tech_norm.items %}
+            if ('{{ fio }}' == c.options[c.selectedIndex].text) {
+                console.log(label_id)
+                if ('{{ sum }}' != 'None') {
+                    document.getElementById(label_id).innerHTML = '{{ sum }}' + ' час'
+                } else {
+                    document.getElementById(label_id).innerHTML = ''
                 }
-            {% endfor %}
-            if (!find) {
-                document.getElementById(label_id).innerHTML = ''
+                find = Boolean(true)
             }
-            console.log(find)
+        {% endfor %}
+        if (!find) {
+            document.getElementById(label_id).innerHTML = ''
         }
-    })
+        console.log(find)
+    }
 </script>
 <div style="height: 150px"></div>
 <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
