@@ -90,7 +90,9 @@ DATABASES = {
         # 'USER': 'postgres',
         # 'PASSWORD': 'Valm0nts89',
 
-        'HOST': 'localhost',
+        # 'HOST': 'localhost',
+        'HOST': "127.0.0.1",
+
         # 'HOST': '192.168.8.163',
         # 'HOST': '192.168.8.30',
         'PORT': '',
