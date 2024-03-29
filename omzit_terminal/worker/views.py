@@ -102,7 +102,7 @@ def worker(request, ws_number):
     # вывод таблицы распределённых РЦ
     today = datetime.datetime.now().strftime('%d.%m.%Y')
     initial_shift_tasks = (ShiftTask.objects.values('id', 'ws_number', 'model_name', 'order', 'op_number',
-                                                    'op_name_full', 'norm_tech', 'fio_doer', 'st_status',
+                                                    'op_name_full', 'norm_calc', 'fio_doer', 'st_status',
                                                     'datetime_job_start', 'decision_time')
                            .filter(ws_number=ws_number, next_shift_task=None).exclude(fio_doer='не распределено')
                            .exclude(Q(decision_time__lte=datetime.datetime.strptime(today, '%d.%m.%Y')) &
@@ -113,7 +113,7 @@ def worker(request, ws_number):
                                     Q(st_status='не принято'))
                            .order_by("st_status"))
     select_shift_task = ((ShiftTask.objects.values('id', 'ws_number', 'model_name', 'order', 'op_number',
-                                                   'op_name_full', 'norm_tech', 'fio_doer', 'st_status',
+                                                   'op_name_full', 'norm_calc', 'fio_doer', 'st_status',
                                                    'datetime_job_start', 'decision_time')
                           .filter(ws_number=ws_number)).exclude(fio_doer='не распределено')
                          .exclude(st_status='брак')

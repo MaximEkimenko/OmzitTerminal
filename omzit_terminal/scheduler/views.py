@@ -255,7 +255,7 @@ def schedulerfio(request, ws_number, model_order_query):
 
     shift_task_fields = (
         'id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number', 'op_number', 'op_name_full',
-        'norm_tech', 'fio_doer', 'st_status',
+        'norm_tech', 'fio_doer', 'st_status', 'norm_calc', 'doers_tech',
     )
     # определения рабочего центра и id
     if not request.user.username:  # если не авторизован, то отправляется на авторизацию
@@ -317,11 +317,13 @@ def schedulerfio(request, ws_number, model_order_query):
                 doers_fios = ', '.join(unique_fios)  # получение уникального списка
                 print('DOERS-', doers_fios)
                 if len(fios) == len(unique_fios):  # если нет повторений в списке fios
-
+                    shift_task = ShiftTask.objects.get(pk=int(pk))
+                    norm_calc = (shift_task.norm_tech * shift_task.doers_tech) / len(fios)
                     if 'redistribute' in form_submit:
                         data = {
                             'fio_doer': doers_fios,
-                            'master_assign_wp_fio': f'{request.user.first_name}'
+                            'master_assign_wp_fio': f'{request.user.first_name}',
+                            'norm_calc': norm_calc
                         }
                     else:
                         data = {
@@ -330,24 +332,23 @@ def schedulerfio(request, ws_number, model_order_query):
                             'st_status': 'запланировано',
                             'datetime_job_start': None,
                             'decision_time': None,
-                            'master_assign_wp_fio': f'{request.user.first_name}'
+                            'master_assign_wp_fio': f'{request.user.first_name}',
+                            'norm_calc': norm_calc
                         }
 
-                    if pk != '':  # если распределяем по id сменного задания
-                        shift_task = ShiftTask.objects.get(pk=int(pk))
-                        if shift_task.st_status == "брак":
-                            #  создаем дубликат СЗ с браком
-                            new_shift_task = ShiftTask.objects.get(pk=int(pk))
-                            new_shift_task.pk = None
-                            for field, value in data.items():
-                                setattr(new_shift_task, field, value)
-                            new_shift_task.save()
-                            #  добавляем в СЗ с браком ссылку на новое СЗ для исправления брака
-                            shift_task.next_shift_task = new_shift_task
-                        else:  # первичное распределение СЗ
-                            for field, value in data.items():
-                                setattr(shift_task, field, value)
-                        shift_task.save()
+                    if shift_task.st_status == "брак":
+                        #  создаем дубликат СЗ с браком
+                        new_shift_task = ShiftTask.objects.get(pk=int(pk))
+                        new_shift_task.pk = None
+                        for field, value in data.items():
+                            setattr(new_shift_task, field, value)
+                        new_shift_task.save()
+                        #  добавляем в СЗ с браком ссылку на новое СЗ для исправления брака
+                        shift_task.next_shift_task = new_shift_task
+                    else:  # первичное распределение СЗ
+                        for field, value in data.items():
+                            setattr(shift_task, field, value)
+                    shift_task.save()
 
                     alert_message = f'Успешно распределено!'
                 else:  # если есть повторения в списке fios
@@ -396,7 +397,7 @@ def schedulerfio(request, ws_number, model_order_query):
                 fio_doer__contains=doer.doers
             ).exclude(
                 st_status__in=['принято', 'не принято', 'брак']
-            ).aggregate(sum=Sum('norm_tech'))['sum']
+            ).aggregate(sum=Sum('norm_calc'))['sum']
         )
 
     context = {
@@ -552,7 +553,7 @@ def shift_tasks_report_view(request, start: str = "", end: str = ""):
     start, end = get_start_end_st_report(start, end)
     shift_task_fields = (
         'id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number',
-        'op_number', 'op_name_full', 'norm_tech', 'fio_doer', "datetime_assign_wp", 'st_status',
+        'op_number', 'op_name_full', 'norm_tech', 'doers_tech', 'norm_calc', 'fio_doer', "datetime_assign_wp", 'st_status',
     )
 
     workplace_schedule = ShiftTask.objects.values(

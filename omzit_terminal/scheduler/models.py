@@ -157,6 +157,9 @@ class ShiftTask(models.Model):
         null=True,
         blank=True
     )
+    doers_tech = models.IntegerField(null=True, blank=True, default=1, verbose_name='Количество исполнителей по ТД')
+    norm_calc = models.DecimalField(null=True, blank=True, max_digits=13, decimal_places=5,
+                                    verbose_name='Расчетная норма времени')
 
     # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
     # # Пример структуры workpiece {

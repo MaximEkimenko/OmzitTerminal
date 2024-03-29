@@ -4,6 +4,7 @@ import shutil
 from typing import Tuple
 
 import openpyxl
+import pandas
 from openpyxl.styles import Font
 from django.core.mail import EmailMessage
 from django.db.models import Sum
@@ -83,6 +84,8 @@ def create_shift_task_report(start: datetime, end: datetime) -> str:  # TODO п�
         "decision_time",  # Дата окончания
         "job_duration",  # Длительность работы
         "norm_tech",  # Технологическая норма
+        "doers_tech",  # Количество исполнителей по ТД
+        "norm_calc",  # Расчетная норма
         "st_status",  # Статус СЗ
         "master_finish_wp",  # Мастер
         "otk_decision",  # Контролер
@@ -142,17 +145,48 @@ def fio_st_time_counter(start: datetime, end: datetime):
     """
     Отчет по количеству часов по сменным заданиям по исполнителям
     """
+    months = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь',
+              'Ноябрь', 'Декабрь']
+    month = months[int(start.strftime('%m'))]
+    year = int(start.strftime('%Y'))
     doer_job_duration = []
     doers = Doers.objects.values_list('doers', flat=True).order_by('doers').all()
     shift_tasks = ShiftTask.objects.filter(decision_time__gte=start, decision_time__lte=end)
-    for doer in doers:
+    main_path = fr"M:\Xranenie\Расчет эффективности"
+    cex_1_timesheets = os.path.join(main_path, 'Табель цеха №1.xlsx')
+    cex_2_timesheets = os.path.join(main_path, 'Табель цеха №2.xlsx')
+    cex_1 = None
+    cex_2 = None
+    try:
+        cex_1 = pandas.read_excel(cex_1_timesheets, sheet_name=f'{month} {year}')
+        cex_2 = pandas.read_excel(cex_2_timesheets, sheet_name=f'{month} {year}')
+    except Exception as ex:
+        print(ex)
+    for i, doer in enumerate(doers):
         sum_job_duration = shift_tasks.filter(
             fio_doer__contains=doer, st_status='принято'
-        ).aggregate(duration=Sum('norm_tech'))
-        doer_job_duration.append({
+        ).aggregate(duration=Sum('norm_calc'))
+        data = {
             "fio": doer,
             "duration": sum_job_duration['duration']
-        })
+        }
+        if cex_1 is not None:
+            try:
+                data["cex1"] = int(cex_1[cex_1.iloc[:, 1] == doer].iloc[:, 37].iloc[0])
+            except Exception as ex:
+                print(ex)
+                data["cex1"] = 'Нет в табеле'
+        else:
+            data["cex1"] = f'Файл {cex_1_timesheets} или вкладка {month} {year} недоступны'
+        if cex_2 is not None:
+            try:
+                data["cex2"] = int(cex_2[cex_2.iloc[:, 1] == doer].iloc[:, 37].iloc[0])
+            except Exception as ex:
+                print(ex)
+                data["cex2"] = 'Нет в табеле'
+        else:
+            data["cex2"] = f'Файл {cex_2_timesheets} или вкладка {month} {year} недоступны'
+        doer_job_duration.append(data)
     return doer_job_duration
 
 

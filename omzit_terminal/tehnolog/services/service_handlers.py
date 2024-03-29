@@ -1,8 +1,10 @@
 import json
 import os
 
+from omzit_terminal.settings import BASE_DIR
 
-def handle_uploaded_file(f, filename: str, path: str = os.getcwd() + r'\xlsx') -> str:
+
+def handle_uploaded_file(f, filename: str, path: str = BASE_DIR / 'xlsx') -> str:
     """
     Обработчик копирует файл из формы загрузки частями в директорию path
     :param path: директория сохранения файла

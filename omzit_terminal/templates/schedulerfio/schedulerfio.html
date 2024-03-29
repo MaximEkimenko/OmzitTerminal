@@ -101,7 +101,9 @@
                             src="{% static 'scheduler/img/sort.svg' %}" alt=""></button>
                 </div>
             </td>
-            <td class="td_cell">Норма времени</td>
+            <td class="td_cell">Технологическая норма времени</td>
+            <td class="td_cell">Количество исполнителей по ТД</td>
+            <td class="td_cell">Расчетная норма времени</td>
             <td class="td_cell">{{ filter.form.fio_doer }} ФИО исполнителя
                 <br>
                 <div class="sort-filter">
@@ -141,6 +143,8 @@
         <td class="td_cell">{{ line.op_number }}</td>
         <td class="td_cell">{{ line.op_name_full }}</td>
         <td class="td_cell">{{ line.norm_tech }}</td>
+        <td class="td_cell">{{ line.doers_tech }}</td>
+        <td class="td_cell">{{ line.norm_calc }}</td>
         <td class="td_cell">{{ line.fio_doer }}</td>
         <td class="td_cell">{{ line.st_status }}</td>
     </tr>
@@ -224,6 +228,37 @@
                 }
             }
         {% endfor %}
+
+        let currentRow = document.querySelectorAll(".table_row")
+        let norm_tech = currentRow[0].getElementsByTagName("td")[9]
+        let doers_tech = currentRow[0].getElementsByTagName("td")[10]
+        let norm_calc = currentRow[0].getElementsByTagName("td")[11]
+
+
+        let doers_counter = 0
+        for (let i = 0; i < fioSelects.length ; i++) {
+            let c = fioSelects[i]
+            if (c.options[c.selectedIndex].text != "ФИО не выбрано") {
+                    doers_counter += 1
+            }
+        }
+
+        fioSelects.forEach(function (c) {
+            c.onchange = function () {
+                doers_counter = 0
+                for (let i = 0; i < fioSelects.length ; i++) {
+                    let c = fioSelects[i]
+                    if (c.options[c.selectedIndex].text != "ФИО не выбрано") {
+                            doers_counter += 1
+                    }
+                }
+                addSum(c)
+                console.log('doers:', doers_counter)
+                norm_calc.innerHTML = Number(norm_tech.innerHTML.replace(",", ".")) * Number(doers_tech.innerHTML) / doers_counter
+            }
+
+        })
+
         // let selectIds = []
         // for (let i = 0; i < fioSelects.length; i++) {
         //     selectIds.push(fioSelects[i].id)
@@ -345,31 +380,25 @@
         document.getElementById("filter_form").submit();
     }
 
-</script>
-<script>
-    let fioField = document.querySelectorAll('[id*="id_fio_"]')
-
-    fioField.forEach(function (c) {
-        c.onchange = function () {
-            let label_id = c.id + "_sum"
-            let find = Boolean(false)
-            {% for fio, sum in sums_tech_norm.items %}
-                if ('{{ fio }}' == c.options[c.selectedIndex].text) {
-                    console.log(label_id)
-                    if ('{{ sum }}' != 'None') {
-                        document.getElementById(label_id).innerHTML = '{{ sum }}' + ' час'
-                    } else {
-                        document.getElementById(label_id).innerHTML = ''
-                    }
-                    find = Boolean(true)
+    function addSum (c) {
+        let label_id = c.id + "_sum"
+        let find = Boolean(false)
+        {% for fio, sum in sums_tech_norm.items %}
+            if ('{{ fio }}' == c.options[c.selectedIndex].text) {
+                console.log(label_id)
+                if ('{{ sum }}' != 'None') {
+                    document.getElementById(label_id).innerHTML = '{{ sum }}' + ' час'
+                } else {
+                    document.getElementById(label_id).innerHTML = ''
                 }
-            {% endfor %}
-            if (!find) {
-                document.getElementById(label_id).innerHTML = ''
+                find = Boolean(true)
             }
-            console.log(find)
+        {% endfor %}
+        if (!find) {
+            document.getElementById(label_id).innerHTML = ''
         }
-    })
+        console.log(find)
+    }
 </script>
 <div style="height: 150px"></div>
 <script src="{% static 'scheduler/js/scheduler.js' %}"></script>

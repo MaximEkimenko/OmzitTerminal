@@ -3,7 +3,36 @@ from typing import Dict, List
 
 import openpyxl
 import re
+
+import pandas as pd
+
 from scheduler.models import ShiftTask, WorkshopSchedule
+from tehnolog.services.pandas_utils import df_handler
+
+
+def get_excel_data_pandas(data: Dict, exel_file: str, excel_list: str):
+    operations = df_handler(pd.read_excel(exel_file, excel_list))
+    data_list = []
+    for index, row in operations.iterrows():
+        data_list.append(
+            {
+                'model_name': data['model_name'],
+                'order': data['order'],
+                'model_order_query': data['model_order_query'],
+                'excel_list_name': f'{excel_list}-{index}',  # инкремент для гарантированно уникальной записи
+                'op_number': row['п/п'],
+                'op_name': row['Наименование работ'],
+                'ws_name': row['Рабочий центр'],
+                'op_name_full': row['Наименование работ'] + '-' + row['Рабочий центр'],
+                'ws_number': str(row['№ рабочего центра']),
+                'norm_tech': row['Загрузка оборудования на 1 котел, часов'],
+                'doers_tech': row['Численность, чел.'],
+                'norm_calc': row['Загрузка оборудования на 1 котел, часов'],
+                'draw_filename': row['Чертеж'],
+
+            }
+        )
+    return data_list
 
 
 def tech_data_get(model_order_query: str, exel_file: str, excel_list: str):
@@ -25,7 +54,8 @@ def tech_data_get(model_order_query: str, exel_file: str, excel_list: str):
         'model_order_query': model_order_query
     }
     # формирование данных для создания записей shift_task (СЗ)
-    data_list = get_excel_data(common_data, exel_file, excel_list)
+    # data_list = get_excel_data(common_data, exel_file, excel_list)
+    data_list = get_excel_data_pandas(common_data, exel_file, excel_list)
 
     def create_all_shift_tasks():  # TODO при рефакторинге перенести в services
         """
@@ -41,7 +71,6 @@ def tech_data_get(model_order_query: str, exel_file: str, excel_list: str):
         tasks = []
         for data in data_list:
             data.update(add_data)
-            print(f"При обновлении ТД создано СЗ со следующими данными {data}")
             tasks.append(ShiftTask(**data))
         ShiftTask.objects.bulk_create(tasks)
 
@@ -59,7 +88,7 @@ def tech_data_get(model_order_query: str, exel_file: str, excel_list: str):
     else:
         tasks = []
         # разрешённые поля
-        allowed_fields = ('ws_number', 'norm_tech', 'draw_filename')
+        allowed_fields = ('ws_number', 'norm_tech', 'doers_tech', 'draw_filename')
         for data in data_list:
             allowed_data = dict()
             for field in allowed_fields:
