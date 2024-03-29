@@ -8,6 +8,7 @@ from typing import Optional
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 
+from omzit_terminal.settings import BASE_DIR
 from .services.service_handlers import handle_uploaded_file
 from .services.tech_data_get import tech_data_get
 from .forms import GetTehDataForm, ChangeOrderModel, SendDrawBack
@@ -75,7 +76,7 @@ def tehnolog_wp(request):
                     'filter': f
                 })
                 return render(request, r"tehnolog/tehnolog.html", context=context)
-            file_save_path = os.getcwd() + r'\xlsx'
+            file_save_path = BASE_DIR / 'xlsx'
             # обработчик загрузки файла
             xlsx_file = handle_uploaded_file(f=request.FILES["excel_file"], filename=filename,
                                              path=file_save_path)
@@ -106,12 +107,15 @@ def tehnolog_wp(request):
                 alert = f'Ошибка загрузки {filename}'
                 success_message = False
             if success_message:
-                success_group_message = (f"Загружен технологический процесс. Заказ-модель: "
-                                         f"{get_teh_data_form.cleaned_data['model_order_query'].model_order_query} "
-                                         f"доступен для планирования. "
-                                         f"Данные загрузил: {request.user.first_name} {request.user.last_name}."
-                                         )
-                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                try:
+                    success_group_message = (f"Загружен технологический процесс. Заказ-модель: "
+                                             f"{get_teh_data_form.cleaned_data['model_order_query'].model_order_query} "
+                                             f"доступен для планирования. "
+                                             f"Данные загрузил: {request.user.first_name} {request.user.last_name}."
+                                             )
+                    asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                except Exception:
+                    alert += " Ошибка отправки сообщения в телеграм!"
             else:
                 print('Ошибка загрузки')
             print(get_teh_data_form.cleaned_data)
