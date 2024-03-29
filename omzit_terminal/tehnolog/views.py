@@ -102,6 +102,10 @@ def tehnolog_wp(request):
                     alert = (f'Ошибка загрузки {filename}! '
                              f'Изменены недопустимые поля, добавлены, удалены или перемещены строки!')
                     success_message = False
+            except KeyError as e:
+                print(f'Ошибка загрузки {filename}', e)
+                alert = f'Ошибка загрузки {filename}. {e}'
+                success_message = False
             except Exception as e:
                 print(f'Ошибка загрузки {filename}', e)
                 alert = f'Ошибка загрузки {filename}'

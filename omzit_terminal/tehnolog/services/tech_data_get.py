@@ -28,7 +28,7 @@ def get_excel_data_pandas(data: Dict, exel_file: str, excel_list: str):
                 'norm_tech': row['Загрузка оборудования на 1 котел, часов'],
                 'doers_tech': row['Численность, чел.'],
                 'norm_calc': row['Загрузка оборудования на 1 котел, часов'],
-                'draw_filename': row['Чертеж'],
+                'draw_filename': row['Ссылка на чертежи'],
 
             }
         )

@@ -27,7 +27,9 @@
                     <td class="td_cell">{{ filter.form.ws_number }} Номер Т</td>
                     <td class="td_cell">{{ filter.form.op_number }} Номер операции</td>
                     <td class="td_cell">{{ filter.form.op_name_full }} Операция</td>
-                    <td class="td_cell">{{ filter.form.norm_tech }} Норма времени</td>
+                    <td class="td_cell">{{ filter.form.norm_tech }} Технологическая норма времени</td>
+                    <td class="td_cell">{{ filter.form.doers_tech }} Количество исполнителей по ТД</td>
+                    <td class="td_cell">{{ filter.form.norm_calc }} Расчетная норма времени</td>
                     <td class="td_cell">{{ filter.form.fio_doer }} Фио исполнителя</td>
                     <td class="td_cell">{{ filter.form.datetime_assign_wp }} Дата распределения</td>
                     <td class="td_cell">{{ filter.form.st_status }} Статус СЗ</td>
@@ -35,9 +37,20 @@
             </form>
             {% for line in filter.qs %}
             <tr class="table_row">
-                {% for el in line.values %}
-                <td class="td_cell">{{ el }}</td>
-                {% endfor %}
+                <td class="td_cell">{{ line.id }}</td>
+                <td class="td_cell">{{ line.workshop }}</td>
+                <td class="td_cell">{{ line.model_name }}</td>
+                <td class="td_cell">{{ line.order }}</td>
+                <td class="td_cell">{{ line.datetime_done }}</td>
+                <td class="td_cell">{{ line.ws_number }}</td>
+                <td class="td_cell">{{ line.op_number }}</td>
+                <td class="td_cell">{{ line.op_name_full }}</td>
+                <td class="td_cell">{{ line.norm_tech }}</td>
+                <td class="td_cell">{{ line.doers_tech }}</td>
+                <td class="td_cell">{{ line.norm_calc }}</td>
+                <td class="td_cell">{{ line.fio_doer }}</td>
+                <td class="td_cell">{{ line.datetime_assign_wp }}</td>
+                <td class="td_cell">{{ line.st_status }}</td>
             </tr>
             {% endfor %}
         </table>
