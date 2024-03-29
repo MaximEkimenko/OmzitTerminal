@@ -141,7 +141,6 @@ def master_id_get(ws_number: str = None, st_id: str = None) -> tuple:
     elif st_id:
         query_field = 'id'
         query_var = st_id
-    print('ws_number=', ws_number, 'st_id=', st_id)
     try:
         # подключение к БД
         con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
@@ -165,6 +164,31 @@ def master_id_get(ws_number: str = None, st_id: str = None) -> tuple:
         con.close()
     print(master_id, ws_result_number)
     return master_id, ws_result_number
+
+
+def control_man_id_get(ws_number: str = None) -> tuple:
+    try:
+        # подключение к БД
+        con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
+        con.autocommit = True
+        # запрос на РЦ со статусом ожидание контролёра
+        select_query = f"""SELECT otk_answer
+                                FROM shift_task
+                                WHERE st_status='ожидание контролёра' AND
+                                ws_number = '{ws_number}';"""
+        try:
+            with con.cursor() as cur:
+                cur.execute(select_query)
+                con.commit()
+                control_man_id = cur.fetchone()
+
+        except Exception as e:
+            print(e, 'ошибка выборке по контролеру')
+    except Exception as e:
+        print('Ошибка подключения к базе', e)
+    finally:
+        con.close()
+    return control_man_id
 
 
 def status_change_to_otk(ws_number: str, initiator_id: str) -> None:
@@ -360,6 +384,38 @@ def doers_update(excel_file: str) -> None:
     finally:
         con.close()
 
+
+def all_active_st_get(status: str = None):
+    """
+    Получение списка всех активных СЗ
+    :return:
+    """
+    if not status:
+        status = 'ожидание контролёра'
+    try:
+        # подключение к БД
+        con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
+        con.autocommit = True
+        # запрос на корректировку БД
+        select_query = f"""SELECT * FROM shift_task WHERE st_status='{status}'"""
+        try:
+            with con.cursor() as cur:
+                cur.execute(select_query)
+                con.commit()
+                st_list = cur.fetchall()
+        except Exception as e:
+            print(e, 'ошибка выборке')
+    except Exception as e:
+        print('Ошибка подключения к базе', e)
+    finally:
+        con.close()
+    result_string = 'Сменные задания ожидающие приёмки:\n'
+    # print(st_list)
+    for st in st_list:
+        result_string += f'СЗ: №{st[0]}, ТЕРМИНАЛ: {st[10]}, Изделие: {st[5]}, Операция: {st[6]} {st[7]}\n'
+    # print(result_string)
+    return result_string
+
 # TODO ЗАКОНСЕРВИРОВАНО Функционал простоев
 # def confirm_downtime(shift_task_number, master_fio, description) -> None:
 #     """
@@ -434,4 +490,5 @@ if __name__ == '__main__':
     # fio_file = r'D:\АСУП\Python\Projects\ARC\GUI\Табель\База ФИО.xlsx'
     # status_change_to_otk('13', '1238658905')
     # doers_update(fio_file)
+    all_active_st_get()
     pass
