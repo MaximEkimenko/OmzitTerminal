@@ -2,20 +2,20 @@ import datetime
 import logging
 import os
 import re
-import time
-
+from aiogram.utils.callback_data import CallbackData
+# TODO очистить закомментированное
 from aiogram import Bot, Dispatcher, executor, types, filters
 # работа с БД
 from terminal_db import (ws_list_get, status_change_to_otk, st_list_get, master_id_get, control_man_id_set,
                          decision_data_set, lines_count, control_man_id_get, all_active_st_get)
 
 # from terminal_db import confirm_downtime, reject_downtime
-
+# TODO подключить logger
 logging.basicConfig(filename="log.log", level=logging.DEBUG, filemode='w',
                     format=' %(levelname)s - %(asctime)s; файл - %(filename)s; сообщение - %(message)s')
 # TOKEN = os.getenv('RSU_TOKEN')
 # тестовый token
-TOKEN = ''
+TOKEN = '6589138757:AAELXb8IB6e2FYtYY19bOX3kAWLVC7jd9Go'
 
 # ids
 admin_id = int(os.getenv('ADMIN_TELEGRAM_ID'))
@@ -24,6 +24,7 @@ ermishkin_id = 5221029965
 gordii_id = 6374431046
 kondratiev_id = 6125791135
 achmetov_id = 1153114403
+kozlov_id = 2103097640
 
 ostrijnoi_id = 5380143506  # цех 2
 mailashov_id = 546976234
@@ -45,6 +46,9 @@ sofinskaya_id = 1358370501
 sheglov_id = 1501419738
 dubenuk_id = 1359982302
 dolganev_id = 1907891961
+shagov_id = 1906275223
+mekelburg_id = 841834270  # УЗК
+kucherenko_id = 950359384
 
 mhitaryan_id = 413559952  # ПКО
 saks_id = 1366631138  # ОГТ
@@ -64,14 +68,15 @@ ws_numbers_c1 = ('11', '12', '13', '14', '15', '16')  # терминалы це�
 ws_numbers_c2 = ('22', '23', '24', '25', '26', '27', '28', '29', '210', '211')  # терминалы цех 2
 
 # fios
-id_fios = {admin_id: 'Екименко М.А.',
+id_fios = {admin_id: 'Екименко М.А.',  # цех 1
            posohov_id: 'Посохов О.С.',
-           ermishkin_id: 'Ермишкин В.М.',  # Мастера
+           ermishkin_id: 'Ермишкин В.М.',
            gordii_id: 'Гордий В.В.',
            kondratiev_id: 'Кондратьев П.В.',
            achmetov_id: 'Ахметов К.',
+           kozlov_id: 'Козлов А.А.',
 
-           mailashov_id: 'Майлашов О.',
+           mailashov_id: 'Майлашов О.',  # цех 2
            gorojanski_id: 'Горожанский Н.Н.',
            pospelov_id: 'Поспелов К.С.',
            kulbashin_id: 'Кульбашин Ю.А.',
@@ -81,6 +86,7 @@ id_fios = {admin_id: 'Екименко М.А.',
 
            savchenko_id: 'Савченко Е.Н.',  # ПДО
            pavluchenkova_id: 'Павлюченкова Н. Л.',
+
            donskaya_id: 'Донская Ю.Г.',  # ОТК
            averkina_id: 'Аверкина О.В.',
            sultigova_id: 'Султыгова О.',
@@ -89,6 +95,9 @@ id_fios = {admin_id: 'Екименко М.А.',
            dolganev_id: 'Долганев А.Н.',
            dubenuk_id: 'Дубенюк А. П.',
            sheglov_id: 'Щеглов В.',
+           shagov_id: 'Шагов И.',
+           mekelburg_id: 'Мекельбург Д.',  # УЗК
+           kucherenko_id: 'Кучеренко О.',
 
            mhitaryan_id: 'Мхитарян К.',  # ПКО
            saks_id: 'Сакс В.И.'  # ОГТ
@@ -98,7 +107,8 @@ id_fios = {admin_id: 'Екименко М.А.',
 users = (admin_id,  # root
          posohov_id, ermishkin_id, gordii_id, kondratiev_id, achmetov_id,  # производство
          savchenko_id, pavluchenkova_id,  # ПДО
-         donskaya_id, averkina_id, sultigova_id, potapova_id, sofinskaya_id, sheglov_id, dubenuk_id, dolganev_id,  # ОТК
+         donskaya_id, averkina_id, sultigova_id, potapova_id, sofinskaya_id, sheglov_id, dubenuk_id, dolganev_id,
+         shagov_id, mekelburg_id, kucherenko_id,  # ОТК
          mhitaryan_id,  # ПКО
          saks_id,  # ОГТ
          mailashov_id, gorojanski_id, pospelov_id, kulbashin_id, skorobogatov_id, ostrijnoi_id, rihmaer_id,  # цех 2
@@ -106,14 +116,15 @@ users = (admin_id,  # root
 
 # производство
 masters_list = (admin_id, ermishkin_id, posohov_id, gordii_id, kondratiev_id, achmetov_id,  # цех 1
-                # цех 2
                 mailashov_id, gorojanski_id, pospelov_id, kulbashin_id, skorobogatov_id, ostrijnoi_id, rihmaer_id,
                 )
+
+nine_digits_group = (mekelburg_id, kucherenko_id)
 
 dispatchers_list = (admin_id, savchenko_id, pavluchenkova_id,)  # диспетчеры
 
 control_mans_list = (admin_id, donskaya_id, averkina_id, sultigova_id, potapova_id, sofinskaya_id, dolganev_id,
-                     sheglov_id, dubenuk_id)  # контролёры
+                     sheglov_id, dubenuk_id, shagov_id, mekelburg_id, kucherenko_id)  # контролёры
 
 bot = Bot(token=TOKEN)  # инициализация бота
 dp = Dispatcher(bot)  # инициализация диспетчера
@@ -124,6 +135,12 @@ pattern_answ_otk = r'(answ)\d\d'  # шаблон для ответа ОТК
 pattern_dcgo_otk = r'(dcgo)\d\d'  # шаблон запуска решения
 pattern_stid_otk = r'(stid)\d'  # шаблон для вызова вариантов решений ОТК
 pattern_dscn_otk = r'(dcsn)\d'  # шаблон принятого решения ОТК
+
+otk_call_callback_data = CallbackData('call', 'ws_number', 'user_id')  # вызов ОТК
+otk_answ_callback_data = CallbackData('answ', 'ws_number', 'user_id')  # ответ ОТК
+otk_dcgo_callback_data = CallbackData('dcgo', 'ws_number', 'user_id')  # решение ОТК
+otk_stid_callback_data = CallbackData('stid', 'shift_task_id', 'user_id')  # варианты решения ОТК
+otk_dcsn_callback_data = CallbackData('dcsn', 'shift_task_id', 'user_id', 'decision')  # принятое решение ОТК
 
 
 async def on_startup(_):  # функция выполняется при запуске бота
@@ -199,10 +216,13 @@ async def master_otk_send(message: types.Message):
         inline_ws_buttons = types.InlineKeyboardMarkup()  # объект
         ws_list = ws_list_get("ожидание мастера")
         print('список РЦ из master_otk_send', ws_list)
+
         if ws_list != ():
             for ws in ws_list:
-                btn = types.InlineKeyboardButton(text=f'{ws}', callback_data=f'call{ws}{message.from_user.id}')
+                callback_data = otk_call_callback_data.new(ws, message.from_user.id)
+                btn = types.InlineKeyboardButton(text=f'{ws}', callback_data=callback_data)
                 inline_ws_buttons.insert(btn)
+
             await message.answer('Выбор терминала', reply_markup=inline_ws_buttons)
         else:
             await message.reply('Сменные задания со статусом "Вызов мастера" отсутствуют.')
@@ -211,19 +231,26 @@ async def master_otk_send(message: types.Message):
 
 
 # обработчик callback otk_send вызова контролёра МАСТЕРОМ на РЦ
-@dp.callback_query_handler(lambda callback: call_get_re(pattern_call_otk, callback.data[:-10]))
-async def otk_call(callback_query: types.CallbackQuery):
+# @dp.callback_query_handler(lambda callback: call_get_re(pattern_call_otk, callback.data[:-10]))
+@dp.callback_query_handler(otk_call_callback_data.filter())
+async def otk_call(callback_query: types.CallbackQuery, callback_data: dict):
     """
     Обработка callback_data при вызове контролёра otk_send
+    :param callback_data:
     :param callback_query:
     :return:
     """
-    master_id = callback_query.data[-10:]  # id мастера
-    ws_number = callback_query.data[4:-10]  # номер РЦ
+    # master_id = callback_query.data[-10:]  # id мастера
+    # ws_number = callback_query.data[4:-10]  # номер РЦ
+    master_id = callback_data.get('user_id')
+    ws_number = callback_data.get('ws_number')
+    print(f"{ws_number=}")
+    print(f"{master_id=}")
     # Статус ожидание контролёра
     status_change_to_otk(ws_number=ws_number, initiator_id=master_id)
     st_count = lines_count(ws_number=str(ws_number))[0]  # количество СЗ с ожиданием контролёра
     ultra_sound_string = lines_count(ws_number=str(ws_number))[1]  # количество СЗ с ожиданием контролёра
+    print('FROM_otk_call_callback_data')
     print('Количество сменных заданий для приёмки', st_count, f'{st_count=}')
     print('Наличие УЗК', ultra_sound_string, f'{ultra_sound_string=}')
     # отправка сообщения о заявке на контролёра в группу ОТК
@@ -245,6 +272,21 @@ async def otk_call(callback_query: types.CallbackQuery):
     else:
         print('Ошибка в номере рабочего центра ')
     await callback_query.answer()  # закрытие inline кнопок
+    #
+    # print('Количество сменных заданий для приёмки', lines_count(ws_number=str(ws_number)), 'st_count=', st_count)
+    # # отправка сообщения о заявке на контролёра в группу ОТК
+    # await bot.send_message(chat_id=omzit_otk_group_id, text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
+    #                                                         f"{id_fios[int(master_id)]}. "
+    #                                                         f"Количество сменных заданий для приёмки: {st_count}.")
+    # # Обратная связь мастеру
+    # await bot.send_message(chat_id=master_id, text="Запрос в отк отправлен.")
+    # if str(ws_number) in ws_numbers_c1:
+    #     await bot.send_message(chat_id=omzit_master_group1_id, text="Запрос в отк отправлен.")
+    # elif str(ws_number) in ws_numbers_c2:
+    #     await bot.send_message(chat_id=omzit_master_group2_id, text="Запрос в отк отправлен.")
+    # else:
+    #     print('Ошибка в номере рабочего центра ')
+    # await callback_query.answer()  # закрытие inline кнопок
 
 
 # ------------------------------------------------
@@ -264,7 +306,9 @@ async def otk_answer_master_send(message: types.Message):
         inline_ws_buttons = types.InlineKeyboardMarkup()  # объект инлайн кнопок РЦ
         if ws_list != ():
             for ws in ws_list:
-                btn = types.InlineKeyboardButton(text=f'{ws}', callback_data=f'answ{ws}{message.from_user.id}')
+                callback_data = otk_answ_callback_data.new(ws, message.from_user.id)
+                btn = types.InlineKeyboardButton(text=f'{ws}',
+                                                 callback_data=callback_data)
                 inline_ws_buttons.insert(btn)
             await message.answer('Выбор терминала', reply_markup=inline_ws_buttons)
         else:
@@ -274,15 +318,22 @@ async def otk_answer_master_send(message: types.Message):
 
 
 # обработчик callback otk_answer ответа контролёра МАСТЕРУ на РЦ
-@dp.callback_query_handler(lambda callback: call_get_re(pattern_answ_otk, callback.data[:-10]))
-async def otk_call_handler(callback_query: types.CallbackQuery):
+# @dp.callback_query_handler(lambda callback: call_get_re(pattern_answ_otk, callback.data[:-10]))
+@dp.callback_query_handler(otk_answ_callback_data.filter())
+async def otk_call_handler(callback_query: types.CallbackQuery, callback_data: dict):
     """
     Обработчик callback.data при ответе контролёра
+    :param callback_data:
     :param callback_query:
     :return:
     """
-    controlman_id = callback_query.data[-10:]  # id контролёра
-    ws_number = callback_query.data[4:-10]  # номер РЦ
+    controlman_id = callback_data.get('user_id')
+    ws_number = callback_data.get('ws_number')
+    print('FROM_otk_answ_callback_data')
+    print(f"{ws_number=}")
+    print(f"{controlman_id=}")
+    # controlman_id = callback_query.data[-10:]  # id контролёра
+    # ws_number = callback_query.data[4:-10]  # номер РЦ
     # запрос в БД на id мастера
     master_id = master_id_get(ws_number=ws_number)[0]
     try:
@@ -339,7 +390,8 @@ async def otk_decision_terminal_choice(message: types.Message):
         ws_list = ws_list_get("ожидание контролёра")
         if ws_list != ():
             for ws in ws_list:
-                btn = types.InlineKeyboardButton(text=f'{ws}', callback_data=f'dcgo{ws}{message.from_user.id}')
+                callback_data = otk_dcgo_callback_data.new(ws, message.from_user.id)
+                btn = types.InlineKeyboardButton(text=f'{ws}', callback_data=callback_data)
                 inline_ws_buttons.insert(btn)
             await message.answer('Выбор терминала для принятия решения:', reply_markup=inline_ws_buttons)
         else:
@@ -349,15 +401,22 @@ async def otk_decision_terminal_choice(message: types.Message):
 
 
 # обработчик callback otk_decision принятия решения по СЗ на РЦ для отображение инлайн СЗ
-@dp.callback_query_handler(lambda callback: call_get_re(pattern_dcgo_otk, callback.data[:-10]))
-async def otk_decision_shift_task_choice(callback_query: types.CallbackQuery):
+# @dp.callback_query_handler(lambda callback: call_get_re(pattern_dcgo_otk, callback.data[:-10]))
+@dp.callback_query_handler(otk_dcgo_callback_data.filter())
+async def otk_decision_shift_task_choice(callback_query: types.CallbackQuery, callback_data: dict):
     """
     Обработчик callback_data для отображения inline кнопок сменного задания. Выбор сменного задания.
+    :param callback_data:
     :param callback_query:
     :return:
     """
-    controlman_id = callback_query.data[-10:]  # id контролёра
-    ws_number = callback_query.data[4:-10]  # номер РЦ
+    controlman_id = callback_data.get('user_id')
+    ws_number = callback_data.get('ws_number')
+    print('FROM_otk_dcgo_callback_data')
+    print(f"{ws_number=}")
+    print(f"{controlman_id=}")
+    # controlman_id = callback_query.data[-10:]  # id контролёра
+    # ws_number = callback_query.data[4:-10]  # номер РЦ
     inline_st_buttons = types.InlineKeyboardMarkup()  # объект инлайн кнопок номера СЗ
     # проверка новых кнопок
     # inline_st_buttons2 = types.ReplyKeyboardMarkup()
@@ -368,8 +427,11 @@ async def otk_decision_shift_task_choice(callback_query: types.CallbackQuery):
         # print('Сменное задание в otk_decision_shift_task_choice: ', task)
         # print(['task_id в otk_decision_shift_task_choice', str(task).find("|") - 1])
         shift_task_id = task[2:str(task).find("|") - 1]  # id СЗ
+        callback_to_decision = otk_stid_callback_data.new(shift_task_id, controlman_id)
         btn = types.InlineKeyboardButton(text=f'ВЫБРАТЬ СЗ: № {shift_task_id}',
-                                         callback_data=f'stid{shift_task_id}{controlman_id}')
+                                         callback_data=callback_to_decision
+                                         # callback_data=f'stid{shift_task_id}{controlman_id}'
+                                         )
         inline_st_buttons.add(btn)
         # проверка новых кнопок
         # btn2 = types.KeyboardButton(text=f'{ws}', callback_data=f'answ{ws}{message.from_user.id}')
@@ -386,22 +448,35 @@ async def otk_decision_shift_task_choice(callback_query: types.CallbackQuery):
 
 
 # обработчик callback otk_decision принятия решения по СЗ на РЦ отображение инлайн кнопок для принятия решения
-@dp.callback_query_handler(lambda callback: call_get_re(pattern_stid_otk, callback.data[:-10]))
-async def otk_decision_choice(callback_query: types.CallbackQuery):
+# @dp.callback_query_handler(lambda callback: call_get_re(pattern_stid_otk, callback.data[:-10]))
+@dp.callback_query_handler(otk_stid_callback_data.filter())
+async def otk_decision_choice(callback_query: types.CallbackQuery, callback_data: dict):
     """
     Отображение inline решения контролёра. Выбор решения контролёра.
+    :param callback_data:
     :param callback_query:
     :return:
     """
-    controlman_id = callback_query.data[-10:]  # id контролёра
-    # print(controlman_id)
-    st_id = callback_query.data[4:-10]  # id СЗ
-    # print(st_id)
+    # controlman_id = callback_query.data[-10:]  # id контролёра
+    # # print(controlman_id)
+    # st_id = callback_query.data[4:-10]  # id СЗ
+    controlman_id = callback_data.get('user_id')
+    st_id = callback_data.get('shift_task_id')
+    print('FROM_otk_stid_callback_data')
+    print(f"{st_id=}")
+    print(f"{controlman_id=}")
     inline_dcsn_buttons = types.InlineKeyboardMarkup()  # объект инлайн кнопок решения контролёра
     # получение списка СЗ
-    btn_good = types.InlineKeyboardButton(text=f'ПРИНЯТО', callback_data=f'dcsn{st_id}1{controlman_id}')
-    btn_bad = types.InlineKeyboardButton(text=f'БРАК', callback_data=f'dcsn{st_id}2{controlman_id}')
-    btn_miss = types.InlineKeyboardButton(text=f'НЕ ПРИНЯТО', callback_data=f'dcsn{st_id}3{controlman_id}')
+    callback_data_good = otk_dcsn_callback_data.new(st_id, controlman_id, '1')
+    callback_data_bad = otk_dcsn_callback_data.new(st_id, controlman_id, '2')
+    callback_data_miss = otk_dcsn_callback_data.new(st_id, controlman_id, '3')
+    btn_good = types.InlineKeyboardButton(text=f'ПРИНЯТО', callback_data=callback_data_good)
+    btn_bad = types.InlineKeyboardButton(text=f'БРАК', callback_data=callback_data_bad)
+    btn_miss = types.InlineKeyboardButton(text=f'НЕ ПРИНЯТО', callback_data=callback_data_miss)
+    # btn_good = types.InlineKeyboardButton(text=f'ПРИНЯТО', callback_data=f'dcsn{st_id}1{controlman_id}')
+    # btn_bad = types.InlineKeyboardButton(text=f'БРАК', callback_data=f'dcsn{st_id}2{controlman_id}')
+    # btn_miss = types.InlineKeyboardButton(text=f'НЕ ПРИНЯТО', callback_data=f'dcsn{st_id}3{controlman_id}')
+
     inline_dcsn_buttons.add(btn_good)
     inline_dcsn_buttons.add(btn_bad)
     inline_dcsn_buttons.add(btn_miss)
@@ -410,21 +485,28 @@ async def otk_decision_choice(callback_query: types.CallbackQuery):
 
 
 # обработчик callback записи данных по решению в базу и выдаче обратной связи мастеру
-@dp.callback_query_handler(lambda callback: call_get_re(pattern_dscn_otk, callback.data[:-10]))
-async def otk_decision_register(callback_query: types.CallbackQuery):
+@dp.callback_query_handler(otk_dcsn_callback_data.filter())
+async def otk_decision_register(callback_query: types.CallbackQuery, callback_data: dict):
     """
     Обработка решения callback.data решения контролёра. Запись решения в БД.
+    :param callback_data:
     :param callback_query:
     :return:
     """
-    st_id = callback_query.data[4:-11]  # id СЗ
-    controlman_id = callback_query.data[-10:]  # id контролёра
-    if callback_query.data[-11:-10] == '1':  # решение контролёра
+    st_id = callback_data.get('shift_task_id')
+    controlman_id = callback_data.get('user_id')
+    # st_id = callback_query.data[4:-11]  # id СЗ
+    # controlman_id = callback_query.data[-10:]  # id контролёра
+
+    if callback_data.get('decision') == '1':  # решение контролёра
         decision = 'принято'
-    elif callback_query.data[-11:-10] == '2':
+    elif callback_data.get('decision') == '2':
         decision = 'брак'
-    else:
+    elif callback_data.get('decision') == '3':
         decision = 'не принято'
+    else:
+        print('Ошибка в передаче индекса решения контролёра!')
+        raise
     # запрос из базы на РЦ и id мастера
     master_id, ws_number = master_id_get(st_id=st_id)
     # запись в базу
