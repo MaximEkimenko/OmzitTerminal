@@ -25,7 +25,7 @@ class SchedulerWorkshopScheduleAdmin(admin.ModelAdmin):
     search_fields = ('workshop', 'model_name', 'datetime_done', 'order', 'order_status', 'done_rate', 'td_status')
     list_filter = ('workshop', 'model_name', 'datetime_done', 'order', 'order_status', 'done_rate', 'td_status')
     ordering = ['datetime_done']
-    list_editable = ('workshop', 'model_name', 'datetime_done', 'order')
+    list_editable = ('workshop', 'model_name', 'datetime_done', 'order', 'order_status', 'td_status')
 
 
 class SchedulerDoersAdmin(admin.ModelAdmin):

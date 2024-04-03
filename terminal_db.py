@@ -220,32 +220,51 @@ def status_change_to_otk(ws_number: str, initiator_id: str) -> None:
         con.close()
 
 
-def lines_count(ws_number: str) -> int:
+def lines_count(ws_number: str) -> tuple:
     """
-    Количество записей по ws_number
+    Количество записей по ws_number и проверяет факт наличия УЗК
     :param ws_number:
-    :return:
+    :return: tuple (количество СЗ для приёмки, строка операций УЗК)
     """
     try:
         # подключение к БД
         con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
         con.autocommit = True
-        # запрос на корректировку БД
+        # запрос количества СЗ
         count_query = f"""select COUNT(id) from shift_task where ws_number='{ws_number}' AND
                            st_status='ожидание контролёра'"""
+        # запрос на проверку УЗК
+        ultra_sound_query = f"""select op_name from shift_task 
+                            where ws_number='{ws_number}' AND
+                            st_status='ожидание контролёра' AND
+                            op_name like '% УЗК %'"""
+        # Количество СЗ
         try:
             with con.cursor() as cur:
                 cur.execute(count_query)
                 con.commit()
                 ws_count = cur.fetchall()
         except Exception as e:
-            print(e, 'ошибка выборке')
-        print(ws_count[0])
+            print(e, 'ошибка выборке количества сменных заданий')
+
+        # проверка УЗК
+        try:
+            with con.cursor() as cur:
+                cur.execute(ultra_sound_query)
+                con.commit()
+                ultra_sounds = cur.fetchall()
+                if ultra_sounds:
+                    ultra_sound_string = ', '.join([line for line in ultra_sounds[0]])
+                else:
+                    ultra_sound_string = ''
+        except Exception as e:
+            print(e, 'ошибка выборке запроса на УЗК')
+
     except Exception as e:
         print('Ошибка подключения к базе', e)
     finally:
         con.close()
-    return ws_count[0][0]
+    return ws_count[0][0], ultra_sound_string
 
 
 def control_man_id_set(ws_number, controlman_id):

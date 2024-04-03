@@ -38,7 +38,8 @@ def sheet_handler(data):
         if column not in new_columns.values():
             no_columns.append(column)
     if len(no_columns) > 0:
-        raise KeyError(f"Не найдены столбцы: {', '.join(no_columns)}")
+        err_string = '; '.join(no_columns)
+        raise KeyError(f"Не найдены столбцы: {err_string}")
     filtered_data = filtered_data.rename(columns=new_columns)
     filtered_data = filtered_data.iloc[1:]
     filtered_data = filtered_data.filter(items=list(new_columns.values()))

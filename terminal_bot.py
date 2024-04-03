@@ -8,11 +8,14 @@ from aiogram import Bot, Dispatcher, executor, types, filters
 # работа с БД
 from terminal_db import (ws_list_get, status_change_to_otk, st_list_get, master_id_get, control_man_id_set,
                          decision_data_set, lines_count, control_man_id_get, all_active_st_get)
+
 # from terminal_db import confirm_downtime, reject_downtime
 
 logging.basicConfig(filename="log.log", level=logging.DEBUG, filemode='w',
                     format=' %(levelname)s - %(asctime)s; файл - %(filename)s; сообщение - %(message)s')
-TOKEN = os.getenv('RSU_TOKEN')
+# TOKEN = os.getenv('RSU_TOKEN')
+# тестовый token
+TOKEN = ''
 
 # ids
 admin_id = int(os.getenv('ADMIN_TELEGRAM_ID'))
@@ -21,6 +24,15 @@ ermishkin_id = 5221029965
 gordii_id = 6374431046
 kondratiev_id = 6125791135
 achmetov_id = 1153114403
+
+ostrijnoi_id = 5380143506  # цех 2
+mailashov_id = 546976234
+gorojanski_id = 6299557037
+kulbashin_id = 5426476877
+pospelov_id = 1377896858
+skorobogatov_id = 5439414299
+rihmaer_id = 6305730497
+lipski_id = 6424114889
 
 savchenko_id = 2131171377  # ПДО
 pavluchenkova_id = 1151694995
@@ -37,16 +49,16 @@ dolganev_id = 1907891961
 mhitaryan_id = 413559952  # ПКО
 saks_id = 1366631138  # ОГТ
 # groups
-omzit_otk_group_id = -981440150
-terminal_group_id = -908012934
-omzit_master_group1_id = -4005524766  # цех 1
-omzit_master_group2_id = -4109421151  # цех 2
+# omzit_otk_group_id = -981440150
+# terminal_group_id = -908012934
+# omzit_master_group1_id = -4005524766  # цех 1
+# omzit_master_group2_id = -4109421151  # цех 2
 
 # test groups
-# omzit_otk_group_id = admin_id
-# terminal_group_id = admin_id
-# omzit_master_group1_id = admin_id
-# omzit_master_group2_id = admin_id
+omzit_otk_group_id = admin_id
+terminal_group_id = admin_id
+omzit_master_group1_id = admin_id
+omzit_master_group2_id = admin_id
 
 ws_numbers_c1 = ('11', '12', '13', '14', '15', '16')  # терминалы цех 1
 ws_numbers_c2 = ('22', '23', '24', '25', '26', '27', '28', '29', '210', '211')  # терминалы цех 2
@@ -58,6 +70,15 @@ id_fios = {admin_id: 'Екименко М.А.',
            gordii_id: 'Гордий В.В.',
            kondratiev_id: 'Кондратьев П.В.',
            achmetov_id: 'Ахметов К.',
+
+           mailashov_id: 'Майлашов О.',
+           gorojanski_id: 'Горожанский Н.Н.',
+           pospelov_id: 'Поспелов К.С.',
+           kulbashin_id: 'Кульбашин Ю.А.',
+           skorobogatov_id: 'Скоробогатов А.',
+           ostrijnoi_id: 'Острижной К.',
+           rihmaer_id: 'Рихмаер Ю.С.',
+
            savchenko_id: 'Савченко Е.Н.',  # ПДО
            pavluchenkova_id: 'Павлюченкова Н. Л.',
            donskaya_id: 'Донская Ю.Г.',  # ОТК
@@ -80,9 +101,14 @@ users = (admin_id,  # root
          donskaya_id, averkina_id, sultigova_id, potapova_id, sofinskaya_id, sheglov_id, dubenuk_id, dolganev_id,  # ОТК
          mhitaryan_id,  # ПКО
          saks_id,  # ОГТ
+         mailashov_id, gorojanski_id, pospelov_id, kulbashin_id, skorobogatov_id, ostrijnoi_id, rihmaer_id,  # цех 2
          )
 
-masters_list = (admin_id, ermishkin_id, posohov_id, gordii_id, kondratiev_id, achmetov_id)  # производство
+# производство
+masters_list = (admin_id, ermishkin_id, posohov_id, gordii_id, kondratiev_id, achmetov_id,  # цех 1
+                # цех 2
+                mailashov_id, gorojanski_id, pospelov_id, kulbashin_id, skorobogatov_id, ostrijnoi_id, rihmaer_id,
+                )
 
 dispatchers_list = (admin_id, savchenko_id, pavluchenkova_id,)  # диспетчеры
 
@@ -196,12 +222,20 @@ async def otk_call(callback_query: types.CallbackQuery):
     ws_number = callback_query.data[4:-10]  # номер РЦ
     # Статус ожидание контролёра
     status_change_to_otk(ws_number=ws_number, initiator_id=master_id)
-    st_count = lines_count(ws_number=str(ws_number))  # количество СЗ с ожиданием контролёра
-    print('Количество сменных заданий для приёмки', lines_count(ws_number=str(ws_number)), 'st_count=', st_count)
+    st_count = lines_count(ws_number=str(ws_number))[0]  # количество СЗ с ожиданием контролёра
+    ultra_sound_string = lines_count(ws_number=str(ws_number))[1]  # количество СЗ с ожиданием контролёра
+    print('Количество сменных заданий для приёмки', st_count, f'{st_count=}')
+    print('Наличие УЗК', ultra_sound_string, f'{ultra_sound_string=}')
     # отправка сообщения о заявке на контролёра в группу ОТК
-    await bot.send_message(chat_id=omzit_otk_group_id, text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
-                                                            f"{id_fios[int(master_id)]}. "
-                                                            f"Количество сменных заданий для приёмки: {st_count}.")
+    if ultra_sound_string:
+        await bot.send_message(chat_id=omzit_otk_group_id, text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
+                                                                f"{id_fios[int(master_id)]}.\n"
+                                                                f"Количество сменных заданий для приёмки: {st_count}.\n"
+                                                                f"операция УЗК: {ultra_sound_string}")
+    else:
+        await bot.send_message(chat_id=omzit_otk_group_id, text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
+                                                                f"{id_fios[int(master_id)]}.\n"
+                                                                f"Количество сменных заданий для приёмки: {st_count}.")
     # Обратная связь мастеру
     await bot.send_message(chat_id=master_id, text="Запрос в отк отправлен.")
     if str(ws_number) in ws_numbers_c1:

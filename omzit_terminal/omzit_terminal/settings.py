@@ -82,13 +82,13 @@ WSGI_APPLICATION = 'omzit_terminal.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        # 'NAME': 'terminal_test',
-        # 'PASSWORD': 'Epass1',
-        # 'USER': 'admin',
-
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': 'Valm0nts89',
+        'NAME': 'terminal_test',
+        'PASSWORD': 'Epass1',
+        'USER': 'admin',
+        #
+        # 'NAME': 'postgres',
+        # 'USER': 'postgres',
+        # 'PASSWORD': 'Valm0nts89',
 
         # 'HOST': 'localhost',
         'HOST': "127.0.0.1",
