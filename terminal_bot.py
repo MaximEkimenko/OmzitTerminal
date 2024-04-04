@@ -15,7 +15,7 @@ logging.basicConfig(filename="log.log", level=logging.DEBUG, filemode='w',
                     format=' %(levelname)s - %(asctime)s; файл - %(filename)s; сообщение - %(message)s')
 # TOKEN = os.getenv('RSU_TOKEN')
 # тестовый token
-TOKEN = '6589138757:AAELXb8IB6e2FYtYY19bOX3kAWLVC7jd9Go'
+# TOKEN =
 
 # ids
 admin_id = int(os.getenv('ADMIN_TELEGRAM_ID'))
