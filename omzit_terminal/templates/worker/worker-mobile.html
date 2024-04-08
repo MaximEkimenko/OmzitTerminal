@@ -16,7 +16,7 @@
                 setTimeout(() => notification.remove(), 10000)
             </script>
         {% endif %}
-        {% if initial_shift_tasks %}
+        {% if select_shift_task %}
         <table class="table" title="График цехов" id="main_table">
             <tr class="table_header_row">
                 <td class="td_cell"><p class="cell_text">№</p></td>
@@ -31,7 +31,7 @@
                 <td class="td_cell"><p class="cell_text">Время начала работы</p></td>
                 <td class="td_cell"><p class="cell_text">Время приемки</p></td>
             </tr>
-            {% for line in initial_shift_tasks %}
+            {% for line in select_shift_task %}
             <tr id="row" class="table_row">
                 <td class="td_cell"><p class="cell_text"><button
                         type="button"
@@ -57,7 +57,7 @@
         <p>Распределённые сменные задания на РЦ {{ ws_number }} отсутствуют.</p>
         {% endif %}
         <!-- prettier-ignore -->
-        {% if initial_shift_tasks %}
+        {% if select_shift_task %}
         {% endif %}
         <div id="id_modal" class="modal">
             <form class="action_form modal-content" method="post" id="actions">
@@ -105,7 +105,8 @@
                 const start_st_btn = document.querySelector("#start_st_btn");
                 const select_draw_btn = document.querySelector("#select_draw_btn");
                 const master_call_btn = document.querySelector("#master_call_btn");
-                const choice_downtime_reason_btn = document.querySelector("#choice_downtime_reason_btn");
+                dispatcher_call_btn = document.querySelector("#choice_downtime_reason_btn");
+                // const choice_downtime_reason_btn = document.querySelector("#choice_downtime_reason_btn");
 
                 start_st_btn.onclick = function () {
                     console.log(form_element.elements.task_id.value)

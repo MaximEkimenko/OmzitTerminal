@@ -1,5 +1,3 @@
-import logging
-
 from django.conf import settings
 
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -11,19 +9,12 @@ from django_apscheduler import util
 
 from worker.views import pause_work, resume_work
 
-logger = logging.getLogger(__name__)
+from m_logger_settings import logger, json_log_refactor_and_xlsx
+from scheduler.services.sz_reports import shift_tasks_auto_report
 
 
 @util.close_old_connections
 def delete_old_job_executions(max_age=604_800):
-    """
-    This job deletes APScheduler job execution entries older than `max_age` from the database.
-    It helps to prevent the database from filling up with old historical records that are no
-    longer useful.
-
-    :param max_age: The maximum length of time to retain historical job execution records.
-                    Defaults to 7 days.
-    """
     DjangoJobExecution.objects.delete_old_job_executions(max_age)
 
 
@@ -33,7 +24,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         scheduler = BlockingScheduler(timezone=settings.TIME_ZONE, job_defaults={'misfire_grace_time': 1 * 60})
         scheduler.add_jobstore(DjangoJobStore(), "default")
-        print("Scheduler запущен")
+
+        logger.info("Команда runscheduler выполнена успешно.")
+
         scheduler.add_job(
             pause_work,
             kwargs={'is_lunch': True, },
@@ -43,7 +36,6 @@ class Command(BaseCommand):
             replace_existing=True,
             misfire_grace_time=1 * 60,
         )
-
         logger.info("Запущена задача 'Приостановка работы в обед' каждый день в 12:00.")
 
         scheduler.add_job(
@@ -74,19 +66,29 @@ class Command(BaseCommand):
             max_instances=1,
             replace_existing=True,
         )
-        logger.info(
-            "Запущена еженедельная задача: 'delete_old_job_executions'."
+        logger.info("Запущена еженедельная задача: 'delete_old_job_executions'.")
+
+        scheduler.add_job(
+            shift_tasks_auto_report,
+            trigger=CronTrigger(hour="07", minute="30"),
+            id="Получение отчета по СЗ",
+            max_instances=1,
+            replace_existing=True,
+            misfire_grace_time=1 * 60,
         )
+        logger.info('Запущена задача: "Формирование log файлов json и xlsx"')
+
+        scheduler.add_job(
+            json_log_refactor_and_xlsx,
+            trigger=CronTrigger(hour="00", minute="05"),
+            id="Формирование log файлов json и xlsx",
+            max_instances=1,
+            replace_existing=True,
+            misfire_grace_time=1 * 60,
+        )
+        logger.info('Запущена задача: "Формирование log файлов json и xlsx"')
 
         # scheduler.add_job( # TODO ФУНКЦИОНАЛ ОТЧЁТОВ законсервировано пока не понадобится
-        #     shift_tasks_auto_report,
-        #     trigger=CronTrigger(hour="07", minute="30"),
-        #     id="Получение отчета по СЗ",
-        #     max_instances=1,
-        #     replace_existing=True,
-        #     misfire_grace_time=1 * 60,
-        # )
-        # scheduler.add_job(
         #     days_report_create,
         #     trigger=CronTrigger(day="01", hour="00", minute="01"),
         #     id="Заполнение дней следующего месяца",
@@ -119,13 +121,10 @@ class Command(BaseCommand):
         #     replace_existing=True,
         #     misfire_grace_time=1 * 60,
         # )
-
-        logger.info("Запущена объединения отчётов")
+        # logger.info("Запущена объединения отчётов")
         # report_merger_schedule
         try:
-            logger.info("Starting scheduler...")
             scheduler.start()
-        except KeyboardInterrupt:
-            logger.info("Stopping scheduler...")
-            scheduler.shutdown()
-            logger.info("Scheduler shut down successfully!")
+        except Exception as e:
+            logger.error("Ошибка запуска команды runscheduler.")
+            logger.exception(e)

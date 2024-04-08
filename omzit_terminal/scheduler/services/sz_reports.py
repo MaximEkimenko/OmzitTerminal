@@ -10,9 +10,12 @@ from django.core.mail import EmailMessage
 from django.db.models import Sum
 from django.utils.timezone import make_aware, make_naive
 
+from m_logger_settings import logger
 from omzit_terminal.settings import BASE_DIR
 from scheduler.models import ShiftTask, Doers
 
+
+# TODO вынести словарь переводчика в отдельный файл json. В том числе для бота.
 valentina_id = 6011624527  # тест
 shkapov_id = 1890988322  # Шкапов
 omzit_chat_id = -1001507361668  # группы
@@ -110,26 +113,26 @@ id_fios = {
 }
 
 
-def shift_tasks_auto_report():  # TODO перенести в service
+def shift_tasks_auto_report():
     """
     Отправляет отчет по сменным заданиям на электронную почту и в папку O:/Расчет эффективности/Отчёты по СЗ
     """
     start = make_aware(datetime.datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0))
     end = make_aware(datetime.datetime.now())
     exel_file = create_shift_task_report(start, end)
-    shutil.copy(exel_file, os.path.join(r"O:\Расчет эффективности\Отчёты по СЗ", os.path.basename(exel_file)))
+    shutil.copy(exel_file, os.path.join(r"M:\Xranenie\Расчет эффективности\Отчёты по СЗ", os.path.basename(exel_file)))
     email = EmailMessage(
         f"Отчет {start.strftime('%d.%m.%Y')}-{end.strftime('%d.%m.%Y')}",
         f"Отчет {start.strftime('%d.%m.%Y')}-{end.strftime('%d.%m.%Y')}",
         "omzit-report@yandex.ru",
         [
-            "alex4ekalovets@gmail.com",
             "pdo02@omzit.ru",
             "pdo06@omzit.ru",
             "pdo09@omzit.ru",
             "e.savchenko@omzit.ru",
             "PVB@omzit.ru",
-            "m.ekimenko@omzit.ru"
+            "m.ekimenko@omzit.ru",
+            "asup01@omzit.ru"
         ],
         [],
     )
@@ -137,7 +140,7 @@ def shift_tasks_auto_report():  # TODO перенести в service
     email.send()
 
 
-def create_shift_task_report(start: datetime, end: datetime) -> str:  # TODO перенести в service
+def create_shift_task_report(start: datetime, end: datetime) -> str:
     """
     Создает excel-файл отчета по сменным заданиям в папке xslx в корне проекта
     :param start: с даты (дата распределения)
@@ -231,8 +234,8 @@ def create_shift_task_report(start: datetime, end: datetime) -> str:  # TODO п�
                     cell = ex_sh.cell(row=i + 2, column=j + 1)
                     try:
                         row[key] = make_naive(row[key])
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.exception(e)
                     cell.value = row[key]
                     cell.font = font
             ex_wb.save(exel_file_dst)
@@ -258,8 +261,9 @@ def fio_st_time_counter(start: datetime, end: datetime):
     try:
         cex_1 = pandas.read_excel(cex_1_timesheets, sheet_name=f'{month} {year}')
         cex_2 = pandas.read_excel(cex_2_timesheets, sheet_name=f'{month} {year}')
-    except Exception as ex:
-        print(ex)
+    except Exception as e:
+        logger.exception(e)
+
     for i, doer in enumerate(doers):
         sum_job_duration = shift_tasks.filter(
             fio_doer__contains=doer, st_status='принято'
@@ -271,16 +275,16 @@ def fio_st_time_counter(start: datetime, end: datetime):
         if cex_1 is not None:
             try:
                 data["cex1"] = int(cex_1[cex_1.iloc[:, 1] == doer].iloc[:, 37].iloc[0])
-            except Exception as ex:
-                print(ex)
+            except Exception as e:
                 data["cex1"] = 'Нет в табеле'
+                logger.warning(f"{data['cex1']} 'Нет в табеле'")
         else:
             data["cex1"] = f'Файл {cex_1_timesheets} или вкладка {month} {year} недоступны'
         if cex_2 is not None:
             try:
                 data["cex2"] = int(cex_2[cex_2.iloc[:, 1] == doer].iloc[:, 37].iloc[0])
-            except Exception as ex:
-                print(ex)
+            except Exception as e:
+                logger.warning(f"{data['cex2']} 'Нет в табеле'")
                 data["cex2"] = 'Нет в табеле'
         else:
             data["cex2"] = f'Файл {cex_2_timesheets} или вкладка {month} {year} недоступны'
@@ -288,7 +292,7 @@ def fio_st_time_counter(start: datetime, end: datetime):
     return doer_job_duration
 
 
-def get_start_end_st_report(start: str, end: str) -> Tuple:  # TODO перенести в service
+def get_start_end_st_report(start: str, end: str) -> Tuple:
     """
     Преобразует полученные от пользователя строки с датами или null в дату и время
     :param start: с даты (Дата распределения)

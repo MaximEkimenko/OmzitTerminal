@@ -1,4 +1,4 @@
-from django.contrib.auth.decorators import login_required
+from m_logger_settings import logger
 import datetime
 import json
 import os
@@ -25,22 +25,19 @@ from .services.master_call_function import get_client_ip
 # from scheduler.models import Downtime
 # from .forms import DowntimeReasonForm
 
-# @login_required(login_url="login")
+
 def ws_number_choose(request):
     """
     Выбор РЦ
     :param request:
     :return:
     """
-    # users = ('admin', 'termi')
-    # if str(request.user.username).strip()[:5] not in users:
-    #     raise PermissionDenied
     if request.method == 'POST':
         ws_number_form = WorkplaceChoose(request.POST)
         # получение номера РЦ
         if ws_number_form.is_valid():
             ws_number = ws_number_form.cleaned_data['ws_number'].ws_number
-            print(ws_number)
+            logger.debug(f'Совершён переход на терминал {ws_number}')
             # редирект на страницу РЦ
             return redirect(f'/worker/{ws_number}')
     else:
@@ -54,21 +51,16 @@ def worker(request, ws_number):
     """
     Обработка данных на странице терминала РЦ ws_number
     :param request:
-    :param ws_number:
+    :param ws_number: Номер терминала
     :return:
     """
-    # if str(request.user.username).strip()[:5] != "admin" or str(request.user.username).strip() != "termi":
-    #     raise PermissionDenied
-    # users = ('admin', 'termi')
-    # if str(request.user.username).strip()[:5] not in users:
-    #     raise PermissionDenied
     # список разрешённых по имени компа
     allowed_terminal_list = ('APM-0036',  # Екименко
                              'SPR-008',  # Терминал №3
                              'APM-0168',  # Отто
-                             'APM-0314',  # Чекаловец
+                             'APM-0314',  # Второе рабочее место АСУП
                              'APM-0168',
-                             'TZ-001',  # Новые терминалы по порядку
+                             'TZ-001',  # терминалы по порядку
                              'TZ-002',
                              'TZ-003',
                              'TZ-004',
@@ -77,7 +69,6 @@ def worker(request, ws_number):
                              'TZ-007',
                              'TZ-008',
                              'TZ-009',
-                             'APM-0229',  # Планшет
                              'TZ-010',
                              'TZ-011',
                              'TZ-012',
@@ -96,9 +87,11 @@ def worker(request, ws_number):
     terminal_ip = get_client_ip(request)  # определение IP терминала
     terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
     if terminal_name[:terminal_name.find('.')] not in allowed_terminal_list:
+        logger.warning(f'Не санкционированная попытка доступа {terminal_name[:terminal_name.find(".")]}! '
+                       f'В доступе отказано.')
         raise PermissionDenied
     else:
-        print(f'Permission granted to {terminal_name[:terminal_name.find(".")]}')
+        logger.debug(f'Выдан доступ {terminal_name[:terminal_name.find(".")]}')
     # вывод таблицы распределённых РЦ
     today = datetime.datetime.now().strftime('%d.%m.%Y')
     initial_shift_tasks = (ShiftTask.objects.values('id', 'ws_number', 'model_name', 'order', 'op_number',
@@ -122,7 +115,6 @@ def worker(request, ws_number):
                          .order_by("st_status"))
     # формирование сообщений
     if request.method == 'POST':
-        print(request.POST)
         if 'сменное' not in request.POST['task_id']:
             # определение id записи
             if 'брак' in request.POST['task_id']:
@@ -141,11 +133,9 @@ def worker(request, ws_number):
                 alert_message = 'Все ок'
             index = request.POST['task_id'].find('--')
             task_id = request.POST['task_id'][:index]
-            # статус в работе
-            # если статус запланировано или пауза установка статуса в работе
+            # установка статуса в работе
             if 'запланировано' in request.POST['task_id']:
-                # if 'ожидание мастера' not in request.POST['task_id']:  # если нет статуса ожидания мастера
-                print('task_id: ', task_id)
+                logger.debug(f'ID выбранного сменного задания: {task_id=}')
                 # обновление данных
                 shift_task = ShiftTask.objects.filter(pk=task_id)
                 working_doers = ShiftTask.objects.filter(st_status='в работе').values_list('fio_doer', flat=True)
@@ -159,6 +149,7 @@ def worker(request, ws_number):
                         job_duration=datetime.timedelta(0),
                     )
                     alert_message = 'Сменное задание запущенно в работу.'
+                    logger.debug(f'Сменное задание {task_id} запущенно в работу.')
             elif 'ожидание мастера' in request.POST['task_id']:
                 if not ShiftTask.objects.filter(pk=task_id, st_status='в работе'):
                     ShiftTask.objects.filter(pk=task_id).update(
@@ -168,30 +159,38 @@ def worker(request, ws_number):
                         job_duration=datetime.timedelta(0),
                     )
                     alert_message = 'Сменное задание запущенно в работу.'
+                    logger.debug(f'Сменное задание {task_id} запущенно в работу после ожидания мастера.')
             elif 'пауза' in request.POST['task_id']:
                 resume_work(task_id=task_id)
+                logger.debug(f'Сменное задание {task_id} запущенно в работу после паузы.')
             # TODO ЗАКОНСЕРВИРОВАНО Функционал простоев
             # elif 'простой' in request.POST['task_id']:
             #     resume_work(task_id=task_id, from_status='простой')
             #     Downtime.objects.filter(shift_task=task_id).update(datetime_end=timezone.now(), status='закрыто')
             else:
-                print("Это СЗ уже взято в работу!")
+                logger.debug(f'Попытка повторного запуска СЗ. СЗ {task_id} уже в работе.')
         else:
-            print('Выберите ещё раз.')
+            logger.debug(f'Неверный выбор команды с клавиатуры терминала.')
             alert_message = 'Неверный выбор. Выберите ещё раз. '
     else:
         if request.GET.get('call') == 'True':
             alert_message = 'Вызов мастеру отправлен.'
+            logger.debug(f'Вызов мастеру отправлен.')
         elif request.GET.get('call') == 'False_wrong':
+            logger.debug(f'Неверный выбор.')
             alert_message = 'Неверный выбор.'
         elif request.GET.get('call') == 'False':
             alert_message = 'Сменное задание не принято в работу или вызов мастеру был отправлен ранее.'
+            logger.debug('Сменное задание не принято в работу или вызов мастеру был отправлен ранее')
         elif request.GET.get('call') == 'True_disp':
             alert_message = 'Сообщение диспетчеру отправлено.'
+            logger.debug('Сообщение диспетчеру отправлено.')
+
         else:
             alert_message = ''
     context = {'initial_shift_tasks': initial_shift_tasks, 'ws_number': ws_number,
                'select_shift_task': select_shift_task, 'alert': alert_message}
+    # отдача шаблона для мобильного в случае доступа с мобильного устройства
     if 'Mobile' in request.META['HTTP_USER_AGENT'] or terminal_name[:terminal_name.find('.')] == 'APM-0229':
         return render(request, r"worker/worker-mobile.html", context=context)
     else:
@@ -202,8 +201,8 @@ def draws(request, ws_st_number: str):
     """
     Выбор чертежей
     :param request:
-    :param ws_st_number:
-    :return:
+    :param ws_st_number: Номер терминала
+    :return: None
     """
     # получение переменных из строки запроса
     ws_number = str(ws_st_number).split('--')[0]
@@ -216,9 +215,7 @@ def draws(request, ws_st_number: str):
     select_draws = (ShiftTask.objects.values('ws_number', 'model_name', 'op_number', 'op_name_full', 'draw_path',
                                              'draw_filename', 'model_order_query')
                     .filter(ws_number=ws_number, op_number=op_number, model_name=model_name, id=st_number))
-    print(select_draws)
     draw_path = fr"C:\draws\{select_draws[0]['model_order_query']}\\"
-
     pdf_links = []  # список словарей чертежей
     # если несколько чертежей
     if select_draws[0]['draw_filename'] is not None:
@@ -229,11 +226,11 @@ def draws(request, ws_st_number: str):
         else:
             draw_filename = select_draws[0]['draw_filename']
             pdf_links.append({'link': fr"{draw_path}{str(draw_filename).strip()}", 'filename': draw_filename})
-        print('pdf_links', pdf_links)
+        logger.debug(f'Запрос к чертежам: ссылки чертежей {pdf_links}')
     context = {'ws_number': ws_number, 'st_number': st_number, 'select_draws': select_draws, 'pdf_links': pdf_links}
-
     terminal_ip = get_client_ip(request)  # определение IP терминала
     terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
+    # отдача шаблона для мобильного в случае доступа с мобильного устройства
     if 'Mobile' in request.META['HTTP_USER_AGENT'] or terminal_name[:terminal_name.find('.')] == 'APM-0229':
         return render(request, r"worker/draws-mobile.html", context=context)
     else:
@@ -241,7 +238,13 @@ def draws(request, ws_st_number: str):
 
 
 def show_draw(request, ws_number, pdf_file):
-    # TODO сделать отмену если ссылки на чертёж нет или она не валидная
+    """
+    Функция показа чертежей
+    :param request:
+    :param ws_number: номер терминала
+    :param pdf_file: строка из get запроса
+    :return: None
+    """
     # преобразование строки из запроса в ссылку
     try:
         path_to_file = (str(pdf_file).replace('--', '/')) + '.pdf'
@@ -249,29 +252,35 @@ def show_draw(request, ws_number, pdf_file):
         response['X-Frame-Options'] = 'SAMEORIGIN'
         return response
     except FileNotFoundError as e:
-        print(e)
+        logger.error('Чертёж не найден.')
+        logger.exception(e)
 
 
 def make_master_call(request, ws_st_number):
+    """
+    Функция отправки сообщение с текстом вызова мастера в группу телеграм
+    :param request:
+    :param ws_st_number:
+    :return:
+    """
     ws_number = str(ws_st_number)[:str(ws_st_number).find('-')]
     st_number = str(ws_st_number)[str(ws_st_number).rfind('-') + 1:]
-    print('ws = ', ws_number)
-    print('st = ', st_number, type(st_number))
-    print('ws-st', ws_st_number)
+    logger.debug(f'Данные для вызова мастера: {ws_number=}, {st_number=}, {ws_st_number=}')
     # if st_number == '0':
     #     return redirect(f'/worker/{ws_number}?call=False')
     # выборка вызовов мастера на РЦ ws_number
     messages = select_master_call(ws_number=str(ws_number), st_number=str(st_number))
-    print('messages=', messages)
     time.sleep(1)  # пауза 1 сек
     if messages:
-        print('Вызов мастера')
+        logger.info(f'Вызов мастера.')
         for message in messages:
             try:
                 asyncio.run(send_call_master(message, ws_number))  # отправка в группу мастерам телеграм ботом
+                logger.info(f'Сообщение мастеру в telegram отправлено успешно {message}')
             except Exception as e:
-                print(f'Ошибка отправки telegram сообщения мастеру {message} ', e)
-        print('Окончание вызова')
+                logger.error(f'Ошибка отправки telegram сообщения мастеру {message}')
+                logger.exception(e)
+        logger.info(f'Окончание вызова мастера.')
         return redirect(f'/worker/{ws_number}?call=True')
     elif st_number == '0':
         return redirect(f'/worker/{ws_number}?call=False_wrong')
@@ -280,26 +289,31 @@ def make_master_call(request, ws_st_number):
 
 
 def make_dispatcher_call(request, ws_st_number):
+    """
+    Функция отправки сообщение с текстом вызова диспетчера в группу телеграм
+    :param request:
+    :param ws_st_number:
+    :return:
+    """
     # group_id = -908012934  # тг группа
     ws_number = str(ws_st_number)[:str(ws_st_number).find('-')]
     st_number = str(ws_st_number)[str(ws_st_number).rfind('-') + 1:]
-    print('ws = ', ws_number)
-    print('st = ', st_number, type(st_number))
-    print('ws-st', ws_st_number)
+    logger.debug(f'Данные для вызова диспетчера: {ws_number=}, {st_number=}, {ws_st_number=}')
     if st_number == '0':
         return redirect(f'/worker/{ws_number}?call=False_wrong')
     # выборка вызовов мастера на РЦ ws_number
     messages = select_dispatcher_call(ws_number=str(ws_number), st_number=str(st_number))
-    print('messages=', messages)
     time.sleep(1)  # пауза 1 сек
     if messages:
-        print('Вызов диспетчера')
+        logger.info('Вызов диспетчера')
         for message in messages:
             try:
                 asyncio.run(send_call_dispatcher(message, ws_number))  # отправка в группу мастерам телеграм ботом
+                logger.info(f'Сообщение диспетчеру в telegram отправлено успешно {message}')
             except Exception as e:
-                print(f'Ошибка отправки telegram сообщения диспетчеру {message} ', e)
-        print('Окончание вызова')
+                logger.error(f'Ошибка отправки telegram сообщения диспетчеру {message}')
+                logger.exception(e)
+        logger.info('Окончание вызова диспетчера')
         return redirect(f'/worker/{ws_number}?call=True_disp')
     elif st_number == 0:
         return redirect(f'/worker/{ws_number}?call=False_wrong')
@@ -324,8 +338,10 @@ def pause_work(task_id=None, is_lunch=False, to_status='пауза'):
                              f"Исполнители: {st.fio_doer}")
         try:
             asyncio.run(send_call_master(message_to_master, st.ws_number))
-        except Exception as ex:
-            print(f"При попытке отправки сообщения мастеру из функции 'pause_work' вызвано исключение: {ex}")
+            logger.info(f'Сообщение telegram из функции "pause_work" мастеру отправлено {message_to_master}')
+        except Exception as e:
+            logger.error('Ошибка при отправке сообщения telegram мастеру из функции "pause_work"')
+            logger.exception(e)
 
     shift_tasks.update(
         st_status=to_status,
@@ -333,28 +349,27 @@ def pause_work(task_id=None, is_lunch=False, to_status='пауза'):
     )
 
     if is_lunch:  # если автоматическая пауза в обеденное время
-
         # открываем существующий json или создаем новый со списком остановленных СЗ под ключом "lunch_stop"
         json_path = os.path.join(BASE_DIR, "storage.json")
         try:
             if os.path.exists(json_path):
                 with open(json_path, "r") as file:
                     data = json.load(file)
-                print(f"Файл storage.json чтение {data}")
+                logger.info(f"Файл storage.json чтение pause_work {data}")
                 data["lunch_stop"] = stopped_shift_tasks
                 with open(json_path, "w") as file:
                     json.dump(data, file)
-                print(f"Файл storage.json запись {data}")
+                logger.info(f"Файл storage.json запись pause_work {data}")
             else:
+                logger.error("Файл storage.json не найден!")
                 raise Exception("Файл storage.json не найден!")
-        except Exception as ex:
-            print(f"Ошибка при чтении storage.json: {ex}")
+        except Exception as e:
+            logger.error('Ошибка при чтении storage.json')
+            logger.exception(e)
             with open(json_path, "w") as file:
-                data = {
-                    "lunch_stop": stopped_shift_tasks
-                }
+                data = {"lunch_stop": stopped_shift_tasks}
                 json.dump(data, file)
-            print(f"Новый файл storage.json {data}")
+            logger.info(f"Новый файл storage.json {data}")
 
 
 def resume_work(task_id=None, is_lunch=False, from_status='пауза'):
@@ -373,22 +388,23 @@ def resume_work(task_id=None, is_lunch=False, from_status='пауза'):
             if os.path.exists(json_path):
                 with open(json_path, "r") as file:
                     data = json.load(file)
-                print(f"Файл storage.json чтение {data}")
+                logger.info(f"Файл storage.json чтение resume_work {data}")
                 stopped_shift_tasks = data.get("lunch_stop")
                 data["lunch_stop"] = []
                 with open(json_path, "w") as file:
                     json.dump(data, file)
-                print(f"Файл storage.json запись {data}")
+                logger.info(f"Файл storage.json запись resume_work {data}")
             else:
+                logger.error("Файл storage.json не найден!")
                 raise Exception("Файл storage.json не найден!")
-        except Exception as ex:
-            print(f"Ошибка при чтении storage.json: {ex}")
+        except Exception as e:
+            logger.error('Ошибка при чтении storage.json')
+            logger.exception(e)
             stopped_shift_tasks = None
-
         if stopped_shift_tasks:
             shift_tasks = ShiftTask.objects.filter(st_status='пауза', pk__in=stopped_shift_tasks)
     else:
-        print('Непредусмотренный случай возобновления работы!')
+        logger.error('Непредусмотренный случай возобновления работы!')
     for st in shift_tasks:
         message_to_master = (f"Возобновлена работа на Т{st.ws_number}. Номер СЗ: {st.id}. "
                              f"Заказ: {st.order}. Изделие: {st.model_name}. "
@@ -396,8 +412,10 @@ def resume_work(task_id=None, is_lunch=False, from_status='пауза'):
                              f"Исполнители: {st.fio_doer}")
         try:
             asyncio.run(send_call_master(message_to_master, st.ws_number))
-        except Exception as ex:
-            print(f"При попытке отправки сообщения мастеру из функции 'resume_work' вызвано исключение: {ex}")
+            logger.info(f'Сообщение telegram из функции "resume_work" мастеру отправлено {message_to_master}')
+        except Exception as e:
+            logger.error('Ошибка при отправке сообщения telegram мастеру из функции "resume_work"')
+            logger.exception(e)
     if isinstance(shift_tasks, QuerySet):
         shift_tasks.update(st_status='в работе', datetime_job_resume=timezone.now())
 

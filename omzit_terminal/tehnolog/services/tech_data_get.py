@@ -10,7 +10,14 @@ from scheduler.models import ShiftTask, WorkshopSchedule
 from tehnolog.services.pandas_utils import df_handler
 
 
-def get_excel_data_pandas(data: Dict, exel_file: str, excel_list: str):
+def get_excel_data_pandas(data: Dict, exel_file: str, excel_list: str) -> List:
+    """
+    Формирует список технологических данных из excel файла
+    :param data:
+    :param exel_file:
+    :param excel_list:
+    :return:
+    """
     operations = df_handler(pd.read_excel(exel_file, excel_list))
     data_list = []
     for index, row in operations.iterrows():
@@ -38,8 +45,7 @@ def get_excel_data_pandas(data: Dict, exel_file: str, excel_list: str):
 def tech_data_get(model_order_query: str, exel_file: str, excel_list: str):
     """
     Функция получает технологические данные из файла exel_file по списку моделей изделия model_list,
-    который равен списку имен листов файла исключая имена листов в списке exclusion_list и сохраняет в модели
-    django ProductModel, TechData
+    который равен списку имен листов файла и сохраняет в модели
     :param model_order_query: заказ-модель
     :param exel_file: имя файла excel
     :param excel_list: модель изделия для получения данных - лист книги excel
@@ -53,13 +59,13 @@ def tech_data_get(model_order_query: str, exel_file: str, excel_list: str):
         'order': order,
         'model_order_query': model_order_query
     }
-    # формирование данных для создания записей shift_task (СЗ)
+    # формирование данных из Excel
     # data_list = get_excel_data(common_data, exel_file, excel_list)
     data_list = get_excel_data_pandas(common_data, exel_file, excel_list)
 
-    def create_all_shift_tasks():  # TODO при рефакторинге перенести в services
+    def create_all_shift_tasks():
         """
-        Метод создает сменные задания
+        Функция создает сменные задания
         :return:
         """
         ws = WorkshopSchedule.objects.get(model_order_query=model_order_query)
@@ -105,8 +111,9 @@ def tech_data_get(model_order_query: str, exel_file: str, excel_list: str):
     return is_uploaded
 
 
-def get_excel_data(data: Dict, exel_file: str, excel_list: str) -> List:  # TODO при рефакторинге перенести в services
+def get_excel_data(data: Dict, exel_file: str, excel_list: str) -> List:
     """
+    # TODO DEPRECATED - удалить после тестового периода работы
     Получение данных из excel
     :param data:
     :param exel_file:
@@ -164,6 +171,3 @@ def get_excel_data(data: Dict, exel_file: str, excel_list: str) -> List:  # TODO
         data_list.append(copy.copy(data))
     return data_list
 
-
-if __name__ == '__main__':
-    pass

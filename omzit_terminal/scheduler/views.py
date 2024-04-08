@@ -1,5 +1,4 @@
-# import calendar
-# import json
+from m_logger_settings import logger
 import asyncio
 import datetime
 
@@ -43,7 +42,9 @@ from .services.sz_reports import get_start_end_st_report, create_shift_task_repo
 
 SPEC_CREATION_PROCESS = dict()
 SPEC_CREATION_THREAD = dict()
-TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
+# TODO ПОМЕНЯТЬ ГРУППУ
+# TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
+TERMINAL_GROUP_ID = int(os.getenv('ADMIN_TELEGRAM_ID'))
 
 
 @login_required(login_url="login")
@@ -54,12 +55,11 @@ def scheduler(request):
         :return:
         """
     if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:4]).strip() != "disp":
+        logger.warning(f"Попытка доступа к рабочему месту диспетчера пользователем {request.user.username}")
         raise PermissionDenied
     group_id = TERMINAL_GROUP_ID  # тг группа
-
     # обновление процента готовности всех заказов
     # TODO модифицировать расчёт процента готовности всех заказов по взвешенной трудоёмкости
-    #  сделать невозможным заполнять запрос с кириллицей
     get_all_done_rate()
     # график изделий
     workshop_schedule_fields = ('workshop', 'order', 'model_name', 'datetime_done', 'order_status', 'done_rate')
@@ -72,15 +72,12 @@ def scheduler(request):
     td_queries_fields = ('model_order_query', 'query_prior', 'td_status', 'order_status')  # поля таблицы
     td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(td_status='завершено'))
     # фильтры в колонки заявок
-    # f_q = get_filterset_second_table(data=request.GET, queryset=td_queries, fields=td_queries_fields)
     f_q = get_filterset(data=request.GET, queryset=td_queries, fields=td_queries_fields, index=2)
-
     # форма запроса КД
     form_query_draw = QueryDraw()
     if request.method == 'POST':
         form_workshop_plan = SchedulerWorkshop(request.POST)
         if form_workshop_plan.is_valid():
-            print(form_workshop_plan.cleaned_data)
             # заполнение графика цеха датой готовности и цехом
             try:
                 # Планирование графика цеха
@@ -94,16 +91,16 @@ def scheduler(request):
                     dispatcher_plan_ws_fio=f'{request.user.first_name} {request.user.last_name}'))
                 # Заполнение данных СЗ, статус СЗ, ФИО планировщика, категория изделия,
                 alert = 'Данные в график успешно занесены! '
-                print('Данные в график успешно занесены!\n')
+                logger.info(f'Данные заказа {form_workshop_plan.cleaned_data["model_order_query"].model_order_query} '
+                            f'успешно занесены в график')
                 # заполнение модели ShiftTask данными планирования цехов
-                print(ShiftTask.objects.filter(model_order_query=form_workshop_plan.cleaned_data['model_order_query']))
                 (ShiftTask.objects.filter(
                     model_order_query=form_workshop_plan.cleaned_data['model_order_query'].model_order_query)
                  .update(workshop=form_workshop_plan.cleaned_data['workshop'],
                          datetime_done=form_workshop_plan.cleaned_data['datetime_done'],
                          product_category=str(form_workshop_plan.cleaned_data['category']),
                          ))
-                print('Данные сменного задания успешно занесены!')
+                # print('Данные сменного задания успешно занесены!')
                 alert += 'Данные сменного задания успешно занесены.'
                 context = {'form_workshop_plan': form_workshop_plan, 'td_queries': td_queries, 'alert': alert,
                            'workshop_schedule': workshop_schedule, 'form_query_draw': form_query_draw,
@@ -113,9 +110,17 @@ def scheduler(request):
                                          f"{form_workshop_plan.cleaned_data['model_order_query'].model_order_query} "
                                          f"успешно запланирован на {form_workshop_plan.cleaned_data['datetime_done']}. "
                                          f"Запланировал: {request.user.first_name} {request.user.last_name}.")
-                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                logger.info(f'Данные сменных заданий успешно занесены.\n'
+                            f'{success_group_message}')
+                try:
+                    asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                except Exception as e:
+                    logger.error('ошибка отправки сообщения в группу телеграм при планировании графика')
+                    logger.exception(e)
             except Exception as e:
-                print(e, ' Ошибка запаси в базу SchedulerWorkshop')
+                logger.error('Ошибка запаси в базу SchedulerWorkshop.')
+                logger.exception(e)
+                # print(e, ' Ошибка запаси в базу SchedulerWorkshop')
                 alert = f'Ошибка занесения данных.'
                 context = {'form_workshop_plan': form_workshop_plan, 'workshop_schedule': workshop_schedule,
                            'td_queries': td_queries, 'form_query_draw': form_query_draw, 'alert': alert,
@@ -164,7 +169,6 @@ def td_query(request):
                                                 td_status="запрошено",
                                                 dispatcher_query_td_fio=f"{request.user.first_name} "
                                                                         f"{request.user.last_name}")
-
                 # сообщение об успехе для отправки в группу
                 success_group_message = (f"Поступила заявка на КД. Изделие: "
                                          f"{form_query_draw.cleaned_data['model_query']}. Заказ:  "
@@ -174,12 +178,17 @@ def td_query(request):
                 # создание папки в общем доступе для чертежей модели
                 if not os.path.exists(rf'C:\draws\{model_order_query}'):
                     os.mkdir(rf'C:\draws\{model_order_query}')
-                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
 
-
-        else:
-            pass
-
+                try:
+                    asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                except Exception as e:
+                    logger.error('Ошибка отправки сообщения боту при заказе чертежей в td_query')
+                    logger.exception(e)
+                    # print('Ошибка отправки сообщения боту при заказе чертежей в td_query', e)
+                logger.info(f'Заявка на КД составлена успешно.\n{success_group_message}')
+            else:
+                logger.warning(f"Заявка на заказ-модель {form_query_draw.cleaned_data['model_query']} уже была."
+                               f"Заявку составил: {request.user.first_name} {request.user.last_name}.")
     return redirect('scheduler')  # обновление страницы при успехе
 
 
@@ -194,20 +203,10 @@ def schedulerwp(request):
     # выборка из уже занесенного
     if (str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:4]).strip() != "disp"
             and str(request.user.username[:5]).strip() != "termi"):
+        logger.warning(f"Попытка доступа к рабочему месту распределителя пользователем {request.user.username}")
         raise PermissionDenied
-    shift_task_fields = (
-        'id',
-        'workshop',
-        'order',
-        'model_name',
-        'datetime_done',
-        'ws_number',
-        'op_number',
-        'op_name_full',
-        'norm_tech',
-        'fio_doer',
-        'st_status'
-    )
+    shift_task_fields = ('id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number', 'op_number',
+                         'op_name_full', 'norm_tech', 'fio_doer', 'st_status')
     workplace_schedule = (ShiftTask.objects.values(*shift_task_fields).all().exclude(datetime_done=None)
                           .order_by("ws_number", "model_name", ))
     alert_message = ''
@@ -215,7 +214,6 @@ def schedulerwp(request):
         form_workplace_plan = SchedulerWorkplace(request.POST)
         form_report = ReportForm()
         if form_workplace_plan.is_valid():
-            print(form_workplace_plan.cleaned_data)
             ws_number = form_workplace_plan.cleaned_data['ws_number']
             model_order_query = form_workplace_plan.cleaned_data['model_order_query']
             if ws_number:
@@ -251,23 +249,20 @@ def schedulerfio(request, ws_number, model_order_query):
     :return:
     """
     if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:4]).strip() != "disp":
+        logger.warning(f"Попытка доступа к рабочему месту диспетчера пользователем {request.user.username}")
         raise PermissionDenied
 
     shift_task_fields = (
         'id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number', 'op_number', 'op_name_full',
-        'norm_tech', 'fio_doer', 'st_status', 'norm_calc', 'doers_tech',
-    )
+        'norm_tech', 'fio_doer', 'st_status', 'norm_calc', 'doers_tech')
     # определения рабочего центра и id
     if not request.user.username:  # если не авторизован, то отправляется на авторизацию
         return redirect('login/')
     try:
-        filtered_workplace_schedule = (
-            ShiftTask.objects.values(
-                *shift_task_fields
-            ).filter(
-                next_shift_task=None
-            ).filter(Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято'))
-        )
+        filtered_workplace_schedule = (ShiftTask.objects.values(*shift_task_fields)
+        .filter(next_shift_task=None)
+        .filter(
+            Q(fio_doer='не распределено') | Q(st_status='брак') | Q(st_status='не принято')))
 
         if model_order_query != 'empty-order-model':
             filtered_workplace_schedule = filtered_workplace_schedule.filter(model_order_query=model_order_query)
@@ -276,21 +271,19 @@ def schedulerfio(request, ws_number, model_order_query):
 
     except Exception as e:
         filtered_workplace_schedule = dict()
-        print('Ошибка получения filtered_workplace_schedule', e)
-
+        logger.error('Ошибка получения filtered_workplace_schedule')
+        logger.exception(e)
+        # print('Ошибка получения filtered_workplace_schedule', e)
     f = get_filterset(data=request.GET, queryset=filtered_workplace_schedule, fields=shift_task_fields)
-
     success = 1
     alert_message = ''
     action = None  # действие по нажатию кнопки в POST форме
     pk = None  # id сменного задания
     fios_doers = None
-
     form_fio_doer = FioDoer()
-
     if request.method == 'POST':
         form_submit = request.POST.get("form", "")  # форма по которой выполнен submit
-        print(form_submit)
+        logger.debug(f'Форма по которой выполнен submit: {form_submit}')
         if "change" in form_submit:
             filtered_workplace_schedule = (
                 ShiftTask.objects.values(*shift_task_fields)
@@ -303,7 +296,6 @@ def schedulerfio(request, ws_number, model_order_query):
             if ws_number != 0:
                 filtered_workplace_schedule = filtered_workplace_schedule.filter(ws_number=str(ws_number))
             action = 'change_distribution'
-
         elif 'confirm' in form_submit:
             _, pk = form_submit.split("|")
             form_fio_doer = FioDoer(request.POST)
@@ -315,7 +307,7 @@ def schedulerfio(request, ws_number, model_order_query):
                 ))
                 unique_fios = set(fios)
                 doers_fios = ', '.join(unique_fios)  # получение уникального списка
-                print('DOERS-', doers_fios)
+                logger.debug(f'ФИО исполнителей: {doers_fios}')
                 if len(fios) == len(unique_fios):  # если нет повторений в списке fios
                     shift_task = ShiftTask.objects.get(pk=int(pk))
                     norm_calc = (shift_task.norm_tech * shift_task.doers_tech) / len(fios)
@@ -349,11 +341,12 @@ def schedulerfio(request, ws_number, model_order_query):
                         for field, value in data.items():
                             setattr(shift_task, field, value)
                     shift_task.save()
-
                     alert_message = f'Успешно распределено!'
+                    logger.info(alert_message)
                 else:  # если есть повторения в списке fios
                     alert_message = f'Исполнители дублируются. Измените исполнителей.'
                     success = 0
+                    logger.info(alert_message)
             pk = None
 
         elif "redistribute" in form_submit:
@@ -393,11 +386,9 @@ def schedulerfio(request, ws_number, model_order_query):
     sums_tech_norm = {}
     for doer in doers:
         sums_tech_norm[doer.doers] = (
-            ShiftTask.objects.filter(
-                fio_doer__contains=doer.doers
-            ).exclude(
-                st_status__in=['принято', 'не принято', 'брак']
-            ).aggregate(sum=Sum('norm_calc'))['sum']
+            ShiftTask.objects.filter(fio_doer__contains=doer.doers)
+            .exclude(st_status__in=['принято', 'не принято', 'брак'])
+            .aggregate(sum=Sum('norm_calc'))['sum']
         )
 
     context = {
@@ -415,11 +406,15 @@ def schedulerfio(request, ws_number, model_order_query):
 
 
 # авторизация пользователей
-class LoginUser(LoginView):  # TODO перенести в service
+class LoginUser(LoginView):
+    """
+    Вход пользователей. redirect на страницу соответствующую имени правам.
+    """
     form_class = AuthenticationForm
     template_name = 'scheduler/login.html'
 
     def get_success_url(self):  # редирект после логина
+        logger.info(f"Пользователь {self.request.user.username} вошёл в систему.")
         if 'admin' in self.request.user.username:
             return reverse_lazy('home')
         elif 'disp' in self.request.user.username:
@@ -430,10 +425,10 @@ class LoginUser(LoginView):  # TODO перенести в service
             return reverse_lazy('constructor')
         elif 'termi' in self.request.user.username:
             return reverse_lazy('worker_choose')
-        print(self.request.user.username)
 
 
 def logout_user(request):  # разлогинивание пользователя
+    logger.info(f'Пользователь {request.user} вышел из системы.')
     logout(request)
     return redirect('login')
 
@@ -448,14 +443,18 @@ def show_workshop_scheme(request):
         path_to_file = r"M:\Xranenie\ПТО\1 Екименко М.А\Планировка\Планирока участков(цех1, цех2, цех3)+РЦ+Расписание+Виды от 20.03.2024.xlsm"
         response = FileResponse(open(fr'{path_to_file}', 'rb'))
         response['X-Frame-Options'] = 'SAMEORIGIN'
+        logger.info(f"Пользователь {request.user} успешно запросил планировку.")
         return response
     except FileNotFoundError as e:
-        print(e)
+        logger.error(f"Ошибка при запросе планировки пользователем {request.user}.")
+        logger.exception(e)
 
 
 @login_required(login_url="login")
 def plan(request):
     """
+    placeholder для будущего функционала планирования
+    TODO рабочее место не используется
     Планирование графика цеха и создание запросов на КД
     :param request:
     :return:
@@ -465,8 +464,6 @@ def plan(request):
     group_id = TERMINAL_GROUP_ID  # тг группа
 
     # обновление процента готовности всех заказов
-    # TODO модифицировать расчёт процента готовности всех заказов по взвешенной трудоёмкости
-    #  сделать невозможным заполнять запрос с кириллицей
     get_all_done_rate()
     # график изделий
     workshop_schedule_fields = ('workshop', 'order', 'model_name', 'datetime_done', 'order_status', 'done_rate')
@@ -540,6 +537,7 @@ def shift_tasks_reports(request, start: str = "", end: str = ""):
     """
     start, end = get_start_end_st_report(start, end)
     exel_file = create_shift_task_report(start, end)
+    logger.info(f'Пользователь {request.user} успешно загрузил отчёт в excel.')
     return FileResponse(open(exel_file, 'rb'))
 
 
@@ -553,7 +551,8 @@ def shift_tasks_report_view(request, start: str = "", end: str = ""):
     start, end = get_start_end_st_report(start, end)
     shift_task_fields = (
         'id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number',
-        'op_number', 'op_name_full', 'norm_tech', 'doers_tech', 'norm_calc', 'fio_doer', "datetime_assign_wp", 'st_status',
+        'op_number', 'op_name_full', 'norm_tech', 'doers_tech', 'norm_calc', 'fio_doer', "datetime_assign_wp",
+        'st_status',
     )
 
     workplace_schedule = ShiftTask.objects.values(
@@ -570,6 +569,7 @@ def shift_tasks_report_view(request, start: str = "", end: str = ""):
         'workplace_schedule': workplace_schedule,
         'filter': f,
     }
+    logger.info(f'Пользователь {request.user} перешёл на страницу отчёта с интревалом: {start} - {end}')
     return render(request, fr"schedulerwp/view_report.html", context=context)
 
 # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано

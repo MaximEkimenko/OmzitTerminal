@@ -10,7 +10,7 @@ from django.shortcuts import render, redirect
 
 from omzit_terminal.settings import BASE_DIR
 from .services.service_handlers import handle_uploaded_file
-from .services.tech_data_get import tech_data_get
+from .services.tech_data_get import tech_data_get, get_excel_data_pandas
 from .forms import GetTehDataForm, ChangeOrderModel, SendDrawBack
 from scheduler.models import WorkshopSchedule
 from constructor.forms import QueryAnswer
@@ -18,6 +18,7 @@ from worker.services.master_call_function import terminal_message_to_id
 from django.core.exceptions import PermissionDenied
 from scheduler.filters import get_filterset
 from .services.service_handlers import handle_uploaded_draw_file
+from m_logger_settings import logger
 
 # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
 
@@ -34,8 +35,9 @@ from .services.service_handlers import handle_uploaded_draw_file
 # TODO ЗАКОНСЕРВИРОВАНО Функционал простоев
 # from scheduler.models import Downtime
 
-# ADMIN_TELEGRAM_ID
-TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
+# TODO поменять группу
+# TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
+TERMINAL_GROUP_ID = os.getenv('ADMIN_TELEGRAM_ID')
 
 
 @login_required(login_url="../scheduler/login/")
@@ -49,11 +51,11 @@ def tehnolog_wp(request):
     td_queries_fields = ('model_order_query', 'query_prior', 'td_status', 'td_remarks', 'order_status')  # поля таблицы
     td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(td_status='завершено'))
     f = get_filterset(data=request.GET, queryset=td_queries, fields=td_queries_fields)  # фильтры в колонки
-    print(f)
     change_model_query_form = ChangeOrderModel()
     send_draw_back_form = SendDrawBack()
     alert = ''
     if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:8]).strip() != "tehnolog":
+        logger.warning(f"Попытка доступа к рабочему месту технолога пользователем {request.user.username}")
         raise PermissionDenied
 
     context = {}
@@ -80,9 +82,8 @@ def tehnolog_wp(request):
             # обработчик загрузки файла
             xlsx_file = handle_uploaded_file(f=request.FILES["excel_file"], filename=filename,
                                              path=file_save_path)
-            print('filename=', filename, 'path=', file_save_path, 'xlsx=', xlsx_file)
             list_name = get_teh_data_form.cleaned_data['list_names']
-            print(list_name)
+            logger.debug(f"Данные загрузки техпроцесса: {filename=}, {file_save_path=}, {xlsx_file=}, {list_name=}")
             # вызов сервиса получения данных из xlsx
             try:
                 is_uploaded = tech_data_get(exel_file=xlsx_file, excel_list=list_name,
@@ -96,19 +97,20 @@ def tehnolog_wp(request):
                              td_status="утверждено",
                              td_tehnolog_done_datetime=datetime.datetime.now()
                              ))
-                    # сообщение в группу
                     success_message = True
+                    logger.info(f"Техпроцесс файла {xlsx_file}, листа {list_name}, модели: "
+                                f"{get_teh_data_form.cleaned_data['model_order_query'].model_order_query} "
+                                f"загружен успешно")
                 else:
                     alert = (f'Ошибка загрузки {filename}! '
                              f'Изменены недопустимые поля, добавлены, удалены или перемещены строки!')
+                    logger.warning(f'Ошибка загрузки техпроцесса {filename}! '
+                                   f'Изменены недопустимые поля, добавлены, удалены или перемещены строки!')
                     success_message = False
-            except KeyError as e:
-                print(f'Ошибка загрузки {filename}', e)
-                alert = f'Ошибка загрузки {filename}. {e}'
-                success_message = False
             except Exception as e:
-                print(f'Ошибка загрузки {filename}', e)
-                alert = f'Ошибка загрузки {filename}'
+                logger.error(f'Ошибка загрузки {filename}')
+                logger.exception(e)
+                alert = f'Ошибка загрузки {filename}. {e}'
                 success_message = False
             if success_message:
                 try:
@@ -118,11 +120,11 @@ def tehnolog_wp(request):
                                              f"Данные загрузил: {request.user.first_name} {request.user.last_name}."
                                              )
                     asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
-                except Exception:
+                    logger.info(f'Сообщение телеграм отправлено {success_group_message}')
+                except Exception as e:
                     alert += " Ошибка отправки сообщения в телеграм!"
-            else:
-                print('Ошибка загрузки')
-            print(get_teh_data_form.cleaned_data)
+                    logger.error('При загрузке техпроцесса ошибка отправки сообщения телеграм!')
+                    logger.exception(e)
     else:
         get_teh_data_form = GetTehDataForm()  # чистая форма для первого запуска
 
@@ -170,10 +172,14 @@ def send_draw_back(request):
                                      f"возвращено с замечанием: {send_draw_back_form.cleaned_data['td_remarks']}. "
                                      f"КД вернул: {request.user.first_name} {request.user.last_name}."
                                      )
-            asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+            try:
+                asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                logger.info(f'При отправке замечания КД сообщения отправлено успешно:\n {success_group_message}')
+            except Exception as e:
+                logger.error('Ошибка отправки сообщения при отправке сообщения в телеграм при замечании на КД.')
+                logger.exception(e)
         else:
-            pass
-
+            logger.error('Не валидная форма отправки замечания КД.')
     return redirect('tehnolog')  # обновление страницы при успехе
 
 
@@ -204,37 +210,53 @@ def new_model_query(request):
 
 
 def change_order_model(old_order_model: str, new_model: str, user: str, new_order: Optional[str] = None) -> str:
+    """
+    Функция для переименования заказ модели используеия в new_model_query
+    :param old_order_model: старая заказ_модель
+    :param new_model: новая модель
+    :param user: имя пользователя
+    :param new_order: новый заказ
+    :return:
+    """
     if new_order is None:
         new_order = old_order_model.split('_')[0]
-
     new_model_order_query = f"{new_order}_{new_model}"
-
     if new_model_order_query == old_order_model:
         return new_model_order_query
-
-    (WorkshopSchedule.objects.filter(model_order_query=old_order_model)
-     .update(order=new_order,
-             model_name=new_model,
-             model_order_query=new_model_order_query))
-
-    # переименование папки
+    # имена для переименования папки
     old_folder = os.path.join("C:/", "draws", old_order_model)
     new_folder = os.path.join("C:/", "draws", new_model_order_query)
     try:
+        # переименование папки
         os.rename(old_folder, new_folder)
-        # сообщение в группу
-
-    except Exception as ex:
-        print(f'При переименовании папки возникло исключение: {ex}')
-    try:
+        # Обновление данных БД
+        WorkshopSchedule.objects.filter(model_order_query=old_order_model).update(
+            order=new_order,
+            model_name=new_model,
+            model_order_query=new_model_order_query)
+        logger.info(f'Папка {old_order_model} успешно переименована в {new_model_order_query}')
         success_group_message = (f"Заказ-модель переименован технологической службой в: "
                                  f"{new_model_order_query}. "
                                  f"Откорректировал: {user}."
                                  )
-        asyncio.run(terminal_message_to_id(to_id=TERMINAL_GROUP_ID, text_message_to_id=success_group_message))
+        rename_success = True
     except Exception as e:
-        print(f'Ошибка отправки telegram при переименовании {old_order_model} в {new_model_order_query} ', e)
-    return new_model_order_query
+        logger.error(f'Переименование {old_order_model} в {new_model_order_query} произошло с ошибкой.')
+        logger.exception(e)
+        success_group_message = ((f"Заказ-модель НЕ ПЕРЕИМЕНОВАН: возникла ошибка. Не найдена исходная папка. "
+                                  f"{old_order_model}. Для переименования в "
+                                  f"{new_model_order_query}. "
+                                  ))
+        rename_success = False
+    try:
+        # сообщение в группу
+        asyncio.run(terminal_message_to_id(to_id=TERMINAL_GROUP_ID, text_message_to_id=success_group_message))
+        logger.info(f'При переименование отправлено сообщение в телеграм {success_group_message}')
+    except Exception as e:
+        logger.error(f'Ошибка отправки telegram при переименовании {old_order_model} в {new_model_order_query}')
+        logger.exception(e)
+    if rename_success:
+        return new_model_order_query
 
 
 def upload_draws(request, draws_path, group_id):
@@ -259,8 +281,10 @@ def upload_draws(request, draws_path, group_id):
                 try:
                     with open(permissions_json_path, 'w') as json_file:
                         json.dump({}, json_file)
+                    logger.info(f'При дополнении КД создание файла доступов {permissions_json_path} прошло успешно.')
                 except Exception as e:
-                    print(f'При попытке создания файла доступов {permissions_json_path} вызвано исключение: {e}')
+                    logger.error(f'Ошибка при попытке создания файла доступов {permissions_json_path}')
+                    logger.exception(e)
             success = True
             for file in files:
                 filename = str(file)
@@ -273,19 +297,28 @@ def upload_draws(request, draws_path, group_id):
                 )
                 if not os.path.exists(uploaded_file):
                     alert = f'Ошибка загрузки {filename}.'
+                    logger.error(f'При дополнении КД произошла ошибка загрузки {filename}.')
                     success = False
                     break
             if success:
                 # Сообщение об успехе
                 alert = 'Все файлы успешно загружены.'
+                logger.info(f'При дополнении КД все файлы успешно загружены.')
                 success_group_message = (f"Обновлён комплект КД чертежами ТД. Заказ-модель "
                                          f"{model_order_query}. "
                                          f"Обновил: {request.user.first_name} {request.user.last_name}. "
                                          f"Загружено файлов: {len(files)}.")
+            else:
+                success_group_message = (f"При дополнении КД возникла ошибка. Не найдена исходная папка: "
+                                         f"{model_order_query}. ")
+            try:
                 asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
-                print(success_group_message, group_id)
+                logger.info(f'При дополнении КД отправлено сообщение телеграм: {success_group_message}')
+            except Exception as e:
+                logger.error(f'ошибка при отправке сообщения телеграм во время дополнения КД')
+                logger.exception(e)
         else:
-            print('INVALID FORM!')
+            logger.error('форма дополнение КД не прошла валидацию.')
             alert = 'Ошибка! Форма не валидна!'
     else:
         draw_files_upload_form = QueryAnswer()

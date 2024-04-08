@@ -1,6 +1,8 @@
 import os
 import asyncio
 import datetime
+from m_logger_settings import logger
+from django.db.models import Q
 from django.http import FileResponse
 from tehnolog.services.service_handlers import handle_uploaded_file
 from django.contrib.auth.decorators import login_required
@@ -11,9 +13,9 @@ from worker.services.master_call_function import terminal_message_to_id
 from django.core.exceptions import PermissionDenied
 from scheduler.filters import get_filterset
 
-# ADMIN_TELEGRAM_ID
+# TODO ПОМЕНЯТЬ ГРУППУ
 TERMINAL_GROUP_ID = os.getenv('ADMIN_TELEGRAM_ID')
-
+# TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
 
 # TODO ЗАКОНСЕРВИРОВАНО Функционал простоев
 # from scheduler.models import Downtime
@@ -22,20 +24,22 @@ TERMINAL_GROUP_ID = os.getenv('ADMIN_TELEGRAM_ID')
 @login_required(login_url="../scheduler/login/")
 def constructor(request):
     if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:11]).strip() != "constructor":
+        logger.warning(f"Попытка доступа к рабочему месту конструктора пользователем {request.user.username}")
         raise PermissionDenied
     group_id = TERMINAL_GROUP_ID  # тг группа
     td_queries_fields = ('model_order_query', 'query_prior', 'td_status', 'td_remarks', 'datetime_done',
                          'td_query_datetime')  # поля таблицы
-    td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(td_status='завершено'))
+    td_queries = (WorkshopSchedule.objects.values(*td_queries_fields)
+                  .filter(Q(td_status='запрошено') | Q(td_status='замечание')))
     f = get_filterset(data=request.GET, queryset=td_queries, fields=td_queries_fields)  # фильтры в колонки
     query_answer_form = QueryAnswer()
     if request.method == 'POST':
         alert = ''
         query_answer_form = QueryAnswer(request.POST, request.FILES)
         if query_answer_form.is_valid():
-            print(query_answer_form.cleaned_data)
             filenames = dict(request.FILES)["draw_files"]  # имя файла
-            print(filenames)
+            logger.info(f"Загрузка КД конструктором начата.")
+            logger.debug(f"Список файлов для загрузки {filenames}")
             i = 0
             success_message = len(filenames) > 0
             order_path = query_answer_form.cleaned_data['model_order_query'].model_order_query
@@ -43,14 +47,16 @@ def constructor(request):
             error_files = []
             for file in filenames:
                 i += 1
-                print('-----', str(file))
-                # TODO плавающий баг при загрузке чертежей
+                logger.debug(f'Загружается файл: {str(file)}\n')
+                # print('-----', str(file))
                 # обработчик загрузки файла
                 try:
                     handle_uploaded_file(f=file, filename=str(file),
                                          path=file_save_path)
                 except Exception as e:
-                    print(f'Ошибка загрузки {str(file)}', e)
+                    logger.error(f'Ошибка загрузки {str(file)}')
+                    logger.exception(e)
+                    # print(f'Ошибка загрузки {str(file)}', e)
                     error_files.append(str(file))
                     success_message = False
 
@@ -70,23 +76,27 @@ def constructor(request):
                                          f"{query_answer_form.cleaned_data['model_order_query'].model_order_query}/. "
                                          f"Передал КД: {request.user.first_name} {request.user.last_name}. "
                                          f"Загружено файлов: {i}.")
+                logger.info(f"Чертежи успешно загружены.\n{success_group_message}")
                 try:
                     asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                    logger.info(f'Сообщение телеграм отправлено {success_group_message}')
                 except Exception as e:
-                    print(f'Ошибка отправки сообщения телеграмом при загрузке чертежей '
-                          f'{query_answer_form.cleaned_data["model_order_query"].model_order_query} ', e)
+                    logger.error(f'Ошибка отправки сообщения в телеграмм при загрузке чертежей '
+                                 f'{query_answer_form.cleaned_data["model_order_query"].model_order_query}')
+                    logger.exception(e)
+                    # print(f'Ошибка отправки сообщения в телеграмм при загрузке чертежей '
+                    #       f'{query_answer_form.cleaned_data["model_order_query"].model_order_query} ', e)
 
             else:
-                alert = f'Ошибка загрузки файлов: {", ".join(error_files)}!'
-
+                alert = f'Ошибка загрузки файлов: {", ".join(error_files)}.'
+                logger.error(f'Ошибка загрузки файлов: {", ".join(error_files)}.')
             context = {'filter': f, 'query_answer_form': query_answer_form, 'alert': alert}
             return render(request, r"constructor/constructor.html", context=context)
         else:
-            print('INVALID FORM!')
-            alert = 'invalid form'
+            logger.error('Ошибка валидации формы.')
+            alert = 'Ошибка валидации формы.'
             context = {'filter': f, 'query_answer_form': query_answer_form, 'alert': alert}
             return render(request, r"constructor/constructor.html", context=context)
-
     context = {'query_answer_form': query_answer_form, 'filter': f}
     # TODO ЗАКОНСЕРВИРОВАНО Функционал простоев
     # downtimes = Downtime.objects.filter(

@@ -17,6 +17,8 @@ import matplotlib.pyplot as plt
 import matplotlib
 from omzit_terminal.settings import BASE_DIR
 
+# TODO подключить logger при расконсервации
+
 
 def get_done_rate(order_number: str) -> float:
     """
@@ -162,37 +164,6 @@ def create_pdf_report(filename: str, table_data: tuple, image_path: str, header_
     return filepath
 
 
-# def simple_report_read(exel_file): # TODO удалить после тестов
-#     """
-#     Функция читает простой файл excel по колонкам дат согласно стандартной форме;
-#     возвращает словарь {номер цеха: (данные колонки за вчера; данные колонки итого)}
-#     И сохраняет данные в общий json
-#     """
-#     json_file = r"D:\АСУП\Python\Projects\ARC\GUI\Выгрузки\arc_indicators.json"
-#     ex_wb = openpyxl.load_workbook(exel_file, data_only=True)  # чтение исходник Excel
-#     ex_sh = ex_wb.active
-#     # определение номера колонки чтения по дате - вчерашний день (число)
-#     report_day = datetime.datetime.now() - datetime.timedelta(1)
-#     number_day = int(report_day.strftime('%d'))  # номер дня в формат числа
-#     day_c1, day_c2, day_c3, day_c4 = 0, 0, 0, 0  # переменные дней
-#     sum_c1, sum_c2, sum_c3, sum_c4 = 0, 0, 0, 0  # переменные суммы
-#     for ex_col in ex_sh.iter_cols(min_row=1, max_row=ex_sh.max_row, min_col=1,  # проход по файлу excel
-#                                   max_col=ex_sh.max_column, values_only=True):
-#         if ex_col[1] == number_day:
-#             day_c1 = ex_col[2] if ex_col[2] else 0
-#             sum_c1 = ex_sh.cell(3, 33).value
-#             day_c2 = ex_col[3] if ex_col[3] else 0
-#             sum_c2 = ex_sh.cell(4, 33).value
-#             day_c3 = ex_col[4] if ex_col[4] else 0
-#             sum_c3 = ex_sh.cell(5, 33).value
-#             day_c4 = ex_col[5] if ex_col[5] else 0
-#             sum_c4 = ex_sh.cell(6, 33).value
-#     ex_wb.close()
-#     return {'c1': {'день_сумма': (day_c1, sum_c1), 'результат': f'{day_c1} / {sum_c1}'},
-#             'c2': {'день_сумма': (day_c2, sum_c2), 'результат': f'{day_c2} / {sum_c2}'},
-#             'c3': {'день_сумма': (day_c3, sum_c3), 'результат': f'{day_c3} / {sum_c3}'},
-#             'c4': {'день_сумма': (day_c4, sum_c4), 'результат': f'{day_c4} / {sum_c4}'}}
-
 def simple_report_read(exel_file: str) -> dict:
     """
     Функция читает простой файл excel по колонкам дат согласно стандартной форме,
@@ -312,33 +283,34 @@ def report_json_create_schedule():
         print(e, ' json update failed at otpb_excel_file read!')
 
 
-def days_report_create() -> None:
-    """
-    Функция создает записи по каждому дню в начале месяца. Функция запускается по расписанию первого
-     числа каждого месяца.
-    :return: None
-    """
-    start_date = datetime.datetime.now().replace(day=1)  # первый день текущего месяца
-    _, last_day = calendar.monthrange(start_date.year, start_date.month)  # последний день текущего месяца
-    end_date = datetime.datetime(year=start_date.year, month=start_date.month, day=last_day)  # последняя дата месяца)
-    # список дат дней месяца
-    daterange = [(start_date.date() + datetime.timedelta(days=x)) for x in range(0, end_date.day)]
-    days_dict = dict()
-    days_list = []
-    for i in range(1, 4 + 1):  # цикл по всем цехам
-        # создание записей планов месяца
-        try:
-            if not MonthPlans.objects.get(workshop=i, month_plan=daterange[0]):
-                MonthPlans.objects.create(workshop=i, month_plan=daterange[0])
-        except Exception:
-            MonthPlans.objects.create(workshop=i, month_plan=daterange[0])
-        month_plan_data = MonthPlans.objects.get(workshop=i, month_plan=daterange[0])  # план цеха
-        for date in daterange:
-            days_dict.update({'calendar_day': date, 'workshop': i, 'month_plan_data': month_plan_data})
-            days_list.append(DailyReport(**days_dict))
-    # создание записей каждого дня месяца
-    try:
-        if not DailyReport.objects.get(calendar_day=daterange[0], workshop=1):
-            DailyReport.objects.bulk_create(days_list)
-    except Exception:
-        DailyReport.objects.bulk_create(days_list)
+# TODO ФУНКЦИОНАЛ ОЧТЁТОВ ЗАКОНСЕРВИРОВАНО
+# def days_report_create() -> None:
+#     """
+#     Функция создает записи по каждому дню в начале месяца. Функция запускается по расписанию первого
+#      числа каждого месяца.
+#     :return: None
+#     """
+#     start_date = datetime.datetime.now().replace(day=1)  # первый день текущего месяца
+#     _, last_day = calendar.monthrange(start_date.year, start_date.month)  # последний день текущего месяца
+#     end_date = datetime.datetime(year=start_date.year, month=start_date.month, day=last_day)  # последняя дата месяца)
+#     # список дат дней месяца
+#     daterange = [(start_date.date() + datetime.timedelta(days=x)) for x in range(0, end_date.day)]
+#     days_dict = dict()
+#     days_list = []
+#     for i in range(1, 4 + 1):  # цикл по всем цехам
+#         # создание записей планов месяца
+#         try:
+#             if not MonthPlans.objects.get(workshop=i, month_plan=daterange[0]):
+#                 MonthPlans.objects.create(workshop=i, month_plan=daterange[0])
+#         except Exception:
+#             MonthPlans.objects.create(workshop=i, month_plan=daterange[0])
+#         month_plan_data = MonthPlans.objects.get(workshop=i, month_plan=daterange[0])  # план цеха
+#         for date in daterange:
+#             days_dict.update({'calendar_day': date, 'workshop': i, 'month_plan_data': month_plan_data})
+#             days_list.append(DailyReport(**days_dict))
+#     # создание записей каждого дня месяца
+#     try:
+#         if not DailyReport.objects.get(calendar_day=daterange[0], workshop=1):
+#             DailyReport.objects.bulk_create(days_list)
+#     except Exception:
+#         DailyReport.objects.bulk_create(days_list)
