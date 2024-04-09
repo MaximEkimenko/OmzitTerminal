@@ -1,3 +1,4 @@
+<!-- prettier-ignore -->
 {% extends 'base.html' %}
 {% load static %}
 
@@ -8,61 +9,62 @@
 {% block menu %}
 {% endblock %}
 {% block body %}
-        <h1 id="h1_tag">Выбор чертежей РЦ {{ ws_number }} сменное задание {{st_number}}</h1>
-        <form action="{{ draws }}" method="GET" enctype="multipart/form-data" id="sel_1">
-            {% csrf_token %}
-            <label id="sel_2" class="form_inner_label"> Выбор чертежа: </label>
-            <br>
-            <select id="select_draws" size="10" name="draws_select">
-                <!-- <select multiple id="sel_3" size="10" name="task_id"></select> -->
-                <option class="sel_option" data-draw_show="0" selected>Выберите чертеж:</option>
-                {% for draw in select_draws %} {% for link in pdf_links %}
-                <option class="sel_option" data-draw_show="{{link.link}}">{{ link.filename }}</option>
-                <!-- <option id="{{ task.id }}" data-send="{{ task.op_number }}--{{ task.model_name }}--{{ task.id }}"> -->
+<h1 id="h1_tag">Выбор чертежей РЦ {{ ws_number }} сменное задание {{st_number}}</h1>
+<form action="{{ draws }}" method="GET" enctype="multipart/form-data" id="sel_1">
+    {% csrf_token %}
+    <label id="sel_2" class="form_inner_label"> Выбор чертежа: </label>
+    <br />
+    {%if not pdf_links.0.filename %}
+    <h3>К операции чертёж не привязан.</h3>
+    {% endif %}
+    <select id="select_draws" size="10" name="draws_select">
+        <!-- <select multiple id="sel_3" size="10" name="task_id"></select> -->
+        <option class="sel_option" data-draw_show="0" selected>Выберите чертеж:</option>
+        {% for draw in select_draws %} {% for link in pdf_links %}
+        <option class="sel_option" data-draw_show="{{link.link}}">{{ link.filename }}</option>
+        <!-- <option id="{{ task.id }}" data-send="{{ task.op_number }}--{{ task.model_name }}--{{ task.id }}"> -->
 
-                {% endfor %} {% endfor %}
-            </select>
-            <br>
-            <button type="button" class="btn" id="draw_choice_btn">Открыть чертеж</button>
-            <button type="button" class="btn" id="return_btn">Назад</button>
-        </form>
-        <center><iframe id="iframe" style="display: none" allowfullscreen="true"></iframe></center>
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                const ws_number = " {{ws_number}} ".trim(); // номер РЦ
-                const st_number = " {{ st_number }}".trim(); // номер СЗ
-                const select_element = document.getElementById("select_draws"); //select элемент
-                select_element.focus(); // фокус при загрузке
-                let form_select = document.getElementById("sel_1"); // элемент form
-                let draw_frame = document.getElementById("iframe"); // элемент frame
-                let h1_tag = document.getElementById("h1_tag"); // элемент h1
+        {% endfor %} {% endfor %}
+    </select>
+    <br />
+    <button type="button" class="btn" id="draw_choice_btn">Открыть чертеж</button>
+    <button type="button" class="btn" id="return_btn">Назад</button>
+</form>
+<center><iframe id="iframe" style="display: none" allowfullscreen="true"></iframe></center>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ws_number = ' {{ws_number}} '.trim() // номер РЦ
+        const st_number = ' {{ st_number }}'.trim() // номер СЗ
+        const select_element = document.getElementById('select_draws') //select элемент
+        select_element.focus() // фокус при загрузке
+        let form_select = document.getElementById('sel_1') // элемент form
+        let draw_frame = document.getElementById('iframe') // элемент frame
+        let h1_tag = document.getElementById('h1_tag') // элемент h1
 
-                const draw_choice_btn = document.querySelector("#draw_choice_btn");
-                draw_choice_btn.onclick = function () {
-                    let right_link = select_element.options[select_element.selectedIndex].dataset.draw_show;
-                    // ссылка на чертеж без "\""
-                    let draw_link = select_element.options[select_element.selectedIndex].dataset.draw_show.replaceAll(
-                        "\\",
-                        "--"
-                    );
-                    if (right_link != 0) {
-                            console.log(`pdf/${ws_number}/${draw_link}`);
-                            draw_frame.src = `pdf/${ws_number}/${draw_link}`;
-                            draw_frame.width = window.screen.width;
-                            draw_frame.height = window.screen.height * 1.3;
-                            draw_frame.style.display = "block";
-                            h1_tag.style.display = "none";
-                            form_select.style.display = "none"; // скрытие формы выбора чертежей
-                        }
-                }
+        const draw_choice_btn = document.querySelector('#draw_choice_btn')
+        draw_choice_btn.onclick = function () {
+            let right_link = select_element.options[select_element.selectedIndex].dataset.draw_show
+            // ссылка на чертеж без "\""
+            let draw_link = select_element.options[
+                select_element.selectedIndex
+            ].dataset.draw_show.replaceAll('\\', '--')
+            if (right_link != 0) {
+                console.log(`pdf/${ws_number}/${draw_link}`)
+                draw_frame.src = `pdf/${ws_number}/${draw_link}`
+                draw_frame.width = window.screen.width
+                draw_frame.height = window.screen.height * 1.3
+                draw_frame.style.display = 'block'
+                h1_tag.style.display = 'none'
+                form_select.style.display = 'none' // скрытие формы выбора чертежей
+            }
+        }
 
-                const return_btn = document.querySelector("#return_btn")
-                return_btn.onclick = function () {
-                    st_main_paige_link = `/worker/${ws_number}`;
-                    location.href = st_main_paige_link;
-                }
-            })
-
-        </script>
-        <br />
+        const return_btn = document.querySelector('#return_btn')
+        return_btn.onclick = function () {
+            st_main_paige_link = `/worker/${ws_number}`
+            location.href = st_main_paige_link
+        }
+    })
+</script>
+<br />
 {% endblock %}

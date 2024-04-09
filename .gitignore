@@ -172,3 +172,5 @@ xlsx
 !template.xlsx
 data/
 temp/
+json_log.json
+json_log.jsonl

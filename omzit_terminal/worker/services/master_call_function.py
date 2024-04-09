@@ -8,9 +8,13 @@ TOKEN = os.getenv('RSU_TOKEN')
 
 bot = Bot(token=TOKEN)  # инициализация бота
 dp = Dispatcher(bot)  # инициализация диспетчера
+
 # группа мастеров
 omzit_master_group1_id = -4005524766
 omzit_master_group2_id = -4109421151
+# test groups
+# omzit_master_group1_id = os.getenv('ADMIN_TELEGRAM_ID')
+# omzit_master_group2_id = os.getenv('ADMIN_TELEGRAM_ID')
 
 
 async def send_call_master(message_to_master, ws_number):

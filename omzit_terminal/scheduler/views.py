@@ -42,9 +42,8 @@ from .services.sz_reports import get_start_end_st_report, create_shift_task_repo
 
 SPEC_CREATION_PROCESS = dict()
 SPEC_CREATION_THREAD = dict()
-# TODO ПОМЕНЯТЬ ГРУППУ
-# TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
-TERMINAL_GROUP_ID = int(os.getenv('ADMIN_TELEGRAM_ID'))
+TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
+# TERMINAL_GROUP_ID = int(os.getenv('ADMIN_TELEGRAM_ID'))
 
 
 @login_required(login_url="login")
@@ -59,7 +58,6 @@ def scheduler(request):
         raise PermissionDenied
     group_id = TERMINAL_GROUP_ID  # тг группа
     # обновление процента готовности всех заказов
-    # TODO модифицировать расчёт процента готовности всех заказов по взвешенной трудоёмкости
     get_all_done_rate()
     # график изделий
     workshop_schedule_fields = ('workshop', 'order', 'model_name', 'datetime_done', 'order_status', 'done_rate')

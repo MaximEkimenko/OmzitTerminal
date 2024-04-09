@@ -112,9 +112,9 @@ class ShiftTask(models.Model):
     order = models.CharField(max_length=100, verbose_name='Номер заказа', null=True, validators=[order_regex])
     model_order_query = models.CharField(max_length=60, null=True, verbose_name='заказ и модель')
     op_number = models.CharField(max_length=20, verbose_name='Номер операции')
-    op_name = models.CharField(max_length=200, verbose_name='Имя операции')
+    op_name = models.TextField(verbose_name='Имя операции')
     ws_name = models.CharField(max_length=100, verbose_name='Имя рабочего центра')
-    op_name_full = models.CharField(max_length=255, verbose_name='Полное имея операции')
+    op_name_full = models.TextField(verbose_name='Полное имея операции')
     ws_number = models.CharField(max_length=10, verbose_name='Номер рабочего центра')
     norm_tech = models.DecimalField(null=True, max_digits=13, decimal_places=5,
                                     verbose_name='Технологическая норма времени')

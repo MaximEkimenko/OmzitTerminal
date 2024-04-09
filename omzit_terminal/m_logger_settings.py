@@ -144,7 +144,7 @@ logging.config.dictConfig(LOGGING_CONFIG)
 
 def json_log_refactor_and_xlsx():
     """
-    Функция создаёт единый файл json из логов в файле json.log, а также создаёт xlsx файл
+    Функция создаёт единый файл json_log.json из логов в файле json_log.jsonl, а также создаёт xlsx файл
     :return: None
     """
     json_list = []  # результирующий список словарей
@@ -155,7 +155,7 @@ def json_log_refactor_and_xlsx():
             for line in original_file.readlines():
                 json_list.append(json.loads(line))
         with open(full_json_file, 'w') as full_j_file:
-            json.dump(json_list, full_j_file, indent=2, ensure_ascii=False)
+            json.dump(json_list, full_j_file, indent=2, ensure_ascii=True)
         # преобразование в excel
         df = pd.DataFrame(json_list)
         df.to_excel(excel_file, index=False)

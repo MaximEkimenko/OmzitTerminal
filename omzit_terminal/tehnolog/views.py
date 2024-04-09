@@ -35,9 +35,8 @@ from m_logger_settings import logger
 # TODO ЗАКОНСЕРВИРОВАНО Функционал простоев
 # from scheduler.models import Downtime
 
-# TODO поменять группу
-# TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
-TERMINAL_GROUP_ID = os.getenv('ADMIN_TELEGRAM_ID')
+TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
+# TERMINAL_GROUP_ID = os.getenv('ADMIN_TELEGRAM_ID')
 
 
 @login_required(login_url="../scheduler/login/")

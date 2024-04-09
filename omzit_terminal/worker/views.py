@@ -209,16 +209,24 @@ def draws(request, ws_st_number: str):
     op_number = str(ws_st_number).split('--')[1]
     model_name = str(ws_st_number).split('--')[2]
     st_number = str(ws_st_number).split('--')[3]
-    header_string = f'Т{ws_number} СЗ {st_number}'
+    # header_string = f'Т{ws_number} СЗ {st_number}'
 
     # # Выбор списка чертежей
     select_draws = (ShiftTask.objects.values('ws_number', 'model_name', 'op_number', 'op_name_full', 'draw_path',
                                              'draw_filename', 'model_order_query')
                     .filter(ws_number=ws_number, op_number=op_number, model_name=model_name, id=st_number))
     draw_path = fr"C:\draws\{select_draws[0]['model_order_query']}\\"
+    # if select_draws[0]['draw_filename'] != 'nan':
+    #     draw_path = fr"C:\draws\{select_draws[0]['model_order_query']}\\"
+    # else:
+    #     pdf_links = ['Для данной позиции не требуется КД']
+    #     logger.warning(f"Запрос к СЗ без КД {select_draws[0]['model_order_query']}")
+    #     context = {'pdf_links': [{'link': 'empty_link', 'filename': 'Для данной позиции не требуется КД'}]}
+    #     return render(request, r"worker/draws.html", context=context)
     pdf_links = []  # список словарей чертежей
     # если несколько чертежей
-    if select_draws[0]['draw_filename'] is not None:
+    print(select_draws[0])
+    if select_draws[0]['draw_filename'] is not None and select_draws[0]['draw_filename'] != 'nan':
         if ',' in select_draws[0]['draw_filename']:
             draw_filenames = select_draws[0]['draw_filename'].split(',')
             for draw_filename in draw_filenames:
@@ -227,6 +235,11 @@ def draws(request, ws_st_number: str):
             draw_filename = select_draws[0]['draw_filename']
             pdf_links.append({'link': fr"{draw_path}{str(draw_filename).strip()}", 'filename': draw_filename})
         logger.debug(f'Запрос к чертежам: ссылки чертежей {pdf_links}')
+    else:
+        logger.warning(f"Запрос к СЗ без КД {select_draws[0]['model_order_query']},"
+                       f"Т{select_draws[0]['ws_number']}, "
+                       f"№операции: {select_draws[0]['op_number']}")
+        # pdf_links.append({'link': "#", 'filename': 'Для операции чертеж не требуется'})
     context = {'ws_number': ws_number, 'st_number': st_number, 'select_draws': select_draws, 'pdf_links': pdf_links}
     terminal_ip = get_client_ip(request)  # определение IP терминала
     terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP

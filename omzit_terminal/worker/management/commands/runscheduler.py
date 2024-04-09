@@ -76,7 +76,7 @@ class Command(BaseCommand):
             replace_existing=True,
             misfire_grace_time=1 * 60,
         )
-        logger.info('Запущена задача: "Формирование log файлов json и xlsx"')
+        logger.info('Запущена задача: "Получение отчета по СЗ"')
 
         scheduler.add_job(
             json_log_refactor_and_xlsx,
