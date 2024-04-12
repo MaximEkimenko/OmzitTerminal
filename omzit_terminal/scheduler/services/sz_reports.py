@@ -246,6 +246,7 @@ def fio_st_time_counter(start: datetime, end: datetime):
     """
     Отчет по количеству часов по сменным заданиям по исполнителям
     """
+    # TODO переписать весь отчёт на pandas
     months = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь',
               'Ноябрь', 'Декабрь']
     month = months[int(start.strftime('%m'))]
@@ -277,15 +278,15 @@ def fio_st_time_counter(start: datetime, end: datetime):
                 data["cex1"] = int(cex_1[cex_1.iloc[:, 1] == doer].iloc[:, 37].iloc[0])
             except Exception as e:
                 data["cex1"] = 'Нет в табеле'
-                logger.warning(f"{data['cex1']} 'Нет в табеле'")
+                # logger.warning(f"{data['cex1']} 'Нет в табеле'")
         else:
             data["cex1"] = f'Файл {cex_1_timesheets} или вкладка {month} {year} недоступны'
         if cex_2 is not None:
             try:
                 data["cex2"] = int(cex_2[cex_2.iloc[:, 1] == doer].iloc[:, 37].iloc[0])
             except Exception as e:
-                logger.warning(f"{data['cex2']} 'Нет в табеле'")
                 data["cex2"] = 'Нет в табеле'
+                # logger.warning(f"{data['cex2']} 'Нет в табеле'")
         else:
             data["cex2"] = f'Файл {cex_2_timesheets} или вкладка {month} {year} недоступны'
         doer_job_duration.append(data)

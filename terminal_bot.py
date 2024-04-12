@@ -102,7 +102,7 @@ id_fios = {admin_id: 'Екименко М.А.',  # цех 1
 
 # пользователи имеющие доступ
 users = (admin_id,  # root
-         posohov_id, ermishkin_id, gordii_id, kondratiev_id, achmetov_id,  # производство
+         posohov_id, ermishkin_id, gordii_id, kondratiev_id, achmetov_id, kozlov_id,  # цех 1
          savchenko_id, pavluchenkova_id,  # ПДО
          donskaya_id, averkina_id, sultigova_id, potapova_id, sofinskaya_id, sheglov_id, dubenuk_id, dolganev_id,
          shagov_id, mekelburg_id, kucherenko_id,  # ОТК
@@ -112,11 +112,9 @@ users = (admin_id,  # root
          )
 
 # производство
-masters_list = (admin_id, ermishkin_id, posohov_id, gordii_id, kondratiev_id, achmetov_id,  # цех 1
+masters_list = (admin_id, ermishkin_id, posohov_id, gordii_id, kondratiev_id, achmetov_id, kozlov_id,   # цех 1
                 mailashov_id, gorojanski_id, pospelov_id, kulbashin_id, skorobogatov_id, ostrijnoi_id, rihmaer_id,
                 )
-
-nine_digits_group = (mekelburg_id, kucherenko_id)
 
 dispatchers_list = (admin_id, savchenko_id, pavluchenkova_id,)  # диспетчеры
 
@@ -188,7 +186,7 @@ async def master_otk_send(message: types.Message):
         # создание inline keyboard РЦ со статусом ожидание мастера
         inline_ws_buttons = types.InlineKeyboardMarkup()  # объект
         ws_list = ws_list_get("ожидание мастера")
-        logger.debug('список РЦ из master_otk_send', ws_list)
+        logger.debug(f'список РЦ из master_otk_send {ws_list=}')
         if ws_list != ():
             for ws in ws_list:
                 callback_data = otk_call_callback_data.new(ws, message.from_user.id)
@@ -311,7 +309,9 @@ async def otk_call_handler(callback_query: types.CallbackQuery, callback_data: d
                                    text=f'Контролёр {id_fios.get(int(control_man_id_get(ws_number)[0]), "Unknown")} '
                                         f'уже ответил на заявку Т{ws_number}')
     except Exception as e:
-        logger.error('Ошибка в otk_call_handler')
+        logger.error(f'Ошибка в otk_call_handler; Контролёр: {id_fios.get(int(controlman_id), controlman_id)}, '
+                     f'Т{ws_number}, '
+                     f'Мастер: {id_fios.get(int(master_id), master_id)}')
         logger.exception(e)
 
 
@@ -407,8 +407,6 @@ async def otk_decision_register(callback_query: types.CallbackQuery, callback_da
     """
     st_id = callback_data.get('shift_task_id')
     controlman_id = callback_data.get('user_id')
-    logger.debug(f'FROM_otk_dcsn_callback_data: {st_id=}, {controlman_id=}')
-
     if callback_data.get('decision') == '1':  # решение контролёра
         decision = 'принято'
     elif callback_data.get('decision') == '2':
@@ -418,31 +416,39 @@ async def otk_decision_register(callback_query: types.CallbackQuery, callback_da
     else:
         logger.error(f'Ошибка в передаче индекса решения контролёра! {st_id=}, {controlman_id=}')
         raise
+    logger.debug(f'FROM_otk_dcsn_callback_data: {st_id=}, {controlman_id=}, decision={callback_data.get("decision")}')
     # запрос из базы на РЦ и id мастера
-    master_id, ws_number = master_id_get(st_id=st_id)
-    # запись в базу
-    decision_data_set(st_id, controlman_id, decision)
-    # Сообщение в группу
-    await bot.send_message(chat_id=omzit_otk_group_id,
-                           text=f'Контролёр {id_fios[int(controlman_id)]} определил "{decision}" на Т{ws_number} '
-                                f'для СЗ №{st_id}')
-    # сообщение в личку
-    await bot.send_message(chat_id=controlman_id,
-                           text=f'Вы определили "{decision}" на Т{ws_number} для СЗ №{st_id}')
-    # сообщение в группу мастерам
-    if str(ws_number) in ws_numbers_c1:
-        await bot.send_message(chat_id=omzit_master_group1_id,
+    if not master_id_get(st_id=st_id)[1]:  # обработка нажатия на уже принятые решения
+        st_status = master_id_get(st_id=st_id)[0]
+        logger.warning(f'Обращение к СЗ со статусом {st_status=} {controlman_id=},'
+                       f'{st_id=}, {decision=},')
+        await bot.send_message(chat_id=controlman_id,
+                               text=f'СЗ №{st_id} находится в статусе {st_status}.')
+    else:
+        master_id, ws_number = master_id_get(st_id=st_id)
+        # запись в базу
+        decision_data_set(st_id, controlman_id, decision)
+        # Сообщение в группу
+        await bot.send_message(chat_id=omzit_otk_group_id,
                                text=f'Контролёр {id_fios[int(controlman_id)]} определил "{decision}" на Т{ws_number} '
                                     f'для СЗ №{st_id}')
-    elif str(ws_number) in ws_numbers_c2:
-        await bot.send_message(chat_id=omzit_master_group2_id,
+        # сообщение в личку
+        await bot.send_message(chat_id=controlman_id,
+                               text=f'Вы определили "{decision}" на Т{ws_number} для СЗ №{st_id}')
+        # сообщение в группу мастерам
+        if str(ws_number) in ws_numbers_c1:
+            await bot.send_message(chat_id=omzit_master_group1_id,
+                                   text=f'Контролёр {id_fios[int(controlman_id)]} определил "{decision}" на Т{ws_number} '
+                                        f'для СЗ №{st_id}')
+        elif str(ws_number) in ws_numbers_c2:
+            await bot.send_message(chat_id=omzit_master_group2_id,
+                                   text=f'Контролёр {id_fios[int(controlman_id)]} определил "{decision}" на Т{ws_number} '
+                                        f'для СЗ №{st_id}')
+        # сообщение мастеру
+        await bot.send_message(chat_id=master_id,
                                text=f'Контролёр {id_fios[int(controlman_id)]} определил "{decision}" на Т{ws_number} '
                                     f'для СЗ №{st_id}')
-    # сообщение мастеру
-    await bot.send_message(chat_id=master_id,
-                           text=f'Контролёр {id_fios[int(controlman_id)]} определил "{decision}" на Т{ws_number} '
-                                f'для СЗ №{st_id}')
-    await callback_query.answer()  # закрытие inline кнопок
+        await callback_query.answer()  # закрытие inline кнопок
 
 
 @dp.message_handler(commands=['text'])  # получение активных запросов отк в виде строки

@@ -30,6 +30,7 @@ LOGGING_CONFIG = {
     "disable_existing_loggers": True,
     "formatters": {
         "console": {
+            # pip install colorlog
             "()": "colorlog.ColoredFormatter",
             "format": "%(asctime)s: %(log_color)s%(levelname)s%(reset)s|"
                       "%(module)s|%(funcName)s|%(lineno)-15s %(light_white)s%(message)s%(reset)-15s"
@@ -49,6 +50,7 @@ LOGGING_CONFIG = {
         },
 
         "json": {
+            # pip install python-json-logger
             "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
             "format": f"""
                     asctime: %(asctime)s
@@ -87,7 +89,7 @@ LOGGING_CONFIG = {
             "formatter": "file",
             "filename": log_file_debug,
             'maxBytes': 51200000000,
-            'backupCount': 1,
+            'backupCount': 2,
         },
         "file_info": {
             "encoding": "utf-8",
@@ -96,7 +98,7 @@ LOGGING_CONFIG = {
             "formatter": "file",
             "filename": log_file_info,
             "maxBytes": 51200000000,
-            "backupCount": 1,
+            "backupCount": 2,
         },
         "json": {
             "encoding": "utf-8",
@@ -105,7 +107,7 @@ LOGGING_CONFIG = {
             "class": "logging.handlers.RotatingFileHandler",
             "filename": log_file_json,
             "maxBytes": 102400000000,
-            "backupCount": 1,
+            "backupCount": 2,
         },
         # "queue_handler": {
         #     "class": "logging.handlers.QueueHandler",
