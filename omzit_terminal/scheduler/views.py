@@ -63,6 +63,7 @@ def scheduler(request):
     workshop_schedule_fields = ('workshop', 'order', 'model_name', 'datetime_done', 'order_status', 'done_rate')
     workshop_schedule = (WorkshopSchedule.objects.values(*workshop_schedule_fields)
                          .exclude(datetime_done=None).exclude(order_status='не запланировано')
+                         .exclude(order_status='завершено')
                          .order_by('datetime_done'))
     # фильтры в колонки графика
     f_w = get_filterset(data=request.GET, queryset=workshop_schedule, fields=workshop_schedule_fields, index=1)

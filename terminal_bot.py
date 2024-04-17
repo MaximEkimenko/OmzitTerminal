@@ -12,7 +12,7 @@ from terminal_db import (ws_list_get, status_change_to_otk, st_list_get, master_
 
 TOKEN = os.getenv('RSU_TOKEN')
 # тестовый token
-# TOKEN =
+# TOKEN = ''
 
 # ids
 admin_id = int(os.getenv('ADMIN_TELEGRAM_ID'))
@@ -210,7 +210,7 @@ async def otk_call(callback_query: types.CallbackQuery, callback_data: dict):
     """
     master_id = callback_data.get('user_id')
     ws_number = callback_data.get('ws_number')
-    logger.debug(f'FROM_otk_call_callback_data: {ws_number=}, {master_id=}')
+    logger.debug(f'FROM_otk_call_callback_data: {ws_number=}, {id_fios.get(int(master_id), master_id)}')
     # Статус ожидание контролёра
     status_change_to_otk(ws_number=ws_number, initiator_id=master_id)
     st_count = lines_count(ws_number=str(ws_number))[0]  # количество СЗ с ожиданием контролёра
@@ -273,7 +273,7 @@ async def otk_call_handler(callback_query: types.CallbackQuery, callback_data: d
     """
     controlman_id = callback_data.get('user_id')
     ws_number = callback_data.get('ws_number')
-    logger.debug(f'FROM_otk_answ_callback_data: {ws_number=}, {controlman_id=}')
+    logger.debug(f'FROM_otk_answ_callback_data: {ws_number=}, {id_fios.get(int(controlman_id), controlman_id)}')
     # запрос в БД на id мастера
     master_id = master_id_get(ws_number=ws_number)[0]
     try:
@@ -351,14 +351,14 @@ async def otk_decision_shift_task_choice(callback_query: types.CallbackQuery, ca
     """
     controlman_id = callback_data.get('user_id')
     ws_number = callback_data.get('ws_number')
-    logger.debug(f'FROM_otk_dcgo_callback_data: {ws_number=}, {controlman_id=}')
+    logger.debug(f'FROM_otk_dcgo_callback_data: {ws_number=}, {id_fios.get(int(controlman_id), controlman_id)}')
     inline_st_buttons = types.InlineKeyboardMarkup()  # объект инлайн кнопок номера СЗ
     # получение списка СЗ
     shift_task_list = st_list_get(ws_number)
     full_task_text = '\n'.join(shift_task_list)
     for task in shift_task_list:
         shift_task_id = task[2:str(task).find("|") - 1]  # id СЗ
-        logger.debug(f'{shift_task_id} в otk_decision_shift_task_choice')
+        logger.debug(f'{shift_task_id=} в otk_decision_shift_task_choice')
         callback_to_decision = otk_stid_callback_data.new(shift_task_id, controlman_id)
         btn = types.InlineKeyboardButton(text=f'ВЫБРАТЬ СЗ: № {shift_task_id}',
                                          callback_data=callback_to_decision)
@@ -379,7 +379,7 @@ async def otk_decision_choice(callback_query: types.CallbackQuery, callback_data
     """
     controlman_id = callback_data.get('user_id')
     st_id = callback_data.get('shift_task_id')
-    logger.debug(f'FROM_otk_stid_callback_data: {st_id=}, {controlman_id=}')
+    logger.debug(f'FROM_otk_stid_callback_data: {st_id=}, {id_fios.get(int(controlman_id), controlman_id)}')
     inline_dcsn_buttons = types.InlineKeyboardMarkup()  # объект инлайн кнопок решения контролёра
     # получение списка СЗ
     callback_data_good = otk_dcsn_callback_data.new(st_id, controlman_id, '1')
@@ -414,16 +414,19 @@ async def otk_decision_register(callback_query: types.CallbackQuery, callback_da
     elif callback_data.get('decision') == '3':
         decision = 'не принято'
     else:
-        logger.error(f'Ошибка в передаче индекса решения контролёра! {st_id=}, {controlman_id=}')
+        logger.error(f'Ошибка в передаче индекса решения контролёра! {st_id=}, '
+                     f'{id_fios.get(int(controlman_id), controlman_id)}')
         raise
-    logger.debug(f'FROM_otk_dcsn_callback_data: {st_id=}, {controlman_id=}, decision={callback_data.get("decision")}')
+    logger.debug(f'FROM_otk_dcsn_callback_data: {st_id=}, {id_fios.get(int(controlman_id), controlman_id)}, '
+                 f'decision={callback_data.get("decision")}')
     # запрос из базы на РЦ и id мастера
     if not master_id_get(st_id=st_id)[1]:  # обработка нажатия на уже принятые решения
         st_status = master_id_get(st_id=st_id)[0]
-        logger.warning(f'Обращение к СЗ со статусом {st_status=} {controlman_id=},'
-                       f'{st_id=}, {decision=},')
+        logger.warning(f'Обращение к СЗ со статусом {st_status=} {id_fios[int(controlman_id)]},'
+                       f'{st_id=}, нажата кнопка: {decision=},')
         await bot.send_message(chat_id=controlman_id,
-                               text=f'СЗ №{st_id} находится в статусе {st_status}.')
+                               text=f'СЗ №{st_id} находится в статусе "{st_status}".')
+        await callback_query.answer()
     else:
         master_id, ws_number = master_id_get(st_id=st_id)
         # запись в базу
