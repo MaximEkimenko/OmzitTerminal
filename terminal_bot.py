@@ -215,13 +215,13 @@ async def otk_call(callback_query: types.CallbackQuery, callback_data: dict):
     status_change_to_otk(ws_number=ws_number, initiator_id=master_id)
     st_count = lines_count(ws_number=str(ws_number))[0]  # количество СЗ с ожиданием контролёра
     ultra_sound_string = lines_count(ws_number=str(ws_number))[1]  # количество СЗ с ожиданием контролёра
-    logger.info(f'Количество сменных заданий для приёмки {st_count=}, Наличие УЗК: {ultra_sound_string=}')
+    logger.info(f'Количество сменных заданий для приёмки {st_count=}, Наличие УЗК, или рентгена: {ultra_sound_string=}')
     # отправка сообщения о заявке на контролёра в группу ОТК
     if ultra_sound_string:
         await bot.send_message(chat_id=omzit_otk_group_id, text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
                                                                 f"{id_fios[int(master_id)]}.\n"
                                                                 f"Количество сменных заданий для приёмки: {st_count}.\n"
-                                                                f"операция УЗК: {ultra_sound_string}")
+                                                                f"операция рентген, УЗК: {ultra_sound_string}")
     else:
         await bot.send_message(chat_id=omzit_otk_group_id, text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
                                                                 f"{id_fios[int(master_id)]}.\n"

@@ -88,7 +88,7 @@ LOGGING_CONFIG = {
             'encoding': 'utf-8',
             "formatter": "file",
             "filename": log_file_debug,
-            'maxBytes': 51200000000,
+            'maxBytes': 102400000,
             'backupCount': 2,
         },
         "file_info": {
@@ -97,7 +97,7 @@ LOGGING_CONFIG = {
             "class": "logging.handlers.RotatingFileHandler",
             "formatter": "file",
             "filename": log_file_info,
-            "maxBytes": 51200000000,
+            "maxBytes": 102400000,
             "backupCount": 2,
         },
         "json": {
@@ -106,7 +106,7 @@ LOGGING_CONFIG = {
             "formatter": "json",
             "class": "logging.handlers.RotatingFileHandler",
             "filename": log_file_json,
-            "maxBytes": 102400000000,
+            "maxBytes": 102400000,
             "backupCount": 2,
         },
         # "queue_handler": {

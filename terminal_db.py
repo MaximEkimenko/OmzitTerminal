@@ -241,7 +241,7 @@ def status_change_to_otk(ws_number: str, initiator_id: str) -> None:
 
 def lines_count(ws_number: str) -> tuple:
     """
-    Количество записей по ws_number и проверяет факт наличия УЗК
+    Количество записей по ws_number и проверяет факт наличия УЗК или рентгена
     :param ws_number:
     :return: tuple (количество СЗ для приёмки, строка операций УЗК)
     """
@@ -250,13 +250,16 @@ def lines_count(ws_number: str) -> tuple:
         con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
         con.autocommit = True
         # запрос количества СЗ
-        count_query = f"""select COUNT(id) from shift_task where ws_number='{ws_number}' AND
+        count_query = f"""SELECT COUNT(id) from shift_task where ws_number='{ws_number}' AND
                            st_status='ожидание контролёра'"""
         # запрос на проверку УЗК
-        ultra_sound_query = f"""select op_name from shift_task 
-                            where ws_number='{ws_number}' AND
+        ultra_sound_query = f"""SELECT op_name from shift_task 
+                            WHERE ws_number='{ws_number}' AND
                             st_status='ожидание контролёра' AND
-                            op_name like '% УЗК %'"""
+                            op_name like '% УЗК %' OR
+                            st_status='ожидание контролёра' AND
+                            op_name like '%Рентген %'
+                            """
         # Количество СЗ
         try:
             with con.cursor() as cur:
@@ -277,7 +280,7 @@ def lines_count(ws_number: str) -> tuple:
                 else:
                     ultra_sound_string = ''
         except Exception as e:
-            logger.error(f'Ошибка в выборке сменный заданий с УЗК. {ws_number=}')
+            logger.error(f'Ошибка в выборке сменных заданий с УЗК и РК. {ws_number=}')
             logger.exception(e)
     except Exception as e:
         logger.error(f'Ошибка подключения к базе при lines_count. {ws_number=}'
