@@ -1,0 +1,173 @@
+{
+	"tasks": [
+		{
+			"id": -1,
+			"name": "Gantt editor",
+			"progress": 0,
+			"progressByWorklog": false,
+			"relevance": 0,
+			"type": "",
+			"typeId": "",
+			"description": "",
+			"code": "",
+			"level": 0,
+			"status": "STATUS_ACTIVE",
+			"depends": "",
+			"start": 1716141600000,
+			"duration": 16,
+			"end": 1718042399999,
+			"startIsMilestone": false,
+			"endIsMilestone": false,
+			"collapsed": false,
+			"canWrite": true,
+			"canAdd": true,
+			"canDelete": true,
+			"canAddIssue": true,
+			"assigs": [],
+			"hasChild": true
+		},
+		{
+			"id": -2,
+			"name": "coding",
+			"progress": 0,
+			"progressByWorklog": false,
+			"relevance": 0,
+			"type": "",
+			"typeId": "",
+			"description": "",
+			"code": "",
+			"level": 1,
+			"status": "STATUS_ACTIVE",
+			"depends": "",
+			"start": 1716141600000,
+			"duration": 6,
+			"end": 1716832799999,
+			"startIsMilestone": false,
+			"endIsMilestone": false,
+			"collapsed": false,
+			"canWrite": true,
+			"canAdd": true,
+			"canDelete": true,
+			"canAddIssue": true,
+			"assigs": [],
+			"hasChild": true,
+			"earlyStart": 0,
+			"earlyFinish": 6,
+			"latestStart": 0,
+			"latestFinish": 6,
+			"criticalCost": 11,
+			"isCritical": true
+		},
+		{
+			"id": -3,
+			"name": "gantt part",
+			"progress": 0,
+			"progressByWorklog": false,
+			"relevance": 0,
+			"type": "",
+			"typeId": "",
+			"description": "",
+			"code": "",
+			"level": 2,
+			"status": "STATUS_ACTIVE",
+			"depends": "",
+			"start": 1716141600000,
+			"duration": 2,
+			"end": 1716314399999,
+			"startIsMilestone": false,
+			"endIsMilestone": false,
+			"collapsed": false,
+			"canWrite": true,
+			"canAdd": true,
+			"canDelete": true,
+			"canAddIssue": true,
+			"assigs": [],
+			"hasChild": false,
+			"earlyStart": 0,
+			"earlyFinish": 2,
+			"latestStart": 5,
+			"latestFinish": 7,
+			"criticalCost": 6,
+			"isCritical": false
+		},
+		{
+			"id": -4,
+			"name": "editor part",
+			"progress": 0,
+			"progressByWorklog": false,
+			"relevance": 0,
+			"type": "",
+			"typeId": "",
+			"description": "",
+			"code": "",
+			"level": 2,
+			"status": "STATUS_SUSPENDED",
+			"depends": "3",
+			"start": 1716314400000,
+			"duration": 4,
+			"end": 1716832799999,
+			"startIsMilestone": false,
+			"endIsMilestone": false,
+			"collapsed": false,
+			"canWrite": true,
+			"canAdd": true,
+			"canDelete": true,
+			"canAddIssue": true,
+			"assigs": [],
+			"hasChild": false,
+			"earlyStart": 2,
+			"earlyFinish": 6,
+			"latestStart": 7,
+			"latestFinish": 11,
+			"criticalCost": 4,
+			"isCritical": false
+		}
+	],
+	"selectedRow": 3,
+	"deletedTaskIds": [
+		-6,
+		-7,
+		-8,
+		-5
+	],
+	"resources": [
+		{
+			"id": "tmp_1",
+			"name": "Resource 1"
+		},
+		{
+			"id": "tmp_2",
+			"name": "Resource 2"
+		},
+		{
+			"id": "tmp_3",
+			"name": "Resource 3"
+		},
+		{
+			"id": "tmp_4",
+			"name": "Resource 4"
+		}
+	],
+	"roles": [
+		{
+			"id": "tmp_1",
+			"name": "Project Manager"
+		},
+		{
+			"id": "tmp_2",
+			"name": "Worker"
+		},
+		{
+			"id": "tmp_3",
+			"name": "Stakeholder"
+		},
+		{
+			"id": "tmp_4",
+			"name": "Customer"
+		}
+	],
+	"canAdd": true,
+	"canWrite": true,
+	"canWriteOnParent": true,
+	"zoom": "1M"
+}

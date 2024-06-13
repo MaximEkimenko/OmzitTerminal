@@ -2,7 +2,9 @@ import asyncio
 import datetime
 import socket
 import threading
-
+import json
+from django.http import JsonResponse
+from django.shortcuts import render
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -138,3 +140,28 @@ class CallDispatcherView(APIView):
             except Exception:
                 pass
         return Response({'is_called': success})
+
+
+@csrf_exempt
+def save(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)  # Parse the JSON data from the request
+            print(data)
+
+            # Process the data (e.g., save to database, perform calculations, etc.)
+
+            # Create a response
+            response_data = {
+                'status': 'success',
+                'message': 'Data received'
+            }
+            return JsonResponse(response_data, status=200)
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Only POST method allowed'}, status=405)
+
+
+def index(request):
+    return render(request, 'api/gantt.html')
