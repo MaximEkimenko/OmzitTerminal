@@ -1,0 +1,37 @@
+{% extends "orders/testrep_base.html" %}
+{% load static %} 
+{% block title %}
+  Заявки на ремонт 
+{%endblock %} 
+{% block content %} 
+  {{block.super}}
+  <div class="col">
+    <h1>Информация по заявке № {{object.id}}</h1>
+    <div class="form_row">
+      
+      <form action="{% url 'orders'%}">
+        <input type="submit" value="Назад" />
+      </form>
+      
+      {% if object.status_id != status.ACCEPTED %}
+      <form action="{% url 'edit_repair' object.id %}">
+          <input type="submit" value="Редактировать" />
+      </form>
+      {%endif %}
+    </div>
+
+    <div class="equipment_card">
+      {% for i, j in order_params.items %}
+      <div class="card_row">
+        <div class="equipment_card__label">  {{i}}   </div>
+        <div class="equipment_card__value">  {{   j|default:""|safe  }}    </div>
+      </div>
+      {%endfor%}
+
+    </div>
+  </div>
+
+{% endblock content %} 
+{% block js %} 
+  {{block.super }} 
+{% endblock js%}

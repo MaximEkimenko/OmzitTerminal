@@ -1,0 +1,31 @@
+{% extends "orders/testrep_base.html" %} {% load static %} {% block title %}
+Заявки на ремонт {%endblock %} {% block content %} {{block.super}}
+<div class="col">
+  <h1>
+    Редактировать заявку на ремонт в рамках своих полномочий
+  </h1>
+
+<form action="" class="form_form" method="POST">
+
+        <div class="form_row">
+            <button class="narrow_button" onclick="window.location.href = `{% url 'orders' %}`;" type="button">Назад</button>
+            <input type="submit" value="Отредактировать" />
+          </div>
+      {% csrf_token %}
+      
+      <div class="form_row">
+      <label>Статус заявки:</label>
+      {{object.status}}
+      </div>
+      {% for row in form  %}
+        <div class="form_row">
+          <label for="{{ row.id_for_label }}">{{row.label}}:</label>      
+            {{row}}            
+        </div>
+        {% endfor %}
+      
+    </form>        
+  
+</div>
+
+{% endblock content %} {% block js %} {{block.super }} {% endblock js%}

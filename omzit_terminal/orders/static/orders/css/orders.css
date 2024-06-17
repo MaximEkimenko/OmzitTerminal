@@ -1,0 +1,244 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 14px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 500;
+  background-color: rgb(36, 36, 55);
+}
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: rgb(34, 34, 51);
+  color: #e0e0f8;
+  justify-content: space-between;
+  align-items: center;
+  height: 80px;
+  min-width: 100vw;
+  font-weight: 500;
+  font-size: 1.25rem;
+  box-shadow: 0 0 5px #000;
+}
+
+.header_row {
+  min-width: 360px;
+  margin: 0.5rem auto;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  list-style-type: none;
+  gap: 25vw;
+}
+.header_row a {
+  text-decoration: none;
+  color: inherit;
+}
+.header_row .option_active a {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff9dc;
+  text-decoration: underline;
+}
+.header_row .links-block {
+  width: -moz-fit-content;
+  width: fit-content;
+  gap: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.user-block {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+}
+
+input,
+select {
+  font-family: Arial, Helvetica, sans-serif;
+  min-height: 25px;
+  min-width: 150px;
+  width: max-content;
+  font-size: 1rem;
+  background-color: #e0e0f8;
+  border-radius: 2px;
+}
+
+button {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1.1rem;
+  background-color: #e0e0f8;
+  margin: 0 0.2rem;
+  padding: 0 0.35rem;
+  min-height: 25px;
+  min-width: 2rem;
+  border-radius: 3px;
+  border: 1px solid rgb(35, 35, 35);
+}
+button:hover:enabled {
+  opacity: 0.9;
+}
+
+.content {
+  max-width: 1900px;
+  margin: 0 auto;
+  font-weight: 400;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+}
+.content_window {
+  background-color: hsl(187, 24%, 86%);
+  width: 100%;
+  flex-grow: 1;
+  border-right: 1px solid #222;
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: center;
+  padding-top: 80px;
+  margin: auto;
+  overflow-y: none;
+}
+.content .content_window .title {
+  margin: 1rem;
+  text-align: center;
+  font-size: 1.5rem;
+}
+.content .content_window .table {
+  overflow-y: auto;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 2rem;
+  align-items: center;
+  margin: 5px;
+}
+
+.frame {
+  margin: 1rem 0.5rem;
+  padding: 1rem;
+  max-width: 500px;
+  border: 1px solid rgba(83, 73, 73, 0.6);
+}
+table {
+  /* border: 1px solid black; */
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-collapse: collapse;
+  min-width: 360px;
+  margin: 1rem auto;
+  border: 1px solid rgba(83, 73, 73, 0.4);
+  line-height: 1.3em;
+}
+table th {
+  background-color: hsl(187, 10%, 27%);
+  color: rgb(238, 247, 244);
+  font-weight: 500;
+  padding: 0.5em 1em;
+}
+table tr {
+  border-bottom: 1px solid rgba(83, 73, 73, 0.4);
+  background-color: rgb(220, 228, 223);
+}
+table tr:nth-child(even) {
+  background-color: rgb(228, 234, 229);
+}
+table tr:hover {
+  background-color: rgb(227, 241, 232);
+}
+table tr.not_active {
+  color: #999;
+}
+table tr span:hover {
+  text-decoration: underline;
+}
+table td {
+  padding: 0.5em 1em;
+  text-align: center;
+  min-width: 5rem;
+  max-width: 250rem;
+  overflow-wrap: break-word;
+  border: 1px solid rgba(83, 73, 73, 0.4);
+} /*# sourceMappingURL=main.css.map */
+
+td button {
+  width: 200px;
+  margin: 2px;
+}
+
+.alert {
+  font-size: 1.25rem;
+  min-height: 26px;
+  min-width: 250px;
+  padding: 0.3rem;
+  margin: 0.3rem;
+  border-radius: 0.5rem;
+  text-align: center;
+}
+
+.alert-danger {
+  color: hsl(15, 100%, 39%);
+  background-color: hsl(15, 100%, 84%);
+  border: 1px solid hsl(15, 100%, 39%);
+  text-align: center;
+}
+
+.alert-success {
+  color: hsl(147.29deg 100% 29.13%);
+  background-color: hsl(148.85deg 100% 90.25%);
+  border: 1px solid hsl(147.29deg 100% 29.13%);
+}
+
+.hide_old_repairs {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: end;
+  align-items: baseline;
+  gap: 2rem;
+}
+
+.popup-form {
+  position: absolute;
+  top: 50px;
+  right: 10px;
+  text-align: right;
+  width: max-content;
+}
+
+.hidden {
+  display: none;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(60, 60, 60, 0.9);
+}
+
+.modal-content {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
