@@ -12,7 +12,7 @@ body {
 }
 
 a {
-    text-decoration: none; /* Убираем подчёркивание */
+  text-decoration: none; /* Убираем подчёркивание */
 }
 
 #wrap {
@@ -33,121 +33,123 @@ footer {
 }
 
 footer img {
-    height:100px;
+  height: 100px;
 }
 
 .line {
-
-    margin: 0;
-	padding: 0;
-	height: 3px;
-	border: none;
-	background: radial-gradient(#EF7F1A, #31343C);
+  margin: 0;
+  padding: 0;
+  height: 3px;
+  border: none;
+  background: radial-gradient(#ef7f1a, #31343c);
 }
 /*стили терминала*/
 
 #sel_3 {
-    height: 500px;
+  height: 500px;
 }
 .sel_option_0 {
-    color: #ec552d;
-    font-size: 22px;
-    font-weight: bold;
+  color: #ec552d;
+  font-size: 22px;
+  font-weight: bold;
 }
 
 .sel_option {
-    padding: 10px;
-    font-weight: bold;
+  padding: 10px;
+  font-weight: bold;
 }
 
 .terminal_alert {
-    font-size: 30px;
-    color: red;
+  font-size: 30px;
+  color: red;
 }
 
 .countdown {
-    font-size: 20px;
-    color: #EF7F1A;
+  font-size: 20px;
+  color: #ef7f1a;
 }
 
 /* стили чертежей */
 #select_draws {
-    height: 300px;
-    width: 500px;
+  height: 300px;
+  width: 500px;
 }
 
 h1 {
-    color: #ec562d;
-    font-weight: bold;
-    font-size: 26px;
+  color: #ec562d;
+  font-weight: bold;
+  font-size: 26px;
 }
 
 h3,
 h4 {
-    color: #ec562d;
-    font-weight: bold;
-    font-size: 22px;
+  color: #ec562d;
+  font-weight: bold;
+  font-size: 22px;
 }
 
 h4 {
-    font-size: 20px;
-    text-align: center;
+  font-size: 20px;
+  text-align: center;
 }
 
 .row {
-    margin: 10px;
+  margin: 10px;
 }
 
 .col {
-    margin: 10px;
-    display: inline-block;
+  margin: 10px;
+  display: inline-block;
 }
 
 .col-form {
-    margin: 10px;
+  margin: 10px;
 }
 
 .alert {
-    color: #ec552d;
-    font-size: 22px;
-    font-weight: bold;
+  color: #ec552d;
+  font-size: 22px;
+  font-weight: bold;
 }
 
 /*исчезающее сообщение*/
 .alert_gone {
-    color: green;
-    font-size: 30px;
-    font-weight: bold;
-    display: inline-block;
+  color: green;
+  font-size: 30px;
+  font-weight: bold;
+  display: inline-block;
 }
 /*таблицы*/
 .table {
-    border: solid 1px orange;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 16px;
-    border-spacing: 2px;
-    display: inline-block;
-    vertical-align: middle;
-    width: auto;
+  border: solid 1px orange;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  border-spacing: 2px;
+  display: inline-block;
+  vertical-align: middle;
+  width: auto;
+  border-collapse: collapse;
 }
 
 .td_cell {
-    border: solid 1px orange;
-    background-color: transparent;
-    padding: 5px;
-    text-align: center;
+  max-width: 260px;
+  word-break: break-word;
+  border: solid 1px orange;
+  background-color: transparent;
+  padding: 5px;
+  text-align: center;
 }
 
 .td_cell_dt {
-    border: solid 1px orange;
-    background-color: transparent;
-    padding: 5px;
-    text-align: center;
+  border: solid 1px orange;
+  background-color: transparent;
+  padding: 5px;
+  text-align: center;
 }
 
 .td_cell input {
-    width: 50px;
-    height: 38px;
+  width: 50px;
+  height: 38px;
 }
 
 /* .td_cell input:hover {
@@ -155,36 +157,36 @@ h4 {
 } */
 
 .changed_plan {
-    width: 120px;
-    height: 30px;
-    font-weight: bold;
-    color: red;
-    font-size: 22px;
-    padding: 0;
-    margin: 0;
+  width: 120px;
+  height: 30px;
+  font-weight: bold;
+  color: red;
+  font-size: 22px;
+  padding: 0;
+  margin: 0;
 }
 
 .yesterday {
-    /* font-weight: bold; */
-    color: orange;
-    font-size: 1.8em;
-    /* width: 100px; */
+  /* font-weight: bold; */
+  color: orange;
+  font-size: 1.8em;
+  /* width: 100px; */
 }
 
 #day_fact_filled {
-    color: green;
-    font-weight: bold;
+  color: green;
+  font-weight: bold;
 }
 
 .cell_text {
-    font-size: 16px;
-    font-weight: bold;
+  font-size: 16px;
+  font-weight: bold;
 }
 
 .table_header_row {
-    font-weight: bold;
-    text-align: center;
-    font-size: 20px;
+  /* font-weight: bold; */
+  text-align: center;
+  /* font-size: 20px; */
 }
 
 /* .table_h3 {
@@ -194,460 +196,492 @@ h4 {
 
 /*блок формы */
 .form_form {
-    width: 1000px;
-    align-self: center;
-    margin-left: auto;
-    margin-right: auto;
+  width: 1000px;
+  align-self: center;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .action_form {
-    width: 800px;
-    align-self: center;
-    margin-left: auto;
-    margin-right: auto;
+  width: 800px;
+  align-self: center;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .second_form {
-    width: 1000px;
-    align-self: center;
-    margin-top: 10px;
-    margin-left: auto;
-    margin-right: auto;
+  width: 1000px;
+  align-self: center;
+  margin-top: 10px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .td_query_block {
-    border: solid red 1px;
-    border-radius: 10px;
-    margin: 10px;
-}
-
-.form_inner_div {
-    margin: 10px;
-    padding: 5px;
-    display: inline-block;
-}
-
-.form_block_div {
-    margin: 10px;
-    padding: 5px;
-    display: block;
-}
-
-.form_block_div input {
-    font-size: 16px;
-    padding: 3px;
-    margin: 3px;
-    border-radius: 7px;
-    height: 32px;
-    display: inline-block
-}
-
-.form_block_div label {
-    margin: 10px;
-    display: inline-block;
-    padding: 5px;
-    color: #ef7f1a;
-    font-size: 22px;
-    font-weight: bold;
-}
-
-.form_inner_label {
-    margin: 10px;
-    display: inline-block;
-    padding: 5px;
-    color: #ef7f1a;
-    font-size: 22px;
-    font-weight: bold;
-}
-
-.form-error {
-    color: red;
-}
-
-select {
-    font-size: 16px;
-    padding: 3px;
-    margin: 3px;
-    border-radius: 7px;
-    height: 40px;
-}
-input {
-    font-size: 14px;
-    border-radius: 7px;
-    height: 22px;
-}
-.form_button {
-    font-size: 16px;
-    border-radius: 4px;
-    margin: 3px;
-    /* width: 200px;
-    height: 30px; */
-    /* height: auto; */
-    /* padding: 5px; */
-}
-.red_word {
-    color: red;
-    /* display: inline-block; */
-}
-
-.green_word {
-    color: green;
-    /* display: inline-block; */
-}
-#id_excel_file {
-    border: solid 1px orange;
-    font-size: 16px;
-    padding: 5px;
-    width: auto;
-    height: auto;
+  border: solid red 1px;
+  border-radius: 10px;
+  margin: 10px;
 }
 
 .form_row {
-    display: inline-block;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  margin: 0.5rem;
+  gap: 24px;
+}
+.form_row__tall {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  margin: 1rem;
+  gap: 24px;
+}
+
+.form_inner_div {
+  margin: 10px;
+  padding: 5px;
+  display: inline-block;
+}
+
+.form_block_div {
+  margin: 10px;
+  padding: 5px;
+  display: block;
+}
+
+.form_block_div input {
+  font-size: 16px;
+  padding: 3px;
+  margin: 3px;
+  border-radius: 7px;
+  height: 32px;
+  display: inline-block;
+}
+
+.form_block_div label {
+  margin: 10px;
+  display: inline-block;
+  padding: 5px;
+  color: #ef7f1a;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.form_inner_label {
+  margin: 10px;
+  display: inline-block;
+  padding: 5px;
+  color: #ef7f1a;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.form_button {
+  font-size: 16px;
+  border-radius: 4px;
+  margin: 3px;
+  /* width: 200px;
+      height: 30px; */
+  /* height: auto; */
+  /* padding: 5px; */
+}
+
+.form-error {
+  color: red;
+}
+
+select {
+  font-size: 16px;
+  max-width: 750px;
+  padding: 3px;
+  margin: 3px;
+  border-radius: 7px;
+  height: 40px;
+}
+input {
+  font-size: 14px;
+  border-radius: 7px;
+  height: 25px;
+}
+
+.input_like {
+  font-size: 14px;
+  border-radius: 7px;
+  height: 25px;
+}
+
+.red_word {
+  color: red;
+  /* display: inline-block; */
+}
+
+.green_word {
+  color: green;
+  /* display: inline-block; */
+}
+#id_excel_file {
+  border: solid 1px orange;
+  font-size: 16px;
+  padding: 5px;
+  width: auto;
+  height: auto;
 }
 
 .form_div {
-    display: inline-block;
-    vertical-align: middle;
-    width: auto;
-    height: auto;
+  display: inline-block;
+  vertical-align: middle;
+  width: auto;
+  height: auto;
 }
 
 .table_div {
-    display: inline-block;
-    vertical-align: middle;
-    width: auto;
-    height: auto;
+  display: inline-block;
+  vertical-align: middle;
+  width: auto;
+  height: auto;
 }
 
 .hide_button {
-    color: white;
-    background-color: gray;
-    position: absolute;
-    padding: 5px;
-    top: 10px;
-    right: 10px;
-    bottom: 10px;
-    left: 10px;
-    width: 110px;
-    height: 70px;
-    border-radius: 5px;
+  color: white;
+  background-color: gray;
+  position: absolute;
+  padding: 5px;
+  top: 10px;
+  right: 10px;
+  bottom: 10px;
+  left: 10px;
+  width: 110px;
+  height: 70px;
+  border-radius: 5px;
 }
 
 .modal {
-    display: none;
-    position: fixed;
-    z-index: 1;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.4);
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
 }
 
 .modal-content {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .add_to_plan {
-    background-color: #333333;
-    border: solid green 1px;
-    margin: 10px;
-    padding: 0 0 10px 0;
-    border-radius: 10px;
+  background-color: #333333;
+  border: solid green 1px;
+  margin: 10px;
+  padding: 0 0 10px 0;
+  border-radius: 10px;
 }
 
 .add_to_plan_center {
-    background-color: #333333;
-    width: 1000px;
-    border: solid green 1px;
-    display: flex;
-    margin-left: auto;
-    margin-right: auto;
-    padding: 0 0 10px 0;
-    border-radius: 10px;
-    flex-direction: column;
+  background-color: #333333;
+  width: 1000px;
+  border: solid green 1px;
+  display: flex;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 0 10px 0;
+  border-radius: 10px;
+  flex-direction: column;
 }
 
 /* Стили модальных окон */
 .btn {
-    background-color: white;
-    border: solid 2px black;
-    border-radius: 10px;
-    padding: 12px;
-    font-size: 16px;
-    cursor: pointer;
-    margin: 0 14px 0px 14px;
-    box-shadow: 10em;
+  background-color: white;
+  border: solid 2px black;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 0 14px 0px 14px;
+  box-shadow: 10em;
 }
 .btn:hover {
-    background-color: green;
-    color: white;
-    border: solid 2px black;
-    border-radius: 10px;
-    /* font-weight: bold; */
-    /* width: 15em; */
+  background-color: green;
+  color: white;
+  border: solid 2px black;
+  border-radius: 10px;
+  /* font-weight: bold; */
+  /* width: 15em; */
 }
 
+
 .st_action_btn {
-    width: 200px;
-    height: 200px;
-    background-color: white;
-    border: solid 2px black;
-    border-radius: 100px;
-    color: white;
-    padding: 12px;
-    font-size: 40px;
-    cursor: pointer;
-    margin: 20px;
-    box-shadow: 10em;
+  width: 200px;
+  height: 200px;
+  background-color: white;
+  border: solid 2px black;
+  border-radius: 100px;
+  color: white;
+  padding: 12px;
+  font-size: 40px;
+  cursor: pointer;
+  margin: 20px;
+  box-shadow: 10em;
 }
 
 .orange {
-    background-color: #ec562d;
+  background-color: #ec562d;
 }
 
 .green {
-    background-color: green;
+  background-color: green;
 }
 
 .red {
-    background-color: red;
+  background-color: red;
 }
 
 .st_action_btn:hover {
-    background-color: green;
-    color: white;
-    border: solid 2px black;
-    border-radius: 100px;
-    /* font-weight: bold; */
-    /* width: 15em; */
+  background-color: green;
+  color: white;
+  border: solid 2px black;
+  border-radius: 100px;
+  /* font-weight: bold; */
+  /* width: 15em; */
 }
 /* Стили легенды окон */
 .legend {
-    position: absolute;
-    top: 50px;
-    right: 10px;
-    /* display: block; */
-    text-align: right;
-    width: max-content;
+  position: absolute;
+  top: 50px;
+  right: 10px;
+  /* display: block; */
+  text-align: right;
+  width: max-content;
 }
 .legend a {
-    color: red;
-    text-align: right;
+  color: red;
+  text-align: right;
 }
 
 .notification {
-    /* position: absolute; */
-    display: block;
+  /* position: absolute; */
+  display: block;
 }
 
 .scheduler {
-    /* float: right; */
-    display: inline-block;
+  /* float: right; */
+  display: inline-block;
 }
 
 .report_input {
-    font-size: 1rem;
-    padding: 3px;
-    margin: 3px;
-    border-radius: 7px;
-    height: 30px;
+  font-size: 1rem;
+  padding: 3px;
+  margin: 3px;
+  border-radius: 7px;
+  height: 30px;
 }
 
 .name_input {
-    font-size: 16px;
-    padding: 3px;
-    margin: 3px;
-    border-radius: 7px;
-    height: 40px;
+  font-size: 16px;
+  padding: 3px;
+  margin: 3px;
+  border-radius: 7px;
+  height: 40px;
 }
 .name_select {
-    font-size: 16px;
-    padding: 3px;
-    margin: 3px;
-    border-radius: 7px;
-    width: 400px;
-    height: 40px;
-    background-color: transparent;
-    color: white;
+  font-size: 16px;
+  padding: 3px;
+  margin: 3px;
+  border-radius: 7px;
+  width: 400px;
+  height: 40px;
+  background-color: transparent;
+  color: white;
 }
 .name_select_option {
   color: white;
-  background: #31343C;
+  background: #31343c;
 }
 
 .name_select::-webkit-scrollbar {
-  width: 12px;               /* ширина всей полосы прокрутки */
+  width: 12px; /* ширина всей полосы прокрутки */
 }
 
 .name_select::-webkit-scrollbar-track {
-  background: #31343C;        /* цвет зоны отслеживания */
+  background: #31343c; /* цвет зоны отслеживания */
 }
 
 .name_select::-webkit-scrollbar-thumb {
-  background-color: transparent;    /* цвет бегунка */
-  border-radius: 20px;       /* округлось бегунка */
-  border: 1px solid white;  /* отступ вокруг бегунка */
+  background-color: transparent; /* цвет бегунка */
+  border-radius: 20px; /* округлось бегунка */
+  border: 1px solid white; /* отступ вокруг бегунка */
 }
 
 .draw_select {
-    font-size: 16px;
-    padding: 3px;
-    margin: 3px;
-    border-radius: 7px;
-    width: 300px;
-    height: 40px;
-    background-color: transparent;
-    color: white;
+  font-size: 16px;
+  padding: 3px;
+  margin: 3px;
+  border-radius: 7px;
+  width: 300px;
+  height: 40px;
+  background-color: transparent;
+  color: white;
 }
 .draw_select_option {
   color: white;
-  background: #31343C;
+  background: #31343c;
 }
 
 .draw_select::-webkit-scrollbar {
-  width: 12px;               /* ширина всей полосы прокрутки */
+  width: 12px; /* ширина всей полосы прокрутки */
 }
 
 .draw_select::-webkit-scrollbar-track {
-  background: #31343C;        /* цвет зоны отслеживания */
+  background: #31343c; /* цвет зоны отслеживания */
 }
 
 .draw_select::-webkit-scrollbar-thumb {
-  background-color: transparent;    /* цвет бегунка */
-  border-radius: 20px;       /* округлось бегунка */
-  border: 1px solid white;  /* отступ вокруг бегунка */
+  background-color: transparent; /* цвет бегунка */
+  border-radius: 20px; /* округлось бегунка */
+  border: 1px solid white; /* отступ вокруг бегунка */
 }
 
 .table_spec {
-    border: solid 1px orange;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 16px;
-    border-spacing: 2px;
-    display: inline-block;
-    vertical-align: middle;
-    width: auto;
+  border: solid 1px orange;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  border-spacing: 2px;
+  display: inline-block;
+  vertical-align: middle;
+  width: auto;
 }
 
 .sz_textarea {
-    font-size: 1rem;
-    padding: 3px;
-    margin: 3px;
-    border-radius: 7px;
+  width: 340px;
+  height: 94px;
+  font-size: 1rem;
+  padding: 3px;
+  margin: 3px;
+  border-radius: 7px;
 }
 
 .scroll_div_back {
-    width:970px;
-    overflow:hidden;
+  width: 970px;
+  overflow: hidden;
 }
 
 .scroll_div {
-    height:300px;
-    overflow-y:scroll;
+  height: 300px;
+  overflow-y: scroll;
 }
 
 .future {
-    width: 70px;
-    height: 30px;
-    /* color: red; */
-    background-color: red;
-    font-weight: bold;
-    color: white;
-    font-size: 22px;
-    padding: 0;
-    margin: 0;
+  width: 70px;
+  height: 30px;
+  /* color: red; */
+  background-color: red;
+  font-weight: bold;
+  color: white;
+  font-size: 22px;
+  padding: 0;
+  margin: 0;
 }
 
 .past {
-    width: 70px;
-    font-weight: bold;
-    font-size: 22px;
-    padding: 0;
-    margin: 0;
+  width: 70px;
+  font-weight: bold;
+  font-size: 22px;
+  padding: 0;
+  margin: 0;
 }
 
 .message_table {
-    border: 1px solid orange;
-    font-size: 20px;
-    font-weight: bold;
-    padding: 10px 5px 10px 5px;
-    margin: 10px 5px 10px 5px;
+  border: 1px solid orange;
+  font-size: 20px;
+  font-weight: bold;
+  padding: 10px 5px 10px 5px;
+  margin: 10px 5px 10px 5px;
 }
 
 .line_plan_table {
-    border: 1px solid orange;
-    display: inline-block;
-    margin: 10px 1px 10px 0;
-    padding: 0;
+  border: 1px solid orange;
+  display: inline-block;
+  margin: 10px 1px 10px 0;
+  padding: 0;
 }
 .message_table_pos {
-    margin: 0 auto;
+  margin: 0 auto;
 }
 
 .navbar {
-    display: flex-box;
+  display: flex-box;
 }
 
 .navbar ul {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    background-color: #ec562d;
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #ec562d;
 }
 
 .navbar li {
-    float: left;
+  float: left;
 }
 
-li a, li span, li button, .dropbtn {
-    display: inline-block;
-    color: white;
-    text-align: center;
-    padding: 14px 16px;
-    text-decoration: none;
+li a,
+li span,
+li button,
+.dropbtn {
+  display: inline-block;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
 }
 
-li button{
-    border: none;
-    font-size: 1em;
-    background-color: transparent;
+li button {
+  border: none;
+  font-size: 1em;
+  background-color: transparent;
 }
 
-li a:hover, li button:hover, .dropdown:hover .dropbtn {
-    background-color: darkslategray;
+li a:hover,
+li button:hover,
+.dropdown:hover .dropbtn {
+  background-color: darkslategray;
 }
 
 li.dropdown {
-    display: inline-block;
+  display: inline-block;
 }
 
 .dropdown-content {
-    display: none;
-    position: absolute;
-    background-color: #f9f9f9;
-    min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-    z-index: 1;
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
 }
 
 .dropdown-content a {
-    color: black;
-    padding: 12px 16px;
-    text-decoration: none;
-    display: block;
-    text-align: left;
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  text-align: left;
 }
 
-.dropdown-content a:hover {background-color: #f1f1f1}
+.dropdown-content a:hover {
+  background-color: #f1f1f1;
+}
 
 .dropdown:hover .dropdown-content {
-    display: block;
+  display: block;
 }
 
 .sticky {
@@ -657,160 +691,262 @@ li.dropdown {
 }
 
 .table_header_row_plasma {
-    font-weight: bold;
-    text-align: center;
-    vertical-align: top;
-    font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  vertical-align: top;
+  font-size: 20px;
 }
 
 .tehnolog_select {
-    width: 25px;
-    height: 25px;
+  width: 25px;
+  height: 25px;
 }
 
 .doer_select {
-    width: 25px;
-    height: 25px;
+  width: 25px;
+  height: 25px;
 }
 
 .plasma_select {
-    width: 25px;
-    height: 25px;
+  width: 25px;
+  height: 25px;
 }
 
 .filter_select {
-    display: inline-flex;
-    min-width: 50px;
-    height: 148px;
+  display: inline-flex;
+  min-width: 50px;
+  height: 148px;
 }
 
 .filter_select::-webkit-scrollbar {
-  width: 12px;               /* ширина всей полосы прокрутки */
+  width: 12px; /* ширина всей полосы прокрутки */
 }
 
 .filter_select::-webkit-scrollbar-track {
-  background: transparent;        /* цвет зоны отслеживания */
+  background: transparent; /* цвет зоны отслеживания */
 }
 
 .filter_select::-webkit-scrollbar-thumb {
-  background-color: transparent;    /* цвет бегунка */
-  border-radius: 20px;       /* округлось бегунка */
-  border: 1px solid white;  /* отступ вокруг бегунка */
+  background-color: transparent; /* цвет бегунка */
+  border-radius: 20px; /* округлось бегунка */
+  border: 1px solid white; /* отступ вокруг бегунка */
 }
 
 .btn_part {
-    background-color: white;
-    border: solid 2px black;
-    border-radius: 10px;
-    padding: 12px;
-    font-size: 16px;
-    cursor: pointer;
-    margin: 0 14px 0px 14px;
-    box-shadow: 10em;
+  background-color: white;
+  border: solid 2px black;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 0 14px 0px 14px;
+  box-shadow: 10em;
 }
 .btn_part:hover {
-    background-color: yellow;
-    color: black;
-    border: solid 2px black;
-    border-radius: 10px;
-    /* font-weight: bold; */
-    /* width: 15em; */
+  background-color: yellow;
+  color: black;
+  border: solid 2px black;
+  border-radius: 10px;
+  /* font-weight: bold; */
+  /* width: 15em; */
 }
 
 .btn_delete {
-    background-color: white;
-    border: solid 2px black;
-    border-radius: 10px;
-    padding: 12px;
-    font-size: 16px;
-    cursor: pointer;
-    margin: 0 14px 0px 14px;
-    box-shadow: 10em;
+  background-color: white;
+  border: solid 2px black;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 0 14px 0px 14px;
+  box-shadow: 10em;
 }
 .btn_delete:hover {
-    background-color: red;
-    color: white;
-    border: solid 2px black;
-    border-radius: 10px;
-    /* font-weight: bold; */
-    /* width: 15em; */
+  background-color: red;
+  color: white;
+  border: solid 2px black;
+  border-radius: 10px;
+  /* font-weight: bold; */
+  /* width: 15em; */
 }
 
 .st_action_btn {
-    width: 200px;
-    height: 200px;
-    background-color: white;
-    border: solid 2px black;
-    border-radius: 100px;
-    color: white;
-    padding: 12px;
-    font-size: 40px;
-    cursor: pointer;
-    margin: 20px;
-    box-shadow: 10em;
+  width: 200px;
+  height: 200px;
+  background-color: white;
+  border: solid 2px black;
+  border-radius: 100px;
+  color: white;
+  padding: 12px;
+  font-size: 40px;
+  cursor: pointer;
+  margin: 20px;
+  box-shadow: 10em;
 }
 
 .orange {
-    background-color: #ec562d;
+  background-color: #ec562d;
 }
 
 .green {
-    background-color: green;
+  background-color: green;
 }
 
 .red {
-    background-color: red;
+  background-color: red;
 }
 
 .st_action_btn:hover {
-    background-color: green;
-    color: white;
-    border: solid 2px black;
-    border-radius: 100px;
-    /* font-weight: bold; */
-    /* width: 15em; */
+  background-color: green;
+  color: white;
+  border: solid 2px black;
+  border-radius: 100px;
+  /* font-weight: bold; */
+  /* width: 15em; */
 }
 
 .action_form {
-    width: 800px;
-    align-self: center;
-    margin-left: auto;
-    margin-right: auto;
+  width: 800px;
+  align-self: center;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .reason_select {
-    height: 300px;
-    width: 500px;
+  height: 300px;
+  width: 500px;
 }
 
 .reason_select option {
-    padding: 10px;
-    font-weight: bold;
+  padding: 10px;
+  font-weight: bold;
 }
 
 .reason_select option:first-child {
-    color: #ec552d;
-    font-size: 22px;
-    font-weight: bold;
+  color: #ec552d;
+  font-size: 22px;
+  font-weight: bold;
 }
 
 .sort-filter {
-    display: inline-flex;
-    width: 90%;
-    flex-wrap: nowrap;
-    align-items: center;
+  display: inline-flex;
+  width: 90%;
+  flex-wrap: nowrap;
+  align-items: center;
 }
 
 .sort-filter input {
-    margin: 2px;
-    border-radius: 7px;
-    height: 23px;
-    width: 100%;
+  margin: 2px;
+  border-radius: 7px;
+  height: 23px;
+  width: 100%;
 }
 
 .sort-filter button {
-    margin: 2px;
-    border-radius: 7px;
-    max-width: 2rem;
-    height: 100%;
+  margin: 2px;
+  border-radius: 7px;
+  max-width: 2rem;
+  height: 100%;
+}
+
+.table_link {
+  color: rgb(154, 156, 253);
+  text-decoration: underline;
+  text-shadow: 0 0 5px black;
+}
+
+.equipment_card {
+  margin: 0px auto;
+  padding: 1rem;
+
+  max-width: 1600px;
+  min-width: 800px;
+  display: flex;
+  flex-direction: column;
+  background: #242629;
+  border: 2 solid black;
+  border-radius: 0.5rem;
+}
+
+.card_row {
+  width: 100%;
+  min-height: 2rem;
+  gap: 0.5rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+  align-items: baseline;
+  gap: 30px;
+  margin: 0.5rem 0;
+  border-bottom: 1px solid rgb(100, 97, 122);
+}
+.equipment_card__label {
+  width: 40%;
+}
+.equipment_card__value {
+  width: 60%;
+}
+.equipment_card__spacer {
+  flex-grow: 1;
+}
+
+
+.link_button {
+  color: green;
+  display: inline-block;
+  margin: 16px;
+}
+
+.link_button_wrapper {
+  background-color: #f0f0f0;
+  color: black;
+  font-size: 16px;
+  border: 2px outset black;
+  border-radius: 4px;
+  margin: 3px;
+}
+
+.narrow_button {
+  font-size: 14px;
+  border-radius: 7px;
+  height: 22px;
+}
+
+
+.btn-like{
+  background-color: white;
+  border: solid 2px black;
+  border-radius: 10px;
+  padding: 9px;
+  font-size: 16px;
+  margin: 0 14px 0px 14px;
+  box-shadow: 10em;
+}
+
+
+section{
+--DETECTED: rgba(255, 25, 82, 0.2);
+--REPAIRING: rgba(253, 68, 43, 1);
+--FIXED: rgb(147, 201, 180);
+--ACCEPTED: rgba(80, 200, 103, 1);
+--WAIT_FOR_ACT: rgba(214, 198, 53, 1);
+--UNPRPAIRABLE: rgba(119, 0, 80, 1);
+--START_REPAIR: rgba(253, 68, 43, 1);
+--WAIT_FOR_MATERIALS: rgb(255, 200, 47);
+--CANCELLED: rgb(77, 72, 58);
+}
+.table_button
+{
+  width: 130px;
+  margin: 2px 0;
+}
+[disabled] {
+  background-color: #BBB;
+  color:#666;
+}
+
+.bigger_text{
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #ef7f1a;
 }

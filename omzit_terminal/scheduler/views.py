@@ -27,6 +27,7 @@ from .models import WorkshopSchedule, ShiftTask, Doers
 from .services.schedule_handlers import get_all_done_rate, make_workshop_plan_plot, create_pdf_report, report_merger
 from worker.services.master_call_function import terminal_message_to_id
 from .services.sz_reports import get_start_end_st_report, create_shift_task_report
+from orders.utils.roles import Position, get_employee_position
 
 # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
 # from django.db.models import Avg, Sum
@@ -414,16 +415,28 @@ class LoginUser(LoginView):
 
     def get_success_url(self):  # редирект после логина
         logger.info(f"Пользователь {self.request.user.username} вошёл в систему.")
-        if 'admin' in self.request.user.username:
-            return reverse_lazy('home')
-        elif 'disp' in self.request.user.username:
-            return reverse_lazy('scheduler')
-        elif 'tehnolog' in self.request.user.username:
-            return reverse_lazy('tehnolog')
-        elif 'constructor' in self.request.user.username:
-            return reverse_lazy('constructor')
-        elif 'termi' in self.request.user.username:
-            return reverse_lazy('worker_choose')
+        if "admin" in self.request.user.username:
+            return reverse_lazy("home")
+
+        if get_employee_position(self.request.user.username) in [
+            Position.HoS,
+            Position.HoRT,
+            Position.Dispatcher,
+        ]:
+            return reverse_lazy("orders")
+        elif get_employee_position(self.request.user.username) in [Position.Engineer]:
+            return reverse_lazy("equipment")
+
+        # elif self.request.user.username == "dispatcher":
+        #     return reverse_lazy("orders")
+        elif "disp" in self.request.user.username:
+            return reverse_lazy("scheduler")
+        elif "tehnolog" in self.request.user.username:
+            return reverse_lazy("tehnolog")
+        elif "constructor" in self.request.user.username:
+            return reverse_lazy("constructor")
+        elif "termi" in self.request.user.username:
+            return reverse_lazy("worker_choose")
 
 
 def logout_user(request):  # разлогинивание пользователя
