@@ -4,7 +4,7 @@ from orders.utils.roles import Position
 
 
 def forDjango(cls):
-    """позволяетпередавать перечисление в шаблон и там обращаться к его полям через точку"""
+    """позволяет передавать перечисление в шаблон и там обращаться к его полям через точку"""
     cls.do_not_call_in_templates = True
     return cls
 
@@ -35,7 +35,6 @@ class Button:
         self.title = title
         self.groups = groups
         self.url = url
-
         self.states = states
 
 
@@ -45,14 +44,14 @@ button_context = [
         title="начать ремонт",
         url="start_repair",
         states=[OrdStatus.DETECTED],
-        groups=[Position.Admin, Position.HoRT],
+        groups=[Position.Admin, Position.HoRT, Position.Repairman],
     ),
     Button(
         name="clarify",
         title="уточнить детали ремонта",
         url="clarify_repair",
         states=[OrdStatus.START_REPAIR],
-        groups=[Position.Admin, Position.HoRT],
+        groups=[Position.Admin, Position.HoRT, Position.Repairman],
     ),
     Button(
         name="commit",
@@ -66,7 +65,7 @@ button_context = [
         title="закончить ремонт",
         url="finish_repair",
         states=[OrdStatus.REPAIRING],
-        groups=[Position.Admin, Position.HoRT],
+        groups=[Position.Admin, Position.HoRT, Position.Repairman],
     ),
     Button(
         name="accept",

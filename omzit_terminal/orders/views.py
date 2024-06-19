@@ -1,4 +1,5 @@
 from datetime import datetime
+import asyncio
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -7,11 +8,11 @@ from django.http import HttpResponse, HttpResponseRedirect, FileResponse
 from django.db.models import Window, Count, ProtectedError
 from django.db.models.functions import RowNumber
 from django.urls import reverse_lazy
-from django.views.generic import DetailView, UpdateView, ListView, DeleteView, TemplateView, View
+from django.views.generic import DetailView, UpdateView, ListView, DeleteView
 from django.forms.models import model_to_dict
 from django.core.handlers.wsgi import WSGIRequest
 from django.utils.timezone import make_aware
-from django.views.generic.base import ContextMixin
+
 
 from m_logger_settings import logger
 from scheduler.filters import get_filterset
@@ -49,6 +50,7 @@ from orders.utils.utils import (
     apply_order_status,
     create_extra_materials,
 )
+from orders.utils.telegram import order_telegram_notification
 
 
 @login_required(login_url="/scheduler/login/")
@@ -96,7 +98,7 @@ def equipment(request: WSGIRequest) -> HttpResponse:
     context.update(
         {
             "button_conditions": {
-                "create": [Position.Admin, Position.Engineer],
+                "create": [Position.Admin, Position.Engineer, Position.HoRT],
             },
             "role": get_employee_position(request.user.username),
             "permitted_users": PERMITED_USERS,
@@ -110,14 +112,14 @@ def orders(request) -> HttpResponse:
     custom_login_check(request)
     if request.method == "POST":
 
-        new_order = AddOrderForm(request.POST)
-        if new_order.is_valid():
+        add_order_form = AddOrderForm(request.POST)
+        if add_order_form.is_valid():
             try:
                 # Выбираем все параметры кроме исполнителей, чтобы создать объект заявки.
                 # Исполнителей присоединим к созданному объекту позже
                 order_parameters = {
                     key: val
-                    for key, val in new_order.cleaned_data.items()
+                    for key, val in add_order_form.cleaned_data.items()
                     if not key.startswith("fio")
                 }
                 order_parameters.update(
@@ -127,18 +129,20 @@ def orders(request) -> HttpResponse:
                         ),
                     }
                 )
-                n_order = Orders(**order_parameters)  # создаем заявку
-                n_order.save()
-                alert_message = "Новая заявка на ремонт добавлена!"
-                create_flash_message(alert_message)
-                last = Orders.objects.last()
-                logger.info(f"Заявка № {last.id} добавлена в таблицу Orders")
+                new_order = Orders(**order_parameters)  # создаем заявку
+                new_order.save()
 
             except Exception as e:
                 alert_message = "Ошибка добавления в заявки"
                 create_flash_message(alert_message)
                 logger.error("Ошибка записи в таблицу Orders.")
                 logger.exception(e)
+            else:
+                alert_message = "Новая заявка на ремонт добавлена!"
+                create_flash_message(alert_message)
+                logger.info(f"Заявка № {new_order.id} добавлена в таблицу Orders")
+                order_telegram_notification(OrdStatus.DETECTED, new_order)
+
         else:
             logger.error("Ошибка валидации формы добавления новой заявки на ремонт.")
         return redirect("orders")
@@ -151,23 +155,28 @@ def orders(request) -> HttpResponse:
 @login_required(login_url="/scheduler/login/")
 def order_start_repair(request, pk):
     context = {}
-    order: Orders = Orders.objects.get(pk=pk)
+    order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
+        pk=pk
+    )
     if request.method == "POST":
         form = StartRepairForm(request.POST)
         if form.is_valid():
             fios = get_doers_list(form)
             if len(fios) == len(set(fios)):  # если нет повторений в списке fios, добавляем запись
-                order.doers_fio = convert_name(fios)
+                applied_status = OrdStatus.START_REPAIR
+                order.doers_fio = ", ".join(sorted(fios))
                 order.inspection_date = make_aware(datetime.now())
                 order.inspected_employee = " ".join(
                     [request.user.last_name, request.user.first_name]
                 )
-                apply_order_status(order, OrdStatus.START_REPAIR)
+                apply_order_status(order, applied_status)
                 alert_message = (
                     f"Начат ремонт оборудования {order.equipment} по заявке № {order.id}."
                 )
                 create_flash_message(alert_message)
                 logger.info(alert_message)
+                order_telegram_notification(applied_status, order)
+
                 return redirect("orders")
             else:
                 alert_message = f"Исполнители дублируются. Измените исполнителей."
@@ -184,7 +193,9 @@ def order_start_repair(request, pk):
 
 @login_required(login_url="/scheduler/login/")
 def order_clarify_repair(request, pk):
-    order: Orders = Orders.objects.get(pk=pk)
+    order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
+        pk=pk
+    )
     if request.method == "POST":
         form = RepairProgressForm(request.POST)
         if form.is_valid():
@@ -211,10 +222,12 @@ def order_clarify_repair(request, pk):
                     material_correct = True
             if material_correct:
                 order.materials = m
+                applied_status = OrdStatus.WAIT_FOR_MATERIALS
                 order.clarify_date = make_aware(datetime.now())
-                apply_order_status(order, OrdStatus.WAIT_FOR_MATERIALS)
+                apply_order_status(order, applied_status)
                 alert_message = "Данные по ремонту уточнены"
                 create_flash_message(alert_message)
+                order_telegram_notification(applied_status, order)
             else:
                 alert_message = f"Некорректно указаны материалы"
                 create_flash_message(alert_message)
@@ -228,7 +241,9 @@ def order_clarify_repair(request, pk):
 
 @login_required(login_url="/scheduler/login/")
 def order_confirm_materials(request, pk):
-    order: Orders = Orders.objects.get(pk=pk)
+    order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
+        pk=pk
+    )
     if request.method == "POST":
         # добавлена заявка на оборудование
         if "materials_request" in request.POST:
@@ -247,11 +262,12 @@ def order_confirm_materials(request, pk):
             # состояние заявки меняем на "в ремонте"
             order.confirm_materials_date = make_aware(datetime.now())
             order.material_dispatcher = " ".join([request.user.last_name, request.user.first_name])
-            apply_order_status(order, OrdStatus.REPAIRING)
+            applied_status = OrdStatus.REPAIRING
+            apply_order_status(order, applied_status)
             alert_message = f"Наличие материалов для ремонта по заявке {order.id} подтверждено."
             create_flash_message(alert_message)
             logger.info(alert_message)
-
+            order_telegram_notification(applied_status, order)
         return redirect("orders")
     form = ConfirmMaterialsForm({"materials_request": order.materials_request})
     context = {"object": order, "form": form, "permitted_users": PERMITED_USERS}
@@ -260,7 +276,9 @@ def order_confirm_materials(request, pk):
 
 @login_required(login_url="/scheduler/login/")
 def order_finish_repair(request, pk):
-    order: Orders = Orders.objects.get(pk=pk)
+    order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
+        pk=pk
+    )
     if request.method == "POST":
         form = RepairFinishForm(request.POST)
         if form.is_valid():
@@ -271,17 +289,21 @@ def order_finish_repair(request, pk):
                 order.repaired_employee = " ".join(
                     [request.user.last_name, request.user.first_name]
                 )
-                apply_order_status(order, OrdStatus.FIXED)
-                alert_message = (
-                    f"Ремонт оборудования {order.equipment} по заявке {order.id} закончен"
-                )
-                create_flash_message(alert_message)
-                logger.info(alert_message)
+                applied_status = OrdStatus.FIXED
+                apply_order_status(order, applied_status)
             except Exception as e:
                 alert_message = f"Ошибка записи при завершении ремонта оборудования {order.equipment} по заявке {order.id}"
                 create_flash_message(alert_message)
                 logger.error(alert_message)
                 logger.exception(e)
+            else:
+                alert_message = (
+                    f"Ремонт оборудования {order.equipment} по заявке {order.id} закончен"
+                )
+                create_flash_message(alert_message)
+                logger.info(alert_message)
+                order_telegram_notification(applied_status, order)
+
         return redirect("orders")
 
     form = RepairFinishForm(model_to_dict(order))
@@ -293,12 +315,16 @@ def order_finish_repair(request, pk):
 @login_required(login_url="/scheduler/login/")
 def order_accept_repair(request, pk):
     if request.method == "POST":
-        order: Orders = Orders.objects.get(pk=pk)
+        order: Orders = Orders.objects.prefetch_related(
+            "equipment", "equipment__shop", "status"
+        ).get(pk=pk)
         order.acceptance_date = make_aware(datetime.now())
         order.accepted_employee = " ".join([request.user.last_name, request.user.first_name])
-        apply_order_status(order, OrdStatus.ACCEPTED)
+        applied_status = OrdStatus.ACCEPTED
+        apply_order_status(order, applied_status)
         alert_message = "Отремонтированное оборудование принято"
         create_flash_message(alert_message)
+        order_telegram_notification(applied_status, order)
         return redirect("orders")
 
     order_object = Orders.objects.get(pk=pk)
@@ -308,7 +334,9 @@ def order_accept_repair(request, pk):
 
 @login_required(login_url="/scheduler/login/")
 def order_revision(request, pk):
-    order: Orders = Orders.objects.get(pk=pk)
+    order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
+        pk=pk
+    )
     if request.method == "POST":
         form = RepairRevisionForm(request.POST)
         if form.is_valid():
@@ -322,17 +350,24 @@ def order_revision(request, pk):
                 else:
                     order.revision_cause = string
                 order.revised_employee = " ".join([request.user.last_name, request.user.first_name])
-                apply_order_status(order, OrdStatus.REPAIRING)
-                alert_message = (
-                    f"Оборудовани {order.equipment} по заявке {order.id} возвращено на доработку"
-                )
-                create_flash_message(alert_message)
-                logger.info(alert_message)
+                applied_status = OrdStatus.REPAIRING
+                apply_order_status(order, applied_status)
             except Exception as e:
                 alert_message = f"Ошибка записи при возвращении оборудования {order.equipment} по заявке {order.id} на доработку"
                 create_flash_message(alert_message)
                 logger.error(alert_message)
                 logger.exception(e)
+            else:
+                alert_message = (
+                    f"Оборудовани {order.equipment} по заявке {order.id} возвращено на доработку"
+                )
+                create_flash_message(alert_message)
+                logger.info(alert_message)
+                order_telegram_notification(
+                    applied_status,
+                    order,
+                    "Оборудование '{equipment}' ({shop}) по заявке № {id} возвращено на доработку.",
+                )
         return redirect("orders")
 
     form = RepairRevisionForm()
@@ -342,7 +377,9 @@ def order_revision(request, pk):
 
 @login_required(login_url="/scheduler/login/")
 def order_cancel_repair(request, pk):
-    order: Orders = Orders.objects.get(pk=pk)
+    order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
+        pk=pk
+    )
     if request.method == "POST":
         form = RepairCancelForm(request.POST)
         if form.is_valid():
@@ -353,17 +390,21 @@ def order_cancel_repair(request, pk):
                 order.accepted_employee = " ".join(
                     [request.user.last_name, request.user.first_name]
                 )
-                apply_order_status(order, OrdStatus.CANCELLED)
-                alert_message = (
-                    f"Ремонт оборудования {order.equipment} по заявке {order.id} отменен"
-                )
-                create_flash_message(alert_message)
-                logger.info(alert_message)
+                applied_status = OrdStatus.CANCELLED
+                apply_order_status(order, applied_status)
+
             except Exception as e:
                 alert_message = f"Ошибка записи при отмене ремонта оборудования {order.equipment} по заявке {order.id}"
                 create_flash_message(alert_message)
                 logger.error(alert_message)
                 logger.exception(e)
+            else:
+                alert_message = (
+                    f"Ремонт оборудования {order.equipment} по заявке {order.id} отменен"
+                )
+                create_flash_message(alert_message)
+                logger.info(alert_message)
+                order_telegram_notification(applied_status, order)
         return redirect("orders")
 
     form = RepairCancelForm()
@@ -371,17 +412,11 @@ def order_cancel_repair(request, pk):
     return render(request, "orders/repair_cancel.html", context)
 
 
-#
-# class EquipmentCardView(FormView):
-#     model = Equipment
-#     template_name = "orders/equipment_card.html"
-#     form_class = AddEquipmentFormModel
-#     success_url = ""
-
-
 @login_required(login_url="/scheduler/login/")
 def order_info(request, pk):
-    order: Orders = Orders.objects.get(pk=pk)
+    order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
+        pk=pk
+    )
     verbose_header = get_order_verbose_names()
     vd = orders_record_to_dict(order, list(verbose_header))
     vhd = {verbose_header[i]: vd[i] for i in verbose_header}
@@ -396,9 +431,9 @@ def order_info(request, pk):
 
 @login_required(login_url="/scheduler/login/")
 def order_edit(request, pk):
-
-    order: Orders = Orders.objects.get(pk=pk)
-
+    order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
+        pk=pk
+    )
     if request.method == "POST":
         form = OrderEditForm(request.POST)
         if form.is_valid():
@@ -462,7 +497,9 @@ def order_delete_proc(request: WSGIRequest):
         except Exception:
             logger.info("Не получилось переконвертить индекс оборудования")
         else:
-            order = Orders.objects.get(pk=pk)
+            order: Orders = Orders.objects.prefetch_related(
+                "equipment", "equipment__shop", "status"
+            ).get(pk=pk)
             # убеждаемся, что пользователю можно удалить заявку
             if (
                 get_employee_position(request.user.username) in [Position.Admin, Position.HoS]
@@ -514,7 +551,7 @@ class EquipmentCardView(LoginRequiredMixin, DetailView):
     template_name = "orders/equipment_card.html"
     pk_url_kwarg = "equipment_id"
     extra_context = {
-        "edit_and_delete": [Position.Admin, Position.Engineer],
+        "edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],
         "permitted_users": PERMITED_USERS,
     }
 
@@ -579,7 +616,7 @@ class EquipmentCardEditView(LoginRequiredMixin, UpdateView):
 
     extra_context = {
         "color": "red",
-        "edit_and_delete": [Position.Admin, Position.Engineer],
+        "edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],
         "permitted_users": PERMITED_USERS,
     }
 
@@ -589,7 +626,7 @@ class EquipmentCardEditView(LoginRequiredMixin, UpdateView):
             {
                 # "permitted_users": PERMITED_USERS,
                 # "status": OrdStatus,
-                "edit_and_delete": [Position.Admin, Position.Engineer],
+                "edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],
                 "test": Position.Admin,
             }
         )

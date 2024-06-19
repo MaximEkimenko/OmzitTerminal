@@ -3,9 +3,29 @@ from django.urls import reverse_lazy
 
 from orders.utils.common import OrdStatus
 
-# class Doers(models.Model):
-#     fio = models.CharField(max_length=255)
-#
+
+class Assignable(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(assignable=True)
+
+
+class Repairmen(models.Model):
+    fio = models.CharField(max_length=255, null=False, blank=False, verbose_name="ФИО")
+    position = models.CharField(max_length=255, null=True, verbose_name="Должность")
+    phone = models.CharField(max_length=20, null=True, blank=True, verbose_name="Телефон")
+    telegram_id = models.CharField(max_length=20, blank=True, null=True, verbose_name="telegram_id")
+    active = models.BooleanField(default=True, verbose_name="Работает")
+    assignable = models.BooleanField(default=True, verbose_name="можно назначить на ремонт")
+
+    objects = models.Manager()
+    assignable_workers = Assignable()
+
+    def __str__(self):
+        return self.fio
+
+    class Meta:
+        verbose_name = "Ремонтник"
+        verbose_name_plural = "Ремонтники"
 
 
 class Shops(models.Model):
@@ -91,12 +111,21 @@ class OrderStatus(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name = "Состояние ремонта"
+        verbose_name_plural = "Состояния ремонта"
+        ordering = ["pk"]
+
 
 class Materials(models.Model):
     name = models.CharField(max_length=255, unique=True, verbose_name="Требуемые материалы")
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        verbose_name = "Материалы"
+        verbose_name_plural = "Материалы"
 
 
 class PriorityChoices(models.IntegerChoices):
@@ -122,8 +151,9 @@ class Orders(models.Model):
     )
     breakdown_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата поломки")
     breakdown_description = models.TextField(verbose_name="Описание поломки")
+    worker = models.CharField(max_length=100, blank=True, null=True, verbose_name="Работник")
     identified_employee = models.CharField(
-        max_length=100, null=True, verbose_name="Работник, выявивший поломку"
+        max_length=100, null=True, verbose_name="Работник, создавший заявку"
     )
     inspection_date = models.DateTimeField(null=True, verbose_name="Дата начала ремонта")
     expected_repair_date = models.DateTimeField(

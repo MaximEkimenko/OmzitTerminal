@@ -12,6 +12,8 @@ class Position(int, Enum):
     Engineer = 3
     Admin = 4
     Dispatcher = 5  # человек, подтверждающий наличие материалов для ремонта
+    Worker = 6  # Работник. Может смотреть, но ни к каким кнопкам у него доступа нет
+    Repairman = 7
 
 
 USER_GROUPS = {
@@ -22,8 +24,10 @@ USER_GROUPS = {
     ],
     Position.Engineer: ["engineer"],
     Position.HoS: ["chief_ceh", "chief_ceh2"],
-    Position.HoRT: ["chief_rep"],
+    Position.HoRT: ["chief_rep", "chief_rep2"],
     Position.Dispatcher: ["dispatcher", "dispatcher2"],
+    Position.Worker: ["worker"],
+    Position.Repairman: ["repair", "repair2", "repair3"],
 }
 PERMITED_USERS = []
 for g in USER_GROUPS.values():

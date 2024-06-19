@@ -82,8 +82,6 @@ def orders_to_dict(model: QuerySet) -> list[dict[str, Any]]:
     """
     Преобразует QuerySet в список словарей. Каждый словарь, это строка таблицы,
     а ключ словаря указывает на конкретную ячейку в строке.
-    Отдельно обрабатывается поле doers. Оно с заказом связано отношением многие-ео-многим,
-    поэтому набор объектов исполнителей преобразуется в строку.
     """
 
     def get_table_fields() -> list[str]:
@@ -95,24 +93,10 @@ def orders_to_dict(model: QuerySet) -> list[dict[str, Any]]:
             fields.append(i.name)
         return fields
 
-    def convert_name(doers: QuerySet):
-        """
-        Конвертирует набор объектов исполнителей в строку, где их имена перечислены через запятую
-        """
-        doers_fio = []
-        for e in rec.doers.all():
-            f = e.doers.split(" ")
-            new_name = " ".join(
-                [f[part][0] + "." if part > 0 else f[part] for part in range(len(f))]
-            )
-            doers_fio.append(new_name)
-        return ", ".join(sorted(doers_fio))
-
     fields = get_table_fields()  # получаем имена полей таблицы
     table_dict = []
     for rec in model:
         rec_dict = orders_record_to_dict(rec, fields)
-        # rec_dict["doers"] = convert_name(rec_dict["doers"])
         table_dict.append(rec_dict)
     return table_dict
 
@@ -121,7 +105,7 @@ def get_doers_list(form: forms.Form) -> list[str]:
     fios = list(
         filter(
             lambda x: x != "None",
-            (str(form.cleaned_data[f"fio_{i}"]) for i in range(1, 5)),
+            (str(form.cleaned_data[f"fio_{i}"]) for i in range(1, 4)),
         )
     )
     return fios
@@ -167,20 +151,7 @@ def orders_get_context(request) -> dict[str, Any]:
     equipment_filter = get_filterset(data=request.GET, queryset=order_table_data, fields=cols)
 
     context = {
-        "button_conditions": {  # у каких пользователей возникают кнопки
-            "create": [Position.Admin, Position.HoS],  # добавить заявку
-            "start": [Position.Admin, Position.HoRT],  # начать ремонт
-            "clarify": [Position.Admin, Position.HoRT],  # уточнить делали ремонта
-            "confirm_materials": [
-                Position.Admin,
-                Position.Dispatcher,
-            ],  # подтвердить наличие материалов
-            "finish": [Position.Admin, Position.HoRT],  # завершить ремонт
-            "accept": [Position.Admin, Position.HoS],  # принять ремонт
-            "revise": [Position.Admin, Position.HoS],  # вернуть на доработку
-            "cancel": [Position.Admin, Position.HoS],  # отменить ремонт
-            "delete": [Position.Admin, Position.HoS],  # удалить ремонт
-        },
+        "create_order": [Position.Admin, Position.HoS],  # добавить заявку
         "role": get_employee_position(request.user.username),
         "order_filter": equipment_filter,
         "status": OrdStatus,
@@ -194,16 +165,24 @@ def orders_get_context(request) -> dict[str, Any]:
 
 def get_order_edit_context(request) -> dict[str, Any]:
     employees = {
+        "worker": [Position.Admin, Position.HoS],
         "breakdown_description": [Position.Admin, Position.HoS],
-        "expected_repair_date": [Position.Admin, Position.HoRT],
-        "materials": [Position.Admin, Position.HoRT],
-        "extra_materials": [Position.Admin, Position.HoRT],
+        "expected_repair_date": [Position.Admin, Position.HoRT, Position.Repairman],
+        "materials": [Position.Admin, Position.HoRT, Position.Repairman],
+        "extra_materials": [Position.Admin, Position.HoRT, Position.Repairman],
         "materials_request": [Position.Admin, Position.Dispatcher],
-        "breakdown_cause": [Position.Admin, Position.HoRT],
-        "solution": [Position.Admin, Position.HoRT],
+        "breakdown_cause": [Position.Admin, Position.HoRT, Position.Repairman],
+        "solution": [Position.Admin, Position.HoRT, Position.Repairman],
     }
 
     stages = {
+        "worker": [
+            OrdStatus.DETECTED,
+            OrdStatus.START_REPAIR,
+            OrdStatus.WAIT_FOR_MATERIALS,
+            OrdStatus.REPAIRING,
+            OrdStatus.REPAIRING,
+        ],
         "breakdown_description": [
             OrdStatus.DETECTED,
             OrdStatus.START_REPAIR,

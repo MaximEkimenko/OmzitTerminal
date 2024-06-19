@@ -3,8 +3,8 @@ from django.forms import ModelForm, SelectDateWidget
 from django.utils.timezone import make_aware
 from django.contrib.admin import widgets
 
-from .models import Equipment, Orders, Materials, Shops
-from scheduler.forms import Doers
+from orders.models import Equipment, Orders, Materials, Shops, Repairmen
+
 from datetime import date, datetime
 
 
@@ -32,17 +32,12 @@ class EditEquipmentForm(ModelForm):
 class AddOrderForm(ModelForm):
     class Meta:
         model = Orders
-        fields = ["equipment", "priority", "breakdown_description"]
-
-    class Media:
-        js = [
-            "/static/orders/js/dummy.js",
-        ]
+        fields = ["equipment", "priority", "breakdown_description", "worker"]
 
 
 # class StartRepairForm(forms.ModelForm):
 class StartRepairForm(forms.Form):
-    qs_st_fio = Doers.objects.all().order_by("doers")
+    qs_st_fio = Repairmen.assignable_workers.all().order_by("fio")
     fio_1 = forms.ModelChoiceField(
         qs_st_fio,
         label="Исполнитель 1",
@@ -60,14 +55,6 @@ class StartRepairForm(forms.Form):
     fio_3 = forms.ModelChoiceField(
         qs_st_fio,
         label="Исполнитель 3",
-        empty_label="ФИО не выбрано",
-        initial="",
-        required=False,
-        widget=forms.Select(attrs={"class": "fio_select"}),
-    )
-    fio_4 = forms.ModelChoiceField(
-        qs_st_fio,
-        label="Исполнитель 4",
         empty_label="ФИО не выбрано",
         initial="",
         required=False,
@@ -125,27 +112,13 @@ class RepairRevisionForm(forms.ModelForm):
         ]
 
 
-#
-# class OrderEditForm(forms.ModelForm):
-#     class Meta:
-#         model = Orders
-#         fields = [
-#             "priority",
-#             "breakdown_description",
-#             "expected_repair_date",
-#             "revision_cause",
-#             "materials",
-#             "materials_request",
-#             "breakdown_cause",
-#             "solution",
-#         ]
-
-
 def current_time():
     return make_aware(datetime.now()).strftime("%d.%m.%Y %H:%M")
 
 
 class OrderEditForm(forms.Form):
+
+    worker = forms.CharField(max_length=255, required=False, label="Работник")
 
     breakdown_description = forms.CharField(
         label="Описание поломки",

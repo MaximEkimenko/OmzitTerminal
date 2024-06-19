@@ -422,6 +422,8 @@ class LoginUser(LoginView):
             Position.HoS,
             Position.HoRT,
             Position.Dispatcher,
+            Position.Worker,
+            Position.Repairman,
         ]:
             return reverse_lazy("orders")
         elif get_employee_position(self.request.user.username) in [Position.Engineer]:
