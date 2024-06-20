@@ -8,6 +8,8 @@ from typing import Any, Callable
 
 from worker.services.master_call_function import terminal_message_to_id
 
+
+
 TELEGRAM_TEST = True
 
 telegram_handle_dict = {
@@ -94,7 +96,7 @@ def notify_shop_chiefs(
 
 def order_telegram_notification(
     status: OrdStatus, order: Orders, custom_message: None | str = None
-) -> bool:
+) -> None:
     """
     Отправляет в телеграм сообщения о переходе заявки на новый этап.
     Запускает произвольное количество обработчиков сообщений, указанных в словаре telegram_handle_dict.

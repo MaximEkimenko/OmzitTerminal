@@ -1,6 +1,6 @@
 from django.urls import path
 
-from api.views import ShiftTaskListView, StartJobView, CallMaserView, CallDispatcherView, save, index
+from api.views import ShiftTaskListView, StartJobView, CallMaserView, CallDispatcherView, save_strat_plan
 
 app_name = "api"
 
@@ -10,6 +10,5 @@ urlpatterns = [
     path("start-job", StartJobView.as_view(), name="start-job"),
     path("call-master", CallMaserView.as_view(), name="call-master"),
     path("call-dispatcher", CallDispatcherView.as_view(), name="call-dispatcher"),
-    path('save/', save, name='save'),
-    path('', index, name='index')
+    path('save_strat', save_strat_plan, name='save_strat_plan'),
 ]

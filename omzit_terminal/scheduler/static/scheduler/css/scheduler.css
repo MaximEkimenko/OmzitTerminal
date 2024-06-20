@@ -132,8 +132,6 @@ h4 {
 }
 
 .td_cell {
-  max-width: 260px;
-  word-break: break-word;
   border: solid 1px orange;
   background-color: transparent;
   padding: 5px;

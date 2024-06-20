@@ -1,3 +1,6 @@
+import json
+
+from django.views.decorators.csrf import csrf_exempt
 from m_logger_settings import logger
 import asyncio
 import datetime
@@ -10,7 +13,7 @@ from django.contrib.auth.views import LoginView
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import PermissionDenied
 
-from django.http import FileResponse
+from django.http import FileResponse, JsonResponse
 
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
@@ -585,6 +588,52 @@ def shift_tasks_report_view(request, start: str = "", end: str = ""):
     }
     logger.info(f'Пользователь {request.user} перешёл на страницу отчёта с интревалом: {start} - {end}')
     return render(request, fr"schedulerwp/view_report.html", context=context)
+
+
+
+
+
+@csrf_exempt
+def save(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)  # Parse the JSON data from the request
+            print(data)
+
+            # Process the data (e.g., save to database, perform calculations, etc.)
+
+            # Create a response
+            response_data = {
+                'status': 'success',
+                'message': 'Data received'
+            }
+            return JsonResponse(response_data, status=200)
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Only POST method allowed'}, status=405)
+
+
+def strat_plan(request):
+    return render(request, 'scheduler/strat_plan/gantt.html')
+    # return render(request, 'api/gantt.html')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
 # @login_required(login_url="login")

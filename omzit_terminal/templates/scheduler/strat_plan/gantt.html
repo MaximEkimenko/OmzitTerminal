@@ -6,7 +6,11 @@
         <title>Teamwork</title>
         {% load static %}
         <link rel="stylesheet" href="{% static 'platform.css' %}" type="text/css" />
-        <link rel="stylesheet" href="{% static 'libs/jquery/dateField/jquery.dateField.css' %}" type="text/css" />
+        <link
+            rel="stylesheet"
+            href="{% static 'libs/jquery/dateField/jquery.dateField.css' %}"
+            type="text/css"
+        />
 
         <link rel="stylesheet" href="{% static 'gantt.css' %}" type="text/css" />
         <link rel="stylesheet" href="{% static 'ganttPrint.css' %}" type="text/css" media="print" />
@@ -32,8 +36,14 @@
         <script src="{% static 'libs/jquery/JST/jquery.JST.js' %}"></script>
         <script src="{% static 'libs/jquery/valueSlider/jquery.mb.slider.js' %}"></script>
 
-        <script type="text/javascript" src="{% static 'libs/jquery/svg/jquery.svg.min.js' %}"></script>
-        <script type="text/javascript" src="{% static 'libs/jquery/svg/jquery.svgdom.1.8.js' %}"></script>
+        <script
+            type="text/javascript"
+            src="{% static 'libs/jquery/svg/jquery.svg.min.js' %}"
+        ></script>
+        <script
+            type="text/javascript"
+            src="{% static 'libs/jquery/svg/jquery.svgdom.1.8.js' %}"
+        ></script>
 
         <script src="{% static 'ganttUtilities.js' %}"></script>
         <script src="{% static 'ganttTask.js' %}"></script>
@@ -174,22 +184,22 @@
                 // console.log(prj)
                 download(JSON.stringify(prj, null, '\t'), 'MyProject.json', 'application/json')
                 const options = {
-                method: 'POST', // HTTP method
-                headers: {
-                    'Content-Type': 'application/json', // specify the content type as JSON
-                },
-                body: JSON.stringify(prj, null, '\t'), // convert JavaScript object to JSON string
-                };
-                try {   
-                    const response = await fetch("http://127.0.0.1:7005/api/save/", options); // make the fetch request
-					console.log(response)
-					if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`); // handle HTTP errors
+                    method: 'POST', // HTTP method
+                    headers: {
+                        'Content-Type': 'application/json', // specify the content type as JSON
+                    },
+                    body: JSON.stringify(prj, null, '\t'), // convert JavaScript object to JSON string
+                }
+                try {
+                    const response = await fetch('http://127.0.0.1:8000/api/save_strat', options) // make the fetch request
+                    console.log(response)
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`) // handle HTTP errors
                     }
-                    const responseData = response.json(); // parse the JSON response
-                    console.log(responseData); // log the response data
+                    const responseData = response.json() // parse the JSON response
+                    console.log(responseData) // log the response data
                 } catch (error) {
-                    console.error('Error making POST request:', error); // log any errors
+                    console.error('Error making POST request:', error) // log any errors
                 }
                 /*
 

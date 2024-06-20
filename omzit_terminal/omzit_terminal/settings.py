@@ -83,13 +83,13 @@ WSGI_APPLICATION = 'omzit_terminal.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        "NAME": "terminal_transit",
-        "PASSWORD": "tolko123",
-        "USER": "admin",
+        # "NAME": "terminal_transit",
+        # "PASSWORD": "tolko123",
+        # "USER": "admin",
 
-        # 'NAME': 'terminal_test',
-        # 'PASSWORD': 'Epass1',
-        # 'USER': 'admin',
+        'NAME': 'terminal_test',
+        'PASSWORD': 'Epass1',
+        'USER': 'admin',
         #
         # 'NAME': 'postgres',
         # 'USER': 'postgres',
@@ -148,7 +148,7 @@ STATIC_URL = r'/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static', 'api'),
+    os.path.join(BASE_DIR, 'static', 'scheduler', 'strat_plan'),
     # os.path.join(BASE_DIR, 'templates', 'api'),
 ]
 

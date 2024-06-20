@@ -143,7 +143,7 @@ class CallDispatcherView(APIView):
 
 
 @csrf_exempt
-def save(request):
+def save_strat_plan(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)  # Parse the JSON data from the request
@@ -163,5 +163,5 @@ def save(request):
         return JsonResponse({'status': 'error', 'message': 'Only POST method allowed'}, status=405)
 
 
-def index(request):
-    return render(request, 'api/gantt.html')
+
+

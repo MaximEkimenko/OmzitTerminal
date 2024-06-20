@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (scheduler, schedulerwp, schedulerfio, LoginUser, logout_user, td_query, show_workshop_scheme, plan,
-                    shift_tasks_reports, shift_tasks_report_view)
+                    shift_tasks_reports, shift_tasks_report_view, strat_plan)
 
 # from .views import plan_resort, report # TODO ФУНКЦИОНАЛ ОТЧЁТОВ ЗАКОНСЕРВИРОВАНО
 from constructor.views import show_instruction
@@ -17,7 +17,7 @@ urlpatterns = [
     path('td_query/', td_query, name='td_query'),
     path('instruction/', show_instruction, name='instruction'),
     path('scheme/', show_workshop_scheme, name='scheme'),
-    path('plan/', plan, name='plan'),
+    path('strat_plan/', strat_plan, name='strat_plan'),
     path('st_report_<str:start>_<str:end>/', shift_tasks_reports, name='st_reports'),
     path('view_st_report_<str:start>_<str:end>/', shift_tasks_report_view, name='view_st_report'),
 
