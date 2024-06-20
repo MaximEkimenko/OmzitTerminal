@@ -174,3 +174,4 @@ data/
 temp/
 logs
 omzit_terminal/logs
+telegram_token.py

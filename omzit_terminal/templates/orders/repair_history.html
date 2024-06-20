@@ -1,0 +1,62 @@
+{% extends "orders/testrep_base.html" %} {% load static %} {% block title %}
+Заявки на ремонт {%endblock %} {% block content %} {{block.super}}
+
+<div class="col">
+<h1>История ремонта оборудования "{{object.unique_name}}"</h1>
+  <div class="form_row">
+    <form action="{% url 'orders'%}">
+      <input type="submit" value="Назад" />
+    </form>  
+  </div>
+
+
+
+  <table class="table">
+    <thead>
+      <form method="get" id="filter_form">
+        <tr class="table_header_row">
+          <th class="td_cell">№ заявки</th>
+          <th class="td_cell">Дата поломки</th>
+          <th class="td_cell">Дата окончания ремонта</th>
+          <th class="td_cell">Результат</th>
+          <th class="td_cell">Описание поломки</th>
+          <th class="td_cell">Причина поломки</th>
+          <th class="td_cell">Способ устранения</th>
+        </tr>
+      </form>
+    </thead>
+    
+    {% for rec in orders%}
+
+
+      <tr class="table_row">
+        
+        <td class="td_cell">
+          <a href="{% url 'order_info' rec.id %}" class="table_link">
+            {{rec.id}}
+          </a>
+        </td>
+
+        <td class="td_cell">{{rec.breakdown_date|default:""}}</td>
+        <td class="td_cell">{{rec.acceptance_date|default:""}}</td>
+        <td class="td_cell">
+          {% if rec.status_id == status.ACCEPTED or rec.status_id == status.CANCELLED%}
+          {{rec.status}}<br>
+      
+
+          {%endif%}
+        </td>
+        <td class="td_cell">{{rec.breakdown_description|default:""}}</td>
+        <td class="td_cell">{{rec.breakdown_cause|default:""}}</td>
+        <td class="td_cell">{{rec.solution|default:""}}</td>
+      </tr>
+  
+
+    {% endfor %}
+  </table>
+
+  
+{% endblock content %} {% block js %} {{block.super }}
+
+<script src="{% static 'orders/js/orders.js' %}"></script>
+{% endblock js%}

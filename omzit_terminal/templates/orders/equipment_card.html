@@ -1,0 +1,101 @@
+{% extends "orders/testrep_base.html" %} {% load static %} {%block content%}
+<div class="col">
+  <h1>Карточка оборудования</h1>
+   
+  
+  <div class="form_row">
+    <form action="{% url 'equipment'%}" method="GET">
+      <input type="submit" value="Назад" />
+    </form>
+    
+    {% if role in edit_and_delete %}
+    <form action="{% url 'equipment_card_edit' object.id %}" method="GET">
+      <input type="submit" value="Редактировать" />
+    </form>
+
+    <button class="input_like" id="button_delete_popup" type="button">Удалить</button>
+    
+
+    {% endif %}
+  </div>
+
+  <div class="equipment_card">
+    <div class="card_row">
+      <div class="equipment_card__label">Название</div>
+      <div class="equipment_card__value">{{object.name|default:"-"}}</div>
+    </div>
+    <div class="card_row">
+      <div class="equipment_card__label">Инвентарный номер</div>
+      <div class="equipment_card__value">{{object.inv_number|default:"-"}}</div>
+    </div>
+    <div class="card_row">
+      <div class="equipment_card__label">№ цеха</div>
+      <div class="equipment_card__value">{{object.shop|default:"-"}}</div>
+    </div>
+    <div class="card_row">
+      <div class="equipment_card__label">Производитель</div>
+      <div class="equipment_card__value">{{object.vendor|default:"-"}}</div>
+    </div>
+    <div class="card_row">
+      <div class="equipment_card__label">Модель</div>
+      <div class="equipment_card__value">{{object.model|default:"-"}}</div>
+    </div>
+
+    <div class="card_row">
+      <div class="equipment_card__label">Серийный номер</div>
+      <div class="equipment_card__value">
+        {{object.serial_number|default:"-"}}
+      </div>
+    </div>
+    <div class="card_row">
+      <div class="equipment_card__label">Характеристики</div>
+      <div class="equipment_card__value">
+        {{object.characteristics|default:"-"}}
+      </div>
+    </div>
+
+    <div class="card_row">
+      <div class="equipment_card__label">Описание</div>
+      <div class="equipment_card__value">
+        {{object.description|default:"-"}}
+      </div>
+    </div>
+
+    <div class="card_row">
+      <div class="equipment_card__label">Дата занесения в базу</div>
+      <div class="equipment_card__value">{{object.registration_date}}</div>
+    </div>
+  </div>
+</div>
+
+<div id="confirm_delete_popup" class="modal">
+  <form
+    
+    class="form_form modal-content"
+    method="POST"
+  >
+    {% csrf_token %}
+    <input type="hidden" name='delete_pk' value="{{object.id}}">
+    <div class="add_to_plan">
+      <div class="form-error">{{ add_equipment_form.non_field_errors }}</div>
+      <div class="form_row">
+        <h3>Подтвердите удаление оборудования "{{object.name}}"</h3>
+      </div>
+      
+
+      <div class="form_row">
+        <button class="form_button" id="cancel_delete_button" type="button"><p class="green_word">Отмена</p></button>
+        <button type="submit" class="form_button">
+          <p class="red_word">Удалить</p>
+        </button>
+      </div>
+      <div class="form-error">{{ add_equipment_form.errors }}</div>
+    </div>
+  </form>
+</div>
+
+{%endblock content%}
+{% block js%} 
+  {{block.super}}
+  <script src="{% static 'orders/js/equipment_card.js' %}"></script>
+{% endblock js%}

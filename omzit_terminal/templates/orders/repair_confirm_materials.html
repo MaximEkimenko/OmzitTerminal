@@ -1,0 +1,62 @@
+{% extends "orders/testrep_base.html" %} {% load static %} {% block title %}
+Детали ремонта {%endblock %} {% block content %} {{block.super}}
+<div class="col">
+  <h1>
+    Уточнить наличие материалов для ремонта оборудования "{{object.equipment}}"
+    по заявке № {{object.id}}
+  </h1>
+
+  <p>{{form.materials}}</p>
+  <div class="form_form">
+    <div id="add-order-form">
+      <div class="add_to_plan">
+        <form action="" class="form_form" method="POST">
+          {% csrf_token %}
+
+          <div class="form_row__tall">
+            Требуемые материалы:
+            <span class="bigger_text">{{object.materials|default:"-"}}</span>
+          </div>
+          <span
+            >Если материалы отсутствуют в наличии, введите номер заявки.</span
+          >
+          <div class="form_row__tall">
+            <label for="{{ form.materials_request.id_for_label }}"
+              >{{form.materials_request.label}}</label
+            >
+            {{form.materials_request}}
+            <input type="submit" value="Добавить" />
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="form_form">
+      <div class="add_to_plan">
+        <div class="form_row__tall">
+          <span
+            >Если материалы не требуются или требуемые материалы имеются в
+            наличии, нажмите "Подтвердить."</span
+          >
+        </div>
+        <div class="form_row__tall">
+          <button
+            class="form_button"
+            onclick="window.location.href = `{% url 'orders' %}`;"
+            type="button"
+          >
+            <p class="green_word">Назад</p>
+          </button>
+
+          <form action="" method="POST">
+            {% csrf_token %}
+            <button type="submit" class="form_button">
+              <p class="green_word">Подтвердить</p>
+            </button>
+          </form>
+        </div>
+
+        {% endblock content %} {% block js %} {{block.super }} {% endblock js%}
+      </div>
+    </div>
+  </div>
+</div>

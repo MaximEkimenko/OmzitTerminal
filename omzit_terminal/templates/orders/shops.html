@@ -1,0 +1,113 @@
+{% extends "orders/testrep_base.html" %} {% load static %} {% block title %}
+Местонахождения {%endblock %} {% block content %} {{block.super}}
+<div class="col">
+  <h1>Места нахождения оборудования</h1>
+  <div class="form_row">
+    <form action="{% url 'equipment'%}" method="GET">
+      <input type="submit" value="Назад" />
+    </form>
+  </div>
+  <div class="equipment_card">
+    <div class="form_row">
+      <form method="POST">
+        {% csrf_token %} {% for i in add_form %} {{i}} {%endfor %}
+        <button type="submit" class="btn">добавить</button>
+      </form>
+    </div>
+    {% for shop in object_list %}
+      <div class="card_row">
+        <div class="shop_name">{{shop.name}}</div>
+        <div class="equipment_card__spacer"></div>
+
+        <div>
+          {% comment "" %}
+          <form action="{% url "shops_edit" shop.id %}" style="display:inline-block;">
+          {% endcomment %}
+          <form action="{% url "shops_edit" shop.id %}" style="display:inline-block;">
+          <button
+            type="submit"
+            class="btn"
+            name="edit_shop"
+            value="{{shop.id}}"
+          >
+            редактировать
+          </button>
+        </form>
+    
+          {% comment "" %}<form action="{% url "shops_delete"%}" style="display:inline-block;">  {% endcomment %}
+        
+          <form action="" style="display:inline-block;">
+            <button type="submit" class="btn" name="delete_button" value="{{shop.id}}">
+              Удалить
+            </button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+
+ <!-- окно редактирования записи о местоположении-->
+ <div id="edit-shop-form" class="modal">
+  <div id="add-order-form">
+    <div class="form_form modal-content">
+      <div class="add_to_plan">
+        <h1>Редактировать местонахождение</h1>
+        <form action="{% url 'shop_edit' %}" method="POST">
+          {% csrf_token %}
+          <div class="form_row">
+            {{edit_form.name}}
+            <button
+              class="btn"
+                  
+              id="edit-form-button"
+              name="edit-form-button"
+              value="{{object.id}}"
+              type="submit"
+            >
+              Изменить
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- окно удаления записи о местоположении-->
+  <div id="delete-shop-form" class="modal">
+    <div id="add-order-form">
+      <div class="form_form modal-content">
+        <div class="add_to_plan">
+          <h1>Вы действительно хотите удалить местоположение?</h1>
+
+          <div class="form_row">
+            <button id="cancel-delete-button" class="form_button" type="button">
+              <p class="green_word">Назад</p>
+            </button>
+
+            <form action="{% url 'shop_delete' %}" method="POST">
+              {% csrf_token %}
+              <button
+                class="form_button"
+                    
+                id="commit-delete-button"
+                name="commit-delete-button"
+                value="{{object.id}}"
+                type="submit"
+              >
+                <p class="red_word">Удалить</p>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% endblock content %} 
+  {% block js %} 
+    {{block.super }} 
+    <script src="{% static 'orders/js/shops.js' %}"></script>
+  {% endblock js%}
+</div>

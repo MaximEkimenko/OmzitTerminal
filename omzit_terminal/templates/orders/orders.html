@@ -1,0 +1,180 @@
+{% extends "orders/testrep_base.html" %} 
+{% load static %} 
+{% block title %}
+  Заявки на ремонт 
+{%endblock %} 
+{% block content %} 
+  {{block.super}}
+  <div class="col">
+    <h1>Заявки на ремонт</h1>
+
+    {%if role in button_conditions.create %}
+    <p>
+      <button id="add_order_button" class="btn">Добавить заявку</button>
+    </p>
+    {%endif%}
+
+    <p>
+      <form action="{% url 'orders_report'%}" method='get'>
+        <button type="submit">Отчет</button>
+      </form>
+    </p>
+    <p>
+      <input
+        type="button"
+        onclick="window.location.href = '{{ request.path }}';"
+        value="Сбросить фильтр"
+      />
+    </p>
+    <table class="table" id="st_table">
+      <thead>
+        <form method="get" id="filter_form">
+          <tr class="table_header_row">
+            <th class="td_cell">№
+              <br>
+              <div class="sort-filter">
+                  <button type="button" onclick="sortTable(0)"><img src="{% static 'scheduler/img/sort.svg' %}"
+              </div>
+            </th>
+            <th class="td_cell">
+              {{order_filter.form.equipment__unique_name}}Оборудование
+              <br>
+              <div class="sort-filter">
+                  <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 1)" placeholder="">
+                  <button type="button" onclick="sortTable(1)"><img src="{% static 'scheduler/img/sort.svg' %}"
+                    alt=""></button>
+              </div>
+            </th>
+            <th class="td_cell">Ремонты</th>
+            <th class="td_cell">{{order_filter.form.status__name}} Статус</th>
+            <th class="td_cell">{{order_filter.form.priority}} Приоритет
+              <br>
+              <div class="sort-filter">
+                  <button type="button" onclick="sortTable(4)"><img src="{% static 'scheduler/img/sort.svg' %}"
+              </div>
+            </th>
+            <th class="td_cell">
+              {{order_filter.form.breakdown_date}}Дата поломки
+              <br>
+              <div class="sort-filter">
+                  <button type="button" onclick="sortTable(5)"><img src="{% static 'scheduler/img/sort.svg' %}"
+              </div>
+
+            </th>
+            <th class="td_cell">Описание поломки</th>
+            <th class="td_cell">
+              {{order_filter.form.expected_repair_date}}Предполагаемая дата окончания ремонта
+            </th>
+            <th class="td_cell">{{order_filter.form.materials__name}}
+              Необходимые матреиалы
+            </th>
+            <th class="td_cell">{{order_filter.form.materials_request}}№ заявки на метриалы</th>
+            <th class="td_cell">{{order_filter.form.doers_fio}}Исполнители</th>
+            <th class="td_cell">Доработка</th>
+            <th class="td_cell">Действия</th>
+          </tr>
+        </form>
+      </thead>
+      
+      {% for rec in order_filter.qs %}      
+        <tr class="table_row">        
+          <td class="td_cell">{{rec.id}}</td>
+          <td class="td_cell">
+            <a href="{% url 'order_info' rec.id %}" class="table_link">
+              {{ rec.equipment__unique_name }}
+            </a>
+          </td>
+          <td class="td_cell">
+            <a href="{% url 'repair_history' rec.equipment_id %}" class="table_link">
+              история
+            </a>
+          </td>
+          <td class="td_cell status_name" data-status={{rec.status}}>{{rec.status__name}}</td>
+          <td class="td_cell">{{rec.priority}}</td>
+          <td class="td_cell">{{rec.breakdown_date}}</td>
+          <td class="td_cell">{{rec.breakdown_description|default:""|truncatewords:13}}</td>
+          <td class="td_cell" >{{rec.expected_repair_date|default:""}}</td>
+          <td class="td_cell" >{{rec.materials__name|default:""}}</td>
+          <td class="td_cell" >{{rec.materials_request|default:""}}</td>
+          <td class="td_cell" >{{rec.doers_fio|default:""}}</td>
+          <td class="td_cell" >{{rec.revision_cause|default:"" |safe}}</td>
+          <td class="td_cell">
+          {% for b in  button_context%}
+            {% if rec.status in b.states and role in b.groups%}
+              {%url b.url rec.id as button_url%}
+                <form action="{{button_url}}">
+                <button class="table_button" name={{b.name}} value={{rec.id}}  type="submit">{{b.title}}</button>
+              </form>
+            {% endif %}
+          {% endfor %}
+
+          </td>
+        </tr>
+
+
+
+      {% endfor %}
+    </table>
+    {% comment "Добавление новой заявки" %}{% endcomment %}
+    <div id="add-order-form" class="modal">
+      <form
+        action="{% url 'orders' %}"
+        class="form_form modal-content"
+        method="POST"
+      >
+        {% csrf_token %}
+        {{add_order_form.media}}
+        <div class="add_to_plan">
+          <div class="form-error">{{ add_order_form.non_field_errors }}</div>
+          {% for entry in add_order_form %}
+          <div class="form_row">
+            <label for="{{ entry.id_for_label }}">{{entry.label}}</label>
+            {{entry}}
+          </div>
+          {% endfor %}
+          <div class="form_row">
+            <button type="submit" class="form_button">
+              <p class="green_word">Добавить</p>
+            </button>
+          </div>
+          <div class="form-error">{{ add_order_form.errors }}</div>
+        </div>
+      </form>
+    </div>
+
+    {% comment "Добавление новой заявки" %}{% endcomment %}
+
+    <div id="delete-order-form" class="modal">
+      <div id="add-order-form">
+        <div class="form_form modal-content">
+      
+      <div class="add_to_plan">
+        <h1>
+          Вы действительно хотите удалить заявку? 
+        </h1>
+
+        <div class="form_row">
+          <button
+            id="cancel-delete-button"
+            class="form_button"
+            type="button"
+          >
+            <p class="green_word">Назад</p>
+          </button>
+
+
+          <form action="{% url 'order_delete_proc' %}" method="POST">
+            {% csrf_token %}
+            <button class="form_button" id="commit-delete-buton" name='delete_button' value="{{object.id}}" type="submit"> <p class="red_word">Удалить</p></button>
+          </form>
+
+      </div>
+    </div>
+  </div>
+{% endblock content %} 
+
+{% block js %} 
+  {{block.super }}
+  <script src="{% static 'orders/js/orders.js' %}"></script>
+  <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
+{% endblock js%}

@@ -1,0 +1,61 @@
+{% extends "orders/testrep_base.html" %} {% load static %} {% block title %}
+Заявки на ремонт {%endblock %} {% block content %} {{block.super}}
+<div class="col">
+  <h1>
+    Отменить ремонт оборудования "{{object.equipment}}" по
+    заявке № {{object.id}}
+  </h1>
+
+  <div id="add-order-form">
+    <form action="" class="form_form" method="POST">
+      {% csrf_token %}
+      <div class="add_to_plan">
+        <div class="form_row">
+        <div>Дата поломки:</div> <div>{{object.breakdown_date}}</div>
+        </div>
+        <div class="form_row">
+            <div>Описание поломки:</div> {{object.breakdown_description}}
+        </div>
+        {% if object.breakdown_cause %}
+            <div class="form_row">
+            <div>Причина поломки:</div> {{object.breakdown_cause}}
+            </div>
+        {% endif %}
+        {% if object.solution %}
+            <div class="form_row">
+            <div>Способ устранения:</div> {{object.solution}}
+            </div>
+        {% endif %}
+        {% if object.revision_cause %}
+          <div class="form_row">
+            <div>Причины возвращения на доработку:</div> {{object.revision_cause|safe}}
+          </div>
+        {% endif %}
+
+
+
+        {% for entry in form %}
+        <div class="form_row">
+          <label for="{{ entry.id_for_label }}">{{entry.label}}</label>
+          {{entry}}
+        </div>
+        {% endfor %}
+
+        <div class="form_row">
+          <button
+            class="form_button"
+            onclick="window.location.href = `{% url 'orders' %}`;"
+            type="button"
+          >
+            <p class="green_word">Назад</p>
+          </button>
+
+          <button type="submit" class="form_button">
+            <p class="green_word">Отменить ремонт</p>
+          </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock content %} {% block js %} {{block.super }} {% endblock js%}
