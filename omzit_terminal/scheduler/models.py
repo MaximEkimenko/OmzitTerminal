@@ -1,5 +1,8 @@
 from django.core.validators import RegexValidator
 from django.db import models
+from django.contrib.postgres.fields import ArrayField
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 
 # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
 # import datetime
@@ -72,12 +75,63 @@ class WorkshopSchedule(models.Model):
         verbose_name = 'График цеха'
         verbose_name_plural = 'График цеха'
 
-    # def __str__(self):
-    #     return str(self.datetime_done)
+
+class SeriesParameters(models.Model):
+    """
+    Модель параметров серии изделий (линейка котлов)
+    """
+    series_name = models.CharField(verbose_name='Название серии изделий')
+    cycle_polynom_koef = ArrayField(models.DecimalField(null=True, max_digits=12, decimal_places=10), null=True,
+                                    verbose_name='Коэффициенты формулы расчёта критической цепи по массе')
+    """Коэффициенты формулы расчёта критической цепи по массе (коэффициенты полинома): 
+    k4*x^4+k3*x^3+k2*x^2+k1*x^1+k0*x^0  
+    Хранятся в иде списка cycle_formula = [k0, k1, k2, k3, k4]
+    для получение полинома в цикле: cycle_formula += cycle_polynom_koef[index] * X ** index
+    """
+    difficulty_koef = models.DecimalField(max_digits=10, decimal_places=2, default=1,
+                                          verbose_name='Коэффициент сложности изделия', null=True)
+
+    class Meta:
+        db_table = "series_parameters"
+        verbose_name = 'Параметры серии'
+        verbose_name_plural = 'Параметры серии'
+
+    def __str__(self):
+        return self.series_name
+
+
+class ModelParameters(models.Model):
+    """
+    Модель ТТХ изделий
+    """
+    model_name = models.CharField(verbose_name='Модель изделия')
+    model_weight = models.DecimalField(max_digits=10, decimal_places=2,  # обязательное поле для начала расчёта
+                                       verbose_name='масса изделия')
+    full_norm_tech = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=0,
+                                         verbose_name='Полная трудоёмкость изделия')
+    critical_chain_cycle_koef = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=0.6,
+                                                    verbose_name='Коэффициент расчёта критической цепи')
+    series_parameters = models.ForeignKey(SeriesParameters, on_delete=models.PROTECT,
+                                          null=True, verbose_name="Параметры серии")
+    # расчётное поле по сигналу перед сохранением данных
+    produce_cycle = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=0,
+                                        verbose_name='Производственный цикл')
+    # расчётное поле по сигналу перед сохранением данных
+    day_hours_amount = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=0,
+                                           verbose_name='Часов в день на изделие')
+
+    class Meta:
+        db_table = "model_parameters"
+        verbose_name = 'Параметры модели'
+        verbose_name_plural = 'Параметры модели'
+
+    def __str__(self):
+        return self.model_name
 
 
 class Doers(models.Model):
-    # TODO синхронизация с 1С
+    # TODO Прочитать (отсортировать, отфильтровать, скопировать?) данные
+    #  из personal.Employee после запуска Personal на сервере
     """
     Таблица исполнителей
     """

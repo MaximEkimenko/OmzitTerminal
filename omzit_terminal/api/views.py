@@ -1,3 +1,5 @@
+from pprint import pprint
+
 import asyncio
 import datetime
 import socket
@@ -147,7 +149,7 @@ def save_strat_plan(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)  # Parse the JSON data from the request
-            print(data)
+            pprint(data)
 
             # Process the data (e.g., save to database, perform calculations, etc.)
 

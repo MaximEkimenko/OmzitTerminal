@@ -13,7 +13,7 @@ from django.contrib.auth.views import LoginView
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import PermissionDenied
 
-from django.http import FileResponse, JsonResponse
+from django.http import FileResponse, JsonResponse, HttpResponse
 
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
@@ -27,6 +27,7 @@ from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw, Pl
 # from .models import  DailyReport, MonthPlans # TODO функционал отчётов ЗАКОНСЕРВИРОВАНО
 from .models import WorkshopSchedule, ShiftTask, Doers
 
+from .services.get_contexts import get_strat_plan_context
 from .services.schedule_handlers import get_all_done_rate, make_workshop_plan_plot, create_pdf_report, report_merger
 from worker.services.master_call_function import terminal_message_to_id
 from .services.sz_reports import get_start_end_st_report, create_shift_task_report
@@ -591,30 +592,15 @@ def shift_tasks_report_view(request, start: str = "", end: str = ""):
 
 
 
+def strat_plan(request) -> HttpResponse:
+    """
+    Страница стратегического планирования
+    :param request:
+    :return:
+    """
+    # получение данных
+    get_strat_plan_context()
 
-
-@csrf_exempt
-def save(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)  # Parse the JSON data from the request
-            print(data)
-
-            # Process the data (e.g., save to database, perform calculations, etc.)
-
-            # Create a response
-            response_data = {
-                'status': 'success',
-                'message': 'Data received'
-            }
-            return JsonResponse(response_data, status=200)
-        except json.JSONDecodeError:
-            return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
-    else:
-        return JsonResponse({'status': 'error', 'message': 'Only POST method allowed'}, status=405)
-
-
-def strat_plan(request):
     return render(request, 'scheduler/strat_plan/gantt.html')
     # return render(request, 'api/gantt.html')
 

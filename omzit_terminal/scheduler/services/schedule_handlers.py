@@ -37,28 +37,51 @@ def get_done_rate(order_number: str) -> float:
     return done_rate
 
 
+# def get_all_done_rate() -> None:
+#     """
+#     Получение процента готовности всех заказов, обновление записей done_rate в БД
+#     :return: None
+#     """
+#     order_rate_dict = dict()  # TODO удалить при рефакторинге
+#     all_orders = WorkshopSchedule.objects.values('order').distinct()
+#     for dict_order in all_orders:
+#         order = dict_order['order']
+#         done_rate = get_done_rate(order)
+#         order_rate_dict[order] = done_rate
+#         # установка статуса в зависимости от процента готовности
+#         if done_rate == float(0):
+#             order_status = None
+#         elif done_rate == float(100):
+#             order_status = 'выполнено'
+#         else:
+#             order_status = 'в работе'
+#         # запись в БД
+#         if order_status:
+#             WorkshopSchedule.objects.filter(order=order).update(done_rate=done_rate, order_status=order_status)
 def get_all_done_rate() -> None:
     """
     Получение процента готовности всех заказов, обновление записей done_rate в БД
     :return: None
     """
-    order_rate_dict = dict()  # TODO удалить при рефакторинге
-    all_orders = WorkshopSchedule.objects.values('order').distinct()
+    all_orders = WorkshopSchedule.objects.values('order', 'order_status', 'done_rate').distinct()
+
     for dict_order in all_orders:
+        current_order_status = dict_order['order_status']
+        current_done_rate = dict_order['done_rate']
         order = dict_order['order']
+        # TODO оптимизировать! Сделать одним запросом.
         done_rate = get_done_rate(order)
-        order_rate_dict[order] = done_rate
-        # установка статуса в зависимости от процента готовности
-        if done_rate == float(0):
-            order_status = None
-        elif done_rate == float(100):
-            order_status = 'выполнено'
-        else:
-            order_status = 'в работе'
-        # запись в БД
-        if order_status:
-            WorkshopSchedule.objects.filter(order=order).update(done_rate=done_rate, order_status=order_status)
-    # print(order_rate_dict)
+        # изменение статуса в зависимости от процента готовности при изменении
+        if current_order_status != 'завершено' and current_done_rate != done_rate:
+            if done_rate == float(0):
+                order_status = None
+            elif done_rate == float(100):
+                order_status = 'завершено'
+            else:
+                order_status = 'в работе'
+            if order_status:
+                WorkshopSchedule.objects.filter(order=order).update(done_rate=done_rate, order_status=order_status)
+
 
 
 def make_workshop_plan_plot(workshop: int, days_list: list, fact_list: list, aver_fact: float,
