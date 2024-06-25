@@ -1,9 +1,13 @@
 """
 Функции получения контекстов
 """
+import json
+from pprint import pprint
+
 from scheduler.models import WorkshopSchedule, ShiftTask, Doers, ModelParameters # noqa
 from m_logger_settings import logger # noqa
-from scheduler.services.initial_data_set import series_parameters_set # noqa
+from scheduler.services.initial_data_set import series_parameters_set, clean_model_names, models_data_db_set # noqa
+from django.db.models import Q
 
 
 def get_strat_plan_context():
@@ -11,30 +15,54 @@ def get_strat_plan_context():
     Получение контекста для strat_plan
     :return:
     """
-    series_parameters_set()  # заполнение первоначальных данных для моделей параметров серии
+    # Первоначальные заполнения данных
+    # series_parameters_set()  # заполнение первоначальных данных для моделей параметров серии
+    # json_file_to_save_tst = r'D:\АСУП\Python\Projects\OmzitTerminal\misc\all_weights.json'
+    # with open(json_file_to_save_tst, 'r') as file:
+    #     model_data = json.load(file)
+    # existing_models = clean_model_names(model_data)
+    # первоначальное заполнение данных серий и моделей
+    # models_data_db_set(existing_models)
+
     # TODO!
-    #  запрос в график производства - найти решения однозначного определения серии по model_order_query
-    #  заполнить параметры модели с параметрами серии из графика производства
     #  сохранить данные графика производства для контекста
     #  передать первоначальный контекст
     #  расчёты по смещение по оси времени, скорректировать контекст
     #  вернуть контекст, перезаписать
     #  рабочее место технолога
+    # запланированное
+    planned_models = []
+    plan = WorkshopSchedule.objects.filter(
+            Q(order_status='запланировано')
+            | Q(order_status='в работе'))
+    for model in plan:
 
+        planned_models.append(model.model_name.split('-')[0])
+
+    # параметры запланированных моделей
+
+
+
+
+
+    # for planned_model in planned_models:
+    #     if planned_model in short_existing_models:
+    #         print(f'Совпадание моделей {planned_model}')
+    #
+    #     else:
+    #         print(f'НЕСовпадание моделей {planned_model}')
+
+        # for plan_model in planned_models:
+        #     if existing_model == plan_model:
+        #         print(f'Совпадание моделей {plan_model}-{existing_model}')
+
+    # pprint(planned_models)
 
 
     #  заполнение данных для моделей параметров моделей изделия
 
 
-    # params = ModelParameters(
-    #     model_name='test_name',
-    #     model_weight=3000,
-    #     full_norm_tech=560,
-    #     # critical_chain_cycle_koef = 0.6,
-    #     cycle_polynom_koef=[],
-    #     # difficulty_koef=1,
-    # )
-    # params.save()
+
 
     example_context = {'assigs': [],
                        'canAdd': True,

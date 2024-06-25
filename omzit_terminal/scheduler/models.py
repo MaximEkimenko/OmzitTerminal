@@ -80,6 +80,7 @@ class SeriesParameters(models.Model):
     """
     Модель параметров серии изделий (линейка котлов)
     """
+    objects = models.Manager()  # явное указание метода для pycharm
     series_name = models.CharField(verbose_name='Название серии изделий')
     cycle_polynom_koef = ArrayField(models.DecimalField(null=True, max_digits=12, decimal_places=10), null=True,
                                     verbose_name='Коэффициенты формулы расчёта критической цепи по массе')
@@ -104,6 +105,7 @@ class ModelParameters(models.Model):
     """
     Модель ТТХ изделий
     """
+    objects = models.Manager()  # явное указание метода для pycharm
     model_name = models.CharField(verbose_name='Модель изделия')
     model_weight = models.DecimalField(max_digits=10, decimal_places=2,  # обязательное поле для начала расчёта
                                        verbose_name='масса изделия')

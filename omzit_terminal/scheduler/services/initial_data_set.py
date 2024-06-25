@@ -2,10 +2,19 @@
 TODO создать рабочее место технолога для занесения и корректировки
 Занесение исходных данных для стратегического планирования
 """
+import json
 from decimal import Decimal
+from pathlib import Path
+from pprint import pprint
+from django.core.exceptions import ObjectDoesNotExist
 
-from scheduler.models import SeriesParameters # noqa
-from m_logger_settings import logger  # noqa
+import openpyxl
+
+try:  # для запуска файла
+    from scheduler.models import SeriesParameters, ModelParameters  # noqa
+    from m_logger_settings import logger  # noqa
+except ModuleNotFoundError:
+    pass
 
 
 def series_parameters_set() -> None:
@@ -17,45 +26,66 @@ def series_parameters_set() -> None:
     new_series_parameters = [
         {
             'series_name': 'ML',
-            'cycle_polynom_koef': list(reversed([Decimal('0.0003'), Decimal('-0.0150'), Decimal('0.2010'),
-                                                 Decimal('1.0065'), Decimal('16.2077')])),
+            'cycle_polynom_koef': list(reversed([Decimal('0.0003112364434866'),
+                                                 Decimal('-0.0150453236513729'),
+                                                 Decimal('0.201039119152367'),
+                                                 Decimal('1.00653250263694'),
+                                                 Decimal('16.2077210606424')])),
             'difficulty_koef': Decimal('1.3')
         },
         {
             'series_name': 'DMH',
-            'cycle_polynom_koef': list(reversed([Decimal('-0.0001'), Decimal('0.0118'), Decimal('-0.3481'),
-                                                 Decimal('5.2202'), Decimal('3.6799')])),
+            'cycle_polynom_koef': list(reversed([Decimal('-0.000130811023477673'),
+                                                 Decimal('0.0118430669074363'),
+                                                 Decimal('-0.348060948000969'),
+                                                 Decimal('5.22023230341833'),
+                                                 Decimal('3.67987872416067')])),
             'difficulty_koef': Decimal('1.5')
 
         },
         {
             'series_name': 'OV',
-            'cycle_polynom_koef': list(reversed([Decimal('-0.0001'), Decimal('0.0118'), Decimal('-0.3481'),
-                                                 Decimal('5.2202'), Decimal('3.6799')])),
+            'cycle_polynom_koef': list(reversed([Decimal('-0.000130811023477673'),
+                                                 Decimal('0.0118430669074363'),
+                                                 Decimal('-0.348060948000969'),
+                                                 Decimal('5.22023230341833'),
+                                                 Decimal('3.67987872416067')])),
             'difficulty_koef': Decimal('1.3')
         },
         {
             'series_name': 'SV',
-            'cycle_polynom_koef': list(reversed([Decimal('-0.0001'), Decimal('0.0118'), Decimal('-0.3481'),
-                                                 Decimal('5.2202'), Decimal('3.6799')])),
+            'cycle_polynom_koef': list(reversed([Decimal('-0.000130811023477673'),
+                                                 Decimal('0.0118430669074363'),
+                                                 Decimal('-0.348060948000969'),
+                                                 Decimal('5.22023230341833'),
+                                                 Decimal('3.67987872416067')])),
             'difficulty_koef': Decimal('1')
         },
         {
             'series_name': 'R',
-            'cycle_polynom_koef': list(reversed([Decimal('0.2145'), Decimal('-2.0039'), Decimal('6.0821'),
-                                                 Decimal('-3.8229'), Decimal('6.1299')])),
+            'cycle_polynom_koef': list(reversed([Decimal('0.21446424625724'),
+                                                 Decimal('-2.00393257283599'),
+                                                 Decimal('6.08211796013855'),
+                                                 Decimal('-3.82285906703149'),
+                                                 Decimal('6.12988710720749')])),
             'difficulty_koef': Decimal('1')
         },
         {
             'series_name': 'P',
-            'cycle_polynom_koef': list(reversed([Decimal('-0.0001'), Decimal('0.0062'), Decimal('-0.1649'),
-                                                 Decimal('3.1292'), Decimal('12.6241')])),
+            'cycle_polynom_koef': list(reversed([Decimal('-0.0000763316486661341'),
+                                                 Decimal('0.00623813864707741'),
+                                                 Decimal('-0.164871150491832'),
+                                                 Decimal('3.12920114698329'),
+                                                 Decimal('12.6240783289121')])),
             'difficulty_koef': Decimal('1')
         },
         {
             'series_name': 'M',
-            'cycle_polynom_koef': list(reversed([Decimal('0.0003'), Decimal('-0.0150'), Decimal('0.2010'),
-                                                 Decimal('1.0065'), Decimal('16.2077')])),
+            'cycle_polynom_koef': list(reversed([Decimal('0.0003112364434866'),
+                                                 Decimal('-0.0150453236513729'),
+                                                 Decimal('0.201039119152367'),
+                                                 Decimal('1.00653250263694'),
+                                                 Decimal('16.2077210606424')])),
             'difficulty_koef': Decimal('1')
         },
     ]
@@ -68,14 +98,109 @@ def series_parameters_set() -> None:
                 parameters.cycle_polynom_koef = data['cycle_polynom_koef']
                 parameters.difficulty_koef = data['difficulty_koef']
                 parameters.save()
-                logger.info(f'{parameters} был обновлён')
+                logger.info(f'Параметры серии {parameters} были обновлёны.')
             else:
-                logger.debug(f'{parameters} изменений не обнаружено.')
-        except SeriesParameters.DoesNotExist():
+                logger.debug(f'В параметрах серии {parameters} изменений не обнаружено.')
+        except ObjectDoesNotExist:
             SeriesParameters.objects.create(series_name=data['series_name'],
                                             cycle_polynom_koef=data['cycle_polynom_koef'],
                                             difficulty_koef=data['difficulty_koef'])
             logger.info(f'Параметры новой серии {data["series_name"]} были добавлены.')
 
 
+def get_all_weights(xlsx_paths: list) -> dict[str]:
+    """
+    Получение json всех масс котлов из xlsx технологов
+    :param xlsx_paths:
+    :return:
+    """
+    all_weights_json = {}
+    for xlsx_path in xlsx_paths:
+        xlsx_files = []
+        for execl_file in Path(xlsx_path).rglob("*.xlsx"):
+            if '~' not in execl_file.name:
+                xlsx_files.append(execl_file)
 
+        for xlsx_file in xlsx_files:
+            wb = openpyxl.load_workbook(xlsx_file, data_only=True)
+            for sheet in wb.sheetnames:
+                ws = wb[sheet]
+                model_weight = ws["G2"].value
+                if model_weight is not None and (type(model_weight) is float or type(model_weight) is int):
+                    all_weights_json[sheet] = {'weight': model_weight, 'file': xlsx_file.name}
+    json_file_to_save = r'D:\АСУП\Python\Projects\OmzitTerminal\misc\all_weights.json'
+    with open(json_file_to_save, 'w') as json_file:
+        json.dump(all_weights_json, json_file, ensure_ascii=False, indent=4)
+    return all_weights_json
+
+
+def clean_model_names(models_data: dict[str]) -> dict[str:float]:
+    """
+    Очистка имён модели от лишних символов
+    :param models_data: данные json
+    :return: {имя модели: вес модели}
+    """
+    translate_dict = {
+        '+': '', 'М': 'M', 'М+': 'M', 'M+': 'M', 'Р': 'P', ' ': '', '1': '1', '2': '2', '3': '3', '4': '4', '5': '5',
+        '6': '6', '7': '7', '8': '8', '9': '9', '0': '0', 'R': 'R', 'Д': 'D', 'А': 'A'
+    }
+    clean_dict = {}
+    for model_name, model_data in models_data.items():
+        model_weight = round(model_data['weight'], 2)
+        if len(model_name.split()) > 1:
+            new_model_name = f"{model_name.split()[0]}{model_name.split()[1]}"
+            max_weight_value = max(model_weight, clean_dict.get(new_model_name, 0))
+            if 'SW' in model_name.split()[1] or 'SV' in model_name.split()[1] or 'RC' in model_name.split()[1]:
+                clean_dict.update({new_model_name: max_weight_value})
+            elif 'ML' in model_name.split()[0] and 'ML' in model_name.split()[1]:
+                new_model_name_left = f"{model_name.split()[0]}"
+                new_model_name_right = f"{model_name.split()[1]}"[1:-1]
+                clean_dict.update({new_model_name_left: max_weight_value})
+                clean_dict.update({new_model_name_right: max_weight_value})
+                pass
+            else:
+                latin_model_name = ''.join(translate_dict.get(char, char) for char in model_name.split()[0])
+                new_model_name = latin_model_name
+                max_weight_value = max(model_weight, clean_dict.get(new_model_name, 0))
+                clean_dict.update({new_model_name: max_weight_value})
+        else:
+            latin_model_name = ''.join(translate_dict.get(char, char) for char in model_name)
+            clean_dict.update({latin_model_name: model_weight})
+    return clean_dict
+
+
+def models_data_db_set(data: dict) -> None:
+    """
+    Первоначальное заполнение параметров моделей
+    :param data:
+    :return:
+    """
+    series = ('ML', 'DMH', 'OV', 'SV', 'R', 'P', 'M')
+    for model, weight in data.items():
+        model_name = model.split('-')[0]
+        for series_element in series:
+            if model_name.endswith(series_element):
+                series_id = SeriesParameters.objects.get(series_name=series_element).id
+                data_to_db = {'model_name': model_name,
+                              'model_weight': weight,
+                              'series_parameters_id': series_id}
+                print(data_to_db)
+                params = ModelParameters(**data_to_db)
+                params.save()
+
+
+
+
+
+if __name__ == '__main__':
+    xlsx_paths_tst = [
+        r'M:\Xranenie\ПТО\котлы\Трудоемкость котлов\Трудоемкость котлов',
+        r'M:\Xranenie\ПТО\котлы\Трудоемкость котлов\Трудоемкость экономайзеров',
+        r'M:\Xranenie\ПТО\котлы\Трудоемкость котлов\Трудоемкость деаэраторов'
+    ]
+    # get_all_weights(xlsx_paths_tst)
+    json_file_to_save_tst = r'D:\АСУП\Python\Projects\OmzitTerminal\misc\all_weights.json'
+    with open(json_file_to_save_tst, 'r') as file:
+        model_names_tst = json.load(file)
+    # print(clean_model_names(model_names_tst))
+    models_data_db_set(clean_model_names(model_names_tst))
