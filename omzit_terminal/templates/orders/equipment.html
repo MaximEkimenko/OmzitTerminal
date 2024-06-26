@@ -86,15 +86,15 @@
     method="POST"
   >
     {% csrf_token %}
-    <div class="add_to_plan">
+    <div class="equipment_card">
       <div class="form-error">{{ add_equipment_form.non_field_errors }}</div>
       {% for entry in add_equipment_form %}
-      <div class="form_row">
-        <label for="{{ entry.id_for_label }}">{{entry.label}}</label>
+      <div class="card_row">
+        <label class="equipment_card__label" for="{{ entry.id_for_label }}">{{entry.label}}</label>
         {{entry}}
       </div>
       {% endfor %}
-      <div class="form_row">
+      <div class="card_row__center">
         <button type="submit" class="form_button">
           <p class="green_word">Добавить</p>
         </button>

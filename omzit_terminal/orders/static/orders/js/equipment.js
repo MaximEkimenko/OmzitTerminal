@@ -7,7 +7,7 @@ addEquipmentButton.addEventListener("click", (e) => {
 });
 
 equipmentForm.addEventListener("click", (e) => {
-  if (!e.target.closest(".add_to_plan")) {
+  if (!e.target.closest(".equipment_card")) {
     equipmentForm.style.display = "none";
   }
 });
