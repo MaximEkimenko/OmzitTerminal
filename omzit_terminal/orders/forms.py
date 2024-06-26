@@ -34,8 +34,15 @@ class AddOrderForm(ModelForm):
     Форма создания новой заявки на ремонт
     """
 
+    # Для добавления заявки поле shops не требуется, они нужно только для фильтрации оборудования
+    # перед созданием объекта из данных формы поле shops удаляется
     shops_qs = Shops.objects.all()
-    shops = forms.ModelChoiceField(shops_qs, label="Фильтр по местоположению", required=False)
+    shops = forms.ModelChoiceField(
+        shops_qs,
+        label="Фильтр по местоположению",
+        required=False,
+        widget=forms.Select(attrs={"class": "input_like"}),
+    )
 
     class Meta:
         model = Orders

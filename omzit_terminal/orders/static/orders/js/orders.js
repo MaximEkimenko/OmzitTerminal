@@ -13,7 +13,7 @@ if (addOrderButton) {
 }
 // модальная форма добавления заявки пропадает , если кликнуть за ее пределами
 equipmentForm.addEventListener("click", (e) => {
-  if (!e.target.closest(".add_to_plan")) {
+  if (!e.target.closest(".equipment_card")) {
     equipmentForm.style.display = "none";
   }
 });
@@ -124,29 +124,26 @@ for (let i = 0; i < table_rows.length; i++) {
       table_rows[i].style.background = color_CANCELLED;
   }
 }
-
+//===========================================
 // фильтрация оборудования при добавлении задания
+//===========================================
 // читаем скрытую строку содержащую всю информацию об оборудовании
 const equipmentDataString = document.querySelector("#equipment_data").innerText;
 const equipmentData = JSON.parse(equipmentDataString);
 
-console.log(equipmentData);
 //добавлем названия оборудования в выпадающий список
 const $equipmentSelect = document.querySelector("#id_equipment");
 equipFilterSelect();
-// подключаем фильтр по номеру цеха
+
+// подключаем фильтры
 const $shop_filter = document.querySelector("#id_shops");
-console.log($shop_filter);
+const $name_filter = document.querySelector("#id_word_filter");
+
 $shop_filter.addEventListener("change", () => {
   equipFilterSelect($shop_filter.value, $name_filter.value);
 });
-
-// подключаем фильтр по текстовому фрагменту
-const $name_filter = document.querySelector("#id_word_filter");
-console.log($name_filter);
 $name_filter.addEventListener("input", () => {
   equipFilterSelect($shop_filter.value, $name_filter.value);
-  console.log($name_filter.value);
 });
 
 // функция, которая фильтрует оборудование по местоположению или части текста
@@ -157,10 +154,8 @@ function equipFilterSelect(shop_id = 0, textFragment = "") {
       ((shop_id == 0) | (entry.shop_id == shop_id)) &
       entry.unique_name.toLowerCase().includes(textFragment)
     ) {
-      const $opt = document.createElement("option");
-      $opt.value = entry.display;
-      $opt.innerText = entry.unique_name;
-      $equipmentSelect.appendChild($opt);
+      const $opt = new Option(entry.unique_name, entry.id)
+      $equipmentSelect.options.add($opt);
     }
   });
 }

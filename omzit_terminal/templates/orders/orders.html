@@ -129,28 +129,40 @@
         method="POST"
       >
         {% csrf_token %}
-        <div class="add_to_plan">
+        <div class="equipment_card">
           <div class="form-error">{{ add_order_form.non_field_errors }}</div>
-          <div class="form_row"> 
+          <div class="card_row__center" style="border: solid 2px gray; border-radius: 10px;"> 
             <label for="id_word_filter">Фильтр по названию</label>
-            <input type="text" placeholder="введите часть названия оборудования" name="word_filter" id="id_word_filter"/>
+            <input type="text" style="width: 250px" placeholder="введите часть названия" 
+            name="word_filter" id="id_word_filter"/>
             {{add_order_form.shops.label}} {{add_order_form.shops}}
+          </div>
 
+          <div class="card_row"> 
+            <div class="equipment_card__label">
+              <label for="id_equipment">Оборудование</label>
+            </div>
+            <div >
+              <select type="text" name="equipment" id="id_equipment" style="width:400px;">
+              </select>
+            </div>
           </div>
-          <div class="form_row"> 
-            <label for="id_equipment">Оборудование</label>
-            <select type="text" name="equipment" id="id_equipment" style="width:400px;">
-            </select>
-          </div>
+
           {% for entry in add_order_form %}
             {% if  entry.name != 'shops' and  entry.name != 'equipment' %}
-              <div class="form_row">
+            <div class="card_row"> 
+
+              <div class="equipment_card__label">
                 <label for="{{ entry.id_for_label }}">{{entry.label}}</label>
+              </div>
+              
+              <div>
                 {{entry}}
               </div>
+            </div>
             {% endif %}
           {% endfor %}
-          <div class="form_row">
+          <div class="card_row__center"> 
             <button type="submit" class="form_button">
               <p class="green_word">Добавить</p>
             </button>

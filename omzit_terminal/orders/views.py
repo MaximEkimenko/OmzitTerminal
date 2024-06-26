@@ -119,6 +119,9 @@ def orders(request) -> HttpResponse:
         add_order_form = AddOrderForm(request.POST)
         if add_order_form.is_valid():
             order_parameters = {key: val for key, val in add_order_form.cleaned_data.items()}
+            # поле shops нужно только для фильтрации названий, поэтому удаляем, иначе будет ошибка создания записи
+            order_parameters.pop("shops")
+            # добавляем сотрудника, который создал заявку
             order_parameters.update(
                 {
                     "identified_employee": " ".join(

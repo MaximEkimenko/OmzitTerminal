@@ -5,12 +5,12 @@
   
   <div class="form_row">
     <form action="{% url 'equipment'%}" method="GET">
-      <input type="submit" value="Назад" />
+      <input type="submit" class="input_like" value="Назад" />
     </form>
     
     {% if role in edit_and_delete %}
     <form action="{% url 'equipment_card_edit' object.id %}" method="GET">
-      <input type="submit" value="Редактировать" />
+      <input type="submit" class="input_like" value="Редактировать" />
     </form>
 
     <button class="input_like" id="button_delete_popup" type="button">Удалить</button>
