@@ -1,0 +1,38 @@
+{% extends "controller/base_controller.html" %} 
+{% block content %}
+<div class="col">
+    {% if form.instance.pk %}
+        <h1>Редактирование акта о браке № {{form.instance.act_number}} </h1>
+    {% else %}
+        <h1>Добавление нового акта о браке</h1>
+    {% endif %} 
+
+    <div class="form_row">
+        <form action="{% url 'controller:index'%}" method="GET">
+            <button type="submit" class="btn">Акты о браке</button>
+        </form>
+    </div>
+    {% include "controller/form_errors.html" %}
+    <form method="POST">
+        {% csrf_token %}
+        <div class="equipment_card">
+            {% for field in form  %}
+            <div class="card_row">
+                <div class="equipment_card__label">{{field.label}}</div>
+                <div class="equipment_card__value">{{field}}</div>
+            </div>
+            {% endfor %}
+            <div class="card_row__center">
+                <button class="btn">
+                    {% if form.instance.pk %}
+                        Отредактировать
+                    {% else %}
+                        Добавить
+                    {% endif %} 
+                </button>
+            </div>
+        </div>
+    </form>
+
+</div>
+{% endblock %}

@@ -29,6 +29,7 @@
                     <a href="{% url 'worker_choose' %}"> Терминал (общий) </a>
                     <a href="{% url 'orders' %}"> Заявки на ремонт </a>
                     <a href="{% url 'equipment' %}"> Оборудование </a>
+                    <a href="{% url 'controller:index' %}"> Акты о браке </a>
 
 
                     {% comment %}
@@ -42,13 +43,18 @@
 
                 </div>
             </li>
-            
+            {% comment %}
+                Формирует выпалающий список приложений на основе того, к какой роли принадлежит пользователь.
+            {% endcomment %}
             {% elif user.username in permitted_users %}
             <li class="dropdown">
                 <a href="javascript:void(0)" class="dropbtn">Меню</a>
-                <div class="dropdown-content">
-                    <a href="{% url 'orders' %}"> Заявки на ремонт</a>
-                    <a href="{% url 'equipment' %}"> Оборудование</a>
+                <div class="dropdown-content">    
+                    {% for _, menu_item in menu_items.items %}
+                        {% if role in menu_item.roles %}
+                            <a href="{% url menu_item.link %}"> {{menu_item.title}}</a>
+                        {% endif %}
+                    {% endfor %}
                 </div>
             </li>
 
@@ -61,7 +67,30 @@
                     <a href="{% url 'schedulerwp' %}"> Планировщик РЦ (Мастер) </a>
                 </div>
             </li>
+
+            {% elif 'master' in user.username %}
+            <li class="dropdown">
+                <a href="javascript:void(0)" class="dropbtn">Меню</a>
+                <div class="dropdown-content">
+                    <a href="{% url 'schedulerwp' %}"> Планировщик РЦ (Мастер) </a>
+                    <a href="{% url 'worker_choose' %}"> Терминал (общий) </a>
+                </div>
+            </li>
+
+            {% elif 'tehnolog' in user.username %}
+            <li class="dropdown">
+                <a href="javascript:void(0)" class="dropbtn">Меню</a>
+                <div class="dropdown-content">
+                    <a href="{% url 'tehnolog' %}"> Технолог </a>
+                    <a href="{% url 'controller:index' %}"> Акты о браке </a>
+                </div>
+            </li>
+
             {% endif %}
+
+  
+
+
 
             {% if user.is_authenticated %}
             <li><a href="{% url 'instruction' %}">Инструкция</a></li>

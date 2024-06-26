@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from m_logger_settings import logger
 import datetime
 import json
@@ -16,7 +18,7 @@ from omzit_terminal.settings import BASE_DIR
 from scheduler.models import ShiftTask
 
 from .forms import WorkplaceChoose
-from .services.master_call_db import select_master_call, select_dispatcher_call
+from .services.master_call_db import select_master_call, select_dispatcher_call, master_calls_count
 from .services.master_call_function import send_call_master, send_call_dispatcher
 from .services.master_call_function import get_client_ip
 
@@ -81,7 +83,9 @@ def worker(request, ws_number):
                              'TZ-019',
                              'TZ-020',
                              'TZ-021',
-                             'APM-0229',  # Планшет
+                             'apm-0140',  # Планшет цех1
+                             'APM-0229',  # Планшет цех2
+                             'host',
                              '192'
                              )
     terminal_ip = get_client_ip(request)  # определение IP терминала
@@ -177,8 +181,11 @@ def worker(request, ws_number):
             alert_message = 'Вызов мастеру отправлен.'
             logger.debug(f'Вызов мастеру отправлен.')
         elif request.GET.get('call') == 'False_wrong':
-            logger.debug(f'Неверный выбор.')
+            logger.debug(f'Неверный выбор. ')
             alert_message = 'Неверный выбор.'
+        elif request.GET.get('call') == 'False_too_many':
+            logger.debug(f'Попытка вызова на терминал количеством сменных больше 6.')
+            alert_message = 'Количество СЗ с вызовом мастера не может превышать 6. Дождитесь мастера.'
         elif request.GET.get('call') == 'False':
             alert_message = 'Сменное задание не принято в работу или вызов мастеру был отправлен ранее.'
             logger.debug('Сменное задание не принято в работу или вызов мастеру был отправлен ранее')
@@ -190,8 +197,13 @@ def worker(request, ws_number):
             alert_message = ''
     context = {'initial_shift_tasks': initial_shift_tasks, 'ws_number': ws_number,
                'select_shift_task': select_shift_task, 'alert': alert_message}
+
     # отдача шаблона для мобильного в случае доступа с мобильного устройства
-    if 'Mobile' in request.META['HTTP_USER_AGENT'] or terminal_name[:terminal_name.find('.')] == 'APM-0229':
+    print(terminal_name)
+    if ('Mobile' in request.META['HTTP_USER_AGENT']
+            or terminal_name[:terminal_name.find('.')] == 'APM-0229'
+            or terminal_name[:terminal_name.find('.')] == 'apm-0140'
+            or 'Android' in request.META['HTTP_USER_AGENT']):
         return render(request, r"worker/worker-mobile.html", context=context)
     else:
         return render(request, r"worker/worker.html", context=context)
@@ -244,7 +256,11 @@ def draws(request, ws_st_number: str):
     terminal_ip = get_client_ip(request)  # определение IP терминала
     terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
     # отдача шаблона для мобильного в случае доступа с мобильного устройства
-    if 'Mobile' in request.META['HTTP_USER_AGENT'] or terminal_name[:terminal_name.find('.')] == 'APM-0229':
+    print(terminal_name)
+    if ('Mobile' in request.META['HTTP_USER_AGENT']
+            or terminal_name[:terminal_name.find('.')] == 'apm-0140'
+            or terminal_name[:terminal_name.find('.')] == 'APM-0229'
+            or 'Android' in request.META['HTTP_USER_AGENT']):
         return render(request, r"worker/draws-mobile.html", context=context)
     else:
         return render(request, r"worker/draws.html", context=context)
@@ -278,6 +294,11 @@ def make_master_call(request, ws_st_number):
     """
     ws_number = str(ws_st_number)[:str(ws_st_number).find('-')]
     st_number = str(ws_st_number)[str(ws_st_number).rfind('-') + 1:]
+    # проверка лишних вызовов мастера
+    master_called_sz = master_calls_count(ws_number)
+    logger.debug(f'Количество СЗ со статусом вызов мастера: {master_called_sz}')
+    if master_called_sz > 5:
+        return redirect(f'/worker/{ws_number}?call=False_too_many')
     logger.debug(f'Данные для вызова мастера: {ws_number=}, {st_number=}, {ws_st_number=}')
     # if st_number == '0':
     #     return redirect(f'/worker/{ws_number}?call=False')
@@ -288,7 +309,7 @@ def make_master_call(request, ws_st_number):
         logger.info(f'Вызов мастера.')
         for message in messages:
             try:
-                asyncio.run(send_call_master(message, ws_number))  # отправка в группу мастерам телеграм ботом
+                # asyncio.run(send_call_master(message, ws_number))  # отправка в группу мастерам телеграм ботом
                 logger.info(f'Сообщение мастеру в telegram отправлено успешно {message}')
             except Exception as e:
                 logger.error(f'Ошибка отправки telegram сообщения мастеру {message}')

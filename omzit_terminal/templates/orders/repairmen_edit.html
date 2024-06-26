@@ -1,0 +1,73 @@
+{% extends "orders/testrep_base.html" %} {% load static %} {% block title %}
+Исполнители заявки {%endblock %} {% block content %} {{block.super}}
+<div class="col">
+  <h1>Работники, выполняющие заявку</h1>
+  <div class="form_row">
+    <form action="{% url 'order_info' pk=order_id %}" method="GET">
+      <input type="submit" class="input_like" value="Карточка заявки" />
+    </form>
+    <form action="{% url 'orders'%}" method="GET">
+      <input type="submit" class="input_like" value="Таблица заявок" />
+    </form>
+
+  </div>
+  <div class="equipment_card">
+    <div class="card_row__center">
+      <form method="POST">
+        {% csrf_token %} {% for i in add_form %} {{i}} {%endfor %}
+        <button type="submit" class="btn">добавить</button>
+      </form>
+    </div>
+    
+    {% for worker in object_list %}
+      <div class="card_row__center">
+        
+        <input type="text" value="{{ worker }}" readonly>
+        <form action="">
+          <button type="submit" class="btn" name="delete_button" value="{{worker.id}}">
+            Удалить
+          </button>
+        </form>
+      </div>
+
+    {% endfor %}
+  </div>
+  
+  <!-- окно удаления записи о местоположении-->
+  <div id="delete-shop-form" class="modal">
+    <div id="add-order-form">
+      <div class="modal-content">
+        <div class="add_to_plan">
+          <h1>Вы действительно хотите удалить местоположение?</h1>
+
+          <div class="form_row">
+            <button id="cancel-delete-button" class="form_button" type="button">
+              <p class="green_word">Назад</p>
+            </button>
+
+            <form action="{% url 'repairmen_delete' %}" method="POST">
+              {% csrf_token %}
+              <input type="hidden" name="order_id" value="{{order_id}}">
+              <button
+                class="form_button"
+                id="commit-delete-button"
+                name="commit-delete-button"
+                value="{{object.id}}"
+                type="submit"
+              >
+                <p class="red_word">Удалить</p>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  {% endblock content %} 
+  {% block js %} 
+    {{block.super }} 
+    <script src="{% static 'orders/js/repairmen.js' %}"></script>
+  {% endblock js%}
+</div>

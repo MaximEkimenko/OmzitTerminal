@@ -1,12 +1,11 @@
+import re
+import traceback
 from pprint import pprint
-
 import asyncio
 import datetime
 import socket
-import threading
 import json
-from django.http import JsonResponse
-from django.shortcuts import render
+from django.http import JsonResponse, HttpResponse, Http404
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -15,15 +14,21 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import redirect, render
 
-from api.serializers import ShiftTaskSerializer, ShiftTaskIdSerializer
-from scheduler.models import ShiftTask
-from worker.services.master_call_db import continue_work
-from worker.services.master_call_function import get_client_ip, send_call_master, send_call_dispatcher
-from worker.views import resume_work
+from m_logger_settings import logger  # noqa
+from api.serializers import ShiftTaskSerializer, ShiftTaskIdSerializer  # noqa
+from scheduler.models import ShiftTask  # noqa
+from worker.services.master_call_function import get_client_ip, send_call_master, send_call_dispatcher  # noqa
+from worker.views import resume_work  # noqa
+from scheduler.models import WorkshopSchedule  # noqa
 
 
 class ShiftTaskListView(ListAPIView):
+    """
+    Получение данных shift_task НЕИСПОЛЬЗУЕТСЯ
+    """
     serializer_class = ShiftTaskSerializer
 
     def get(self, request, *args, **kwargs):
@@ -75,6 +80,9 @@ class ShiftTaskListView(ListAPIView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class StartJobView(APIView):
+    """
+    Запуск СЗ в работу через API. НЕИСПОЛЬЗУЕТСЯ.
+    """
 
     def post(self, request):
         serializer = ShiftTaskIdSerializer(data=self.request.data)
@@ -96,6 +104,9 @@ class StartJobView(APIView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CallMaserView(APIView):
+    """
+    Обработка вызова мастера. НЕИСПОЛЬЗУЕТСЯ.
+    """
 
     def post(self, request):
         serializer = ShiftTaskIdSerializer(data=self.request.data)
@@ -124,6 +135,9 @@ class CallMaserView(APIView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CallDispatcherView(APIView):
+    """
+    Обработка вызова диспетчера. НЕИСПОЛЬЗУЕТСЯ.
+    """
 
     def post(self, request):
         serializer = ShiftTaskIdSerializer(data=self.request.data)
@@ -146,24 +160,148 @@ class CallDispatcherView(APIView):
 
 @csrf_exempt
 def save_strat_plan(request):
+    """
+    Получение данных из страницы STRAT плана и их сохранение в БД
+    :param request:
+    :return:
+    """
+    model_pattern = r"^[\-A-Za-z0-9]+$"
+    order_pattern = r"^[А-Яа-яA-Za-z0-9\(\)\-]+$"
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)  # Parse the JSON data from the request
-            pprint(data)
+            # получение данных
+            data = json.loads(request.body)
+            # обработка id новых записей - определение максимального id
+            all_ids = WorkshopSchedule.objects.all().values_list('id', flat=True)
+            next_max_id = max(list(all_ids)) + 1
+            # добавление next_max_id вместо tmp
+            for task in data['tasks']:
+                # обработка некорректного ввода
+                try:
+                    if not re.match(order_pattern, task['code']) or task['code'] is None:
+                        logger.error(f'Неверное имя заказа {task["code"]}.')
+                        return HttpResponse({'status': 'error', 'message': 'order_error'}, status=400)
+                    if not re.match(model_pattern, task['name']) or task['name'] is None:
+                        logger.error(f'Неверное имя модели. {task["name"]}')
+                        return HttpResponse({'status': 'error', 'message': 'model_error'}, status=400)
+                except Exception as e:
+                    traceback.print_exception(e)
+                    return
+                if 'tmp' in str(task['id']):
+                    task['id'] = next_max_id
+                    next_max_id = next_max_id + 1
+            json_ids = [item['id'] for item in data['tasks']]  # все id для обновления
+            schedules_to_update = WorkshopSchedule.objects.filter(pk__in=json_ids)  # все объекты для обновления
+            # print(schedules_to_update[0])
+            existing_ids = set(schedules_to_update.values_list('pk', flat=True))  # существующие id
+            # словарь для получения данных json по id
+            json_data_by_id = {item['id']: item for item in data['tasks']}
+            # список для обновления данных
+            for schedule in schedules_to_update:
+                json_item = json_data_by_id[schedule.pk]
+                # расчётная дата сдачи с + # TODO костыль компенсации смещения на 1 день
+                schedule.calculated_datetime_done = ((datetime.datetime.fromtimestamp(json_item['end'] / 1000).date())
+                                                     + datetime.timedelta(days=1))
+                # степень готовности
+                schedule.done_rate = json_item['progress']
+                # цикл производства
+                schedule.produce_cycle = json_item['duration']
+                # расчётная дата запуска
+                schedule.calculated_datetime_start = (schedule.calculated_datetime_done -
+                                                      datetime.timedelta(days=schedule.produce_cycle))
+                # фиксирование в графике
+                schedule.is_fixed = json_item.get('is_fixed', False)
+                # отставание дней
+                schedule.late_days = json_item.get('late_days', 0)
+                # статус завершено при готовности 100 %
+                if json_item['progress'] >= 100:
+                    schedule.order_status = 'завершено'
+                else:
+                    schedule.order_status = schedule.order_status
 
-            # Process the data (e.g., save to database, perform calculations, etc.)
+            # список для создания новых записей
+            new_schedules = []
+            try:
+                for json_id in json_ids:
+                    if json_id not in existing_ids:
+                        json_item = json_data_by_id[json_id]
 
-            # Create a response
+                        calculated_datetime_done = datetime.datetime.fromtimestamp(
+                            int(json_item['end'] / 1000)).date()
+
+                        if json_item['progress'] >= 100:
+                            order_status = 'завершено'
+                        elif json_item['progress'] == 0:
+                            order_status = 'не запланировано'
+                        else:
+                            order_status = 'в работе'
+                        produce_cycle = json_item['duration']
+
+                        is_fixed = json_item.get('is_fixed', False)
+                        new_schedule = WorkshopSchedule(
+                            pk=json_id,
+                            workshop=int(data['workshop']),
+                            calculated_datetime_done=calculated_datetime_done,
+                            datetime_done=calculated_datetime_done,
+                            order=json_item['code'],
+                            model_name=json_item['name'],
+                            model_order_query=f"{json_item['code']}_{json_item['name']}",
+                            td_status='не заказано',
+                            order_status=order_status,
+                            query_prior=4,
+                            done_rate=json_item['progress'],
+                            produce_cycle=produce_cycle,
+                            is_fixed=is_fixed,
+                            late_days=0
+                        )
+                        new_schedules.append(new_schedule)
+            except Exception as e:
+                logger.exception(e)
+            # обновление данных
+            try:
+                WorkshopSchedule.objects.bulk_update(schedules_to_update,
+                                                     ['calculated_datetime_done', 'done_rate', 'produce_cycle',
+                                                      'order_status', 'is_fixed', 'calculated_datetime_start',
+                                                      'late_days'])
+                logger.debug('Данные планирования успешно обновлены.')
+            except Exception as e:
+                logger.error('Ошибка при обновлении данных WorkshopSchedule.')
+                logger.exception(e)
+            # добавление данных
+            if new_schedules:
+                try:
+                    WorkshopSchedule.objects.bulk_create(new_schedules)
+                    logger.debug(f'Данные планирования f{new_schedules} успешно добавлены.')
+                except Exception as e:
+                    logger.error('Ошибка при добавлении данных WorkshopSchedule.')
+                    logger.exception(e)
+
             response_data = {
-                'status': 'success',
-                'message': 'Data received'
+                'status': 'ok',
+                'message': 'данные получены'
             }
             return JsonResponse(response_data, status=200)
-        except json.JSONDecodeError:
-            return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+        except json.JSONDecodeError as e:
+            logger.error('Неверный формат JSON')
+            logger.exception(e)
+            return JsonResponse({'status': 'error', 'message': 'Неверный формат JSON'}, status=400)
     else:
-        return JsonResponse({'status': 'error', 'message': 'Only POST method allowed'}, status=405)
+        raise PermissionDenied
 
 
-
-
+@csrf_exempt
+def delete_model_from_start_plan(request, model_id):
+    """
+    Удаление модели из WorkshopSchedule по id из front strat_plan
+    :param request:
+    :param model_id:
+    :return:
+    """
+    try:
+        WorkshopSchedule.objects.get(pk=model_id).delete()
+        logger.debug(f'Модель {model_id} успешно удалена из WorkshopSchedule.')
+        return JsonResponse({'status': 'ok', 'message': f'{model_id} успешно удалена'}, status=200)
+    except Exception as e:
+        logger.error('Ошибка при удалении модели из WorkshopSchedule.')
+        logger.exception(e)
+        return JsonResponse({'status': 'error', 'message': 'Ошибка при удалении модели'}, status=500)

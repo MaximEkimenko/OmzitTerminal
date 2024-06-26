@@ -8,25 +8,25 @@ from django.utils.timezone import make_aware
 from .models import ShiftTask, WorkshopSchedule, Doers, model_pattern, model_error_text, order_pattern, order_error_text
 from django.forms import ModelChoiceField
 from django.db.models import Q
-from tehnolog.models import ProductCategory
-from constructor.forms import QueryAnswerForm, MultipleFileField, MultipleFileInput
+from tehnolog.models import ProductCategory  # noqa
+from constructor.forms import QueryAnswerForm, MultipleFileField, MultipleFileInput  # noqa
 
 
 class SchedulerWorkshop(forms.Form):
     """
     Форма для ввода графика цеха
     """
-
-    query_set = WorkshopSchedule.objects.filter(td_status='утверждено', order_status='не запланировано')
-
+    # query_set = WorkshopSchedule.objects.filter(td_status='утверждено', order_status='не запланировано')
+    # TODO ТЕСТЫ вернуть на место в боевой базе
+    # query_set = WorkshopSchedule.objects.filter(order_status='не запланировано')
+    query_set = WorkshopSchedule.objects.all()
     model_order_query = QueryAnswerForm(query_set, empty_label='выберите заказ-модель', label='Заказ-модель')
-
     workshop = forms.ChoiceField(choices=((1, 'Цех 1'), (2, 'Цех 2'), (3, 'Цех 3'), (4, 'Цех 4')),
                                  label='Цех', required=True)
     query_set = ProductCategory.objects.all()
     category = forms.ModelChoiceField(queryset=query_set, empty_label='Категория не выбрана',
                                       label='Категория заказа', required=True)  # выбор категории
-    datetime_done = forms.DateField(label='Планируемая дата готовности', required=True,
+    datetime_done = forms.DateField(label='Планируемая дата по договору', required=True,
                                     widget=forms.SelectDateWidget(empty_label=("год", "месяц", "день"),
                                                                   years=(datetime.datetime.now().year,
                                                                          datetime.datetime.now().year + 1)))
@@ -36,13 +36,39 @@ class QueryDraw(forms.Form):
     """
     Форма запроса чертежа
     """
+    # Старая версия
     # model_query = forms.CharField(max_length=50, label='Модель запроса КД', required=False)
-    model_query = forms.CharField(max_length=50, label='Модель запроса КД',
-                                  widget=forms.TextInput(attrs={'pattern': model_pattern, 'title': model_error_text}))
-    order_query = forms.CharField(max_length=50, label='Заказ запроса КД',
-                                  widget=forms.TextInput(attrs={'pattern': order_pattern, 'title': order_error_text}))
+    # model_query = forms.CharField(max_length=50, label='Модель запроса КД',
+    #                               widget=forms.TextInput(attrs={'pattern': model_pattern, 'title': model_error_text}))
+    # order_query = forms.CharField(max_length=50, label='Заказ запроса КД',
+    #                               widget=forms.TextInput(attrs={'pattern': order_pattern, 'title': order_error_text}))
+    model_order_query_queryset = WorkshopSchedule.objects.filter(td_status='не заказано')
+    model_query = forms.ModelChoiceField(queryset=model_order_query_queryset, empty_label='Заказ модель не выбрана',
+                                         label='заказ модель', required=True)  # выбор категории
     query_prior = forms.ChoiceField(choices=((1, 1), (2, 2), (3, 3), (4, 4)), label='Приоритет', initial=1,
                                     required=False)
+
+
+class ChangeDateTimeDone(forms.Form):
+    """
+    Форма редактирования даты готовности заказ_модели
+    """
+    query_set = WorkshopSchedule.objects.all()
+    model_order_query = QueryAnswerForm(query_set, empty_label='выберите заказ-модель', label='Заказ-модель')
+    # datetime_done = forms.DateField(label='Редактируемая дата под договору', required=True,
+    #                                 widget=forms.SelectDateWidget(empty_label=("год", "месяц", "день"),
+    #                                                               years=(datetime.datetime.now().year,
+    #                                                                      datetime.datetime.now().year + 1)))
+    contract_start_date = forms.DateField(label='Дата начала по договору', required=True,
+                                          widget=forms.SelectDateWidget(empty_label=("год", "месяц", "день"),
+                                                                        years=(datetime.datetime.now().year - 1,
+                                                                               datetime.datetime.now().year,
+                                                                               datetime.datetime.now().year + 1)))
+    contract_end_date = forms.DateField(label='Дата окончания по договору', required=True,
+                                        widget=forms.SelectDateWidget(empty_label=("год", "месяц", "день"),
+                                                                      years=(datetime.datetime.now().year - 1,
+                                                                             datetime.datetime.now().year,
+                                                                             datetime.datetime.now().year + 1)))
 
 
 class SchedulerWorkplaceLabel(ModelChoiceField):  # переопределение метода отображения строки результатов для РЦ

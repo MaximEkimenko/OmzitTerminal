@@ -139,6 +139,11 @@ GanttMaster.prototype.init = function (workSpace) {
                 self.removeLink(focusedSVGElement.data('from'), focusedSVGElement.data('to'))
             else self.deleteCurrentTask()
         })
+        //!bind!
+        .bind('deleteTask.gantt', function () {
+            self.deleteTask()
+        })
+        //!bind!
         .bind('addAboveCurrentTask.gantt', function () {
             self.addAboveCurrentTask()
         })
@@ -1049,29 +1054,70 @@ GanttMaster.prototype.indentCurrentTask = function () {
     }
 }
 
+//удаление задания по endpoint django
+GanttMaster.prototype.deleteTask = async function () {
+    const deleteUrl = `http://192.168.8.163:8000/api/delete_model`
+    var self = this
+    model_id = self.currentTask.id
+
+    var userConfirmed = confirm(
+        `Вы уверены, что хотите удалить ${self.currentTask.model_order_query} ?`
+    )
+
+    // Подтверждение удаления
+    if (!userConfirmed) {
+        alert(`Удаление ${self.currentTask.model_order_query} отменено.`)
+        return
+    }
+
+    const options = {
+        method: 'GET', // HTTP method
+        // headers: {
+        //     'Content-Type': 'application/json', // specify the content type as JSON
+        // },
+        // body: JSON.stringify(prj, null, '\t'), // convert JavaScript object to JSON string
+    }
+    try {
+        const response = await fetch(`${deleteUrl}${model_id}`, options) // make the fetch request
+        // console.log(response)
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`) // handle HTTP errors
+        }
+        const responseData = response.json() // parse the JSON response
+        // console.log(responseData) // log the response data
+    } catch (error) {
+        console.error('Error making POST request:', error) // log any errors
+    }
+    location.reload()
+
+    // return this.currentTask
+}
+//!!!!!!!!!!
+
 GanttMaster.prototype.addBelowCurrentTask = function () {
     var self = this
-    //console.debug("addBelowCurrentTask",self.currentTask)
     var factory = new TaskFactory()
     var ch
     var row = 0
     if (self.currentTask && self.currentTask.name) {
+        // Удалено за ненадобностью (добавляется сразу на 0 уровень)
         //add below add a brother if current task is not already a parent
-        var addNewBrother = !(self.currentTask.isParent() || self.currentTask.level == 0)
+        // var addNewBrother = !(self.currentTask.isParent() || self.currentTask.level == 0)
 
-        var canAddChild = self.currentTask.canAdd
-        var canAddBrother = self.currentTask.getParent() && self.currentTask.getParent().canAdd
+        // var canAddChild = self.currentTask.canAdd
+        // var canAddBrother = self.currentTask.getParent() && self.currentTask.getParent().canAdd
 
-        //if you cannot add a brother you will try to add a child
-        addNewBrother = addNewBrother && canAddBrother
+        // //if you cannot add a brother you will try to add a child
+        // addNewBrother = addNewBrother && canAddBrother
 
-        if (!canAddBrother && !canAddChild) return
+        // if (!canAddBrother && !canAddChild) return
 
         ch = factory.build(
             'tmp_' + new Date().getTime(),
             '',
             '',
-            self.currentTask.level + (addNewBrother ? 0 : 1),
+            // self.currentTask.level + (addNewBrother ? 0 : 1),
+            0,
             self.currentTask.start,
             1
         )

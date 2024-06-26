@@ -4,7 +4,7 @@
   <h1>Места нахождения оборудования</h1>
   <div class="form_row">
     <form action="{% url 'equipment'%}" method="GET">
-      <input type="submit" value="Назад" />
+      <input type="submit" class="input_like" value="Назад" />
     </form>
   </div>
   <div class="equipment_card">
@@ -20,19 +20,16 @@
         <div class="equipment_card__spacer"></div>
 
         <div>
-          {% comment "" %}
-          <form action="{% url "shops_edit" shop.id %}" style="display:inline-block;">
-          {% endcomment %}
-          <form action="{% url "shops_edit" shop.id %}" style="display:inline-block;">
-          <button
-            type="submit"
-            class="btn"
-            name="edit_shop"
-            value="{{shop.id}}"
-          >
-            редактировать
-          </button>
-        </form>
+          <form action="" style="display:inline-block;">
+            <button
+              type="submit"
+              class="btn"
+              name="edit_shop"
+              value="{{shop.id}}"
+            >
+              редактировать
+            </button>
+          </form>
     
           {% comment "" %}<form action="{% url "shops_delete"%}" style="display:inline-block;">  {% endcomment %}
         
@@ -58,8 +55,7 @@
           <div class="form_row">
             {{edit_form.name}}
             <button
-              class="btn"
-                  
+              class="btn"                  
               id="edit-form-button"
               name="edit-form-button"
               value="{{object.id}}"

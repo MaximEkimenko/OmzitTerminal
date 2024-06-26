@@ -6,6 +6,7 @@ from aiogram import Bot, Dispatcher, executor, types
 # работа с БД
 from terminal_db import (ws_list_get, status_change_to_otk, st_list_get, master_id_get, control_man_id_set,
                          decision_data_set, lines_count, control_man_id_get, all_active_st_get)
+
 # TODO законсервировано функционал простоев
 # from terminal_db import confirm_downtime, reject_downtime
 
@@ -62,7 +63,7 @@ omzit_master_group1_id = admin_id
 omzit_master_group2_id = admin_id
 
 ws_numbers_c1 = ('11', '12', '13', '14', '15', '16')  # терминалы цех 1
-ws_numbers_c2 = ('22', '23', '24', '25', '26', '27', '28', '29', '210', '211')  # терминалы цех 2
+ws_numbers_c2 = ('22', '23', '24', '25', '26', '27', '28', '29', '210', '211', '212')  # терминалы цех 2
 
 # fios
 id_fios = {admin_id: 'Екименко М.А.',  # цех 1
@@ -112,7 +113,7 @@ users = (admin_id,  # root
          )
 
 # производство
-masters_list = (admin_id, ermishkin_id, posohov_id, gordii_id, kondratiev_id, achmetov_id, kozlov_id,   # цех 1
+masters_list = (admin_id, ermishkin_id, posohov_id, gordii_id, kondratiev_id, achmetov_id, kozlov_id,  # цех 1
                 mailashov_id, gorojanski_id, pospelov_id, kulbashin_id, skorobogatov_id, ostrijnoi_id, rihmaer_id,
                 )
 
@@ -211,6 +212,18 @@ async def otk_call(callback_query: types.CallbackQuery, callback_data: dict):
     master_id = callback_data.get('user_id')
     ws_number = callback_data.get('ws_number')
     logger.debug(f'FROM_otk_call_callback_data: {ws_number=}, {id_fios.get(int(master_id), master_id)}')
+    if str(ws_number) in ws_numbers_c1:
+        send_master_group = omzit_master_group1_id
+    elif str(ws_number) in ws_numbers_c2:
+        send_master_group = omzit_master_group2_id
+    # обработка большого количества вызовов ОТК
+    st_count = lines_count(ws_number=str(ws_number))[0]  # количество СЗ с ожиданием контролёра
+    if st_count > 10:
+        await bot.send_message(chat_id=send_master_group, text=f"Вызов контролёра более чем на 8 СЗ недопустим.\n"
+                                                               f"Сдайте сменные задания ОТК.")
+        logger.warning(f'Попытка вызвать ОТК на более 10 СЗ одновременно.'
+                       f'{ws_number=}, {id_fios.get(int(master_id), master_id)}')
+        return
     # Статус ожидание контролёра
     status_change_to_otk(ws_number=ws_number, initiator_id=master_id)
     st_count = lines_count(ws_number=str(ws_number))[0]  # количество СЗ с ожиданием контролёра
@@ -226,8 +239,8 @@ async def otk_call(callback_query: types.CallbackQuery, callback_data: dict):
         await bot.send_message(chat_id=omzit_otk_group_id, text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
                                                                 f"{id_fios[int(master_id)]}.\n"
                                                                 f"Количество сменных заданий для приёмки: {st_count}.")
-    # Обратная связь мастеру
-    await bot.send_message(chat_id=master_id, text="Запрос в отк отправлен.")
+    # Обратная связь мастеру отменено т.к. мастера не хотят личку
+    # await bot.send_message(chat_id=master_id, text="Запрос в отк отправлен.")
     if str(ws_number) in ws_numbers_c1:
         await bot.send_message(chat_id=omzit_master_group1_id, text="Запрос в отк отправлен.")
     elif str(ws_number) in ws_numbers_c2:
@@ -283,8 +296,8 @@ async def otk_call_handler(callback_query: types.CallbackQuery, callback_data: d
             await bot.send_message(chat_id=omzit_otk_group_id,
                                    text=f"Контролёр {id_fios[int(controlman_id)]} ответил на запрос Т{ws_number}.")
             # обратная связь мастеру
-            await bot.send_message(chat_id=master_id, text=f"Контролёр {id_fios[int(controlman_id)]} ответил "
-                                                           f"на запрос Т{ws_number}.")
+            # await bot.send_message(chat_id=master_id, text=f"Контролёр {id_fios[int(controlman_id)]} ответил "
+            #                                                f"на запрос Т{ws_number}.")
             # обратная связь в группу мастерам
             if str(ws_number) in ws_numbers_c1:
                 await bot.send_message(chat_id=omzit_master_group1_id,
@@ -355,7 +368,13 @@ async def otk_decision_shift_task_choice(callback_query: types.CallbackQuery, ca
     inline_st_buttons = types.InlineKeyboardMarkup()  # объект инлайн кнопок номера СЗ
     # получение списка СЗ
     shift_task_list = st_list_get(ws_number)
-    full_task_text = '\n'.join(shift_task_list)
+
+    # обработка длинной строки при большом количестве СЗ
+    if len(shift_task_list) > 4:
+        full_task_text = '\n'.join(shift_task_list)[:40]
+    else:
+        full_task_text = '\n'.join(shift_task_list)
+
     for task in shift_task_list:
         shift_task_id = task[2:str(task).find("|") - 1]  # id СЗ
         logger.debug(f'{shift_task_id=} в otk_decision_shift_task_choice')
@@ -448,9 +467,9 @@ async def otk_decision_register(callback_query: types.CallbackQuery, callback_da
                                    text=f'Контролёр {id_fios[int(controlman_id)]} определил "{decision}" на Т{ws_number} '
                                         f'для СЗ №{st_id}')
         # сообщение мастеру
-        await bot.send_message(chat_id=master_id,
-                               text=f'Контролёр {id_fios[int(controlman_id)]} определил "{decision}" на Т{ws_number} '
-                                    f'для СЗ №{st_id}')
+        # await bot.send_message(chat_id=master_id,
+        #                        text=f'Контролёр {id_fios[int(controlman_id)]} определил "{decision}" на Т{ws_number} '
+        #                             f'для СЗ №{st_id}')
         await callback_query.answer()  # закрытие inline кнопок
 
 
@@ -512,6 +531,78 @@ async def on_shutdown(_):  # функция выполняется при зав
 #         else:
 #             await message.reply(f'Неверный формат ответа! Введите "Да" или "Нет", '
 #                                 f'при необходимости через пробел укажите описание проблемы')
+
+
+@dp.message_handler(commands=['otk_send_text'])
+async def master_otk_text_send(message: types.Message):
+    """
+    Ручная отправка вызова ОТК
+    :param message:
+    :return:
+    """
+    try:
+        master_id = message.from_user.id
+        ws_number = message.text.split(' ')[1]
+        if str(ws_number) in ws_numbers_c1 or str(ws_number) in ws_numbers_c2:
+            if str(ws_number) in ws_numbers_c1:
+                send_master_group = omzit_master_group1_id
+            elif str(ws_number) in ws_numbers_c2:
+                send_master_group = omzit_master_group2_id
+            # обработка большого количества вызовов ОТК
+            # Статус ожидание контролёра
+            status_change_to_otk(ws_number=ws_number, initiator_id=master_id)
+            st_count = lines_count(ws_number=str(ws_number))[0]  # количество СЗ с ожиданием контролёра
+            send_master_group = admin_id  # TODO ТЕСТЫ!!!
+            omzit_otk_group_id = admin_id  # TODO ТЕСТЫ!!!
+            if st_count > 10:
+                await bot.send_message(chat_id=send_master_group,
+                                       text=f"Вызов контролёра более "
+                                            f"чем на 10 СЗ недопустим."
+                                            f"Сдайте сменные задания ОТК.")
+                logger.warning(f'Попытка вызвать ОТК на более 10 СЗ одновременно.'
+                               f'{ws_number=}, {id_fios.get(int(master_id), master_id)}')
+                return
+            if st_count == 0:
+                await bot.send_message(chat_id=send_master_group,
+                                       text=f"Сменных заданий со статусом 'вызов контролёра' "
+                                            f"на {ws_number} нет.")
+                return
+        else:
+            await message.reply(text='Номер терминала введён неправильно')
+            logger.debug(f'Номер терминала введён неправильно {message.text=}. '
+                         f'При ручном вызове ОТК из master_otk_text_send')
+            return
+        logger.info(f'Вызов контролёра вручную из master_otk_text_send')
+        text_to_otk = ' '.join(message.text.split(' ')[2:])
+        if len(text_to_otk) > 50:
+            await message.reply(text='Сообщение для ОТК более 50 символов.')
+            logger.debug(f'Сообщение для ОТК более 50 символов {message.text=}. '
+                         f'При ручном вызове ОТК из master_otk_text_send')
+            return
+
+        ultra_sound_string = lines_count(ws_number=str(ws_number))[1]
+        logger.info(f'Количество сменных заданий для приёмки {st_count=}, '
+                    f'Наличие УЗК, или рентгена: {ultra_sound_string=}')
+        # отправка сообщения о заявке на контролёра в группу ОТК
+        if ultra_sound_string:
+            await bot.send_message(chat_id=omzit_otk_group_id,
+                                   text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
+                                        f"{id_fios[int(master_id)]}.\n"
+                                        f"Количество сменных заданий для приёмки: "
+                                        f"{st_count}.\n"
+                                        f"операция рентген, УЗК: {ultra_sound_string} \n"
+                                        f"Замечание мастера: {text_to_otk}")
+        else:
+            await bot.send_message(chat_id=omzit_otk_group_id,
+                                   text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
+                                        f"{id_fios[int(master_id)]}.\n"
+                                        f"Количество сменных заданий для приёмки: {st_count}. \n"
+                                        f"Замечание мастера: {text_to_otk}")
+        await bot.send_message(chat_id=send_master_group, text="Запрос в отк отправлен.")
+    except Exception as e:
+        logger.error(e)
+        await message.reply(text='Команда введена неправильно')
+        logger.debug(f'Команда введена неправильно {message.text=}. При ручном вызове ОТК из master_otk_text_send')
 
 
 if __name__ == '__main__':

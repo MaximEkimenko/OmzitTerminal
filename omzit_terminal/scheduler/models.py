@@ -35,6 +35,8 @@ class WorkshopSchedule(models.Model):
     workshop = models.PositiveSmallIntegerField(verbose_name='Цех', null=True)
     model_name = models.CharField(max_length=30, verbose_name='Модель изделия', validators=[model_regex])
     datetime_done = models.DateField(null=True, verbose_name='Планируемая дата готовности')
+    calculated_datetime_done = models.DateField(null=True, verbose_name='Расчётная дата готовности')
+    calculated_datetime_start = models.DateField(null=True, verbose_name='Расчётная дата запуска')
     order = models.CharField(max_length=100, verbose_name='Номер заказа', validators=[order_regex])
     order_status = models.CharField(max_length=20, default='не запланировано', verbose_name='Статус заказа')
 
@@ -43,7 +45,8 @@ class WorkshopSchedule(models.Model):
     query_prior = models.PositiveSmallIntegerField(verbose_name='Приоритет заявки чертежей', default=1)
     done_rate = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=0,
                                     verbose_name='процент готовности')
-    td_status = models.CharField(max_length=20, default='запрошено', verbose_name='Статус технической документации')
+    td_status = models.CharField(max_length=20, default='запрошено', null=True,
+                                 verbose_name='Статус технической документации')
     td_query_datetime = models.DateTimeField(auto_now_add=True, null=True,
                                              verbose_name='дата/время запроса документации')
     td_remarks = models.TextField(blank=True, verbose_name='замечания к КД')
@@ -59,6 +62,33 @@ class WorkshopSchedule(models.Model):
     constructor_query_td_fio = models.CharField(max_length=30, null=True, verbose_name='Передал КД')
     tehnolog_query_td_fio = models.CharField(max_length=30, null=True, verbose_name='Утвердил / загрузил')
     product_category = models.CharField(max_length=30, null=True, verbose_name='Категория изделия')
+
+    # TODO добавлено для функционала strat моделей без параметров
+    #  при глобальном рефакторинге: models.ForeignKey(ModelParameters, ...)
+    #  либо работа только с таблицей ModelParameters
+    produce_cycle = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=1,
+                                        verbose_name='Производственный цикл')
+    contract_start_date = models.DateField(null=True, verbose_name='Дата начала по договору')
+    contract_end_date = models.DateField(null=True, verbose_name='Дата готовности по договору')
+
+    is_fixed = models.BooleanField(default=False, verbose_name='фиксация в план')
+    late_days = models.IntegerField(null=True, default=0, verbose_name='отставание дней')
+
+    # def __str__(self):
+    #     fields = [f"{field.name}: {getattr(self, field.name)}" for field in self._meta.fields]
+    #     return "\n".join(fields)
+    def __str__(self):
+        return self.model_order_query
+
+    def save(self, *args, **kwargs):
+        """
+        Копирование значения datetime_done в calculated_datetime_done
+        при создании новой записи
+        """
+        if not self.calculated_datetime_done:
+            self.calculated_datetime_done = self.datetime_done
+        super().save(*args, **kwargs)
+
 
     # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
     # # Пример структуры {
@@ -113,7 +143,7 @@ class ModelParameters(models.Model):
                                          verbose_name='Полная трудоёмкость изделия')
     critical_chain_cycle_koef = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=0.6,
                                                     verbose_name='Коэффициент расчёта критической цепи')
-    series_parameters = models.ForeignKey(SeriesParameters, on_delete=models.PROTECT,
+    series_parameters = models.ForeignKey(SeriesParameters, on_delete=models.DO_NOTHING,
                                           null=True, verbose_name="Параметры серии")
     # расчётное поле по сигналу перед сохранением данных
     produce_cycle = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=0,
@@ -139,6 +169,8 @@ class Doers(models.Model):
     """
     objects = models.Manager()  # явное указание метода для pycharm
     doers = models.CharField(max_length=255, unique=True, verbose_name='ФИО исполнителей')
+    telegram_id = models.BigIntegerField(null=True, default=0, verbose_name='telegram_id исполнителя')
+    is_approved = models.BooleanField(default=False, verbose_name='Одобрен')
 
     # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
     # job_title = models.CharField(max_length=255, null=True, blank=True, verbose_name='Должность')
@@ -155,8 +187,6 @@ class Doers(models.Model):
 
 # class DocQuery(models.Model):
 #     pass
-
-
 class ShiftTask(models.Model):
     """
     Модель данных сменного задания основная модель всего терминала

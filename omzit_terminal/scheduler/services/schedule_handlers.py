@@ -1,7 +1,9 @@
 import calendar
 import json
 import shutil
+from decimal import Decimal
 
+from django.db.models import Sum
 import openpyxl
 from PyPDF2 import PdfMerger
 from fpdf import FPDF
@@ -15,62 +17,73 @@ from ..models import WorkshopSchedule, ShiftTask
 # from ..models import MonthPlans, DailyReport
 import matplotlib.pyplot as plt
 import matplotlib
-from omzit_terminal.settings import BASE_DIR
+from omzit_terminal.settings import BASE_DIR  # noqa
+
 
 # TODO подключить logger при расконсервации
 
 
-def get_done_rate(order_number: str) -> float:
+def get_done_rate(model_order_query: str) -> float:
     """
     Получение процента готовности заказа
-    :param order_number: номер заказа
+    :param model_order_query: номер заказа
     :return:
     """
     # метод расчёта по количеству принятых сменных заданий
     # TODO реализовать альтернативный метод расчёта по выполненной трудоёмкости.
-    all_st = ShiftTask.objects.filter(order=order_number).count()
-    done_st = ShiftTask.objects.filter(order=order_number, st_status='принято').count()
+    total = 0
+    all_st = ShiftTask.objects.filter(model_order_query=model_order_query).count()
+    done_st = ShiftTask.objects.filter(model_order_query=model_order_query, st_status='принято').count()
+
+    full_td = ShiftTask.objects.filter(
+        model_order_query=model_order_query).aggregate(total=Sum('norm_tech'))['total']
     try:
         done_rate = round(100 * (all_st - (all_st - done_st)) / all_st, 2)
     except ZeroDivisionError:
         done_rate = 0
+
     return done_rate
 
 
-# def get_all_done_rate() -> None:
-#     """
-#     Получение процента готовности всех заказов, обновление записей done_rate в БД
-#     :return: None
-#     """
-#     order_rate_dict = dict()  # TODO удалить при рефакторинге
-#     all_orders = WorkshopSchedule.objects.values('order').distinct()
-#     for dict_order in all_orders:
-#         order = dict_order['order']
-#         done_rate = get_done_rate(order)
-#         order_rate_dict[order] = done_rate
-#         # установка статуса в зависимости от процента готовности
-#         if done_rate == float(0):
-#             order_status = None
-#         elif done_rate == float(100):
-#             order_status = 'выполнено'
-#         else:
-#             order_status = 'в работе'
-#         # запись в БД
-#         if order_status:
-#             WorkshopSchedule.objects.filter(order=order).update(done_rate=done_rate, order_status=order_status)
+def get_done_rate_with_td(td: Decimal, model_order: str) -> float:
+    """
+    Функция расчитывает процент готовности заказ модели по полной трудоёмкости
+    :param td: полная трудоёмкость
+    :param model_order: заказ модель
+    :return:
+    """
+    if td is None:
+        return 0
+    done_st = ShiftTask.objects.filter(
+        model_order_query=model_order,
+        st_status='принято').aggregate(sum=Sum('norm_calc'))['sum']
+    if done_st:
+        try:
+            return round(float(done_st / td) * 100, 1)
+        except ZeroDivisionError:
+            return 0
+    else:
+        return 0
+    # print(done_st)
+
+    # .aggregate(sum=Sum('norm_calc'))['sum']
+    # >> > tt.objects.aggregate(total_likes=Sum('tt_like'))
+    # {'total_likes': 0.4470664529184653}
+
+
 def get_all_done_rate() -> None:
     """
     Получение процента готовности всех заказов, обновление записей done_rate в БД
     :return: None
     """
-    all_orders = WorkshopSchedule.objects.values('order', 'order_status', 'done_rate').distinct()
+    all_orders = WorkshopSchedule.objects.values('model_order_query', 'order_status', 'done_rate').distinct()
 
     for dict_order in all_orders:
         current_order_status = dict_order['order_status']
         current_done_rate = dict_order['done_rate']
-        order = dict_order['order']
+        model_order_query = dict_order['model_order_query']
         # TODO оптимизировать! Сделать одним запросом.
-        done_rate = get_done_rate(order)
+        done_rate = get_done_rate(model_order_query)
         # изменение статуса в зависимости от процента готовности при изменении
         if current_order_status != 'завершено' and current_done_rate != done_rate:
             if done_rate == float(0):
@@ -80,8 +93,8 @@ def get_all_done_rate() -> None:
             else:
                 order_status = 'в работе'
             if order_status:
-                WorkshopSchedule.objects.filter(order=order).update(done_rate=done_rate, order_status=order_status)
-
+                WorkshopSchedule.objects.filter(model_order_query=model_order_query).update(done_rate=done_rate,
+                                                                                            order_status=order_status)
 
 
 def make_workshop_plan_plot(workshop: int, days_list: list, fact_list: list, aver_fact: float,
@@ -304,7 +317,6 @@ def report_json_create_schedule():
         print('json otpb_excel_file info updated')
     except Exception as e:
         print(e, ' json update failed at otpb_excel_file read!')
-
 
 # TODO ФУНКЦИОНАЛ ОЧТЁТОВ ЗАКОНСЕРВИРОВАНО
 # def days_report_create() -> None:
