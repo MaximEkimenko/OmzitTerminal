@@ -81,7 +81,6 @@ class Equipment(models.Model):
     # на самом деле оно не уникальное, инвентарники могут повторяться, просто поможет отличить одно от другого
     unique_name = models.CharField(max_length=255, verbose_name="Уникальное название оборудования")
 
-    # shop = models.CharField(max_length=255, blank=False, null=True, verbose_name="Цех")
     shop = models.ForeignKey(
         Shops, on_delete=models.PROTECT, null=True, verbose_name="Местонахождение"
     )
@@ -89,9 +88,10 @@ class Equipment(models.Model):
     registration_date = models.DateTimeField(
         auto_now_add=True, verbose_name="Дата добавления в базу"
     )
-    # decommissioning_date = models.DateTimeField(blank=True, null=True, verbose_name="Дата списания")
+
     characteristics = models.TextField(blank=True, null=True, verbose_name="ТТХ")
     description = models.TextField(blank=True, null=True, verbose_name="Описание оборудования")
+    ppr_plan_day = models.IntegerField(blank=True, null=True, verbose_name="День планового ремонта")
 
     class Meta:
         verbose_name = "Оборудование"

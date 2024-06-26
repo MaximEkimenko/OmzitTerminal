@@ -27,7 +27,7 @@ USER_GROUPS = {
     Position.HoRT: ["chief_rep", "chief_rep2"],
     Position.Dispatcher: ["dispatcher", "dispatcher2"],
     Position.Worker: ["worker"],
-    Position.Repairman: ["repair", "repair2", "repair3"],
+    Position.Repairman: ["repair", "repair2", "repair3", "repair4"],
 }
 PERMITED_USERS = []
 for g in USER_GROUPS.values():
@@ -35,6 +35,9 @@ for g in USER_GROUPS.values():
 
 
 def get_employee_position(username):
+    """
+    Возвращает группу пользователя (его роль) на основе имени пользователя
+    """
     for ug in USER_GROUPS:
         if username in USER_GROUPS[ug]:
             return ug
@@ -42,6 +45,12 @@ def get_employee_position(username):
 
 
 def custom_login_check(request) -> Literal[True]:
+    """
+    Проверяет, есть ли username в списке разрешенных пользователей PERMITED_USERS.
+    Если есть, прдолжает работу, если нет - возбуждает исключение PermissionDenied,
+    таким образом функция-представление не открывается для сторонних пользователей
+
+    """
     username = request.user.username
     if not any(map(lambda x: x == username, PERMITED_USERS)):
         logger.warning(

@@ -30,6 +30,13 @@ class EditEquipmentForm(ModelForm):
 
 
 class AddOrderForm(ModelForm):
+    """
+    Форма создания новой заявки на ремонт
+    """
+
+    shops_qs = Shops.objects.all()
+    shops = forms.ModelChoiceField(shops_qs, label="Фильтр по местоположению", required=False)
+
     class Meta:
         model = Orders
         fields = ["equipment", "priority", "breakdown_description", "worker"]

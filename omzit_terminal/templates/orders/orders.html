@@ -8,7 +8,7 @@
   <div class="col">
     <h1>Заявки на ремонт</h1>
 
-    {%if role in button_conditions.create %}
+    {%if role in create_order %}
     <p>
       <button id="add_order_button" class="btn">Добавить заявку</button>
     </p>
@@ -31,10 +31,6 @@
         <form method="get" id="filter_form">
           <tr class="table_header_row">
             <th class="td_cell">№
-              <br>
-              <div class="sort-filter">
-                  <button type="button" onclick="sortTable(0)"><img src="{% static 'scheduler/img/sort.svg' %}"
-              </div>
             </th>
             <th class="td_cell">
               {{order_filter.form.equipment__unique_name}}Оборудование
@@ -46,20 +42,20 @@
               </div>
             </th>
             <th class="td_cell">Ремонты</th>
-            <th class="td_cell">{{order_filter.form.status__name}} Статус</th>
+            <th class="td_cell">{{order_filter.form.status__name}} Статус
+              <br>
+              <div class="sort-filter">
+                  <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 3)" placeholder="">
+              </div>
+            </th>
             <th class="td_cell">{{order_filter.form.priority}} Приоритет
               <br>
               <div class="sort-filter">
-                  <button type="button" onclick="sortTable(4)"><img src="{% static 'scheduler/img/sort.svg' %}"
+                  <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 4)" placeholder="">
               </div>
             </th>
             <th class="td_cell">
               {{order_filter.form.breakdown_date}}Дата поломки
-              <br>
-              <div class="sort-filter">
-                  <button type="button" onclick="sortTable(5)"><img src="{% static 'scheduler/img/sort.svg' %}"
-              </div>
-
             </th>
             <th class="td_cell">Описание поломки</th>
             <th class="td_cell">
@@ -67,6 +63,10 @@
             </th>
             <th class="td_cell">{{order_filter.form.materials__name}}
               Необходимые матреиалы
+              <br>
+              <div class="sort-filter">
+                  <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 8)" placeholder="">
+              </div>
             </th>
             <th class="td_cell">{{order_filter.form.materials_request}}№ заявки на метриалы</th>
             <th class="td_cell">{{order_filter.form.doers_fio}}Исполнители</th>
@@ -111,10 +111,16 @@
           </td>
         </tr>
 
-
-
       {% endfor %}
     </table>
+    
+    <div id= "equipment_data" hidden>
+    {{equipment_json}}
+    </div>
+    
+
+
+
     {% comment "Добавление новой заявки" %}{% endcomment %}
     <div id="add-order-form" class="modal">
       <form
@@ -123,14 +129,26 @@
         method="POST"
       >
         {% csrf_token %}
-        {{add_order_form.media}}
         <div class="add_to_plan">
           <div class="form-error">{{ add_order_form.non_field_errors }}</div>
-          {% for entry in add_order_form %}
-          <div class="form_row">
-            <label for="{{ entry.id_for_label }}">{{entry.label}}</label>
-            {{entry}}
+          <div class="form_row"> 
+            <label for="id_word_filter">Фильтр по названию</label>
+            <input type="text" placeholder="введите часть названия оборудования" name="word_filter" id="id_word_filter"/>
+            {{add_order_form.shops.label}} {{add_order_form.shops}}
+
           </div>
+          <div class="form_row"> 
+            <label for="id_equipment">Оборудование</label>
+            <select type="text" name="equipment" id="id_equipment" style="width:400px;">
+            </select>
+          </div>
+          {% for entry in add_order_form %}
+            {% if  entry.name != 'shops' and  entry.name != 'equipment' %}
+              <div class="form_row">
+                <label for="{{ entry.id_for_label }}">{{entry.label}}</label>
+                {{entry}}
+              </div>
+            {% endif %}
           {% endfor %}
           <div class="form_row">
             <button type="submit" class="form_button">
@@ -142,7 +160,7 @@
       </form>
     </div>
 
-    {% comment "Добавление новой заявки" %}{% endcomment %}
+    {% comment "Удаление заявки" %}{% endcomment %}
 
     <div id="delete-order-form" class="modal">
       <div id="add-order-form">

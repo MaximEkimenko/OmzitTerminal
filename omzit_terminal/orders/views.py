@@ -109,29 +109,26 @@ def equipment(request: WSGIRequest) -> HttpResponse:
 
 @login_required(login_url="/scheduler/login/")
 def orders(request) -> HttpResponse:
+    """
+    Главная страница, на которой демонстрируется таблица с заявками на ремонт.
+    На этой странице проходит управление всем циклом заявок: от создания заявки до завершения ремонта.
+    """
     custom_login_check(request)
     if request.method == "POST":
 
         add_order_form = AddOrderForm(request.POST)
         if add_order_form.is_valid():
-            try:
-                # Выбираем все параметры кроме исполнителей, чтобы создать объект заявки.
-                # Исполнителей присоединим к созданному объекту позже
-                order_parameters = {
-                    key: val
-                    for key, val in add_order_form.cleaned_data.items()
-                    if not key.startswith("fio")
+            order_parameters = {key: val for key, val in add_order_form.cleaned_data.items()}
+            order_parameters.update(
+                {
+                    "identified_employee": " ".join(
+                        [request.user.last_name, request.user.first_name]
+                    ),
                 }
-                order_parameters.update(
-                    {
-                        "identified_employee": " ".join(
-                            [request.user.last_name, request.user.first_name]
-                        ),
-                    }
-                )
+            )
+            try:
                 new_order = Orders(**order_parameters)  # создаем заявку
                 new_order.save()
-
             except Exception as e:
                 alert_message = "Ошибка добавления в заявки"
                 create_flash_message(alert_message)
@@ -142,13 +139,10 @@ def orders(request) -> HttpResponse:
                 create_flash_message(alert_message)
                 logger.info(f"Заявка № {new_order.id} добавлена в таблицу Orders")
                 order_telegram_notification(OrdStatus.DETECTED, new_order)
-
-        else:
-            logger.error("Ошибка валидации формы добавления новой заявки на ремонт.")
         return redirect("orders")
-
+    else:
+        print("ошибка валидации")
     context = orders_get_context(request)
-    context.update({"permitted_users": PERMITED_USERS})
     return render(request, "orders/orders.html", context=context)
 
 

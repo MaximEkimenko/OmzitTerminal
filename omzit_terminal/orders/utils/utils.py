@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from typing import Any
-
+import json
 from django import forms
 from django.db.models import QuerySet
 from django.utils.timezone import make_naive, make_aware
@@ -11,7 +11,7 @@ from orders.utils.common import OrdStatus, button_context
 from orders.utils.roles import Position, get_employee_position
 from orders.forms import AddOrderForm
 
-from orders.models import FlashMessage, Orders, OrderStatus, Materials
+from orders.models import FlashMessage, Orders, OrderStatus, Materials, Equipment
 
 
 def get_order_verbose_names():
@@ -121,6 +121,17 @@ def convert_name(doers: list[str]) -> str:
 
 
 def orders_get_context(request) -> dict[str, Any]:
+    """
+    Добавляет в контекст для представления orders следующую информацию:
+    create_order: каким группам пользователей позволено создавать заявку, нужно для появления
+        на странице кнопки "создать заявку"
+    role: к какой группе принадлежит пользователь (для формирования кнопок этапов ремонта)
+    order_filter: объект для фильтрации заявок по значениям в столбцах таблицы
+    add_order_form: форма создания новой заявки на ремонт
+    alerts: всплывающие сообщения о действиях пользователя
+    button_context: список, но основе которого происходит формирование кнопок
+    """
+    #
     cols = [
         "id",
         "equipment_id",
@@ -130,13 +141,8 @@ def orders_get_context(request) -> dict[str, Any]:
         "priority",
         "breakdown_date",
         "breakdown_description",
-        "identified_employee",
-        "inspection_date",
         "expected_repair_date",
         "materials__name",
-        "repair_date",
-        "acceptance_date",
-        "accepted_employee",
         "doers_fio",
         "materials_request",
         "revision_cause",
@@ -148,13 +154,17 @@ def orders_get_context(request) -> dict[str, Any]:
         .prefetch_related("equipment", "status", "materials")
         .values(*cols)
     )
-    equipment_filter = get_filterset(data=request.GET, queryset=order_table_data, fields=cols)
+    orders_filter = get_filterset(data=request.GET, queryset=order_table_data, fields=cols)
+
+    equipment_json = json.dumps(
+        list(Equipment.objects.all().values("id", "unique_name", "shop_id"))
+    )
 
     context = {
         "create_order": [Position.Admin, Position.HoS],  # добавить заявку
         "role": get_employee_position(request.user.username),
-        "order_filter": equipment_filter,
-        "status": OrdStatus,
+        "order_filter": orders_filter,
+        "equipment_json": equipment_json,
         "add_order_form": AddOrderForm(),
         "alerts": pop_flash_messages(),
         "button_context": button_context,

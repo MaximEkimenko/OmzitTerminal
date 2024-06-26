@@ -9,18 +9,20 @@ from typing import Any, Callable
 from worker.services.master_call_function import terminal_message_to_id
 
 
-
+# если True, то не отправляет в телегу сообщения, просто печатает их в консоль
 TELEGRAM_TEST = True
 
+"""
+Словарь содержит сообщения, которые нужно отправлять в телеграм-чаты при изменении статуса заявок,
+а также функции, которе должны отправлять эти сообщения и идентификаторы чатов 
+"""
 telegram_handle_dict = {
     OrdStatus.DETECTED: {
         "message": "Создана заявка № {id} на ремонт оборудования '{equipment}' ({shop}) с приоритетом № {priority}.",
-        # "message": "Создана заявка № {id} на ремонт оборудования '{equipment}' ({shop}) с приоритетом № {priority}.",
         "handlers": [{"func": "send_telegram_messages", "tids": [orders_telegram_group_id]}],
     },
     OrdStatus.START_REPAIR: {
         "message": "Начат ремонт оборудования '{equipment}' ({shop}) по заявке № {id}.",
-        # "message": "Начат ремонт оборудования '{equipment}' ({shop}) по заявке № {id}.",
         "handlers": [{"func": "send_telegram_messages", "tids": [orders_telegram_group_id]}],
     },
     OrdStatus.WAIT_FOR_MATERIALS: {
@@ -37,7 +39,6 @@ telegram_handle_dict = {
     },
     OrdStatus.FIXED: {
         "message": "Ремонт  оборудования '{equipment}' ({shop}) по заявке № {id} закончен.",
-        # "message": "Ремонт  оборудования '{equipment}' ({shop}) по заявке № {id} закончен.",
         "handlers": [
             {"func": "send_telegram_messages", "tids": [orders_telegram_group_id]},
             {"func": "notify_shop_chiefs", "tids": shop_chief_telegram_ids},
