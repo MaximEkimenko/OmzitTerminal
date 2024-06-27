@@ -205,8 +205,9 @@ def schedulerwp(request):
     """
     # отображение графика РЦ
     # выборка из уже занесенного
-    if (str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:4]).strip() != "disp"
-            and str(request.user.username[:5]).strip() != "termi"):
+    if (str(request.user.username).strip()[:5] != "admin"
+            and str(request.user.username[:4]).strip() != "disp"
+            and str(request.user.username[:6]).strip() != "master"):
         logger.warning(f"Попытка доступа к рабочему месту распределителя пользователем {request.user.username}")
         raise PermissionDenied
     shift_task_fields = ('id', 'workshop', 'order', 'model_name', 'datetime_done', 'ws_number', 'op_number',
@@ -252,7 +253,9 @@ def schedulerfio(request, ws_number, model_order_query):
     :param request:
     :return:
     """
-    if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:4]).strip() != "disp":
+    if (str(request.user.username).strip()[:5] != "admin"
+            and str(request.user.username[:4]).strip() != "disp"
+            and str(request.user.username[:6]).strip() != "master"):
         logger.warning(f"Попытка доступа к рабочему месту диспетчера пользователем {request.user.username}")
         raise PermissionDenied
 
@@ -441,8 +444,10 @@ class LoginUser(LoginView):
             return reverse_lazy("tehnolog")
         elif "constructor" in self.request.user.username:
             return reverse_lazy("constructor")
-        elif "termi" in self.request.user.username:
-            return reverse_lazy("worker_choose")
+        # elif "master" in self.request.user.username:
+        #     return reverse_lazy("worker_choose")
+        elif "master" in self.request.user.username:
+            return reverse_lazy("schedulerwp")
 
 
 def logout_user(request):  # разлогинивание пользователя

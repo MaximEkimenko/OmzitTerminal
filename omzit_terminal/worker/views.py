@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from m_logger_settings import logger
 import datetime
 import json
@@ -81,7 +83,8 @@ def worker(request, ws_number):
                              'TZ-019',
                              'TZ-020',
                              'TZ-021',
-                             'APM-0229',  # Планшет
+                             'apm-0140', # Планшет цех1
+                             'APM-0229', # Планшет цех2
                              '192'
                              )
     terminal_ip = get_client_ip(request)  # определение IP терминала
@@ -190,8 +193,13 @@ def worker(request, ws_number):
             alert_message = ''
     context = {'initial_shift_tasks': initial_shift_tasks, 'ws_number': ws_number,
                'select_shift_task': select_shift_task, 'alert': alert_message}
+
     # отдача шаблона для мобильного в случае доступа с мобильного устройства
-    if 'Mobile' in request.META['HTTP_USER_AGENT'] or terminal_name[:terminal_name.find('.')] == 'APM-0229':
+    print(terminal_name)
+    if ('Mobile' in request.META['HTTP_USER_AGENT']
+            or terminal_name[:terminal_name.find('.')] == 'APM-0229'
+            or terminal_name[:terminal_name.find('.')] == 'apm-0140'
+            or 'Android' in request.META['HTTP_USER_AGENT']):
         return render(request, r"worker/worker-mobile.html", context=context)
     else:
         return render(request, r"worker/worker.html", context=context)
@@ -244,7 +252,11 @@ def draws(request, ws_st_number: str):
     terminal_ip = get_client_ip(request)  # определение IP терминала
     terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
     # отдача шаблона для мобильного в случае доступа с мобильного устройства
-    if 'Mobile' in request.META['HTTP_USER_AGENT'] or terminal_name[:terminal_name.find('.')] == 'APM-0229':
+    print(terminal_name)
+    if ('Mobile' in request.META['HTTP_USER_AGENT']
+            or terminal_name[:terminal_name.find('.')] == 'apm-0140'
+            or terminal_name[:terminal_name.find('.')] == 'APM-0229'
+            or 'Android' in request.META['HTTP_USER_AGENT']):
         return render(request, r"worker/draws-mobile.html", context=context)
     else:
         return render(request, r"worker/draws.html", context=context)

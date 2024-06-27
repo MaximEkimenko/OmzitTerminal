@@ -61,6 +61,16 @@
                     <a href="{% url 'schedulerwp' %}"> Планировщик РЦ (Мастер) </a>
                 </div>
             </li>
+
+            {% elif 'master' in user.username %}
+            <li class="dropdown">
+                <a href="javascript:void(0)" class="dropbtn">Меню</a>
+                <div class="dropdown-content">
+                    <a href="{% url 'schedulerwp' %}"> Планировщик РЦ (Мастер) </a>
+                    <a href="{% url 'worker_choose' %}"> Терминал (общий) </a>
+                </div>
+            </li>
+
             {% endif %}
 
             {% if user.is_authenticated %}
