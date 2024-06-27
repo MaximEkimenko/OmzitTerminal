@@ -143,7 +143,7 @@
               <label for="id_equipment">Оборудование</label>
             </div>
             <div >
-              <select type="text" name="equipment" id="id_equipment" style="width:400px;">
+              <select type="text" name="{{add_order_form.equipment.html_name}}" id="{{add_order_form.equipment.auto_id}}" style="width:400px;">
               </select>
             </div>
           </div>
@@ -155,6 +155,7 @@
               <div class="equipment_card__label">
                 <label for="{{ entry.id_for_label }}">{{entry.label}}</label>
               </div>
+
               
               <div>
                 {{entry}}
