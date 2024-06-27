@@ -71,7 +71,7 @@
 <div id="confirm_delete_popup" class="modal">
   <form
     
-    class="form_form modal-content"
+    class="modal-content"
     method="POST"
   >
     {% csrf_token %}
@@ -79,7 +79,7 @@
     <div class="add_to_plan">
       <div class="form-error">{{ add_equipment_form.non_field_errors }}</div>
       <div class="form_row">
-        <h3>Подтвердите удаление оборудования "{{object.name}}"</h3>
+        <h3 class="header_margin">Подтвердите удаление оборудования "{{object.name}}"</h3>
       </div>
       
 

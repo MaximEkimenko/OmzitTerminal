@@ -861,9 +861,8 @@ li.dropdown {
   min-width: 800px;
   display: flex;
   flex-direction: column;
-  /* background: #242629; */
   background: #333;
-  border: 3px solid #262622;
+  border: 3px solid #20201d;
   border-radius: 0.5rem;
 }
 
@@ -974,4 +973,7 @@ section{
   font-size: 1.25rem;
   font-weight: bold;
   color: #ef7f1a;
+}
+.header_margin {
+  margin: 1rem 1.5rem;
 }

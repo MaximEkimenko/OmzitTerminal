@@ -115,7 +115,6 @@ def orders(request) -> HttpResponse:
     """
     custom_login_check(request)
     if request.method == "POST":
-
         add_order_form = AddOrderForm(request.POST)
         if add_order_form.is_valid():
             order_parameters = {key: val for key, val in add_order_form.cleaned_data.items()}
@@ -142,9 +141,9 @@ def orders(request) -> HttpResponse:
                 create_flash_message(alert_message)
                 logger.info(f"Заявка № {new_order.id} добавлена в таблицу Orders")
                 order_telegram_notification(OrdStatus.DETECTED, new_order)
+        else:
+            print("ошибка валидации при добавлении заявки")
         return redirect("orders")
-    else:
-        print("ошибка валидации")
     context = orders_get_context(request)
     return render(request, "orders/orders.html", context=context)
 
@@ -450,6 +449,14 @@ def order_edit(request, pk):
                     cd["materials"] = em
             try:
                 Orders.objects.filter(pk=pk).update(**cd)
+            except Exception as e:
+                alert_message = f"Ошибка редактирования заявки № {order.id}"
+                create_flash_message(alert_message)
+                message = f"Ошибка при редактировании заявки № {order.id} пользователем {request.user.username}\n"
+                message += f"Попытка внести данные: {cd}"
+                logger.info(message)
+                logger.exception(e)
+            else:
                 alert_message = f"Заявка № {order.id} успешно отредактирована"
                 create_flash_message(alert_message)
                 message = (
@@ -458,13 +465,6 @@ def order_edit(request, pk):
                 message += f"Были внесены данные: {cd}"
                 logger.info(message)
 
-            except Exception as e:
-                alert_message = f"Ошибка редактирования заявки № {order.id}"
-                create_flash_message(alert_message)
-                message = f"Ошибка при редактировании заявки № {order.id} пользователем {request.user.username}\n"
-                message += f"Попытка внести данные: {cd}"
-                logger.info(message)
-                logger.exception(e)
         return redirect("orders")
 
     form = OrderEditForm(model_to_dict(order))

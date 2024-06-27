@@ -148,7 +148,7 @@ class OrderEditForm(forms.Form):
     )
 
     materials = forms.ModelChoiceField(
-        queryset=Materials.objects.all().order_by("name"), label="Материалы"
+        queryset=Materials.objects.all().order_by("name"), required=True, label="Материалы"
     )
     extra_materials = forms.CharField(
         max_length=255, required=False, label="Материалы, которых нет в списке"

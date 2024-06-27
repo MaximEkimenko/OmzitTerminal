@@ -125,7 +125,7 @@
     <div id="add-order-form" class="modal">
       <form
         action="{% url 'orders' %}"
-        class="form_form modal-content"
+        class="modal-content"
         method="POST"
       >
         {% csrf_token %}
@@ -176,10 +176,10 @@
 
     <div id="delete-order-form" class="modal">
       <div id="add-order-form">
-        <div class="form_form modal-content">
+        <div class="modal-content">
       
       <div class="add_to_plan">
-        <h1>
+        <h1 class="header_margin">
           Вы действительно хотите удалить заявку? 
         </h1>
 
