@@ -6,13 +6,12 @@
   </h1>
 
   <form action=""  method="POST">
-    <div class="equipment_card">
-      <div class="card_row__center">
-          <button class="input_like" onclick="window.location.href = `{% url 'orders' %}`;" type="button">Назад</button>
-        <button type="submit" class="input_like" >Отредактировать</button>
-      </div>
-      {% csrf_token %}
-      
+    <div class="form_row">
+      <button class="input_like" onclick="window.location.href = `{% url 'orders' %}`;" type="button">Назад</button>
+      <button type="submit" class="input_like" >Отредактировать</button>
+    </div>
+    {% csrf_token %}
+    <div class="equipment_card">      
       <div class="card_row">
         <label class="equipment_card__label">Статус заявки:</label>
         {{object.status}}

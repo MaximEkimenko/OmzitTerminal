@@ -182,7 +182,10 @@ class Orders(models.Model):
     cancel_cause = models.TextField(null=True, verbose_name="Причина отмены ремонта")
 
     materials = models.ForeignKey(
-        Materials, on_delete=models.PROTECT, default=1, verbose_name="Требуемые материалы"
+        Materials,
+        on_delete=models.PROTECT,
+        default=1,
+        verbose_name="Требуемые материалы",
     )
     materials_request = models.CharField(
         max_length=100, blank=True, null=True, verbose_name="№ заявки на материалы"

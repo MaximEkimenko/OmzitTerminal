@@ -9,12 +9,20 @@ from datetime import date, datetime
 
 
 class AddEquipmentForm(ModelForm):
+    shop = forms.ModelChoiceField(
+        Shops.objects, label="Местонажождение", required=False, empty_label=None
+    )
+
     class Meta:
         model = Equipment
         fields = ["name", "inv_number", "shop"]
 
 
 class EditEquipmentForm(ModelForm):
+    shop = forms.ModelChoiceField(
+        Shops.objects, label="Местонахождение", required=False, empty_label=None
+    )
+
     class Meta:
         model = Equipment
         fields = [
@@ -148,7 +156,10 @@ class OrderEditForm(forms.Form):
     )
 
     materials = forms.ModelChoiceField(
-        queryset=Materials.objects.all().order_by("name"), required=True, label="Материалы"
+        queryset=Materials.objects.all().order_by("name"),
+        required=False,
+        empty_label=None,
+        label="Материалы",
     )
     extra_materials = forms.CharField(
         max_length=255, required=False, label="Материалы, которых нет в списке"

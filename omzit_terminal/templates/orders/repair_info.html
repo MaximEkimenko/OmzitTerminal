@@ -10,12 +10,12 @@
     <div class="form_row">
       
       <form action="{% url 'orders'%}">
-        <input type="submit" value="Назад" />
+        <input type="submit"  class="input_like" value="Назад" />
       </form>
       
       {% if object.status_id != status.ACCEPTED %}
       <form action="{% url 'edit_repair' object.id %}">
-          <input type="submit" value="Редактировать" />
+          <input type="submit" class="input_like"  value="Редактировать" />
       </form>
       {%endif %}
     </div>
