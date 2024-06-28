@@ -19,7 +19,7 @@ from scheduler.filters import get_filterset
 from orders.report import create_order_report
 
 
-from orders.models import Orders, Equipment, Shops
+from orders.models import Orders, Equipment, Shops, Repairmen
 from orders.forms import (
     AddEquipmentForm,
     AddOrderForm,
@@ -32,9 +32,11 @@ from orders.forms import (
     OrderEditForm,
     RepairCancelForm,
     AddShop,
+    AssignRepairman,
 )
 from orders.utils.common import (
     OrdStatus,
+    MAX_DAYWORKERS_PER_ORDER,
 )
 from orders.utils.roles import Position, get_employee_position, custom_login_check, PERMITED_USERS
 from orders.utils.utils import (
@@ -150,6 +152,54 @@ def orders(request) -> HttpResponse:
 
 @login_required(login_url="/scheduler/login/")
 def order_start_repair(request, pk):
+    """
+    Добавляем пользователей в начале ремонта.
+    Или в начала рабочего для, чтобы вновь запустить приостановленную заявку.
+    Вызывается при статусах заявки: "требует ремонта" и "приостановлено"
+    """
+    context = {}
+    order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
+        pk=pk
+    )
+    if request.method == "POST":
+        form = StartRepairForm(request.POST)
+        if form.is_valid():
+            fios = get_doers_list(form)
+            if len(fios) == len(set(fios)):  # если нет повторений в списке fios, добавляем запись
+                applied_status = OrdStatus.START_REPAIR
+                order.doers_fio = ", ".join(sorted([i.fio for i in fios]))
+
+                order.dayworkers.set(fios)
+
+                order.inspection_date = make_aware(datetime.now())
+                order.inspected_employee = " ".join(
+                    [request.user.last_name, request.user.first_name]
+                )
+                apply_order_status(order, applied_status)
+                alert_message = (
+                    f"Начат ремонт оборудования {order.equipment} по заявке № {order.id}."
+                )
+                create_flash_message(alert_message)
+                logger.info(alert_message)
+                order_telegram_notification(applied_status, order)
+
+                return redirect("orders")
+            else:
+                alert_message = f"Исполнители дублируются. Измените исполнителей."
+                create_flash_message(alert_message)
+                logger.error(alert_message)
+                form = StartRepairForm(form.cleaned_data)
+                context.update({"object": order, "form": form, "alerts": pop_flash_messages()})
+                return render(request, "orders/repair_start.html", context)
+
+    form = StartRepairForm()
+    context.update({"object": order, "form": form, "permitted_users": PERMITED_USERS})
+    return render(request, "orders/repair_start.html", context)
+
+
+"""
+@login_required(login_url="/scheduler/login/")
+def order_start_repair(request, pk):
     context = {}
     order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
         pk=pk
@@ -185,6 +235,7 @@ def order_start_repair(request, pk):
     form = StartRepairForm()
     context.update({"object": order, "form": form, "permitted_users": PERMITED_USERS})
     return render(request, "orders/repair_start.html", context)
+"""
 
 
 @login_required(login_url="/scheduler/login/")
@@ -680,44 +731,9 @@ class ShopsView(ListView):
 
 class ShopsEdit(UpdateView):
     model = Shops
-
     form_class = AddShop
     template_name = "orders/shops_edit.html"
     success_url = reverse_lazy("shops")
-
-    extra_context = {}
-
-
-class ShopsDelete(DeleteView):
-    model = Shops
-    template_name = "orders/shops_delete.html"
-    # success_url = reverse_lazy("orders:shops")
-    success_url = reverse_lazy("shops")
-
-    def post(self, request, *args, **kwargs):
-        try:
-            object: Shops = self.get_object()
-            name = object.name
-            pk = object.id
-            self.get_object().delete()
-            alert_message = f'Местонаходжение "{name}" удлено'
-            create_flash_message(alert_message)
-            message = f"{alert_message}. Удалил пользователь {request.user.username}"
-            logger.info(message)
-        except ProtectedError as e:
-
-            alert_message = (
-                f"Местоположение не может быть удалено, так как нему привязано оборудование"
-            )
-            create_flash_message(alert_message)
-            message = (
-                f" К местоположению id {pk} привязано оборудование, поэтому оно не может быть "
-                f"удалено пользователем {request.user.username}"
-            )
-            logger.error(message)
-            logger.exception(e)
-
-        return redirect(self.success_url)
 
 
 @login_required(login_url="/scheduler/login/")
@@ -802,3 +818,76 @@ def shop_delete_proc(request: WSGIRequest):
                 logger.exception(e)
 
     return redirect("shops")
+
+
+class RepairmenEdit(ListView):
+    """
+    Педставление для релактирования (добавления и удаления) работников, приписанных к заявке на ремонт
+    """
+
+    model = Repairmen
+    template_name = "orders/repairmen_edit.html"
+
+    def get_queryset(self):
+        qs = Orders.objects.get(pk=self.kwargs["pk"]).dayworkers.order_by("fio")
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "alerts": pop_flash_messages(),
+                "add_form": AssignRepairman(),
+                "order_id": self.kwargs["pk"],
+            }
+        )
+        return context
+
+    def post(self, request, *args, **kwargs):
+        """
+        Добавляет работника к заявке
+        """
+        form = AssignRepairman(request.POST)
+        if form.is_valid():
+            order = Orders.objects.get(pk=self.kwargs["pk"])
+            workers_count = order.dayworkers.count()
+            # на заявку можно назначить только MAX_DAYWORKERS_PER_ORDER работников
+            if workers_count >= MAX_DAYWORKERS_PER_ORDER:
+                create_flash_message("Назначено слишком много работников.")
+            else:
+                order.dayworkers.add(form.cleaned_data["fio"])
+                order.save()
+                create_flash_message("Работник добавлен к заявке.")
+        else:
+            create_flash_message(form.errors["name"][0])
+        rw = reverse_lazy("repairmen_edit", args=(self.kwargs["pk"],))
+        return redirect(rw)
+
+
+@login_required(login_url="/scheduler/login/")
+def repairmen_delete_proc(request: WSGIRequest):
+
+    if request.method == "POST":
+        pk = request.POST.get("commit-delete-button")
+        order_id = request.POST.get("order_id")
+        try:
+            order = Orders.objects.get(pk=order_id)
+            repairman = Repairmen.assignable_workers.get(pk=pk)
+            order.dayworkers.remove(repairman)
+        except Exception as e:
+            alert_message = f"Ошибка при удалении работника из заявки"
+            create_flash_message(alert_message)
+            message = (
+                f"Ошибка при удалении работника id {pk} "
+                f"из заявки №  {order_id}. Пользователь {request.user.username}"
+            )
+            logger.error(message)
+            logger.exception(e)
+        else:
+            alert_message = f"Работник снят с заявки."
+            create_flash_message(alert_message)
+            message = f"Работник id {pk} снят с заявки № {order_id}. Удалил пользователь {request.user.username}"
+            logger.info(message)
+
+    rw = reverse_lazy("repairmen_edit", args=(order_id,))
+    return redirect(rw)

@@ -19,9 +19,10 @@ from .views import (
     order_delete_proc,
     ShopsView,
     ShopsEdit,
-    ShopsDelete,
     shop_delete_proc,
     shop_edit_proc,
+    RepairmenEdit,
+    repairmen_delete_proc,
 )
 
 urlpatterns = [
@@ -48,7 +49,8 @@ urlpatterns = [
     path("repair_history/<int:pk>", repair_history, name="repair_history"),
     path("shops/", ShopsView.as_view(), name="shops"),
     path("shops_edit/<int:pk>", ShopsEdit.as_view(), name="shops_edit"),
-    path("shops_delete/<int:pk>", ShopsDelete.as_view(), name="shops_delete"),
     path("shop_edit/", shop_edit_proc, name="shop_edit"),
     path("shops_delete/", shop_delete_proc, name="shop_delete"),
+    path("repairmen_edit/<int:pk>", RepairmenEdit.as_view(), name="repairmen_edit"),
+    path("repairmen_delete/", repairmen_delete_proc, name="repairmen_delete"),
 ]

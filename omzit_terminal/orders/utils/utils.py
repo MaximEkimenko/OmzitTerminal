@@ -2,6 +2,7 @@ from datetime import date, datetime
 from typing import Any
 import json
 from django import forms
+from django.db import models
 from django.db.models import QuerySet
 from django.utils.timezone import make_naive, make_aware
 
@@ -11,16 +12,19 @@ from orders.utils.common import OrdStatus, button_context
 from orders.utils.roles import Position, get_employee_position
 from orders.forms import AddOrderForm
 
-from orders.models import FlashMessage, Orders, OrderStatus, Materials, Equipment
+from orders.models import FlashMessage, Orders, OrderStatus, Materials, Equipment, Repairmen
 
 
 def get_order_verbose_names():
     verbose_names = dict()
     for field in Orders._meta.get_fields():
-        if hasattr(field, "verbose_name"):
-            verbose_names[field.name] = field.verbose_name
-        else:
-            verbose_names[field.name] = field.name
+        # не обрабатываем поле многие-ко-многим, потому что в форме его автоматом вывести нельзя
+        print(field.name, type(field))
+        if not type(field) in [models.ManyToManyField, models.ManyToManyRel, models.ManyToOneRel]:
+            if hasattr(field, "verbose_name"):
+                verbose_names[field.name] = field.verbose_name
+            else:
+                verbose_names[field.name] = field.name
     return verbose_names
 
 
@@ -101,11 +105,14 @@ def orders_to_dict(model: QuerySet) -> list[dict[str, Any]]:
     return table_dict
 
 
-def get_doers_list(form: forms.Form) -> list[str]:
+def get_doers_list(form: forms.Form) -> list[Repairmen]:
+    """
+    Возвращает список работников (объектов Repairmen) при начале ремонта
+    """
     fios = list(
         filter(
-            lambda x: x != "None",
-            (str(form.cleaned_data[f"fio_{i}"]) for i in range(1, 4)),
+            lambda x: x is not None,
+            (form.cleaned_data[f"fio_{i}"] for i in range(1, 4)),
         )
     )
     return fios

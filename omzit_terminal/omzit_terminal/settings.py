@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "orders",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [
@@ -82,7 +83,7 @@ WSGI_APPLICATION = "omzit_terminal.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "terminal_transit",
+        "NAME": "terminal_dayworker",
         "PASSWORD": "tolko123",
         "USER": "admin",
         # 'NAME': 'terminal_test',

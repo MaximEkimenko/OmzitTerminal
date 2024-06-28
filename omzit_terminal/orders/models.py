@@ -1,6 +1,6 @@
 from django.db import models
 from django.urls import reverse_lazy
-
+from django.utils.timezone import now
 from orders.utils.common import OrdStatus
 
 
@@ -135,6 +135,16 @@ class PriorityChoices(models.IntegerChoices):
     RP_4 = 4, "4"
 
 
+class OrdersWorkers(models.Model):
+    worker = models.ForeignKey(Repairmen, on_delete=models.CASCADE)
+    order = models.ForeignKey("Orders", on_delete=models.CASCADE)
+    start_date = models.DateTimeField(default=now)
+    end_date = models.DateTimeField(null=True)
+
+    def __str__(self):
+        return f"worker: {self.worker}   order:{self.order} start_date:{self.start_date} "
+
+
 class Orders(models.Model):
     equipment = models.ForeignKey(
         Equipment, on_delete=models.PROTECT, verbose_name="Оборудование", related_name="repairs"
@@ -152,6 +162,7 @@ class Orders(models.Model):
     breakdown_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата поломки")
     breakdown_description = models.TextField(verbose_name="Описание поломки")
     worker = models.CharField(max_length=100, blank=True, null=True, verbose_name="Работник")
+    dayworkers = models.ManyToManyField(Repairmen, through=OrdersWorkers, related_name="dayworkers")
     identified_employee = models.CharField(
         max_length=100, null=True, verbose_name="Работник, создавший заявку"
     )
