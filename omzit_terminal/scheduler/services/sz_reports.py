@@ -10,9 +10,9 @@ from django.core.mail import EmailMessage
 from django.db.models import Sum
 from django.utils.timezone import make_aware, make_naive
 
-from m_logger_settings import logger
-from omzit_terminal.settings import BASE_DIR
-from scheduler.models import ShiftTask, Doers
+from m_logger_settings import logger  # noqa
+from omzit_terminal.settings import BASE_DIR  # noqa
+from scheduler.models import ShiftTask, Doers  # noqa
 
 
 # TODO вынести словарь переводчика в отдельный файл json. В том числе для бота.
@@ -156,9 +156,7 @@ def create_shift_task_report(start: datetime, end: datetime) -> str:
         else:
             verbose_names[field.name] = field.name
 
-    queryset = ShiftTask.objects.exclude(
-        fio_doer="не распределено"
-    ).order_by("datetime_assign_wp")
+    queryset = ShiftTask.objects.exclude(fio_doer="не распределено").order_by("datetime_assign_wp")
 
     fields_1C_report = (
         "pk",  # №

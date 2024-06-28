@@ -7,10 +7,10 @@ from django_apscheduler.jobstores import DjangoJobStore
 from django_apscheduler.models import DjangoJobExecution
 from django_apscheduler import util
 
-from worker.views import pause_work, resume_work
+from worker.views import pause_work, resume_work  # noqa
 
-from m_logger_settings import logger, json_log_refactor_and_xlsx
-from scheduler.services.sz_reports import shift_tasks_auto_report
+from m_logger_settings import logger, json_log_refactor_and_xlsx  # noqa
+from scheduler.services.sz_reports import shift_tasks_auto_report  # noqa
 
 
 @util.close_old_connections

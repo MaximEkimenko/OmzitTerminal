@@ -113,7 +113,7 @@ class ModelParameters(models.Model):
                                          verbose_name='Полная трудоёмкость изделия')
     critical_chain_cycle_koef = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=0.6,
                                                     verbose_name='Коэффициент расчёта критической цепи')
-    series_parameters = models.ForeignKey(SeriesParameters, on_delete=models.PROTECT,
+    series_parameters = models.ForeignKey(SeriesParameters, on_delete=models.DO_NOTHING,
                                           null=True, verbose_name="Параметры серии")
     # расчётное поле по сигналу перед сохранением данных
     produce_cycle = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=0,
