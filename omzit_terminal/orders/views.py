@@ -3,9 +3,10 @@ import asyncio
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.postgres.aggregates import StringAgg
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect, FileResponse
-from django.db.models import Window, Count, ProtectedError
+from django.db.models import Window, Count, ProtectedError, Subquery, OuterRef
 from django.db.models.functions import RowNumber
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, UpdateView, ListView, DeleteView
@@ -461,12 +462,29 @@ def order_cancel_repair(request, pk):
 
 @login_required(login_url="/scheduler/login/")
 def order_info(request, pk):
-    order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
-        pk=pk
+    """
+    Выводит информацию о заявке (показывет все поля из модели, которые можно показать).
+    """
+    # ползапрос, который сливает исполнителей из mny-to-many-отношения в одну строку
+    assigned_workers_subquery = (
+        Repairmen.assignable_workers.filter(orders=OuterRef("pk"))
+        .values("orders")
+        .annotate(assigned_workers_string=StringAgg("fio", delimiter=", ", ordering="fio"))
+        .values("assigned_workers_string")
+    )
+
+    order = (
+        Orders.objects.filter(pk=pk)
+        .annotate(dayworkers_fio=Subquery(assigned_workers_subquery))
+        .prefetch_related("equipment", "status", "materials")
+        .first()
     )
     verbose_header = get_order_verbose_names()
+    verbose_header.update({"dayworkers_fio": "Исполнители"})
+
     vd = orders_record_to_dict(order, list(verbose_header))
     vhd = {verbose_header[i]: vd[i] for i in verbose_header}
+
     context = {
         "object": order,
         "order_params": vhd,

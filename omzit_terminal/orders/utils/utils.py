@@ -16,11 +16,17 @@ from orders.forms import AddOrderForm
 from orders.models import FlashMessage, Orders, OrderStatus, Materials, Equipment, Repairmen
 
 
-def get_order_verbose_names():
+def get_order_verbose_names() -> dict[str, str]:
+    """
+    Возвращает словарь подписей к полям таблицы заявок на ремонт (Orders)
+    Ключ: название поля (имя переменной, ссылающейся на поле)
+    Значение: русское название поля, взятое из атрибута verbose_names поля
+
+    """
     verbose_names = dict()
     for field in Orders._meta.get_fields():
         # не обрабатываем поле многие-ко-многим, потому что в форме его автоматом вывести нельзя
-        print(field.name, type(field))
+        # print(field.name, type(field))
         if not type(field) in [models.ManyToManyField, models.ManyToManyRel, models.ManyToOneRel]:
             if hasattr(field, "verbose_name"):
                 verbose_names[field.name] = field.verbose_name
