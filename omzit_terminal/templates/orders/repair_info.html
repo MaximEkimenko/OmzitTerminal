@@ -19,7 +19,11 @@
       </form>
       <form action="{% url 'repairmen_edit' object.id %}">
         <input type="submit" class="input_like"  value="Редактировать исполнителей" />
-    </form>
+      </form>
+      <form action="" mathod="GET">
+        <input type="submit" class="input_like"  value="История исполнителей" />
+      </form>
+
 
       {%endif %}
     </div>

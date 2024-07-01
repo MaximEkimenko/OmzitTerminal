@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.postgres.aggregates import StringAgg
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect, FileResponse
+from django.db import transaction
 from django.db.models import Window, Count, ProtectedError, Subquery, OuterRef
 from django.db.models.functions import RowNumber
 from django.urls import reverse_lazy
@@ -44,14 +45,15 @@ from orders.utils.utils import (
     create_flash_message,
     pop_flash_messages,
     get_doers_list,
-    convert_name,
-    orders_get_context,
     orders_record_to_dict,
     get_order_verbose_names,
     get_order_edit_context,
     process_repair_expect_date,
     apply_order_status,
     create_extra_materials,
+    is_need_to_be_suspended,
+    orders_get_context,
+    clear_dayworkers,
 )
 from orders.utils.telegram import order_telegram_notification
 
@@ -168,7 +170,7 @@ def order_start_repair(request, pk):
             fios = get_doers_list(form)
             if len(fios) == len(set(fios)):  # если нет повторений в списке fios, добавляем запись
                 applied_status = OrdStatus.START_REPAIR
-                order.doers_fio = ", ".join(sorted([i.fio for i in fios]))
+                # order.doers_fio = ", ".join(sorted([i.fio for i in fios]))
 
                 order.dayworkers.set(fios)
 
@@ -884,7 +886,6 @@ class RepairmenEdit(ListView):
 
 @login_required(login_url="/scheduler/login/")
 def repairmen_delete_proc(request: WSGIRequest):
-
     if request.method == "POST":
         pk = request.POST.get("commit-delete-button")
         order_id = request.POST.get("order_id")
@@ -892,6 +893,8 @@ def repairmen_delete_proc(request: WSGIRequest):
             order = Orders.objects.get(pk=order_id)
             repairman = Repairmen.assignable_workers.get(pk=pk)
             order.dayworkers.remove(repairman)
+            is_need_to_be_suspended(order)
+
         except Exception as e:
             alert_message = f"Ошибка при удалении работника из заявки"
             create_flash_message(alert_message)
@@ -909,3 +912,9 @@ def repairmen_delete_proc(request: WSGIRequest):
 
     rw = reverse_lazy("repairmen_edit", args=(order_id,))
     return redirect(rw)
+
+
+def clear_workers(request: WSGIRequest, pk):
+    order = Orders.objects.get(pk=pk)
+    clear_dayworkers(order)
+    return redirect("orders")

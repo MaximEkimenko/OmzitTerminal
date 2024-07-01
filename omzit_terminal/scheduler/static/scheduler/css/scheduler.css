@@ -958,7 +958,7 @@ section{
 --START_REPAIR: rgba(253, 68, 43, 1);
 --WAIT_FOR_MATERIALS: rgb(255, 200, 47);
 --CANCELLED: rgb(77, 72, 58);
---SUSPENDED: rgb(230, 220, 195);
+--SUSPENDED: rgba(252, 229, 153, 0.3);
 }
 .table_button
 {

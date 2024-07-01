@@ -211,6 +211,9 @@ def orders_get_context(request) -> dict[str, Any]:
 
 
 def get_order_edit_context(request) -> dict[str, Any]:
+    """
+    Возвращает условия, когда и какому пользователю можно редактировать отдельные поля карточки заявки на ремонт.
+    """
     employees = {
         "worker": [Position.Admin, Position.HoS],
         "breakdown_description": [Position.Admin, Position.HoS],
@@ -261,14 +264,26 @@ def get_order_edit_context(request) -> dict[str, Any]:
 
 
 def process_repair_expect_date(d: date) -> datetime:
+    """
+    Выбирает дату окончания ремонта, но поле должно содержать и время. На тот случай,
+    если задача занимает час или два. Теоретически должна быть возможность определять
+    срок выполнения задачи с точностью до минуты.
+    Так что в данной функции к дате прибавляется время сразу перед началом следующего
+    дня и возвращается datetime.
+    """
     md = datetime.combine(d, datetime.max.time())
     return make_aware(md)
 
 
 def apply_order_status(order: Orders, status: OrdStatus) -> None:
+    """
+    Переводит заявку в статус, переданный в параметре, сохраняет объект заявки и
+    записывает в лог результат данной опреации.
+    """
     flag = False
     stat = OrderStatus.objects.get(pk=status)
     try:
+        order.previous_status = order.status
         order.status = stat
         order.save()
         flag = True
@@ -280,6 +295,11 @@ def apply_order_status(order: Orders, status: OrdStatus) -> None:
 
 
 def create_extra_materials(exma: str) -> Materials | None:
+    """
+    Принимает введенную вручную строку с требуемыми для ремонта материалами.
+    Если такая строка уже есть, просто возвращает объект материалов.
+    Если нет, то создает его и возвращает.
+    """
     try:
         m = Materials.objects.filter(name=exma).first()
         if m is None:
@@ -295,3 +315,23 @@ def create_extra_materials(exma: str) -> Materials | None:
         logger.exception(e)
         m = None
     return m
+
+
+def is_need_to_be_suspended(order: Orders):
+    """
+    Если заявка находится в статусе "ремонт начат" или "в ремонте" и на нее не назначено
+    ни одного исполнителя (например, в конце рабочего дня все исполнители автоматически
+    сняты), то заявка переходит в статус "приостановлено"
+    """
+    dayworkers = order.dayworkers.count()
+    if dayworkers == 0 and order.status_id in (OrdStatus.START_REPAIR, OrdStatus.REPAIRING):
+        apply_order_status(order, OrdStatus.SUSPENDED)
+
+
+def clear_dayworkers(order: Orders):
+    """
+    Снимаем всех сотрудников с заявки, а дальше она, в зависимости от статуса, может перейти
+    в состояние "приостановлено"
+    """
+    order.dayworkers.clear()
+    is_need_to_be_suspended(order)

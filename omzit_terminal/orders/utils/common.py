@@ -124,10 +124,17 @@ button_context = [
         groups=[Position.Admin, Position.HoS],
     ),
     Button(
-        name="edit_repairman",
-        title="редактировать исполнителей",
-        url="repairmen_edit",
-        states=ALL_STATES,
+        name="add_repairman",
+        title="добавить исполнителей",
+        url="start_repair",
+        states=[OrdStatus.SUSPENDED],
         groups=[Position.Admin, Position.HoRT, Position.Repairman],
+    ),
+    Button(
+        name="clear_repairman",
+        title="снять всех исполнителей",
+        url="clear_workers",
+        states=[OrdStatus.START_REPAIR, OrdStatus.REPAIRING],
+        groups=[Position.Admin],
     ),
 ]

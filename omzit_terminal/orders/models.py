@@ -149,12 +149,20 @@ class Orders(models.Model):
     equipment = models.ForeignKey(
         Equipment, on_delete=models.PROTECT, verbose_name="Оборудование", related_name="repairs"
     )
-    doers_fio = models.CharField(max_length=255, blank=True, null=True, verbose_name="Исполнители")
+
     status = models.ForeignKey(
         OrderStatus,
         on_delete=models.CASCADE,
         default=OrdStatus.DETECTED,
         verbose_name="Статус заявки",
+        related_name="orders_with_status",
+    )
+    previous_status = models.ForeignKey(
+        OrderStatus,
+        on_delete=models.CASCADE,
+        null=True,
+        verbose_name="Предыдущий статус",
+        related_name="orders_with_previous_status",
     )
     priority = models.IntegerField(
         choices=PriorityChoices.choices, default=PriorityChoices.RP_4, verbose_name="Приоритет"
