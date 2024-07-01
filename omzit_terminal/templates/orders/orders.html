@@ -69,7 +69,7 @@
               </div>
             </th>
             <th class="td_cell">{{order_filter.form.materials_request}}№ заявки на метриалы</th>
-            <th class="td_cell">{{order_filter.form.doers_fio}}Исполнители</th>
+            <th class="td_cell">Исполнители</th>
             <th class="td_cell">Доработка</th>
             <th class="td_cell">Действия</th>
           </tr>
@@ -96,7 +96,7 @@
           <td class="td_cell" >{{rec.expected_repair_date|default:""}}</td>
           <td class="td_cell" >{{rec.materials__name|default:""}}</td>
           <td class="td_cell" >{{rec.materials_request|default:""}}</td>
-          <td class="td_cell" >{{rec.doers_fio|default:""}}</td>
+          <td class="td_cell" >{{rec.dayworkers_fio|default:""}}</td>
           <td class="td_cell" >{{rec.revision_cause|default:"" |safe}}</td>
           <td class="td_cell">
           {% for b in  button_context%}

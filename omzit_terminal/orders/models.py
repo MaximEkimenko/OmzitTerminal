@@ -162,7 +162,7 @@ class Orders(models.Model):
     breakdown_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата поломки")
     breakdown_description = models.TextField(verbose_name="Описание поломки")
     worker = models.CharField(max_length=100, blank=True, null=True, verbose_name="Работник")
-    dayworkers = models.ManyToManyField(Repairmen, through=OrdersWorkers, related_name="dayworkers")
+    dayworkers = models.ManyToManyField(Repairmen, through=OrdersWorkers, related_name="orders")
     identified_employee = models.CharField(
         max_length=100, null=True, verbose_name="Работник, создавший заявку"
     )

@@ -2,8 +2,9 @@ from datetime import date, datetime
 from typing import Any
 import json
 from django import forms
+from django.contrib.postgres.aggregates import StringAgg
 from django.db import models
-from django.db.models import QuerySet
+from django.db.models import QuerySet, OuterRef, Subquery
 from django.utils.timezone import make_naive, make_aware
 
 from m_logger_settings import logger
@@ -150,16 +151,39 @@ def orders_get_context(request) -> dict[str, Any]:
         "breakdown_description",
         "expected_repair_date",
         "materials__name",
-        "doers_fio",
         "materials_request",
         "revision_cause",
     ]
 
+    cols_extended = [
+        "id",
+        "equipment_id",
+        "equipment__unique_name",
+        "status",
+        "status__name",
+        "priority",
+        "breakdown_date",
+        "breakdown_description",
+        "expected_repair_date",
+        "materials__name",
+        "dayworkers_fio",
+        "materials_request",
+        "revision_cause",
+    ]
+
+    assigned_workers_subquery = (
+        Repairmen.assignable_workers.filter(orders=OuterRef("pk"))
+        .values("orders")
+        .annotate(assigned_workers_string=StringAgg("fio", delimiter=", ", ordering="fio"))
+        .values("assigned_workers_string")
+    )
+
     order_table_data = (
         Orders.objects.exclude(acceptance_date__lt=date.today())
         .all()
+        .annotate(dayworkers_fio=Subquery(assigned_workers_subquery))
         .prefetch_related("equipment", "status", "materials")
-        .values(*cols)
+        .values(*cols_extended)
     )
     orders_filter = get_filterset(data=request.GET, queryset=order_table_data, fields=cols)
 

@@ -3,9 +3,13 @@
 <div class="col">
   <h1>Работники, выполняющие заявку</h1>
   <div class="form_row">
-    <form action="{% url 'equipment'%}" method="GET">
-      <input type="submit" class="input_like" value="Назад" />
+    <form action="{% url 'order_info' pk=order_id %}" method="GET">
+      <input type="submit" class="input_like" value="Карточка заявки" />
     </form>
+    <form action="{% url 'orders'%}" method="GET">
+      <input type="submit" class="input_like" value="Таблица заявок" />
+    </form>
+
   </div>
   <div class="equipment_card">
     <div class="card_row__center">
