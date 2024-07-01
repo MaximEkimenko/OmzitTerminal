@@ -154,7 +154,7 @@ def orders(request) -> HttpResponse:
 
 
 @login_required(login_url="/scheduler/login/")
-def order_start_repair(request, pk):
+def order_assign_workers(request, pk):
     """
     Добавляем пользователей в начале ремонта.
     Или в начала рабочего для, чтобы вновь запустить приостановленную заявку.
@@ -169,8 +169,6 @@ def order_start_repair(request, pk):
         if form.is_valid():
             fios = get_doers_list(form)
             if len(fios) == len(set(fios)):  # если нет повторений в списке fios, добавляем запись
-                applied_status = OrdStatus.START_REPAIR
-                # order.doers_fio = ", ".join(sorted([i.fio for i in fios]))
 
                 order.dayworkers.set(fios)
 
@@ -178,13 +176,24 @@ def order_start_repair(request, pk):
                 order.inspected_employee = " ".join(
                     [request.user.last_name, request.user.first_name]
                 )
-                apply_order_status(order, applied_status)
-                alert_message = (
-                    f"Начат ремонт оборудования {order.equipment} по заявке № {order.id}."
-                )
-                create_flash_message(alert_message)
-                logger.info(alert_message)
-                order_telegram_notification(applied_status, order)
+                # если мы попали сюда (добавляем работников), значит ремонт либо начат, либо возобновлен
+                # если ремонт был приостановлен, возобновляем предыдущую стадию
+                if order.previous_status_id in (OrdStatus.START_REPAIR, OrdStatus.REPAIRING):
+                    applied_status = order.previous_status_id
+                    alert_message = (
+                        f"Возобновлен ремонт оборудования {order.equipment} по заявке № {order.id}."
+                    )
+                # или начинаем новый ремонт
+                else:
+                    applied_status = OrdStatus.START_REPAIR
+                    alert_message = (
+                        f"Начат ремонт оборудования {order.equipment} по заявке № {order.id}."
+                    )
+                success = apply_order_status(order, applied_status)
+                if success:
+                    create_flash_message(alert_message)
+                    logger.info(alert_message)
+                    order_telegram_notification(applied_status, order)
 
                 return redirect("orders")
             else:
@@ -196,49 +205,10 @@ def order_start_repair(request, pk):
                 return render(request, "orders/repair_start.html", context)
 
     form = StartRepairForm()
-    context.update({"object": order, "form": form, "permitted_users": PERMITED_USERS})
-    return render(request, "orders/repair_start.html", context)
-
-
-"""
-@login_required(login_url="/scheduler/login/")
-def order_start_repair(request, pk):
-    context = {}
-    order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
-        pk=pk
+    context.update(
+        {"object": order, "form": form, "permitted_users": PERMITED_USERS, "status": OrdStatus}
     )
-    if request.method == "POST":
-        form = StartRepairForm(request.POST)
-        if form.is_valid():
-            fios = get_doers_list(form)
-            if len(fios) == len(set(fios)):  # если нет повторений в списке fios, добавляем запись
-                applied_status = OrdStatus.START_REPAIR
-                order.doers_fio = ", ".join(sorted(fios))
-                order.inspection_date = make_aware(datetime.now())
-                order.inspected_employee = " ".join(
-                    [request.user.last_name, request.user.first_name]
-                )
-                apply_order_status(order, applied_status)
-                alert_message = (
-                    f"Начат ремонт оборудования {order.equipment} по заявке № {order.id}."
-                )
-                create_flash_message(alert_message)
-                logger.info(alert_message)
-                order_telegram_notification(applied_status, order)
-
-                return redirect("orders")
-            else:
-                alert_message = f"Исполнители дублируются. Измените исполнителей."
-                create_flash_message(alert_message)
-                logger.error(alert_message)
-                form = StartRepairForm(form.cleaned_data)
-                context.update({"object": order, "form": form, "alerts": pop_flash_messages()})
-                return render(request, "orders/repair_start.html", context)
-
-    form = StartRepairForm()
-    context.update({"object": order, "form": form, "permitted_users": PERMITED_USERS})
     return render(request, "orders/repair_start.html", context)
-"""
 
 
 @login_required(login_url="/scheduler/login/")
@@ -275,8 +245,10 @@ def order_clarify_repair(request, pk):
                 applied_status = OrdStatus.WAIT_FOR_MATERIALS
                 order.clarify_date = make_aware(datetime.now())
                 apply_order_status(order, applied_status)
+                clear_dayworkers(order)
                 alert_message = "Данные по ремонту уточнены"
                 create_flash_message(alert_message)
+
                 order_telegram_notification(applied_status, order)
             else:
                 alert_message = f"Некорректно указаны материалы"
@@ -291,6 +263,13 @@ def order_clarify_repair(request, pk):
 
 @login_required(login_url="/scheduler/login/")
 def order_confirm_materials(request, pk):
+    """
+    Здесь совершаются два действия.
+    1) Если материалы в наличии или не требуются, происходит переход на этап "в ремонте". И
+     онт тут же приостанавливается, так как работники на этапе подтверждения материалов были сняты.
+    2) Если материалы нужно ждать, вводится номер заявки на материалы. Статус заявки на ремонт не меняется.
+    """
+
     order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
         pk=pk
     )
@@ -303,8 +282,10 @@ def order_confirm_materials(request, pk):
             if form.is_valid():
                 order.materials_request = form.cleaned_data["materials_request"]
                 order.materials_request_date = make_aware(datetime.now())
+                # Нужно сохранить номер заявки и дату, больше ничего не меняется
+                # так что вызывает функцию с тем же статусом
                 apply_order_status(order, OrdStatus.WAIT_FOR_MATERIALS)
-                alert_message = "Наличие материалов для ремонта подтверждено."
+                alert_message = "Номер заявки на материалы внесен."
                 create_flash_message(alert_message)
 
         else:
@@ -318,6 +299,7 @@ def order_confirm_materials(request, pk):
             create_flash_message(alert_message)
             logger.info(alert_message)
             order_telegram_notification(applied_status, order)
+            is_need_to_be_suspended(order)
         return redirect("orders")
     form = ConfirmMaterialsForm({"materials_request": order.materials_request})
     context = {"object": order, "form": form, "permitted_users": PERMITED_USERS}
@@ -347,6 +329,7 @@ def order_finish_repair(request, pk):
                 logger.error(alert_message)
                 logger.exception(e)
             else:
+                clear_dayworkers(order)
                 alert_message = (
                     f"Ремонт оборудования {order.equipment} по заявке {order.id} закончен"
                 )
@@ -372,6 +355,7 @@ def order_accept_repair(request, pk):
         order.accepted_employee = " ".join([request.user.last_name, request.user.first_name])
         applied_status = OrdStatus.ACCEPTED
         apply_order_status(order, applied_status)
+        clear_dayworkers(order)
         alert_message = "Отремонтированное оборудование принято"
         create_flash_message(alert_message)
         order_telegram_notification(applied_status, order)
@@ -400,16 +384,22 @@ def order_revision(request, pk):
                 else:
                     order.revision_cause = string
                 order.revised_employee = " ".join([request.user.last_name, request.user.first_name])
+                # так как при окончании ремонта все сотрудники снимаются, при возврате на доработку
+                # нужно возвращать статус "приостановлено"
                 applied_status = OrdStatus.REPAIRING
                 apply_order_status(order, applied_status)
+                is_need_to_be_suspended(order)
             except Exception as e:
-                alert_message = f"Ошибка записи при возвращении оборудования {order.equipment} по заявке {order.id} на доработку"
+                alert_message = (
+                    f"Ошибка записи при возвращении оборудования {order.equipment} "
+                    f"по заявке {order.id} на доработку"
+                )
                 create_flash_message(alert_message)
                 logger.error(alert_message)
                 logger.exception(e)
             else:
                 alert_message = (
-                    f"Оборудовани {order.equipment} по заявке {order.id} возвращено на доработку"
+                    f"Оборудование {order.equipment} по заявке {order.id} возвращено на доработку"
                 )
                 create_flash_message(alert_message)
                 logger.info(alert_message)
@@ -449,6 +439,7 @@ def order_cancel_repair(request, pk):
                 logger.error(alert_message)
                 logger.exception(e)
             else:
+                clear_dayworkers(order)
                 alert_message = (
                     f"Ремонт оборудования {order.equipment} по заявке {order.id} отменен"
                 )
@@ -914,7 +905,8 @@ def repairmen_delete_proc(request: WSGIRequest):
     return redirect(rw)
 
 
-def clear_workers(request: WSGIRequest, pk):
+@login_required(login_url="/scheduler/login/")
+def clear_workers_proc(request: WSGIRequest, pk):
     order = Orders.objects.get(pk=pk)
     clear_dayworkers(order)
     return redirect("orders")

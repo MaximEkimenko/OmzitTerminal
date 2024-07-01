@@ -167,6 +167,7 @@ def orders_get_context(request) -> dict[str, Any]:
         "equipment__unique_name",
         "status",
         "status__name",
+        "previous_status__name",
         "priority",
         "breakdown_date",
         "breakdown_description",
@@ -275,7 +276,7 @@ def process_repair_expect_date(d: date) -> datetime:
     return make_aware(md)
 
 
-def apply_order_status(order: Orders, status: OrdStatus) -> None:
+def apply_order_status(order: Orders, status: OrdStatus) -> bool:
     """
     Переводит заявку в статус, переданный в параметре, сохраняет объект заявки и
     записывает в лог результат данной опреации.

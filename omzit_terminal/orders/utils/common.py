@@ -125,7 +125,7 @@ button_context = [
     ),
     Button(
         name="add_repairman",
-        title="добавить исполнителей",
+        title="назначить исполнителей",
         url="start_repair",
         states=[OrdStatus.SUSPENDED],
         groups=[Position.Admin, Position.HoRT, Position.Repairman],
