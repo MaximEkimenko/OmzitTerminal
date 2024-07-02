@@ -5,6 +5,7 @@ from django import forms
 from django.contrib.postgres.aggregates import StringAgg
 from django.db import models
 from django.db.models import QuerySet, OuterRef, Subquery
+from django.utils import timezone
 from django.utils.timezone import make_naive, make_aware
 
 from m_logger_settings import logger
@@ -179,7 +180,9 @@ def orders_get_context(request) -> dict[str, Any]:
     ]
 
     assigned_workers_subquery = (
-        Repairmen.assignable_workers.filter(orders=OuterRef("pk"))
+        Repairmen.assignable_workers.filter(
+            orders=OuterRef("pk"), assignments__end_date__isnull=True
+        )
         .values("orders")
         .annotate(assigned_workers_string=StringAgg("fio", delimiter=", ", ordering="fio"))
         .values("assigned_workers_string")
@@ -324,8 +327,11 @@ def is_need_to_be_suspended(order: Orders):
     ни одного исполнителя (например, в конце рабочего дня все исполнители автоматически
     сняты), то заявка переходит в статус "приостановлено"
     """
-    dayworkers = order.dayworkers.count()
-    if dayworkers == 0 and order.status_id in (OrdStatus.START_REPAIR, OrdStatus.REPAIRING):
+
+    if order.active_workers_count() == 0 and order.status_id in (
+        OrdStatus.START_REPAIR,
+        OrdStatus.REPAIRING,
+    ):
         apply_order_status(order, OrdStatus.SUSPENDED)
 
 
@@ -334,5 +340,5 @@ def clear_dayworkers(order: Orders):
     Снимаем всех сотрудников с заявки, а дальше она, в зависимости от статуса, может перейти
     в состояние "приостановлено"
     """
-    order.dayworkers.clear()
+    order.assignments.filter(end_date__isnull=True).update(end_date=timezone.now())
     is_need_to_be_suspended(order)

@@ -136,13 +136,16 @@ class PriorityChoices(models.IntegerChoices):
 
 
 class OrdersWorkers(models.Model):
-    worker = models.ForeignKey(Repairmen, on_delete=models.CASCADE)
-    order = models.ForeignKey("Orders", on_delete=models.CASCADE)
+    worker = models.ForeignKey(Repairmen, on_delete=models.CASCADE, related_name="assignments")
+    order = models.ForeignKey("Orders", on_delete=models.CASCADE, related_name="assignments")
     start_date = models.DateTimeField(default=now)
     end_date = models.DateTimeField(null=True)
 
+    class Meta:
+        unique_together = ["worker", "order", "start_date"]
+
     def __str__(self):
-        return f"worker: {self.worker}   order:{self.order} start_date:{self.start_date} "
+        return f"worker: {self.worker.fio}   order:{self.order.id} start_date:{self.start_date}  end_date:{self.end_date} "
 
 
 class Orders(models.Model):
@@ -238,3 +241,21 @@ class Orders(models.Model):
 
     def __str__(self):
         return f"{self.pk} {self.equipment} {self.status} {self.breakdown_date}"
+
+    def assigned_workers(self):
+        """
+        Возвращает список ремонтников, занимающихся в данный момент этим заданием
+        """
+        return self.assignments.filter(end_date__isnull=True).all()
+
+    def involved_workers(self):
+        """
+        Возвращает список ремонтников, принимавших участие в данном ремонте
+        """
+        return self.dayworkers.all()
+
+    def active_workers_count(self) -> int:
+        """
+        Возвращает количество работников, приписанных к заявке в данный момент
+        """
+        return self.assignments.filter(end_date__isnull=True).count()

@@ -13,6 +13,7 @@ from django.urls import reverse_lazy
 from django.views.generic import DetailView, UpdateView, ListView, DeleteView
 from django.forms.models import model_to_dict
 from django.core.handlers.wsgi import WSGIRequest
+from django.utils import timezone
 from django.utils.timezone import make_aware
 
 
@@ -21,11 +22,11 @@ from scheduler.filters import get_filterset
 from orders.report import create_order_report
 
 
-from orders.models import Orders, Equipment, Shops, Repairmen
+from orders.models import Orders, Equipment, Shops, Repairmen, OrdersWorkers
 from orders.forms import (
     AddEquipmentForm,
     AddOrderForm,
-    StartRepairForm,
+    AssignWorkersForm,
     EditEquipmentForm,
     RepairProgressForm,
     ConfirmMaterialsForm,
@@ -165,12 +166,12 @@ def order_assign_workers(request, pk):
         pk=pk
     )
     if request.method == "POST":
-        form = StartRepairForm(request.POST)
+        form = AssignWorkersForm(request.POST)
         if form.is_valid():
             fios = get_doers_list(form)
             if len(fios) == len(set(fios)):  # если нет повторений в списке fios, добавляем запись
 
-                order.dayworkers.set(fios)
+                order.dayworkers.add(*fios)
 
                 order.inspection_date = make_aware(datetime.now())
                 order.inspected_employee = " ".join(
@@ -200,11 +201,11 @@ def order_assign_workers(request, pk):
                 alert_message = f"Исполнители дублируются. Измените исполнителей."
                 create_flash_message(alert_message)
                 logger.error(alert_message)
-                form = StartRepairForm(form.cleaned_data)
+                form = AssignWorkersForm(form.cleaned_data)
                 context.update({"object": order, "form": form, "alerts": pop_flash_messages()})
                 return render(request, "orders/repair_start.html", context)
 
-    form = StartRepairForm()
+    form = AssignWorkersForm()
     context.update(
         {"object": order, "form": form, "permitted_users": PERMITED_USERS, "status": OrdStatus}
     )
@@ -458,9 +459,11 @@ def order_info(request, pk):
     """
     Выводит информацию о заявке (показывет все поля из модели, которые можно показать).
     """
-    # ползапрос, который сливает исполнителей из mny-to-many-отношения в одну строку
+    # подзапрос, который сливает исполнителей из mny-to-many-отношения в одну строку
     assigned_workers_subquery = (
-        Repairmen.assignable_workers.filter(orders=OuterRef("pk"))
+        Repairmen.assignable_workers.filter(
+            orders=OuterRef("pk"), assignments__end_date__isnull=True
+        )
         .values("orders")
         .annotate(assigned_workers_string=StringAgg("fio", delimiter=", ", ordering="fio"))
         .values("assigned_workers_string")
@@ -840,7 +843,11 @@ class RepairmenEdit(ListView):
     template_name = "orders/repairmen_edit.html"
 
     def get_queryset(self):
-        qs = Orders.objects.get(pk=self.kwargs["pk"]).dayworkers.order_by("fio")
+        qs = (
+            Orders.objects.get(pk=self.kwargs["pk"])
+            .dayworkers.filter(assignments__end_date__isnull=True)
+            .order_by("fio")
+        )
         return qs
 
     def get_context_data(self, **kwargs):
@@ -861,9 +868,8 @@ class RepairmenEdit(ListView):
         form = AssignRepairman(request.POST)
         if form.is_valid():
             order = Orders.objects.get(pk=self.kwargs["pk"])
-            workers_count = order.dayworkers.count()
             # на заявку можно назначить только MAX_DAYWORKERS_PER_ORDER работников
-            if workers_count >= MAX_DAYWORKERS_PER_ORDER:
+            if order.active_workers_count() >= MAX_DAYWORKERS_PER_ORDER:
                 create_flash_message("Назначено слишком много работников.")
             else:
                 order.dayworkers.add(form.cleaned_data["fio"])
@@ -882,8 +888,9 @@ def repairmen_delete_proc(request: WSGIRequest):
         order_id = request.POST.get("order_id")
         try:
             order = Orders.objects.get(pk=order_id)
-            repairman = Repairmen.assignable_workers.get(pk=pk)
-            order.dayworkers.remove(repairman)
+            OrdersWorkers.objects.filter(order=order_id, worker=pk).all().update(
+                end_date=timezone.now()
+            )
             is_need_to_be_suspended(order)
 
         except Exception as e:
