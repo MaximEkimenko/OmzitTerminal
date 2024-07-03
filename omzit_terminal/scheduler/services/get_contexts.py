@@ -39,6 +39,8 @@ def get_strat_plan_context():
 
         planned_models.append(model.model_name.split('-')[0])
 
+    print(planned_models)
+
     # параметры запланированных моделей
 
 

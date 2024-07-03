@@ -31,7 +31,7 @@ async def send_call_master(message_to_master, ws_number):
     elif str(ws_number) in ws_numbers_c2:
         await bot.send_message(chat_id=omzit_master_group2_id, text=message_to_master)
     else:
-        logger.eroor(f'Ошибка отправки сообщения мастеру в цехе №{ws_number}, {message_to_master}')
+        logger.error(f'Ошибка отправки сообщения мастеру в цехе №{ws_number}, {message_to_master}')
 
 
 async def send_call_dispatcher(message_to_master, ws_number):
@@ -49,7 +49,7 @@ async def send_call_dispatcher(message_to_master, ws_number):
     elif str(ws_number) in ws_numbers_c2:
         await bot.send_message(chat_id=omzit_master_group2_id, text=message_to_master)
     else:
-        logger.eroor(f'Ошибка отправки сообщения диспетчеру в цехе №{ws_number}, {message_to_master}')
+        logger.error(f'Ошибка отправки сообщения мастеру в цехе №{ws_number}, {message_to_master}')
 
 
 async def terminal_message_to_id(to_id, text_message_to_id):

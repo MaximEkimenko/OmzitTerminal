@@ -7,10 +7,11 @@ from django_apscheduler.jobstores import DjangoJobStore
 from django_apscheduler.models import DjangoJobExecution
 from django_apscheduler import util
 
-from worker.views import pause_work, resume_work
+from worker.views import pause_work, resume_work  # noqa
 
-from m_logger_settings import logger, json_log_refactor_and_xlsx
-from scheduler.services.sz_reports import shift_tasks_auto_report
+from m_logger_settings import logger, json_log_refactor_and_xlsx  # noqa
+from scheduler.services.sz_reports import shift_tasks_auto_report  # noqa
+from scheduler.services.create_fio_report import create_fio_report_schedule # noqa
 
 
 @util.close_old_connections
@@ -78,15 +79,26 @@ class Command(BaseCommand):
         )
         logger.info('Запущена задача: "Получение отчета по СЗ"')
 
+        # scheduler.add_job(
+        #     json_log_refactor_and_xlsx,
+        #     trigger=CronTrigger(hour="00", minute="05"),
+        #     id="Формирование log файлов json и xlsx",
+        #     max_instances=1,
+        #     replace_existing=True,
+        #     misfire_grace_time=1 * 60,
+        # )
+        # logger.info('Запущена задача: "Формирование log файлов json и xlsx"')
+
         scheduler.add_job(
-            json_log_refactor_and_xlsx,
-            trigger=CronTrigger(hour="00", minute="05"),
-            id="Формирование log файлов json и xlsx",
+            create_fio_report_schedule,
+            trigger=CronTrigger(hour="20", minute="00"),
+            id="Формирование отчётов для рабочих",
             max_instances=1,
             replace_existing=True,
             misfire_grace_time=1 * 60,
         )
-        logger.info('Запущена задача: "Формирование log файлов json и xlsx"')
+        logger.info('Запущена задача: "Формирование отчётов для рабочих"')
+
 
         # scheduler.add_job( # TODO ФУНКЦИОНАЛ ОТЧЁТОВ законсервировано пока не понадобится
         #     days_report_create,

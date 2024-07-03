@@ -113,7 +113,7 @@ class ModelParameters(models.Model):
                                          verbose_name='Полная трудоёмкость изделия')
     critical_chain_cycle_koef = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=0.6,
                                                     verbose_name='Коэффициент расчёта критической цепи')
-    series_parameters = models.ForeignKey(SeriesParameters, on_delete=models.PROTECT,
+    series_parameters = models.ForeignKey(SeriesParameters, on_delete=models.DO_NOTHING,
                                           null=True, verbose_name="Параметры серии")
     # расчётное поле по сигналу перед сохранением данных
     produce_cycle = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=0,
@@ -139,6 +139,8 @@ class Doers(models.Model):
     """
     objects = models.Manager()  # явное указание метода для pycharm
     doers = models.CharField(max_length=255, unique=True, verbose_name='ФИО исполнителей')
+    telegram_id = models.BigIntegerField(null=True, default=0, verbose_name='telegram_id исполнителя')
+    is_approved = models.BooleanField(default=False, verbose_name='Одобрен')
 
     # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
     # job_title = models.CharField(max_length=255, null=True, blank=True, verbose_name='Должность')
