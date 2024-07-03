@@ -139,6 +139,8 @@ class Doers(models.Model):
     """
     objects = models.Manager()  # явное указание метода для pycharm
     doers = models.CharField(max_length=255, unique=True, verbose_name='ФИО исполнителей')
+    telegram_id = models.BigIntegerField(null=True, default=0, verbose_name='telegram_id исполнителя')
+    is_approved = models.BooleanField(default=False, verbose_name='Одобрен')
 
     # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
     # job_title = models.CharField(max_length=255, null=True, blank=True, verbose_name='Должность')
