@@ -470,7 +470,7 @@ def order_cancel_repair(request, pk):
 
 
 @login_required(login_url="/scheduler/login/")
-def order_info(request, pk):
+def order_card(request, pk):
     """
     Выводит информацию о заявке (показывет все поля из модели, которые можно показать).
     """
@@ -610,7 +610,7 @@ def order_delete_proc(request: WSGIRequest):
 
 
 @login_required(login_url="/scheduler/login/")
-def repair_history(request: WSGIRequest, pk):
+def order_history(request: WSGIRequest, pk):
     equipment: Equipment = Equipment.objects.filter(pk=pk).values(*["id", "name", "unique_name"])[0]
     orders: Orders = Orders.objects.filter(equipment_id=pk).order_by("breakdown_date").all()
     context = {
@@ -717,7 +717,7 @@ class EquipmentCardEditView(LoginRequiredMixin, UpdateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-def repair_orders_reports(request):
+def order_report(request):
     try:
         exel_file = create_order_report()
         logger.info(f"Пользователь {request.user} успешно загрузил отчёт в excel.")
