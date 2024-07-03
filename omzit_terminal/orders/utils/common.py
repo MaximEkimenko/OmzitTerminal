@@ -2,6 +2,9 @@ from enum import Enum
 from dataclasses import dataclass, field
 from orders.utils.roles import Position
 
+# максимальное количество работников, которое может быть одновременно приписано к одному ремонту
+MAX_DAYWORKERS_PER_ORDER = 4
+
 
 def forDjango(cls):
     """позволяет передавать перечисление в шаблон и там обращаться к его полям через точку"""
@@ -22,6 +25,10 @@ class OrdStatus(int, Enum):
     ACCEPTED = 7  # ремонт принят
     CANCELLED = 8  # ремонт отменен
     UNPRPAIRABLE = 9  # неремонтопригодно
+    SUSPENDED = 10  # задача приостановлена (требует назначения новых сотрудников)
+
+
+ALL_STATES = [i for i in OrdStatus]
 
 
 class Button:
@@ -115,5 +122,19 @@ button_context = [
         url="delete_repair",
         states=[OrdStatus.DETECTED],
         groups=[Position.Admin, Position.HoS],
+    ),
+    Button(
+        name="add_repairman",
+        title="назначить исполнителей",
+        url="start_repair",
+        states=[OrdStatus.SUSPENDED],
+        groups=[Position.Admin, Position.HoRT, Position.Repairman],
+    ),
+    Button(
+        name="clear_repairman",
+        title="снять всех исполнителей",
+        url="clear_workers",
+        states=[OrdStatus.START_REPAIR, OrdStatus.REPAIRING],
+        groups=[Position.Admin],
     ),
 ]

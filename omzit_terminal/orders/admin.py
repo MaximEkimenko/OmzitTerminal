@@ -13,6 +13,7 @@ class OrdersAdmin(admin.ModelAdmin):
         "breakdown_description",
         "priority",
     )
+    list_editable = ["priority", "status"]
     search_fields = ("equipment", "breakdown_description")
     ordering = ["id"]
 

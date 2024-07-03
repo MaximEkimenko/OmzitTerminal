@@ -54,7 +54,11 @@ telegram_handle_dict = {
     },
     OrdStatus.UNPRPAIRABLE: {
         "message": "не реализовано",
-        "handlers": [{"func": "send_telegram_messages", "tids": [orders_telegram_group_id]}],
+        "handlers": [{"func": "fake_telegram_messages", "tids": [orders_telegram_group_id]}],
+    },
+    OrdStatus.SUSPENDED: {
+        "message": "не реализовано",
+        "handlers": [{"func": "fake_telegram_messages", "tids": [orders_telegram_group_id]}],
     },
 }
 
@@ -81,6 +85,10 @@ def send_telegram_messages(
 ):
     for tid in telegram_ids:
         send_telegram_message(tid, message, error_template)
+
+
+def fake_telegram_messages(*args, **kwargs):
+    print(args)
 
 
 def notify_shop_chiefs(

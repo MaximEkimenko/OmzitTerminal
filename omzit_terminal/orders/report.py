@@ -3,6 +3,7 @@ import pandas as pd
 from pathlib import Path
 from datetime import datetime
 
+from django.forms import model_to_dict
 from django.utils.timezone import make_naive
 from openpyxl import Workbook
 
@@ -38,8 +39,20 @@ def create_order_report():
             verbose_names[field.name] = field.verbose_name
         else:
             verbose_names[field.name] = field.name
-    # qs = Orders.objects.values(*verbose_names)
-    qs = Orders.objects.all()
+    qs = Orders.objects.values(*verbose_names)
+    specific_fields = [
+        "id",
+        "equipment",
+        "status",
+        "priority",
+        "breakdown_date",
+        "breakdown_description",
+    ]
+
+    qs = list(Orders.objects.all().values(*specific_fields))
+    # print(qs)
+    # qs = model_to_dict(qs, specific_fields)
+    qs = list(Orders.objects.all())
     qs = orders_to_dict(qs)
 
     for i, key in enumerate(verbose_names):
@@ -53,8 +66,13 @@ def create_order_report():
             except Exception as e:
                 # logger.exception(e)
                 pass
-            cell.value = row[key]
-            # cell.font = font
+            try:
+                cell.value = row[key]
+            except ValueError as e:
+                logger.error(f"Ошибка при конвертации значения {row[key]} по ключу {key}")
+                logger.exception(e)
+                cell.value = "error"
+
     x = datetime.now()
     filename = f"Заявки на ремонт {x.day:02d}_{x.month:02d}_{x.year:04d} {x.hour:02d}_{x.minute:02d}_{x.second:02d}.xlsx"
     exel_file_dst = Path(BASE_DIR).joinpath("xlsx")

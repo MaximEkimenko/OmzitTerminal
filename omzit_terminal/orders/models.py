@@ -1,6 +1,7 @@
 from django.db import models
+from django.db.models import OuterRef, Subquery, QuerySet
 from django.urls import reverse_lazy
-
+from django.utils.timezone import now
 from orders.utils.common import OrdStatus
 
 
@@ -26,6 +27,21 @@ class Repairmen(models.Model):
     class Meta:
         verbose_name = "Ремонтник"
         verbose_name_plural = "Ремонтники"
+
+    @classmethod
+    def busy_workers(cls, repairmen_ids: list[int]) -> QuerySet["Repairmen"]:
+        sq = OrdersWorkers.objects.filter(worker=OuterRef("pk"), end_date__isnull=True).values(
+            "order"
+        )
+        busy_workers: QuerySet["Repairmen"] = (
+            cls.assignable_workers.filter(pk__in=repairmen_ids)
+            .annotate(order=Subquery(sq))
+            .filter(
+                order__isnull=False
+            )  # нужно, чтобы не выдавались сотрудники, не приписанные к заданию
+            .all()
+        )
+        return busy_workers
 
 
 class Shops(models.Model):
@@ -135,16 +151,38 @@ class PriorityChoices(models.IntegerChoices):
     RP_4 = 4, "4"
 
 
+class OrdersWorkers(models.Model):
+    worker = models.ForeignKey(Repairmen, on_delete=models.CASCADE, related_name="assignments")
+    order = models.ForeignKey("Orders", on_delete=models.CASCADE, related_name="assignments")
+    start_date = models.DateTimeField(default=now)
+    end_date = models.DateTimeField(null=True)
+
+    class Meta:
+        # unique_together = ["worker", "order", "start_date"]
+        pass
+
+    def __str__(self):
+        return f"worker: {self.worker.fio}   order:{self.order.id} start_date:{self.start_date}  end_date:{self.end_date} "
+
+
 class Orders(models.Model):
     equipment = models.ForeignKey(
         Equipment, on_delete=models.PROTECT, verbose_name="Оборудование", related_name="repairs"
     )
-    doers_fio = models.CharField(max_length=255, blank=True, null=True, verbose_name="Исполнители")
+
     status = models.ForeignKey(
         OrderStatus,
         on_delete=models.CASCADE,
         default=OrdStatus.DETECTED,
         verbose_name="Статус заявки",
+        related_name="orders_with_status",
+    )
+    previous_status = models.ForeignKey(
+        OrderStatus,
+        on_delete=models.CASCADE,
+        null=True,
+        verbose_name="Предыдущий статус",
+        related_name="orders_with_previous_status",
     )
     priority = models.IntegerField(
         choices=PriorityChoices.choices, default=PriorityChoices.RP_4, verbose_name="Приоритет"
@@ -152,6 +190,7 @@ class Orders(models.Model):
     breakdown_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата поломки")
     breakdown_description = models.TextField(verbose_name="Описание поломки")
     worker = models.CharField(max_length=100, blank=True, null=True, verbose_name="Работник")
+    dayworkers = models.ManyToManyField(Repairmen, through=OrdersWorkers, related_name="orders")
     identified_employee = models.CharField(
         max_length=100, null=True, verbose_name="Работник, создавший заявку"
     )
@@ -219,3 +258,21 @@ class Orders(models.Model):
 
     def __str__(self):
         return f"{self.pk} {self.equipment} {self.status} {self.breakdown_date}"
+
+    def assigned_workers(self):
+        """
+        Возвращает список ремонтников, занимающихся в данный момент этим заданием
+        """
+        return self.assignments.filter(end_date__isnull=True).all()
+
+    def involved_workers(self):
+        """
+        Возвращает список ремонтников, принимавших участие в данном ремонте
+        """
+        return self.dayworkers.all()
+
+    def active_workers_count(self) -> int:
+        """
+        Возвращает количество работников, приписанных к заявке в данный момент
+        """
+        return self.assignments.filter(end_date__isnull=True).count()

@@ -3,14 +3,17 @@ import asyncio
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.postgres.aggregates import StringAgg
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect, FileResponse
-from django.db.models import Window, Count, ProtectedError
+from django.db import transaction
+from django.db.models import Window, Count, ProtectedError, Subquery, OuterRef
 from django.db.models.functions import RowNumber
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, UpdateView, ListView, DeleteView
 from django.forms.models import model_to_dict
 from django.core.handlers.wsgi import WSGIRequest
+from django.utils import timezone
 from django.utils.timezone import make_aware
 
 
@@ -19,11 +22,11 @@ from scheduler.filters import get_filterset
 from orders.report import create_order_report
 
 
-from orders.models import Orders, Equipment, Shops
+from orders.models import Orders, Equipment, Shops, Repairmen, OrdersWorkers
 from orders.forms import (
     AddEquipmentForm,
     AddOrderForm,
-    StartRepairForm,
+    AssignWorkersForm,
     EditEquipmentForm,
     RepairProgressForm,
     ConfirmMaterialsForm,
@@ -32,23 +35,27 @@ from orders.forms import (
     OrderEditForm,
     RepairCancelForm,
     AddShop,
+    AssignRepairman,
 )
 from orders.utils.common import (
     OrdStatus,
+    MAX_DAYWORKERS_PER_ORDER,
 )
 from orders.utils.roles import Position, get_employee_position, custom_login_check, PERMITED_USERS
 from orders.utils.utils import (
     create_flash_message,
     pop_flash_messages,
     get_doers_list,
-    convert_name,
-    orders_get_context,
     orders_record_to_dict,
     get_order_verbose_names,
     get_order_edit_context,
     process_repair_expect_date,
     apply_order_status,
     create_extra_materials,
+    check_order_suspend,
+    orders_get_context,
+    clear_dayworkers,
+    check_order_resume,
 )
 from orders.utils.telegram import order_telegram_notification
 
@@ -149,41 +156,74 @@ def orders(request) -> HttpResponse:
 
 
 @login_required(login_url="/scheduler/login/")
-def order_start_repair(request, pk):
+def order_assign_workers(request, pk):
+    """
+    Добавляем работников к ремонту:
+    Или в начале ремонта.
+    Или после того, как на предыдущем ремонте работники были удалены
+    Или в начала рабочего для, чтобы вновь запустить приостановленную заявку.
+    Вызывается при статусах заявки: "требует ремонта" и "приостановлено"
+    """
     context = {}
     order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
         pk=pk
     )
     if request.method == "POST":
-        form = StartRepairForm(request.POST)
+        form = AssignWorkersForm(request.POST)
         if form.is_valid():
             fios = get_doers_list(form)
             if len(fios) == len(set(fios)):  # если нет повторений в списке fios, добавляем запись
-                applied_status = OrdStatus.START_REPAIR
-                order.doers_fio = ", ".join(sorted(fios))
-                order.inspection_date = make_aware(datetime.now())
-                order.inspected_employee = " ".join(
-                    [request.user.last_name, request.user.first_name]
-                )
-                apply_order_status(order, applied_status)
-                alert_message = (
-                    f"Начат ремонт оборудования {order.equipment} по заявке № {order.id}."
-                )
-                create_flash_message(alert_message)
-                logger.info(alert_message)
-                order_telegram_notification(applied_status, order)
+                fios_ids = [i.id for i in fios]
+                # проверяем, есть ли среди указанных работников те, кто уже назначен на другую заявку
+                busy_workers = Repairmen.busy_workers(fios_ids)
+                # если есть, оставляем форму без изменения и отправляем сообщение об ошибке
+                if busy_workers:
+                    for worker in busy_workers:
+                        create_flash_message(f"{worker.fio} занят на заявке № {worker.order}")
+                    form = AssignWorkersForm(form.cleaned_data)
+                    context.update({"object": order, "form": form, "alerts": pop_flash_messages()})
+                    return render(request, "orders/repair_start.html", context)
+
+                # добавляем работников к ремонту
+                # order.dayworkers.add(*fios)
+                for new_worker in fios:
+                    OrdersWorkers.objects.create(order=order, worker=new_worker)
+                # если мы попали сюда (добавляем работников), значит ремонт либо начат, либо возобновлен
+                # если ремонт был приостановлен, возобновляем предыдущую стадию
+                if order.previous_status_id in (OrdStatus.START_REPAIR, OrdStatus.REPAIRING):
+                    applied_status = order.previous_status_id
+                    alert_message = (
+                        f"Возобновлен ремонт оборудования {order.equipment} по заявке № {order.id}."
+                    )
+                # или начинаем новый ремонт
+                else:
+                    order.inspection_date = make_aware(datetime.now())
+                    order.inspected_employee = " ".join(
+                        [request.user.last_name, request.user.first_name]
+                    )
+                    applied_status = OrdStatus.START_REPAIR
+                    alert_message = (
+                        f"Начат ремонт оборудования {order.equipment} по заявке № {order.id}."
+                    )
+                success = apply_order_status(order, applied_status)
+                if success:
+                    create_flash_message(alert_message)
+                    logger.info(alert_message)
+                    order_telegram_notification(applied_status, order)
 
                 return redirect("orders")
             else:
                 alert_message = f"Исполнители дублируются. Измените исполнителей."
                 create_flash_message(alert_message)
                 logger.error(alert_message)
-                form = StartRepairForm(form.cleaned_data)
+                form = AssignWorkersForm(form.cleaned_data)
                 context.update({"object": order, "form": form, "alerts": pop_flash_messages()})
                 return render(request, "orders/repair_start.html", context)
 
-    form = StartRepairForm()
-    context.update({"object": order, "form": form, "permitted_users": PERMITED_USERS})
+    form = AssignWorkersForm()
+    context.update(
+        {"object": order, "form": form, "permitted_users": PERMITED_USERS, "status": OrdStatus}
+    )
     return render(request, "orders/repair_start.html", context)
 
 
@@ -221,8 +261,10 @@ def order_clarify_repair(request, pk):
                 applied_status = OrdStatus.WAIT_FOR_MATERIALS
                 order.clarify_date = make_aware(datetime.now())
                 apply_order_status(order, applied_status)
+                clear_dayworkers(order)
                 alert_message = "Данные по ремонту уточнены"
                 create_flash_message(alert_message)
+
                 order_telegram_notification(applied_status, order)
             else:
                 alert_message = f"Некорректно указаны материалы"
@@ -237,6 +279,13 @@ def order_clarify_repair(request, pk):
 
 @login_required(login_url="/scheduler/login/")
 def order_confirm_materials(request, pk):
+    """
+    Здесь совершаются два действия.
+    1) Если материалы в наличии или не требуются, происходит переход на этап "в ремонте". И
+     онт тут же приостанавливается, так как работники на этапе подтверждения материалов были сняты.
+    2) Если материалы нужно ждать, вводится номер заявки на материалы. Статус заявки на ремонт не меняется.
+    """
+
     order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
         pk=pk
     )
@@ -249,8 +298,10 @@ def order_confirm_materials(request, pk):
             if form.is_valid():
                 order.materials_request = form.cleaned_data["materials_request"]
                 order.materials_request_date = make_aware(datetime.now())
+                # Нужно сохранить номер заявки и дату, больше ничего не меняется
+                # так что вызывает функцию с тем же статусом
                 apply_order_status(order, OrdStatus.WAIT_FOR_MATERIALS)
-                alert_message = "Наличие материалов для ремонта подтверждено."
+                alert_message = "Номер заявки на материалы внесен."
                 create_flash_message(alert_message)
 
         else:
@@ -264,6 +315,7 @@ def order_confirm_materials(request, pk):
             create_flash_message(alert_message)
             logger.info(alert_message)
             order_telegram_notification(applied_status, order)
+            check_order_suspend(order)
         return redirect("orders")
     form = ConfirmMaterialsForm({"materials_request": order.materials_request})
     context = {"object": order, "form": form, "permitted_users": PERMITED_USERS}
@@ -293,6 +345,7 @@ def order_finish_repair(request, pk):
                 logger.error(alert_message)
                 logger.exception(e)
             else:
+                clear_dayworkers(order)
                 alert_message = (
                     f"Ремонт оборудования {order.equipment} по заявке {order.id} закончен"
                 )
@@ -318,6 +371,7 @@ def order_accept_repair(request, pk):
         order.accepted_employee = " ".join([request.user.last_name, request.user.first_name])
         applied_status = OrdStatus.ACCEPTED
         apply_order_status(order, applied_status)
+        clear_dayworkers(order)
         alert_message = "Отремонтированное оборудование принято"
         create_flash_message(alert_message)
         order_telegram_notification(applied_status, order)
@@ -346,16 +400,22 @@ def order_revision(request, pk):
                 else:
                     order.revision_cause = string
                 order.revised_employee = " ".join([request.user.last_name, request.user.first_name])
+                # так как при окончании ремонта все сотрудники снимаются, при возврате на доработку
+                # нужно возвращать статус "приостановлено"
                 applied_status = OrdStatus.REPAIRING
                 apply_order_status(order, applied_status)
+                check_order_suspend(order)
             except Exception as e:
-                alert_message = f"Ошибка записи при возвращении оборудования {order.equipment} по заявке {order.id} на доработку"
+                alert_message = (
+                    f"Ошибка записи при возвращении оборудования {order.equipment} "
+                    f"по заявке {order.id} на доработку"
+                )
                 create_flash_message(alert_message)
                 logger.error(alert_message)
                 logger.exception(e)
             else:
                 alert_message = (
-                    f"Оборудовани {order.equipment} по заявке {order.id} возвращено на доработку"
+                    f"Оборудование {order.equipment} по заявке {order.id} возвращено на доработку"
                 )
                 create_flash_message(alert_message)
                 logger.info(alert_message)
@@ -395,6 +455,7 @@ def order_cancel_repair(request, pk):
                 logger.error(alert_message)
                 logger.exception(e)
             else:
+                clear_dayworkers(order)
                 alert_message = (
                     f"Ремонт оборудования {order.equipment} по заявке {order.id} отменен"
                 )
@@ -409,13 +470,32 @@ def order_cancel_repair(request, pk):
 
 
 @login_required(login_url="/scheduler/login/")
-def order_info(request, pk):
-    order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
-        pk=pk
+def order_card(request, pk):
+    """
+    Выводит информацию о заявке (показывет все поля из модели, которые можно показать).
+    """
+    # подзапрос, который сливает исполнителей из mny-to-many-отношения в одну строку
+    assigned_workers_subquery = (
+        Repairmen.assignable_workers.filter(
+            orders=OuterRef("pk"), assignments__end_date__isnull=True
+        )
+        .values("orders")
+        .annotate(assigned_workers_string=StringAgg("fio", delimiter=", ", ordering="fio"))
+        .values("assigned_workers_string")
+    )
+
+    order = (
+        Orders.objects.filter(pk=pk)
+        .annotate(dayworkers_fio=Subquery(assigned_workers_subquery))
+        .prefetch_related("equipment", "status", "materials")
+        .first()
     )
     verbose_header = get_order_verbose_names()
+    verbose_header.update({"dayworkers_fio": "Исполнители"})
+
     vd = orders_record_to_dict(order, list(verbose_header))
     vhd = {verbose_header[i]: vd[i] for i in verbose_header}
+
     context = {
         "object": order,
         "order_params": vhd,
@@ -530,7 +610,7 @@ def order_delete_proc(request: WSGIRequest):
 
 
 @login_required(login_url="/scheduler/login/")
-def repair_history(request: WSGIRequest, pk):
+def order_history(request: WSGIRequest, pk):
     equipment: Equipment = Equipment.objects.filter(pk=pk).values(*["id", "name", "unique_name"])[0]
     orders: Orders = Orders.objects.filter(equipment_id=pk).order_by("breakdown_date").all()
     context = {
@@ -637,7 +717,7 @@ class EquipmentCardEditView(LoginRequiredMixin, UpdateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-def repair_orders_reports(request):
+def order_report(request):
     try:
         exel_file = create_order_report()
         logger.info(f"Пользователь {request.user} успешно загрузил отчёт в excel.")
@@ -680,44 +760,9 @@ class ShopsView(ListView):
 
 class ShopsEdit(UpdateView):
     model = Shops
-
     form_class = AddShop
     template_name = "orders/shops_edit.html"
     success_url = reverse_lazy("shops")
-
-    extra_context = {}
-
-
-class ShopsDelete(DeleteView):
-    model = Shops
-    template_name = "orders/shops_delete.html"
-    # success_url = reverse_lazy("orders:shops")
-    success_url = reverse_lazy("shops")
-
-    def post(self, request, *args, **kwargs):
-        try:
-            object: Shops = self.get_object()
-            name = object.name
-            pk = object.id
-            self.get_object().delete()
-            alert_message = f'Местонаходжение "{name}" удлено'
-            create_flash_message(alert_message)
-            message = f"{alert_message}. Удалил пользователь {request.user.username}"
-            logger.info(message)
-        except ProtectedError as e:
-
-            alert_message = (
-                f"Местоположение не может быть удалено, так как нему привязано оборудование"
-            )
-            create_flash_message(alert_message)
-            message = (
-                f" К местоположению id {pk} привязано оборудование, поэтому оно не может быть "
-                f"удалено пользователем {request.user.username}"
-            )
-            logger.error(message)
-            logger.exception(e)
-
-        return redirect(self.success_url)
 
 
 @login_required(login_url="/scheduler/login/")
@@ -802,3 +847,96 @@ def shop_delete_proc(request: WSGIRequest):
                 logger.exception(e)
 
     return redirect("shops")
+
+
+class RepairmenEdit(ListView):
+    """
+    Педставление для редактирования (добавления и удаления) работников, приписанных к заявке на ремонт
+    """
+
+    # model = Repairmen
+    template_name = "orders/repairmen_edit.html"
+
+    def get_queryset(self):
+        qs = (
+            Orders.objects.get(pk=self.kwargs["pk"])
+            .dayworkers.filter(assignments__end_date__isnull=True)
+            .order_by("fio")
+        )
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "alerts": pop_flash_messages(),
+                "add_form": AssignRepairman(),
+                "order_id": self.kwargs["pk"],
+            }
+        )
+        return context
+
+    def post(self, request, *args, **kwargs):
+        """
+        Добавляет работника к заявке
+        """
+        rw = reverse_lazy("repairmen_edit", args=(self.kwargs["pk"],))
+        form = AssignRepairman(request.POST)
+        if form.is_valid():
+            order = Orders.objects.get(pk=self.kwargs["pk"])
+            new_worker = form.cleaned_data["fio"]
+            busy_worker = Repairmen.busy_workers([new_worker.pk]).first()
+            print("занятый сторудник:", busy_worker)
+            if busy_worker:
+                create_flash_message(f"{busy_worker.fio} занят на заявке № {busy_worker.order}")
+                return redirect(rw)
+            # на заявку можно назначить только MAX_DAYWORKERS_PER_ORDER работников
+            if order.active_workers_count() >= MAX_DAYWORKERS_PER_ORDER:
+                create_flash_message("Назначено слишком много работников.")
+            else:
+                OrdersWorkers.objects.create(order=order, worker=new_worker)
+                check_order_resume(order)
+                create_flash_message("Работник добавлен к заявке.")
+
+        else:
+            create_flash_message(form.errors["name"][0])
+
+        return redirect(rw)
+
+
+@login_required(login_url="/scheduler/login/")
+def repairmen_delete_proc(request: WSGIRequest):
+    if request.method == "POST":
+        pk = request.POST.get("commit-delete-button")
+        order_id = request.POST.get("order_id")
+        try:
+            order = Orders.objects.get(pk=order_id)
+            OrdersWorkers.objects.filter(order=order_id, worker=pk).all().update(
+                end_date=timezone.now()
+            )
+            check_order_suspend(order)
+
+        except Exception as e:
+            alert_message = f"Ошибка при удалении работника из заявки"
+            create_flash_message(alert_message)
+            message = (
+                f"Ошибка при удалении работника id {pk} "
+                f"из заявки №  {order_id}. Пользователь {request.user.username}"
+            )
+            logger.error(message)
+            logger.exception(e)
+        else:
+            alert_message = f"Работник снят с заявки."
+            create_flash_message(alert_message)
+            message = f"Работник id {pk} снят с заявки № {order_id}. Удалил пользователь {request.user.username}"
+            logger.info(message)
+
+    rw = reverse_lazy("repairmen_edit", args=(order_id,))
+    return redirect(rw)
+
+
+@login_required(login_url="/scheduler/login/")
+def clear_workers_proc(request: WSGIRequest, pk):
+    order = Orders.objects.get(pk=pk)
+    clear_dayworkers(order)
+    return redirect("orders")

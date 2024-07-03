@@ -57,9 +57,9 @@ class AddOrderForm(ModelForm):
         fields = ["equipment", "priority", "breakdown_description", "worker"]
 
 
-# class StartRepairForm(forms.ModelForm):
-class StartRepairForm(forms.Form):
-    qs_st_fio = Repairmen.assignable_workers.all().order_by("fio")
+class AssignWorkersForm(forms.Form):
+    # qs_st_fio = Repairmen.assignable_workers.all().order_by("fio")
+    qs_st_fio = Repairmen.assignable_workers.all().order_by("fio").only("pk", "fio")
     fio_1 = forms.ModelChoiceField(
         qs_st_fio,
         label="Исполнитель 1",
@@ -190,4 +190,14 @@ class AddShop(forms.ModelForm):
             attrs={"placeholder": "новое местонахождение", "class": "btn-like"},
         ),
         label="Местонахождение",
+    )
+
+
+class AssignRepairman(forms.Form):
+    qs_st_fio = Repairmen.assignable_workers.all().order_by("fio")
+    fio = forms.ModelChoiceField(
+        qs_st_fio,
+        label="Исполнитель",
+        empty_label="ФИО не выбрано",
+        widget=forms.Select(attrs={"class": "fio_select"}),
     )

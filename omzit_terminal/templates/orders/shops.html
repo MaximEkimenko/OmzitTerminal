@@ -20,9 +20,6 @@
         <div class="equipment_card__spacer"></div>
 
         <div>
-          {% comment "" %}
-          <form action="{% url "shops_edit" shop.id %}" style="display:inline-block;">
-          {% endcomment %}
           <form action="{% url "shops_edit" shop.id %}" style="display:inline-block;">
             <button
               type="submit"
@@ -58,8 +55,7 @@
           <div class="form_row">
             {{edit_form.name}}
             <button
-              class="btn"
-                  
+              class="btn"                  
               id="edit-form-button"
               name="edit-form-button"
               value="{{object.id}}"

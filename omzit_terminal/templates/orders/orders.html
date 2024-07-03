@@ -48,6 +48,8 @@
                   <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 3)" placeholder="">
               </div>
             </th>
+            <th class="td_cell"> Предыдущий статус </th>
+
             <th class="td_cell">{{order_filter.form.priority}} Приоритет
               <br>
               <div class="sort-filter">
@@ -69,7 +71,7 @@
               </div>
             </th>
             <th class="td_cell">{{order_filter.form.materials_request}}№ заявки на метриалы</th>
-            <th class="td_cell">{{order_filter.form.doers_fio}}Исполнители</th>
+            <th class="td_cell">Исполнители</th>
             <th class="td_cell">Доработка</th>
             <th class="td_cell">Действия</th>
           </tr>
@@ -90,13 +92,14 @@
             </a>
           </td>
           <td class="td_cell status_name" data-status={{rec.status}}>{{rec.status__name}}</td>
+          <td class="td_cell status_name">{{rec.previous_status__name}}</td>
           <td class="td_cell">{{rec.priority}}</td>
           <td class="td_cell">{{rec.breakdown_date}}</td>
           <td class="td_cell">{{rec.breakdown_description|default:""|truncatewords:13}}</td>
           <td class="td_cell" >{{rec.expected_repair_date|default:""}}</td>
           <td class="td_cell" >{{rec.materials__name|default:""}}</td>
           <td class="td_cell" >{{rec.materials_request|default:""}}</td>
-          <td class="td_cell" >{{rec.doers_fio|default:""}}</td>
+          <td class="td_cell" >{{rec.dayworkers_fio|default:""}}</td>
           <td class="td_cell" >{{rec.revision_cause|default:"" |safe}}</td>
           <td class="td_cell">
           {% for b in  button_context%}
@@ -154,9 +157,7 @@
 
               <div class="equipment_card__label">
                 <label for="{{ entry.id_for_label }}">{{entry.label}}</label>
-              </div>
-
-              
+              </div>              
               <div>
                 {{entry}}
               </div>

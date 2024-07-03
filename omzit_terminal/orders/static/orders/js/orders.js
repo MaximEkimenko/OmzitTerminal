@@ -90,8 +90,8 @@ const color_WAIT_FOR_ACT = "rgba(214, 198, 53, 0.3)";
 const color_UNPRPAIRABLE = "rgba(119, 0, 80, 0.3)";
 const color_START_REPAIR = "rgba(253, 68, 43, 0.3)";
 const color_WAIT_FOR_MATERIALS = "rgba(255, 200, 47,  0.35)";
-
 const color_CANCELLED = "rgba(77, 72, 58, 0.3)";
+const color_SUSPENDED = "rgba(252, 229, 153, 0.3)";
 
 for (let i = 0; i < table_rows.length; i++) {
   let stat_cell = table_rows[i].querySelector(".status_name");
@@ -122,7 +122,12 @@ for (let i = 0; i < table_rows.length; i++) {
       break;
     case "ремонт отменен":
       table_rows[i].style.background = color_CANCELLED;
+      break;
+    case "приостановлено":
+      table_rows[i].style.background = color_SUSPENDED;
+  
   }
+  
 }
 //===========================================
 // фильтрация оборудования при добавлении задания
