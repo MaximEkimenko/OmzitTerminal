@@ -7,7 +7,7 @@ MAX_DAYWORKERS_PER_ORDER = 4
 
 
 def forDjango(cls):
-    """позволяет передавать перечисление в шаблон и там обращаться к его полям через точку"""
+    """Позволяет передавать перечисление в шаблон и там обращаться к его полям через точку"""
     cls.do_not_call_in_templates = True
     return cls
 
@@ -138,3 +138,18 @@ button_context = [
         groups=[Position.Admin],
     ),
 ]
+
+
+def can_edit_workers(status_id, role):
+    """
+    Определяет, кто и когда может редактировать состав ремонтников, приписанных к заявке.
+    Возвращает True или False. В зависимости от результата на странице рисуется кнопка для
+    перехода на страницу редактирования ремонтников.
+    """
+    if role in [Position.Admin, Position.HoRT, Position.Repairman] and status_id in [
+        OrdStatus.START_REPAIR,
+        OrdStatus.WAIT_FOR_MATERIALS,
+        OrdStatus.REPAIRING,
+    ]:
+        return True
+    return False

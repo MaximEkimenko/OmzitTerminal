@@ -7,11 +7,12 @@ from django_apscheduler.jobstores import DjangoJobStore
 from django_apscheduler.models import DjangoJobExecution
 from django_apscheduler import util
 
+from orders.utils.tasks import clear_all_dayworkers
 from worker.views import pause_work, resume_work  # noqa
 
 from m_logger_settings import logger, json_log_refactor_and_xlsx  # noqa
 from scheduler.services.sz_reports import shift_tasks_auto_report  # noqa
-from scheduler.services.create_fio_report import create_fio_report_schedule # noqa
+from scheduler.services.create_fio_report import create_fio_report_schedule  # noqa
 
 
 @util.close_old_connections
@@ -23,14 +24,18 @@ class Command(BaseCommand):
     help = "Runs APScheduler."
 
     def handle(self, *args, **options):
-        scheduler = BlockingScheduler(timezone=settings.TIME_ZONE, job_defaults={'misfire_grace_time': 1 * 60})
+        scheduler = BlockingScheduler(
+            timezone=settings.TIME_ZONE, job_defaults={"misfire_grace_time": 1 * 60}
+        )
         scheduler.add_jobstore(DjangoJobStore(), "default")
 
         logger.info("Команда runscheduler выполнена успешно.")
-
+        """
         scheduler.add_job(
             pause_work,
-            kwargs={'is_lunch': True, },
+            kwargs={
+                "is_lunch": True,
+            },
             trigger=CronTrigger(hour="12"),
             id="Приостановка работы в обед",
             max_instances=1,
@@ -50,7 +55,9 @@ class Command(BaseCommand):
 
         scheduler.add_job(
             resume_work,
-            kwargs={'is_lunch': True, },
+            kwargs={
+                "is_lunch": True,
+            },
             trigger=CronTrigger(hour="13"),
             id="Возобновление работы после обеда",
             max_instances=1,
@@ -60,9 +67,7 @@ class Command(BaseCommand):
 
         scheduler.add_job(
             delete_old_job_executions,
-            trigger=CronTrigger(
-                day_of_week="mon", hour="00", minute="00"
-            ),
+            trigger=CronTrigger(day_of_week="mon", hour="00", minute="00"),
             id="delete_old_job_executions",
             max_instances=1,
             replace_existing=True,
@@ -71,14 +76,14 @@ class Command(BaseCommand):
 
         scheduler.add_job(
             shift_tasks_auto_report,
-            trigger=CronTrigger(hour="07", minute="30"),
+            trigger=CronTrigger(hour="13", minute="06"),
             id="Получение отчета по СЗ",
             max_instances=1,
             replace_existing=True,
             misfire_grace_time=1 * 60,
         )
         logger.info('Запущена задача: "Получение отчета по СЗ"')
-
+        """
         # scheduler.add_job(
         #     json_log_refactor_and_xlsx,
         #     trigger=CronTrigger(hour="00", minute="05"),
@@ -89,16 +94,27 @@ class Command(BaseCommand):
         # )
         # logger.info('Запущена задача: "Формирование log файлов json и xlsx"')
 
+        """
         scheduler.add_job(
             create_fio_report_schedule,
-            trigger=CronTrigger(hour="20", minute="00"),
+            trigger=CronTrigger(hour="12", minute="50"),
             id="Формирование отчётов для рабочих",
             max_instances=1,
             replace_existing=True,
             misfire_grace_time=1 * 60,
         )
         logger.info('Запущена задача: "Формирование отчётов для рабочих"')
+        """
 
+        scheduler.add_job(
+            clear_all_dayworkers,
+            trigger=CronTrigger(hour="13", minute="45"),
+            id="Снятие ремонтников с заявок в конце смены",
+            max_instances=1,
+            replace_existing=True,
+            misfire_grace_time=1 * 60,
+        )
+        logger.info('Запущена задача: "Снятие ремонтников с заявок в конце смены"')
 
         # scheduler.add_job( # TODO ФУНКЦИОНАЛ ОТЧЁТОВ законсервировано пока не понадобится
         #     days_report_create,

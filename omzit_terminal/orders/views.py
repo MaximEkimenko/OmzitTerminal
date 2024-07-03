@@ -40,6 +40,7 @@ from orders.forms import (
 from orders.utils.common import (
     OrdStatus,
     MAX_DAYWORKERS_PER_ORDER,
+    can_edit_workers,
 )
 from orders.utils.roles import Position, get_employee_position, custom_login_check, PERMITED_USERS
 from orders.utils.utils import (
@@ -261,7 +262,7 @@ def order_clarify_repair(request, pk):
                 applied_status = OrdStatus.WAIT_FOR_MATERIALS
                 order.clarify_date = make_aware(datetime.now())
                 apply_order_status(order, applied_status)
-                clear_dayworkers(order)
+                # clear_dayworkers(order)
                 alert_message = "Данные по ремонту уточнены"
                 create_flash_message(alert_message)
 
@@ -495,11 +496,13 @@ def order_card(request, pk):
 
     vd = orders_record_to_dict(order, list(verbose_header))
     vhd = {verbose_header[i]: vd[i] for i in verbose_header}
-
+    can_edit = can_edit_workers(order.status_id, get_employee_position(request.user.username))
+    print("Можно редактировань пользователей:", can_edit)
     context = {
         "object": order,
         "order_params": vhd,
         "status": OrdStatus,
+        "can_edit_workers": can_edit,
         "permitted_users": PERMITED_USERS,
     }
     return render(request, "orders/repair_info.html", context)
