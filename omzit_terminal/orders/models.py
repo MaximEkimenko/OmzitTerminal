@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import OuterRef, Subquery, QuerySet
 from django.urls import reverse_lazy
 from django.utils.timezone import now
 from orders.utils.common import OrdStatus
@@ -26,6 +27,21 @@ class Repairmen(models.Model):
     class Meta:
         verbose_name = "Ремонтник"
         verbose_name_plural = "Ремонтники"
+
+    @classmethod
+    def busy_workers(cls, repairmen_ids: list[int]) -> QuerySet["Repairmen"]:
+        sq = OrdersWorkers.objects.filter(worker=OuterRef("pk"), end_date__isnull=True).values(
+            "order"
+        )
+        busy_workers: QuerySet["Repairmen"] = (
+            cls.assignable_workers.filter(pk__in=repairmen_ids)
+            .annotate(order=Subquery(sq))
+            .filter(
+                order__isnull=False
+            )  # нужно, чтобы не выдавались сотрудники, не приписанные к заданию
+            .all()
+        )
+        return busy_workers
 
 
 class Shops(models.Model):
@@ -142,7 +158,8 @@ class OrdersWorkers(models.Model):
     end_date = models.DateTimeField(null=True)
 
     class Meta:
-        unique_together = ["worker", "order", "start_date"]
+        # unique_together = ["worker", "order", "start_date"]
+        pass
 
     def __str__(self):
         return f"worker: {self.worker.fio}   order:{self.order.id} start_date:{self.start_date}  end_date:{self.end_date} "

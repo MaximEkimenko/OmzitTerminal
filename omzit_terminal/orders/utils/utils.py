@@ -14,7 +14,15 @@ from orders.utils.common import OrdStatus, button_context
 from orders.utils.roles import Position, get_employee_position
 from orders.forms import AddOrderForm
 
-from orders.models import FlashMessage, Orders, OrderStatus, Materials, Equipment, Repairmen
+from orders.models import (
+    FlashMessage,
+    Orders,
+    OrderStatus,
+    Materials,
+    Equipment,
+    Repairmen,
+    OrdersWorkers,
+)
 
 
 def get_order_verbose_names() -> dict[str, str]:
@@ -321,13 +329,29 @@ def create_extra_materials(exma: str) -> Materials | None:
     return m
 
 
-def is_need_to_be_suspended(order: Orders):
+def check_order_resume(order: Orders):
+    """
+    Если заявка находится в статусе "приостановлено", а предыдущий статус: "ремонт начат" или "в ремонте"
+    и у нее имеется активный исполнитель, то заявка возвращается к предыдущему статусу
+    """
+    if (
+        order.active_workers_count() > 0
+        and order.status_id == OrdStatus.SUSPENDED
+        and order.previous_status_id
+        in (
+            OrdStatus.START_REPAIR,
+            OrdStatus.REPAIRING,
+        )
+    ):
+        apply_order_status(order, order.previous_status_id)
+
+
+def check_order_suspend(order: Orders):
     """
     Если заявка находится в статусе "ремонт начат" или "в ремонте" и на нее не назначено
     ни одного исполнителя (например, в конце рабочего дня все исполнители автоматически
     сняты), то заявка переходит в статус "приостановлено"
     """
-
     if order.active_workers_count() == 0 and order.status_id in (
         OrdStatus.START_REPAIR,
         OrdStatus.REPAIRING,
@@ -340,5 +364,7 @@ def clear_dayworkers(order: Orders):
     Снимаем всех сотрудников с заявки, а дальше она, в зависимости от статуса, может перейти
     в состояние "приостановлено"
     """
-    order.assignments.filter(end_date__isnull=True).update(end_date=timezone.now())
-    is_need_to_be_suspended(order)
+    active_workers = OrdersWorkers.objects.filter(order=order, end_date__isnull=True).all()
+    if active_workers:
+        active_workers.update(end_date=timezone.now())
+        check_order_suspend(order)

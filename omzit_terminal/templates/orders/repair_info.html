@@ -17,15 +17,25 @@
       <form action="{% url 'edit_repair' object.id %}">
           <input type="submit" class="input_like"  value="Редактировать" />
       </form>
+      {%endif %}
+      
+      
+      {% if object.status_id == status.START_REPAIR or object.status_id == status.REPAIRING %}
       <form action="{% url 'repairmen_edit' object.id %}">
         <input type="submit" class="input_like"  value="Редактировать исполнителей" />
       </form>
+      {%endif %}      
+    
+    
+      
+
+
+
+      {% comment %}
       <form action="" mathod="GET">
         <input type="submit" class="input_like"  value="История исполнителей" />
       </form>
-
-
-      {%endif %}
+      {% endcomment %}
     </div>
 
     <div class="equipment_card">

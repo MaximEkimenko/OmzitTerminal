@@ -52,9 +52,10 @@ from orders.utils.utils import (
     process_repair_expect_date,
     apply_order_status,
     create_extra_materials,
-    is_need_to_be_suspended,
+    check_order_suspend,
     orders_get_context,
     clear_dayworkers,
+    check_order_resume,
 )
 from orders.utils.telegram import order_telegram_notification
 
@@ -157,7 +158,9 @@ def orders(request) -> HttpResponse:
 @login_required(login_url="/scheduler/login/")
 def order_assign_workers(request, pk):
     """
-    Добавляем пользователей в начале ремонта.
+    Добавляем работников к ремонту:
+    Или в начале ремонта.
+    Или после того, как на предыдущем ремонте работники были удалены
     Или в начала рабочего для, чтобы вновь запустить приостановленную заявку.
     Вызывается при статусах заявки: "требует ремонта" и "приостановлено"
     """
@@ -170,13 +173,21 @@ def order_assign_workers(request, pk):
         if form.is_valid():
             fios = get_doers_list(form)
             if len(fios) == len(set(fios)):  # если нет повторений в списке fios, добавляем запись
+                fios_ids = [i.id for i in fios]
+                # проверяем, есть ли среди указанных работников те, кто уже назначен на другую заявку
+                busy_workers = Repairmen.busy_workers(fios_ids)
+                # если есть, оставляем форму без изменения и отправляем сообщение об ошибке
+                if busy_workers:
+                    for worker in busy_workers:
+                        create_flash_message(f"{worker.fio} занят на заявке № {worker.order}")
+                    form = AssignWorkersForm(form.cleaned_data)
+                    context.update({"object": order, "form": form, "alerts": pop_flash_messages()})
+                    return render(request, "orders/repair_start.html", context)
 
-                order.dayworkers.add(*fios)
-
-                order.inspection_date = make_aware(datetime.now())
-                order.inspected_employee = " ".join(
-                    [request.user.last_name, request.user.first_name]
-                )
+                # добавляем работников к ремонту
+                # order.dayworkers.add(*fios)
+                for new_worker in fios:
+                    OrdersWorkers.objects.create(order=order, worker=new_worker)
                 # если мы попали сюда (добавляем работников), значит ремонт либо начат, либо возобновлен
                 # если ремонт был приостановлен, возобновляем предыдущую стадию
                 if order.previous_status_id in (OrdStatus.START_REPAIR, OrdStatus.REPAIRING):
@@ -186,6 +197,10 @@ def order_assign_workers(request, pk):
                     )
                 # или начинаем новый ремонт
                 else:
+                    order.inspection_date = make_aware(datetime.now())
+                    order.inspected_employee = " ".join(
+                        [request.user.last_name, request.user.first_name]
+                    )
                     applied_status = OrdStatus.START_REPAIR
                     alert_message = (
                         f"Начат ремонт оборудования {order.equipment} по заявке № {order.id}."
@@ -300,7 +315,7 @@ def order_confirm_materials(request, pk):
             create_flash_message(alert_message)
             logger.info(alert_message)
             order_telegram_notification(applied_status, order)
-            is_need_to_be_suspended(order)
+            check_order_suspend(order)
         return redirect("orders")
     form = ConfirmMaterialsForm({"materials_request": order.materials_request})
     context = {"object": order, "form": form, "permitted_users": PERMITED_USERS}
@@ -389,7 +404,7 @@ def order_revision(request, pk):
                 # нужно возвращать статус "приостановлено"
                 applied_status = OrdStatus.REPAIRING
                 apply_order_status(order, applied_status)
-                is_need_to_be_suspended(order)
+                check_order_suspend(order)
             except Exception as e:
                 alert_message = (
                     f"Ошибка записи при возвращении оборудования {order.equipment} "
@@ -836,10 +851,10 @@ def shop_delete_proc(request: WSGIRequest):
 
 class RepairmenEdit(ListView):
     """
-    Педставление для релактирования (добавления и удаления) работников, приписанных к заявке на ремонт
+    Педставление для редактирования (добавления и удаления) работников, приписанных к заявке на ремонт
     """
 
-    model = Repairmen
+    # model = Repairmen
     template_name = "orders/repairmen_edit.html"
 
     def get_queryset(self):
@@ -865,19 +880,27 @@ class RepairmenEdit(ListView):
         """
         Добавляет работника к заявке
         """
+        rw = reverse_lazy("repairmen_edit", args=(self.kwargs["pk"],))
         form = AssignRepairman(request.POST)
         if form.is_valid():
             order = Orders.objects.get(pk=self.kwargs["pk"])
+            new_worker = form.cleaned_data["fio"]
+            busy_worker = Repairmen.busy_workers([new_worker.pk]).first()
+            print("занятый сторудник:", busy_worker)
+            if busy_worker:
+                create_flash_message(f"{busy_worker.fio} занят на заявке № {busy_worker.order}")
+                return redirect(rw)
             # на заявку можно назначить только MAX_DAYWORKERS_PER_ORDER работников
             if order.active_workers_count() >= MAX_DAYWORKERS_PER_ORDER:
                 create_flash_message("Назначено слишком много работников.")
             else:
-                order.dayworkers.add(form.cleaned_data["fio"])
-                order.save()
+                OrdersWorkers.objects.create(order=order, worker=new_worker)
+                check_order_resume(order)
                 create_flash_message("Работник добавлен к заявке.")
+
         else:
             create_flash_message(form.errors["name"][0])
-        rw = reverse_lazy("repairmen_edit", args=(self.kwargs["pk"],))
+
         return redirect(rw)
 
 
@@ -891,7 +914,7 @@ def repairmen_delete_proc(request: WSGIRequest):
             OrdersWorkers.objects.filter(order=order_id, worker=pk).all().update(
                 end_date=timezone.now()
             )
-            is_need_to_be_suspended(order)
+            check_order_suspend(order)
 
         except Exception as e:
             alert_message = f"Ошибка при удалении работника из заявки"
