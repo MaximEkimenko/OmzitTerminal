@@ -175,7 +175,7 @@
 
                 fileread.readAsText(uploadedFile)
             }
-
+            baseUrl = 'http://192.168.8.163:8000/api/save_strat'
             async function saveGanttOnServer() {
                 //this is a simulation: save data to the local storage or to the textarea
                 //saveInLocalStorage();
@@ -191,7 +191,7 @@
                     body: JSON.stringify(prj, null, '\t'), // convert JavaScript object to JSON string
                 }
                 try {
-                    const response = await fetch('http://127.0.0.1:8000/api/save_strat', options) // make the fetch request
+                    const response = await fetch(`${baseUrl}`, options) // make the fetch request
                     console.log(response)
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`) // handle HTTP errors

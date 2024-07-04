@@ -605,7 +605,6 @@ def strat_plan(request) -> HttpResponse:
     """
     # получение данных
     get_strat_plan_context()
-
     return render(request, 'scheduler/strat_plan/gantt.html')
     # return render(request, 'api/gantt.html')
 
