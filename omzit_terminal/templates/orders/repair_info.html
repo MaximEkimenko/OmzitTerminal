@@ -25,6 +25,9 @@
         </form>
       {%endif %}      
   
+      <form action="{% url 'upload_pdf' object.id %}">
+        <input type="submit"  class="input_like" value="Загрузить файл" />
+      </form>
 
 
       {% comment %}
@@ -35,12 +38,19 @@
     </div>
 
     <div class="equipment_card">
+      
       {% for i, j in order_params.items %}
-      <div class="card_row">
-        <div class="equipment_card__label">  {{i}}   </div>
-        <div class="equipment_card__value">  {{   j|default:""|safe  }}    </div>
-      </div>
+      {% if i == "Скан заявки на материалы" %}
+      <a href= "{% url 'show_pdf' object.id %}" target="_blank"> {{j.name}}</a>
+      
+      {%else%}
+        <div class="card_row">
+          <div class="equipment_card__label">  {{i}}   </div>
+          <div class="equipment_card__value">  {{   j|default:""|safe  }}    </div>
+        </div>
+      {%endif%}
       {%endfor%}
+    
 
     </div>
   </div>

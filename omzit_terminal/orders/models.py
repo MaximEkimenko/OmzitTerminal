@@ -165,6 +165,11 @@ class OrdersWorkers(models.Model):
         return f"worker: {self.worker.fio}   order:{self.order.id} start_date:{self.start_date}  end_date:{self.end_date} "
 
 
+def order_directory_path(instance, filename):
+    """Формирует путь для сохранения файлов, прикрепленных к заявкам"""
+    return f"order_{instance.pk}/{filename}"
+
+
 class Orders(models.Model):
     equipment = models.ForeignKey(
         Equipment, on_delete=models.PROTECT, verbose_name="Оборудование", related_name="repairs"
@@ -235,6 +240,10 @@ class Orders(models.Model):
     material_dispatcher = models.CharField(
         max_length=100, null=True, verbose_name="Работник, подтверждающий наличие материалов"
     )
+    material_request_file = models.FileField(
+        verbose_name="Скан заявки на материалы", upload_to=order_directory_path
+    )
+
     confirm_materials_date = models.DateTimeField(
         null=True, verbose_name="Дата подтверждения материалов"
     )

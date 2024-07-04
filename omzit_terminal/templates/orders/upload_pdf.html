@@ -1,0 +1,29 @@
+{% extends "orders/testrep_base.html" %} {% load static %} {% block title %}
+ЗАгрузка файла {%endblock %} {% block content %} {{block.super}}
+<div class="col">
+  <div id="add-order-form">
+    <h2>Добавить скан заявки на материалы:</h2>
+    <form action="" class="form_form" method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="add_to_plan">
+        {{form.as_p}}
+    
+        <div class="form_row">
+          <button
+            class="form_button"
+            onclick="window.location.href = `{% url 'orders' %}`;"
+            type="button"
+          >
+            <p class="green_word">Назад</p>
+          </button>
+
+          <button type="submit" class="form_button">
+            <p class="green_word">Загрузить</p>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock content %} {% block js %} {{block.super }} {% endblock js%}

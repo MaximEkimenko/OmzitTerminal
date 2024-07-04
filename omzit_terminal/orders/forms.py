@@ -1,11 +1,13 @@
+from datetime import date, datetime
+from pathlib import Path
+
 from django import forms
+from django.core.exceptions import ValidationError
 from django.forms import ModelForm, SelectDateWidget
 from django.utils.timezone import make_aware
 from django.contrib.admin import widgets
 
 from orders.models import Equipment, Orders, Materials, Shops, Repairmen
-
-from datetime import date, datetime
 
 
 class AddEquipmentForm(ModelForm):
@@ -201,3 +203,16 @@ class AssignRepairman(forms.Form):
         empty_label="ФИО не выбрано",
         widget=forms.Select(attrs={"class": "fio_select"}),
     )
+
+
+class UploadPDFFile(forms.ModelForm):
+    class Meta:
+        model = Orders
+        fields = ("material_request_file",)
+
+    def clean_material_request_file(self):
+        filename = self.cleaned_data["material_request_file"]
+        p = Path(filename.name).suffix
+        if p.lower() != ".pdf":
+            raise ValidationError("Допускается загружать только pdf-файлы.")
+        return filename

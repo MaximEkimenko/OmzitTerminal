@@ -24,6 +24,8 @@ from .views import (
     RepairmenEdit,
     repairmen_delete_proc,
     clear_workers_proc,
+    order_upload_pdf,
+    show_pdf,
 )
 
 urlpatterns = [
@@ -55,4 +57,6 @@ urlpatterns = [
     path("repairmen_edit/<int:pk>", RepairmenEdit.as_view(), name="repairmen_edit"),
     path("repairmen_delete/", repairmen_delete_proc, name="repairmen_delete"),
     path("clear_workers/<int:pk>", clear_workers_proc, name="clear_workers"),
+    path("upload_pdf/<int:pk>", order_upload_pdf, name="upload_pdf"),
+    path("show_pdf/<int:pk>", show_pdf, name="show_pdf"),
 ]

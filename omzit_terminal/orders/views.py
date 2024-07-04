@@ -36,6 +36,7 @@ from orders.forms import (
     RepairCancelForm,
     AddShop,
     AssignRepairman,
+    UploadPDFFile,
 )
 from orders.utils.common import (
     OrdStatus,
@@ -497,7 +498,6 @@ def order_card(request, pk):
     vd = orders_record_to_dict(order, list(verbose_header))
     vhd = {verbose_header[i]: vd[i] for i in verbose_header}
     can_edit = can_edit_workers(order.status_id, get_employee_position(request.user.username))
-    print("Можно редактировань пользователей:", can_edit)
     context = {
         "object": order,
         "order_params": vhd,
@@ -943,3 +943,37 @@ def clear_workers_proc(request: WSGIRequest, pk):
     order = Orders.objects.get(pk=pk)
     clear_dayworkers(order)
     return redirect("orders")
+
+
+@login_required(login_url="/scheduler/login/")
+def order_upload_pdf(request: WSGIRequest, pk):
+    # order: Orders = Orders.objects.filter(pk=pk)
+    order: Orders = Orders.objects.get(pk=pk)
+    if request.method == "POST":
+        form = UploadPDFFile(request.POST, request.FILES)
+        if form.is_valid():
+            file = request.FILES.get("material_request_file")
+            # order.update(material_request_file=request.FILES.get("material_request_file"))
+            order.material_request_file.save(file.name, file)
+            print(type(order.material_request_file))
+            print(dir(order.material_request_file))
+            print(order.material_request_file.name)
+            print(order.material_request_file.url)
+            print(type(order.material_request_file.file))
+            print(order.material_request_file.file.name)
+            rw = reverse_lazy("order_info", args=(pk,))
+            return redirect(rw)
+        else:
+            context = {"form": form}
+            return render(request, "orders/upload_pdf.html", context=context)
+    else:
+        context = {"form": UploadPDFFile(order)}
+        return render(request, "orders/upload_pdf.html", context=context)
+
+
+def show_pdf(request: WSGIRequest, pk):
+    order: Orders = Orders.objects.get(pk=pk)
+    f = order.material_request_file.open()
+    print(type(f), f)
+
+    return FileResponse(f)
