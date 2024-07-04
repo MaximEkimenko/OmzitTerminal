@@ -1,18 +1,17 @@
-import openpyxl
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
 
-from django.forms import model_to_dict
+
 from django.utils.timezone import make_naive
 from openpyxl import Workbook
 
 from m_logger_settings import logger
 from omzit_terminal.settings import BASE_DIR
 from orders.models import Orders
-from openpyxl.styles import Font
 
-from orders.utils.utils import orders_to_dict
+
+from orders.utils.utils import orders_to_dict, get_order_verbose_names, ORDER_REPORT_COLUMNS
 
 
 # def create_order_report(queryset):
@@ -27,36 +26,17 @@ from orders.utils.utils import orders_to_dict
 
 
 def create_order_report():
-
-    # font = Font(name="Arial", size=12)
     wb = Workbook()
     ws = wb.active
     ws.title = "Заявки на ремонт"
 
-    verbose_names = dict()
-    for field in Orders._meta.get_fields():
-        if hasattr(field, "verbose_name"):
-            verbose_names[field.name] = field.verbose_name
-        else:
-            verbose_names[field.name] = field.name
-    qs = Orders.objects.values(*verbose_names)
-    specific_fields = [
-        "id",
-        "equipment",
-        "status",
-        "priority",
-        "breakdown_date",
-        "breakdown_description",
-    ]
+    qs = Orders.fresh_orders()
+    qs = orders_to_dict(qs, ORDER_REPORT_COLUMNS)
+    verbose_header = get_order_verbose_names()
+    verbose_header.update({"dayworkers_fio": "Исполнители", "id": "№"})
 
-    qs = list(Orders.objects.all().values(*specific_fields))
-    # print(qs)
-    # qs = model_to_dict(qs, specific_fields)
-    qs = list(Orders.objects.all())
-    qs = orders_to_dict(qs)
-
-    for i, key in enumerate(verbose_names):
-        ws.cell(row=1, column=i + 1).value = verbose_names[key]
+    for i, column in enumerate(ORDER_REPORT_COLUMNS):
+        ws.cell(row=1, column=i + 1).value = verbose_header[column]
 
     for i, row in enumerate(qs):
         for j, key in enumerate(row):

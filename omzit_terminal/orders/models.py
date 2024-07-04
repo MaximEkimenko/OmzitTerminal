@@ -1,3 +1,6 @@
+from datetime import date
+
+from django.contrib.postgres.aggregates import StringAgg
 from django.db import models
 from django.db.models import OuterRef, Subquery, QuerySet
 from django.urls import reverse_lazy
@@ -285,3 +288,21 @@ class Orders(models.Model):
         Возвращает количество работников, приписанных к заявке в данный момент
         """
         return self.assignments.filter(end_date__isnull=True).count()
+
+    @classmethod
+    def fresh_orders(cls):
+        assigned_workers_subquery = (
+            Repairmen.assignable_workers.filter(
+                orders=OuterRef("pk"), assignments__end_date__isnull=True
+            )
+            .values("orders")
+            .annotate(assigned_workers_string=StringAgg("fio", delimiter=", ", ordering="fio"))
+            .values("assigned_workers_string")
+        )
+        fresh = (
+            cls.objects.exclude(acceptance_date__lt=date.today())
+            .all()
+            .annotate(dayworkers_fio=Subquery(assigned_workers_subquery))
+            .prefetch_related("equipment", "status", "materials")
+        )
+        return fresh

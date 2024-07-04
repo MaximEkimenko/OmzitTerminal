@@ -99,7 +99,7 @@ def orders_record_to_dict(record: Orders, fields: list[str]) -> dict[str, Any]:
     return res
 
 
-def orders_to_dict(model: QuerySet) -> list[dict[str, Any]]:
+def orders_to_dict(model: QuerySet, fields) -> list[dict[str, Any]]:
     """
     Преобразует QuerySet в список словарей. Каждый словарь, это строка таблицы,
     а ключ словаря указывает на конкретную ячейку в строке.
@@ -114,7 +114,7 @@ def orders_to_dict(model: QuerySet) -> list[dict[str, Any]]:
             fields.append(i.name)
         return fields
 
-    fields = get_table_fields()  # получаем имена полей таблицы
+    # fields = get_table_fields()  # получаем имена полей таблицы
     table_dict = []
     for rec in model:
         rec_dict = orders_record_to_dict(rec, fields)
@@ -397,7 +397,38 @@ ORDER_CARD_COLUMNS = (
     "revision_cause",
     "revised_employee",
     "cancel_cause",
+    "materials_request_date",
+    "material_dispatcher",
+    "confirm_materials_date",
+    "supply_request",
+    "supply_request_date",
+)
+ORDER_REPORT_COLUMNS = (
+    "id",
+    "equipment",
+    "status",
+    "priority",
+    "dayworkers_fio",
+    "materials",
     "materials_request",
+    "breakdown_date",
+    "breakdown_description",
+    "worker",
+    "expected_repair_date",
+    "breakdown_cause",
+    "solution",
+    "identified_employee",
+    "inspection_date",
+    "inspected_employee",
+    "clarify_date",
+    "repair_date",
+    "repaired_employee",
+    "acceptance_date",
+    "accepted_employee",
+    "revision_date",
+    "revision_cause",
+    "revised_employee",
+    "cancel_cause",
     "materials_request_date",
     "material_dispatcher",
     "confirm_materials_date",

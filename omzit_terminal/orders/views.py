@@ -494,12 +494,6 @@ def order_card(request, pk):
         .first()
     )
 
-    # print(order.material_request_file)
-    # print(f"{order.material_request_file.name=}")
-    # print("field", dir(order.material_request_file))
-    # print("field_file", dir(order.material_request_file.file))
-    # print(order.material_request_file.file)
-
     # получаем подписи к полям таблицы
     verbose_header = get_order_verbose_names()
 
@@ -507,7 +501,6 @@ def order_card(request, pk):
     verbose_header.update({"dayworkers_fio": "Исполнители"})
     # из записи в базе данных получаем словарь с нужными нам колонками
     vd = orders_record_to_dict(order, ORDER_CARD_COLUMNS)
-    # vd["material_request_file"] = vd["material_request_file"].file.name
 
     vhd = {verbose_header[i]: vd[i] for i in ORDER_CARD_COLUMNS}
     can_edit = can_edit_workers(order.status_id, get_employee_position(request.user.username))
@@ -517,7 +510,9 @@ def order_card(request, pk):
         "status": OrdStatus,
         "can_edit_workers": can_edit,
         "permitted_users": PERMITED_USERS,
-        "pdf_field": verbose_header["material_request_file"],
+        "pdf_field": verbose_header[
+            "material_request_file"
+        ],  # имя поля, которое надо обрабатывать особенно
     }
     return render(request, "orders/repair_info.html", context)
 
@@ -739,7 +734,6 @@ def order_report(request):
         exel_file = create_order_report()
         logger.info(f"Пользователь {request.user} успешно загрузил отчёт в excel.")
         return FileResponse(open(exel_file, "rb"))
-        return redirect("orders")
     except Exception as e:
         logger.info("Ошибка при создании xls-отчета")
         logger.exception(e)
