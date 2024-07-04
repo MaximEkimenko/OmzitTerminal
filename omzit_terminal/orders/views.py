@@ -58,6 +58,7 @@ from orders.utils.utils import (
     orders_get_context,
     clear_dayworkers,
     check_order_resume,
+    ORDER_CARD_COLUMNS,
 )
 from orders.utils.telegram import order_telegram_notification
 
@@ -492,11 +493,23 @@ def order_card(request, pk):
         .prefetch_related("equipment", "status", "materials")
         .first()
     )
-    verbose_header = get_order_verbose_names()
-    verbose_header.update({"dayworkers_fio": "Исполнители"})
 
-    vd = orders_record_to_dict(order, list(verbose_header))
-    vhd = {verbose_header[i]: vd[i] for i in verbose_header}
+    # print(order.material_request_file)
+    # print(f"{order.material_request_file.name=}")
+    # print("field", dir(order.material_request_file))
+    # print("field_file", dir(order.material_request_file.file))
+    # print(order.material_request_file.file)
+
+    # получаем подписи к полям таблицы
+    verbose_header = get_order_verbose_names()
+
+    # получаем подписи к полям таблицы
+    verbose_header.update({"dayworkers_fio": "Исполнители"})
+    # из записи в базе данных получаем словарь с нужными нам колонками
+    vd = orders_record_to_dict(order, ORDER_CARD_COLUMNS)
+    # vd["material_request_file"] = vd["material_request_file"].file.name
+
+    vhd = {verbose_header[i]: vd[i] for i in ORDER_CARD_COLUMNS}
     can_edit = can_edit_workers(order.status_id, get_employee_position(request.user.username))
     context = {
         "object": order,
@@ -504,6 +517,7 @@ def order_card(request, pk):
         "status": OrdStatus,
         "can_edit_workers": can_edit,
         "permitted_users": PERMITED_USERS,
+        "pdf_field": verbose_header["material_request_file"],
     }
     return render(request, "orders/repair_info.html", context)
 
@@ -947,27 +961,22 @@ def clear_workers_proc(request: WSGIRequest, pk):
 
 @login_required(login_url="/scheduler/login/")
 def order_upload_pdf(request: WSGIRequest, pk):
-    # order: Orders = Orders.objects.filter(pk=pk)
+    """
+    Представление для прикрепления pdf-файлов к заявке на ремонт
+    """
     order: Orders = Orders.objects.get(pk=pk)
     if request.method == "POST":
         form = UploadPDFFile(request.POST, request.FILES)
         if form.is_valid():
             file = request.FILES.get("material_request_file")
-            # order.update(material_request_file=request.FILES.get("material_request_file"))
             order.material_request_file.save(file.name, file)
-            print(type(order.material_request_file))
-            print(dir(order.material_request_file))
-            print(order.material_request_file.name)
-            print(order.material_request_file.url)
-            print(type(order.material_request_file.file))
-            print(order.material_request_file.file.name)
             rw = reverse_lazy("order_info", args=(pk,))
             return redirect(rw)
         else:
             context = {"form": form}
             return render(request, "orders/upload_pdf.html", context=context)
     else:
-        context = {"form": UploadPDFFile(order)}
+        context = {"form": UploadPDFFile(), "pk": pk}
         return render(request, "orders/upload_pdf.html", context=context)
 
 

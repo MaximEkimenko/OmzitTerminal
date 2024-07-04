@@ -36,7 +36,8 @@ def get_order_verbose_names() -> dict[str, str]:
     for field in Orders._meta.get_fields():
         # не обрабатываем поле многие-ко-многим, потому что в форме его автоматом вывести нельзя
         # print(field.name, type(field))
-        if not type(field) in [models.ManyToManyField, models.ManyToManyRel, models.ManyToOneRel]:
+        # if not type(field) in [models.ManyToManyField, models.ManyToManyRel, models.ManyToOneRel]:
+        if True:
             if hasattr(field, "verbose_name"):
                 verbose_names[field.name] = field.verbose_name
             else:
@@ -368,3 +369,38 @@ def clear_dayworkers(order: Orders):
     if active_workers:
         active_workers.update(end_date=timezone.now())
         check_order_suspend(order)
+
+
+ORDER_CARD_COLUMNS = (
+    "equipment",
+    "status",
+    "priority",
+    "dayworkers_fio",
+    "materials",
+    "materials_request",
+    "material_request_file",
+    "breakdown_date",
+    "breakdown_description",
+    "worker",
+    "expected_repair_date",
+    "breakdown_cause",
+    "solution",
+    "identified_employee",
+    "inspection_date",
+    "inspected_employee",
+    "clarify_date",
+    "repair_date",
+    "repaired_employee",
+    "acceptance_date",
+    "accepted_employee",
+    "revision_date",
+    "revision_cause",
+    "revised_employee",
+    "cancel_cause",
+    "materials_request",
+    "materials_request_date",
+    "material_dispatcher",
+    "confirm_materials_date",
+    "supply_request",
+    "supply_request_date",
+)

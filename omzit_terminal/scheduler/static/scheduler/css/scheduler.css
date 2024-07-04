@@ -902,6 +902,7 @@ li.dropdown {
 .equipment_card__spacer {
   flex-grow: 1;
 }
+
 .equipment_card input{
   width:400px;
   font-size: 16px;
@@ -965,6 +966,25 @@ section{
   width: 130px;
   margin: 2px 0;
 }
+
+.fit_content_button
+{
+ width: fit-content !important;
+}
+.flex_container {
+  display:flex;
+  flex: 1 0 0;
+  flex-direction: row;
+  justify-content: center;
+}
+
+.one_char_spacer {
+  width: 1rem;
+}
+.right_edje_element{
+  justify-self: end;
+}
+
 [disabled] {
   background-color: #BBB;
   color:#666;
