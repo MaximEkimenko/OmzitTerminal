@@ -14,17 +14,6 @@ from orders.models import Orders
 from orders.utils.utils import orders_to_dict, get_order_verbose_names, ORDER_REPORT_COLUMNS
 
 
-# def create_order_report(queryset):
-#     x = datetime.now()
-#     filename = f"report_{x.hour}_{x.minute}_{x.second}.xlsx"
-#     mypath = Path(r"D:\temp")
-#     fullpath = mypath.joinpath(filename)
-#     df = pd.DataFrame.from_records(queryset)
-#     print(df)
-#     print(fullpath)
-#     df.to_csv(filename, index=False, sep="\t", quoting=1)
-
-
 def create_order_report():
     wb = Workbook()
     ws = wb.active

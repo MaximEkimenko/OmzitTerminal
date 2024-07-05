@@ -180,7 +180,6 @@ def orders_get_context(request) -> dict[str, Any]:
         "equipment__unique_name",
         "status",
         "status__name",
-        "previous_status__name",
         "priority",
         "breakdown_date",
         "breakdown_description",
@@ -191,24 +190,11 @@ def orders_get_context(request) -> dict[str, Any]:
         "revision_cause",
     ]
 
-    assigned_workers_subquery = (
-        Repairmen.assignable_workers.filter(
-            orders=OuterRef("pk"), assignments__end_date__isnull=True
-        )
-        .values("orders")
-        .annotate(assigned_workers_string=StringAgg("fio", delimiter=", ", ordering="fio"))
-        .values("assigned_workers_string")
-    )
-
-    order_table_data = (
-        Orders.objects.exclude(acceptance_date__lt=date.today())
-        .all()
-        .annotate(dayworkers_fio=Subquery(assigned_workers_subquery))
-        .prefetch_related("equipment", "status", "materials")
-        .values(*cols_extended)
-    )
+    order_table_data = Orders.fresh_orders().values(*cols_extended)
     orders_filter = get_filterset(data=request.GET, queryset=order_table_data, fields=cols)
 
+    # Это словарь оборудования с указанием, к какому цеху оно принадлежит.
+    # Нужно для реализации фильтров при создании заявки на ремонт.
     equipment_json = json.dumps(
         list(Equipment.objects.all().values("id", "unique_name", "shop_id"))
     )

@@ -48,8 +48,6 @@
                   <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 3)" placeholder="">
               </div>
             </th>
-            <th class="td_cell"> Предыдущий статус </th>
-
             <th class="td_cell">{{order_filter.form.priority}} Приоритет
               <br>
               <div class="sort-filter">
@@ -92,7 +90,6 @@
             </a>
           </td>
           <td class="td_cell status_name" data-status={{rec.status}}>{{rec.status__name}}</td>
-          <td class="td_cell status_name">{{rec.previous_status__name}}</td>
           <td class="td_cell">{{rec.priority}}</td>
           <td class="td_cell">{{rec.breakdown_date}}</td>
           <td class="td_cell">{{rec.breakdown_description|default:""|truncatewords:13}}</td>
