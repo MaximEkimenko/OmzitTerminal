@@ -54,10 +54,10 @@ TERMINAL_GROUP_ID = os.getenv('TERMINAL_GROUP_ID')
 @login_required(login_url="login")
 def scheduler(request):
     """
-        Планирование графика цеха и создание запросов на КД
-        :param request:
-        :return:
-        """
+    Планирование графика цеха и создание запросов на КД
+    :param request:
+    :return:
+    """
     if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:4]).strip() != "disp":
         logger.warning(f"Попытка доступа к рабочему месту диспетчера пользователем {request.user.username}")
         raise PermissionDenied
@@ -604,8 +604,8 @@ def strat_plan(request) -> HttpResponse:
     :return:
     """
     # получение данных
-    get_strat_plan_context()
-    return render(request, 'scheduler/strat_plan/gantt.html')
+    context = get_strat_plan_context()
+    return render(request, 'scheduler/strat_plan/gantt.html', context={'json': json.dumps(context)})
     # return render(request, 'api/gantt.html')
 
 

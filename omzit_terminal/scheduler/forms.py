@@ -37,8 +37,10 @@ class QueryDraw(forms.Form):
     Форма запроса чертежа
     """
     # model_query = forms.CharField(max_length=50, label='Модель запроса КД', required=False)
+
     model_query = forms.CharField(max_length=50, label='Модель запроса КД',
                                   widget=forms.TextInput(attrs={'pattern': model_pattern, 'title': model_error_text}))
+    # TODO добавить валидацию уникальных значений поля order_query
     order_query = forms.CharField(max_length=50, label='Заказ запроса КД',
                                   widget=forms.TextInput(attrs={'pattern': order_pattern, 'title': order_error_text}))
     query_prior = forms.ChoiceField(choices=((1, 1), (2, 2), (3, 3), (4, 4)), label='Приоритет', initial=1,

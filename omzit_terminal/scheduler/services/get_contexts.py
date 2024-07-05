@@ -24,7 +24,7 @@ def get_strat_plan_context():
     # with open(json_file_to_save_tst, 'r') as file:
     #     model_data = json.load(file)
     # existing_models = clean_model_names(model_data)
-    # первоначальное заполнение данных серий и моделей
+    # # первоначальное заполнение данных серий и моделей
     # models_data_db_set(existing_models)
 
     # TODO!
@@ -100,12 +100,6 @@ def get_strat_plan_context():
                                                       datetime.datetime.min.time())
             model_prod_cycle = int(model_parameters[0]['produce_cycle'].quantize(Decimal('1'),
                                                                                  ROUND_CEILING))
-            # model_prod_cycle = datetime.timedelta(days=
-            #                                       float(model_parameters[0]['produce_cycle'].quantize(Decimal('1'),
-            #                                                                                           ROUND_CEILING))
-            #                                       )
-
-            # print (   datetime.date.fromtimestamp(int(plan_datetime.timestamp())))
 
             context["tasks"].append({'id': model['id'],
                                      'name': model_parameters[0]['model_name'],
@@ -119,18 +113,10 @@ def get_strat_plan_context():
                                      'level': 0,
                                      'status': 'STATUS_ACTIVE',
                                      'depends': '',
-
-                                     # 'start': int(plan_datetime.timestamp()) * 1000,
-                                     # 'end': int(plan_datetime.timestamp()) * 1000,
                                      'end': '',
                                      'start': int((plan_datetime -
                                                    datetime.timedelta(days=model_prod_cycle)).timestamp()) * 1000,
                                      'duration': model_prod_cycle,
-
-
-                                     # 'end': int((plan_datetime +
-                                     #             datetime.timedelta(days=model_prod_cycle)).timestamp()) * 1000,
-
                                      'startIsMilestone': False,
                                      'endIsMilestone': False,
                                      'collapsed': False,
@@ -150,11 +136,12 @@ def get_strat_plan_context():
 
             # context['tasks'].append()
         else:
-            print('we go zero here!')
+            # print('we go zero here!')
+            pass
     # pprint(context)
-    json_file = Path(r'C:\Users\user-18\Desktop\json_chk.json')
-    with open(json_file, 'w') as js_file:
-        json.dump(context, js_file, indent=2)
+    # json_file = Path(r'C:\Users\user-18\Desktop\json_chk.json')
+    # with open(json_file, 'w') as js_file:
+    #     json.dump(context, js_file, indent=2)
 
     # параметры запланированных моделей
 
@@ -239,6 +226,7 @@ def get_strat_plan_context():
                                   'status': 'STATUS_DONE',
                                   'type': '',
                                   'typeId': ''}]},
+    return context
 
 
 if __name__ == '__main__':
