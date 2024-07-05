@@ -88,11 +88,10 @@ class AssignWorkersForm(forms.Form):
 
 class RepairProgressForm(forms.Form):
     expected_repair_date = forms.DateField(
+        initial=date.today().strftime("%Y-%m-%d"),
         label="Ожидаемая дата окончания ремонта",
         required=False,
-        widget=forms.DateInput(
-            format="%Y-%m-%d", attrs={"type": "date", "value": date.today().strftime("%Y-%m-%d")}
-        ),
+        widget=forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
         input_formats=["%Y-%m-%d"],  # для календаря срабатывает только такой формат даты
     )
 
@@ -103,6 +102,14 @@ class RepairProgressForm(forms.Form):
     extra_materials = forms.CharField(
         max_length=255, required=False, label="Или указать материалы вручную"
     )
+
+    # Для того, чтобы в форме каждый раз отображалась актуальная дата, нужно применять дату
+    # при создании формы, а не при объявлении класса (то есть при запуске сервера)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        today = date.today().strftime("%Y-%m-%d")
+        self.fields["expected_repair_date"].widget.attrs["value"] = today
+        self.fields["expected_repair_date"].widget.attrs["min"] = today
 
 
 class ConfirmMaterialsForm(forms.ModelForm):

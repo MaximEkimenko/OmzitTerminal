@@ -373,6 +373,7 @@ ORDER_CARD_COLUMNS = (
     "status",
     "priority",
     "dayworkers_fio",
+    "workers_count",
     "materials",
     "materials_request",
     "material_request_file",

@@ -7,7 +7,7 @@ from django.contrib.postgres.aggregates import StringAgg
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect, FileResponse
 from django.db import transaction
-from django.db.models import Window, Count, ProtectedError, Subquery, OuterRef
+from django.db.models import Window, Count, ProtectedError, Subquery, OuterRef, F
 from django.db.models.functions import RowNumber
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, UpdateView, ListView, DeleteView
@@ -488,10 +488,19 @@ def order_card(request, pk):
         .values("assigned_workers_string")
     )
 
+    # подзапрос, считающий сколько всего людей было назначено на ремонт, включая повторные назначения
+    assignments_count = (
+        OrdersWorkers.objects.filter(order=OuterRef("pk"))
+        .values("order")
+        # тут можно посчитать все эпизоды назначения либо уникальных сотрудников, которых назначили
+        .annotate(assignments=Count("worker", distinct=False))
+        .values("assignments")
+    )
+
     order = (
         Orders.objects.filter(pk=pk)
         .annotate(dayworkers_fio=Subquery(assigned_workers_subquery))
-        .prefetch_related("equipment", "status", "materials")
+        .annotate(workers_count=Subquery(assignments_count))
         .first()
     )
 
@@ -499,7 +508,9 @@ def order_card(request, pk):
     verbose_header = get_order_verbose_names()
 
     # получаем подписи к полям таблицы
-    verbose_header.update({"dayworkers_fio": "Исполнители"})
+    verbose_header.update(
+        {"dayworkers_fio": "Исполнители", "workers_count": "Назначений на ремонт"}
+    )
     # из записи в базе данных получаем словарь с нужными нам колонками
     vd = orders_record_to_dict(order, ORDER_CARD_COLUMNS)
 
@@ -513,7 +524,10 @@ def order_card(request, pk):
         "permitted_users": PERMITED_USERS,
         "pdf_field": verbose_header[
             "material_request_file"
-        ],  # имя поля, которое надо обрабатывать особенно
+        ],  # имя поля, которое надо обрабатывать особенным образом (строка с пикрепленным сканом заявки)
+        "assignments_field": verbose_header[
+            "workers_count"
+        ],  # количество назначений на ремонт и кнопка для просмотра истории назначений
         "alerts": pop_flash_messages(),
     }
     return render(request, "orders/repair_info.html", context)
@@ -946,6 +960,18 @@ def repairmen_delete_proc(request: WSGIRequest):
 
     rw = reverse_lazy("repairmen_edit", args=(order_id,))
     return redirect(rw)
+
+
+def repairmen_history(request, pk):
+    dayworkers = (
+        OrdersWorkers.objects.filter(order=pk)
+        .order_by("start_date")
+        .annotate(fio=F("worker__fio"))
+        .all()
+    )
+    print(dayworkers)
+    context = {"pk": pk, "object": dayworkers}
+    return render(request, "orders/repairmen_history.html", context=context)
 
 
 @login_required(login_url="/scheduler/login/")

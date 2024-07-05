@@ -1,0 +1,40 @@
+{% extends "orders/testrep_base.html" %} {% load static %} {% block title %}
+Работники, принимавшие участие в ремонте.{%endblock %} {% block content %} {{block.super}}
+<div class="col">
+    <h1>Работники, принимавшие участие в ремонте  по заявке № "{{pk}}"</h1>
+    <div class="form_row">
+        <form action="{% url 'order_info' pk %}" method="GET">
+            <input type="submit" class="input_like" value="Карточка заявки" />
+        </form>
+        <form action="{% url 'orders'%}" method="GET">
+            <input type="submit" class="input_like" value="Таблица заявок" />
+        </form>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr class="table_header_row">
+              <th class="td_cell">№ </th>
+              <th class="td_cell">ФИО</th>
+              <th class="td_cell">Дата начала</th>
+              <th class="td_cell">Дата окончания</th>
+            </tr>
+      
+        </thead>
+        <tbody>
+            {% for worker in object%}
+            <tr class="table_row">
+            <td class="td_cell">{{forloop.counter}}</td>
+            <td class="td_cell">{{worker.fio}}</td>
+            <td class="td_cell">{{worker.start_date}}</td>
+            <td class="td_cell">{{worker.end_date|default:"-"}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+        
+    
+    
+</div>
+
+{% endblock content %} {% block js %} {{block.super }} {% endblock js%}

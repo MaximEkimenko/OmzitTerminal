@@ -10,7 +10,7 @@
     <div class="form_row">
       
       <form action="{% url 'orders'%}">
-        <input type="submit"  class="input_like" value="Назад" />
+        <input type="submit"  class="input_like" value="Таблица заявок" />
       </form>
       
       {% if object.status_id != status.ACCEPTED %}
@@ -24,12 +24,6 @@
           <input type="submit" class="input_like"  value="Редактировать исполнителей" />
         </form>
       {%endif %}      
-
-      {% comment %}
-      <form action="" mathod="GET">
-        <input type="submit" class="input_like"  value="История исполнителей" />
-      </form>
-      {% endcomment %}
     </div>
 
     <div class="equipment_card">
@@ -46,7 +40,19 @@
               </form>
             </div>
           </div>
-        {%else%}
+        {% elif i == assignments_field %}
+          <div class="card_row">
+            <div class="equipment_card__label">  {{i}} </div>
+            <div class="flex_container">  
+              {{j}}
+              <div class="one_char_spacer"></div><div class="one_char_spacer"></div>
+              <form action="{% url 'repairmen_history' object.id %}" class="right_edje_element">
+                <input type="submit"  class="fit_content_button" value="история назначений" />
+              </form>
+            </div>
+          </div>
+
+        {%else%}        
           <div class="card_row">
             <div class="equipment_card__label">  {{i}}   </div>
             <div class="equipment_card__value">  {{   j|default:""|safe  }}    </div>
