@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from pathlib import Path
 from typing import Any
 import json
 from django import forms
@@ -33,6 +34,8 @@ def get_order_verbose_names() -> dict[str, str]:
 
     """
     verbose_names = dict()
+    # можно использовать такой подход
+    # Orders._meta.get_field(field):
     for field in Orders._meta.get_fields():
         # не обрабатываем поле многие-ко-многим, потому что в форме его автоматом вывести нельзя
         # print(field.name, type(field))
@@ -369,6 +372,14 @@ def clear_dayworkers(order: Orders):
     if active_workers:
         active_workers.update(end_date=timezone.now())
         check_order_suspend(order)
+
+
+def remove_old_file_if_exist(file):
+    if file:
+        f = Path(file.path).resolve()
+        if f.exists():
+            f.unlink()
+            logger.info(f"Файл  {file.name}, прикрепленный к заявке, удален.")
 
 
 ORDER_CARD_COLUMNS = (

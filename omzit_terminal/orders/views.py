@@ -1,5 +1,5 @@
 from datetime import datetime
-import asyncio
+from pathlib import Path
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -59,6 +59,7 @@ from orders.utils.utils import (
     clear_dayworkers,
     check_order_resume,
     ORDER_CARD_COLUMNS,
+    remove_old_file_if_exist,
 )
 from orders.utils.telegram import order_telegram_notification
 
@@ -513,6 +514,7 @@ def order_card(request, pk):
         "pdf_field": verbose_header[
             "material_request_file"
         ],  # имя поля, которое надо обрабатывать особенно
+        "alerts": pop_flash_messages(),
     }
     return render(request, "orders/repair_info.html", context)
 
@@ -963,10 +965,11 @@ def order_upload_pdf(request: WSGIRequest, pk):
         form = UploadPDFFile(request.POST, request.FILES)
         if form.is_valid():
             file = request.FILES.get("material_request_file")
+            remove_old_file_if_exist(order.material_request_file)
             order.material_request_file.save(file.name, file)
-            rw = reverse_lazy("order_info", args=(pk,))
-            return redirect(rw)
+            return redirect(reverse_lazy("order_info", args=(pk,)))
         else:
+            # для вывода ошибок формы
             context = {"form": form}
             return render(request, "orders/upload_pdf.html", context=context)
     else:
@@ -976,7 +979,12 @@ def order_upload_pdf(request: WSGIRequest, pk):
 
 def show_pdf(request: WSGIRequest, pk):
     order: Orders = Orders.objects.get(pk=pk)
-    f = order.material_request_file.open()
-    print(type(f), f)
-
-    return FileResponse(f)
+    f = Path(order.material_request_file.path)
+    if f.exists():
+        pdf_file = order.material_request_file.open()
+        return FileResponse(pdf_file)
+    else:
+        order.material_request_file = None
+        order.save()
+        create_flash_message("Файл не обнаружен")
+        return redirect(reverse_lazy("order_info", args=(pk,)))
