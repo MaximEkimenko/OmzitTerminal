@@ -83,7 +83,7 @@ WSGI_APPLICATION = "omzit_terminal.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "terminal_dayworker",
+        "NAME": "terminal_transit2",
         "PASSWORD": "tolko123",
         "USER": "admin",
         # 'NAME': 'terminal_test',

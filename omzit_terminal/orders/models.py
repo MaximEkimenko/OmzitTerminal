@@ -244,7 +244,7 @@ class Orders(models.Model):
         max_length=100, null=True, verbose_name="Работник, подтверждающий наличие материалов"
     )
     material_request_file = models.FileField(
-        verbose_name="Pdf заявка на материалы", upload_to=order_directory_path
+        verbose_name="Pdf заявка на материалы", null=True, upload_to=order_directory_path
     )
 
     confirm_materials_date = models.DateTimeField(
