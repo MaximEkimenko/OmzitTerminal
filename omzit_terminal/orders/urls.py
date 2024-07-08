@@ -28,6 +28,7 @@ from .views import (
     show_pdf,
     OrdersArchive,
     RepairmenHistory,
+    filter_data,
 )
 
 urlpatterns = [
@@ -62,4 +63,5 @@ urlpatterns = [
     path("upload_pdf/<int:pk>", order_upload_pdf, name="upload_pdf"),
     path("show_pdf/<int:pk>", show_pdf, name="show_pdf"),
     path("orders_archive/", OrdersArchive.as_view(), name="orders_archive"),
+    path("filter_data/", filter_data, name="filter_data"),
 ]

@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.postgres.aggregates import StringAgg
 from django.shortcuts import render, redirect
-from django.http import HttpResponse, HttpResponseRedirect, FileResponse
+from django.http import HttpResponse, HttpResponseRedirect, FileResponse, JsonResponse
 from django.db import transaction
 from django.db.models import Window, Count, ProtectedError, Subquery, OuterRef, F
 from django.db.models.functions import RowNumber
@@ -1020,7 +1020,7 @@ def order_upload_pdf(request: WSGIRequest, pk):
         return render(request, "orders/upload_pdf.html", context=context)
 
 
-def show_pdf(request: WSGIRequest, pk):
+def show_pdf(request, pk):
     order: Orders = Orders.objects.get(pk=pk)
     f = Path(order.material_request_file.path)
     if f.exists():
@@ -1031,3 +1031,8 @@ def show_pdf(request: WSGIRequest, pk):
         order.save()
         create_flash_message("Файл не обнаружен")
         return redirect(reverse_lazy("order_info", args=(pk,)))
+
+
+def filter_data(request):
+    equipment_json = list(Equipment.objects.all().values("id", "unique_name", "shop_id"))
+    return JsonResponse({"filter": equipment_json})

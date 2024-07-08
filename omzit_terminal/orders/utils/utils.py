@@ -195,15 +195,11 @@ def orders_get_context(request) -> dict[str, Any]:
 
     # Это словарь оборудования с указанием, к какому цеху оно принадлежит.
     # Нужно для реализации фильтров при создании заявки на ремонт.
-    equipment_json = json.dumps(
-        list(Equipment.objects.all().values("id", "unique_name", "shop_id"))
-    )
 
     context = {
         "create_order": [Position.Admin, Position.HoS],  # добавить заявку
         "role": get_employee_position(request.user.username),
         "order_filter": orders_filter,
-        "equipment_json": equipment_json,
         "add_order_form": AddOrderForm(),
         "alerts": pop_flash_messages(),
         "button_context": button_context,

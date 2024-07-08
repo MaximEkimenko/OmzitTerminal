@@ -1,3 +1,4 @@
+"use strict";
 const addOrderButton = document.querySelector("#add_order_button"); // Получаем кнопки с классом
 const equipmentForm = document.querySelector("#add-order-form");
 const $deleteForm = document.querySelector("#delete-order-form");
@@ -31,8 +32,8 @@ function onChange() {
 //нужно этой нопке по событию назначать id удаляемой заявке, чтобы потом через форму отправлять на сервер
 const $commitDeleteButton = document.querySelector("#commit-delete-buton");
 //ищем все кнопки удаления свежих заявок и подвешиваем на них событие появления модального окна для удалени
-$beleteButtons = $table.querySelectorAll("button[name='delete']");
-$beleteButtons.forEach((element) => {
+const $deleteButtons = $table.querySelectorAll("button[name='delete']");
+$deleteButtons.forEach((element) => {
   element.addEventListener("click", (e) => {
     e.preventDefault();
     $commitDeleteButton.value = element.value;
@@ -125,16 +126,13 @@ for (let i = 0; i < table_rows.length; i++) {
       break;
     case "приостановлено":
       table_rows[i].style.background = color_SUSPENDED;
-  
   }
-  
 }
+
 //===========================================
 // фильтрация оборудования при добавлении задания
 //===========================================
-// читаем скрытую строку содержащую всю информацию об оборудовании
-const equipmentDataString = document.querySelector("#equipment_data").innerText;
-const equipmentData = JSON.parse(equipmentDataString);
+let equipmentData = undefined;
 
 //добавлем названия оборудования в выпадающий список
 const $equipmentSelect = document.querySelector("#id_equipment");
@@ -151,18 +149,31 @@ $name_filter.addEventListener("input", () => {
   equipFilterSelect($shop_filter.value, $name_filter.value);
 });
 
+async function getEquipmentData() {
+  URL = `${window.location.origin}/orders/filter_data/`;
+  const raw_data = await fetch(URL);
+  const json_data = await raw_data.json();
+  return json_data["filter"];
+}
+
+function create_option(entry, shop_id, textFragment) {
+  if (
+    ((shop_id == 0) | (entry.shop_id == shop_id)) &
+    entry.unique_name.toLowerCase().includes(textFragment)
+  ) {
+    const $opt = new Option(entry.unique_name, entry.id);
+    return $opt;
+  }
+}
+
 // функция, которая фильтрует оборудование по местоположению или части текста
-function equipFilterSelect(shop_id = 0, textFragment = "") {
+async function equipFilterSelect(shop_id = 0, textFragment = "") {
+  if (!equipmentData) equipmentData = await getEquipmentData();
   $equipmentSelect.options.length = 0;
-  equipmentData.forEach((entry) => {
-    if (
-      ((shop_id == 0) | (entry.shop_id == shop_id)) &
-      entry.unique_name.toLowerCase().includes(textFragment)
-    ) {
-      const $opt = new Option(entry.unique_name, entry.id)
-      $equipmentSelect.options.add($opt);
-    }
-  });
+  for (let entry of equipmentData) {
+    const $opt = create_option(entry, shop_id, textFragment);
+    if ($opt) $equipmentSelect.options.add($opt);
+  }
 }
 
 // это попытка сделать свою фильрацию по колонкам
