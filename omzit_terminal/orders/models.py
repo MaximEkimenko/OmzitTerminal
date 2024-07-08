@@ -306,3 +306,13 @@ class Orders(models.Model):
             .prefetch_related("equipment", "status", "materials")
         )
         return fresh
+
+    @classmethod
+    def archived_orders(cls):
+        not_active_order_status = [OrdStatus.ACCEPTED, OrdStatus.CANCELLED, OrdStatus.UNPRPAIRABLE]
+        fresh = (
+            cls.objects.filter(status__in=not_active_order_status)
+            .all()
+            .prefetch_related("equipment", "status")
+        )
+        return fresh

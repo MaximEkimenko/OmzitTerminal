@@ -24,8 +24,7 @@
         </tr>
   
     </thead>
-    
-    {% for rec in orders%}
+    {% for rec in orders %}
 
 
       <tr class="table_row">
@@ -40,9 +39,7 @@
         <td class="td_cell">{{rec.acceptance_date|default:""}}</td>
         <td class="td_cell">
           {% if rec.status_id == status.ACCEPTED or rec.status_id == status.CANCELLED%}
-          {{rec.status}}<br>
-      
-
+            {{rec.status}}<br>    
           {%endif%}
         </td>
         <td class="td_cell">{{rec.breakdown_description|default:""}}</td>

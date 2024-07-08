@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     equipment,
     orders,
+    orders_archive,
     EquipmentCardView,
     EquipmentCardEditView,
     # OrderEditView,
@@ -45,7 +46,6 @@ urlpatterns = [
     path("revision_repair/<int:pk>", order_revision, name="revision_repair"),
     path("cancel_repair/<int:pk>", order_cancel_repair, name="cancel_repair"),
     path("order_info/<int:pk>", order_card, name="order_info"),
-    # path("orders/<int:pk>", OrderEditView.as_view(), name="orders_edit"),
     path("orders/", orders, name="orders"),
     path("orders_report/", order_report, name="orders_report"),
     path("order_delete_proc/", order_delete_proc, name="order_delete_proc"),
@@ -61,4 +61,5 @@ urlpatterns = [
     path("clear_workers/<int:pk>", clear_workers_proc, name="clear_workers"),
     path("upload_pdf/<int:pk>", order_upload_pdf, name="upload_pdf"),
     path("show_pdf/<int:pk>", show_pdf, name="show_pdf"),
+    path("orders_archive/", orders_archive, name="orders_archive"),
 ]

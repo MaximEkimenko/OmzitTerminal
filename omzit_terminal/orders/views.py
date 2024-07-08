@@ -159,6 +159,17 @@ def orders(request) -> HttpResponse:
     return render(request, "orders/orders.html", context=context)
 
 
+def orders_archive(request):
+    archived_orders = Orders.archived_orders()
+    for i in archived_orders:
+        print(i.status, i.solution)
+
+    context = {
+        "orders": archived_orders,
+    }
+    return render(request, "orders/orders_archive.html", context=context)
+
+
 @login_required(login_url="/scheduler/login/")
 def order_assign_workers(request, pk):
     """

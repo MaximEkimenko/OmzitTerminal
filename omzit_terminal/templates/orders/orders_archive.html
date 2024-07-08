@@ -1,0 +1,59 @@
+{% extends "orders/testrep_base.html" %} 
+{% load static %} 
+{% block title %}
+  Заявки на ремонт 
+{%endblock %} 
+{% block content %} 
+  {{block.super}}
+  <div class="col">
+    <h1>Архив заявок</h1>
+
+    <table class="table">
+        <thead>
+            <tr class="table_header_row">
+              <th class="td_cell">№ заявки</th>
+              <th class="td_cell">Оборудование</th>
+              <th class="td_cell">Дата поломки</th>
+              <th class="td_cell">Дата окончания ремонта</th>
+              <th class="td_cell">Результат</th>
+              <th class="td_cell">Описание поломки</th>
+              <th class="td_cell">Причина поломки</th>
+              <th class="td_cell">Способ устранения</th>
+            </tr>
+      
+        </thead>
+        {% for rec in orders%}
+          <tr class="table_row">
+            <td class="td_cell">
+              <a href="{% url 'order_info' rec.id %}" class="table_link">
+                {{rec.id}}
+              </a>
+            </td>            
+            <td class="td_cell">
+              <a href="{% url 'repair_history' rec.equipment_id %}" class="table_link">
+                {{rec.equipment}}
+              </a>
+            </td>
+            <td class="td_cell">{{rec.breakdown_date|default:""}}</td>
+            <td class="td_cell">{{rec.acceptance_date|default:""}}</td>            
+            <td class="td_cell">{{rec.status}}</td>
+            <td class="td_cell">{{rec.breakdown_description|default:""}}</td>
+            <td class="td_cell">{{rec.breakdown_cause|default:""}}</td>
+            <td class="td_cell">{{rec.solution|default:""}}</td>
+          </tr>
+      
+    
+        {% endfor %}
+      </table>
+
+
+
+
+      </div>
+    
+  </div>
+{% endblock content %} 
+
+{% block js %} 
+  {{block.super }}
+{% endblock js%}

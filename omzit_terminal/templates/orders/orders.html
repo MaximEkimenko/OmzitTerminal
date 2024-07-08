@@ -13,12 +13,17 @@
       <button id="add_order_button" class="btn">Добавить заявку</button>
     </p>
     {%endif%}
-
     <p>
       <form action="{% url 'orders_report'%}" method='get'>
         <button type="submit">Отчет</button>
       </form>
     </p>
+    <p>
+      <form action="{% url 'orders_archive' %}" method='get'>
+        <button type="submit">архив</button>
+      </form>
+    </p>
+
     <p>
       <input
         type="button"
