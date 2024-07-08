@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.views.i18n import JavaScriptCatalog
-from tst_in_terminal import tst
+# from tst_in_terminal import tst
 
 from .views import home
 
@@ -16,7 +16,7 @@ urlpatterns = [
     path("api/", include("api.urls")),
     path("api-auth/", include("rest_framework.urls")),
     path("orders/", include("orders.urls")),
-    path("tst/", tst, name="tst"),
+    # path("tst/", tst, name="tst"),
 ]
 
 # TODO написать обработчики ошибок 404, 500, перед деплоем и сделать debug False

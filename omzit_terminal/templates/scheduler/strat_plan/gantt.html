@@ -105,11 +105,14 @@
         <script type="text/javascript">
             var ge
 
+            // getNewJson()
+
             $(function () {
                 var canWrite = true //this is the default for test purposes
 
                 // here starts gantt initialization
                 ge = new GanttMaster()
+
                 ge.set100OnClose = true
 
                 ge.shrinkParent = true
@@ -120,7 +123,13 @@
                 //in order to force compute the best-fitting zoom level
                 delete ge.gantt.zoom
 
-                var project = loadFromLocalStorage()
+                // var project = loadFromLocalStorage()
+
+                // загрузка из контекста view django
+                var new_json = JSON.parse(`{{ json|safe }}`) // Array of Objects.
+
+                ge.loadProject(new_json)
+                ge.checkpoint() //empty the undo stack
 
                 // if (!project.canWrite)
                 //     $('.ganttButtonBar button.requireWrite').attr('disabled', 'true')
@@ -176,6 +185,20 @@
                 fileread.readAsText(uploadedFile)
             }
 
+            function getNewJson() {
+                var fileread = new FileReader()
+
+                fileread.onload = function (e) {
+                    var content = `{{ json|safe }}`
+                    var intern = JSON.parse(content) // Array of Objects.
+                    console.log(intern) // You can index every object
+
+                    ge.loadProject(intern)
+                    ge.checkpoint() //empty the undo stack
+                }
+            }
+
+            baseUrl = 'http://192.168.8.163:8000/api/save_strat'
             async function saveGanttOnServer() {
                 //this is a simulation: save data to the local storage or to the textarea
                 //saveInLocalStorage();
@@ -191,7 +214,7 @@
                     body: JSON.stringify(prj, null, '\t'), // convert JavaScript object to JSON string
                 }
                 try {
-                    const response = await fetch('http://127.0.0.1:8000/api/save_strat', options) // make the fetch request
+                    const response = await fetch(`${baseUrl}`, options) // make the fetch request
                     console.log(response)
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`) // handle HTTP errors

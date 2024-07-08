@@ -150,9 +150,7 @@ def save_strat_plan(request):
         try:
             data = json.loads(request.body)  # Parse the JSON data from the request
             pprint(data)
-
             # Process the data (e.g., save to database, perform calculations, etc.)
-
             # Create a response
             response_data = {
                 'status': 'success',

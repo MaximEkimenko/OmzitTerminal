@@ -35,6 +35,7 @@ class WorkshopSchedule(models.Model):
     workshop = models.PositiveSmallIntegerField(verbose_name='Цех', null=True)
     model_name = models.CharField(max_length=30, verbose_name='Модель изделия', validators=[model_regex])
     datetime_done = models.DateField(null=True, verbose_name='Планируемая дата готовности')
+    # TODO добавить unique=True
     order = models.CharField(max_length=100, verbose_name='Номер заказа', validators=[order_regex])
     order_status = models.CharField(max_length=20, default='не запланировано', verbose_name='Статус заказа')
 

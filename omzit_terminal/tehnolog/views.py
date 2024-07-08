@@ -46,6 +46,9 @@ def tehnolog_wp(request):
     :param request:
     :return:
     """
+    if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:8]).strip() != "tehnolog":
+        logger.warning(f"Попытка доступа к рабочему месту технолога пользователем {request.user.username}")
+        raise PermissionDenied
     group_id = TERMINAL_GROUP_ID  # тг группа
     td_queries_fields = ('model_order_query', 'query_prior', 'td_status', 'td_remarks', 'order_status')  # поля таблицы
     td_queries = (WorkshopSchedule.objects.values(*td_queries_fields).exclude(td_status='завершено'))
@@ -53,10 +56,6 @@ def tehnolog_wp(request):
     change_model_query_form = ChangeOrderModel()
     send_draw_back_form = SendDrawBack()
     alert = ''
-    if str(request.user.username).strip()[:5] != "admin" and str(request.user.username[:8]).strip() != "tehnolog":
-        logger.warning(f"Попытка доступа к рабочему месту технолога пользователем {request.user.username}")
-        raise PermissionDenied
-
     context = {}
     context.update(upload_draws(
         request=request,

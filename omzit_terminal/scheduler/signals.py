@@ -27,7 +27,7 @@ def auto_fill_produce_cycle_and_day_hours_amount(sender, instance, **kwargs) -> 
         polynom += polynom_part
         print(f"{polynom=}")
 
-    print(f"resulting_polynom = {polynom}")
+    # print(f"resulting_polynom = {polynom}")
     instance.produce_cycle = polynom * series_data.difficulty_koef
     # заполнение трудочасов в смену в зависимости от серии
     if series_data.series_name == 'ML':

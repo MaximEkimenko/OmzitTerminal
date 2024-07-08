@@ -13,7 +13,7 @@ import openpyxl
 try:  # для запуска файла
     from scheduler.models import SeriesParameters, ModelParameters  # noqa
     from m_logger_settings import logger  # noqa
-except ModuleNotFoundError:
+except Exception:
     pass
 
 
@@ -126,8 +126,23 @@ def get_all_weights(xlsx_paths: list) -> dict[str]:
             for sheet in wb.sheetnames:
                 ws = wb[sheet]
                 model_weight = ws["G2"].value
+                # поиск суммарной трудоёмкости
+                full_norm_tech = 0
+                for i in range(1, 2000):
+                    if ws[f"O{i}"].value == 'часов':
+                        full_norm_tech = ws[f"O{i - 1}"].value
+                        try:
+                            full_norm_tech = round(float(full_norm_tech), 2)
+                        except ValueError as e:
+                            full_norm_tech = 0
+                        break
+                print(f"{full_norm_tech=}")
                 if model_weight is not None and (type(model_weight) is float or type(model_weight) is int):
-                    all_weights_json[sheet] = {'weight': model_weight, 'file': xlsx_file.name}
+                    all_weights_json[sheet] = {'weight': model_weight, 'file': xlsx_file.name,
+                                               'full_norm_tech': full_norm_tech}
+                if model_weight is not None and (type(model_weight) is float or type(model_weight) is int):
+                    all_weights_json[sheet] = {'weight': model_weight, 'file': xlsx_file.name,
+                                               'full_norm_tech': full_norm_tech}
     json_file_to_save = r'D:\АСУП\Python\Projects\OmzitTerminal\misc\all_weights.json'
     with open(json_file_to_save, 'w') as json_file:
         json.dump(all_weights_json, json_file, ensure_ascii=False, indent=4)
@@ -147,25 +162,52 @@ def clean_model_names(models_data: dict[str]) -> dict[str:float]:
     clean_dict = {}
     for model_name, model_data in models_data.items():
         model_weight = round(model_data['weight'], 2)
+        model_full_norm_tech = model_data['full_norm_tech']
         if len(model_name.split()) > 1:
             new_model_name = f"{model_name.split()[0]}{model_name.split()[1]}"
-            max_weight_value = max(model_weight, clean_dict.get(new_model_name, 0))
+
+
+            new_data = clean_dict.get(new_model_name, 0)
+            if new_data != 0:
+                max_weight_value = max(model_weight, new_data.get('model_weight', 0))
+            else:
+                max_weight_value = model_weight
+
+
             if 'SW' in model_name.split()[1] or 'SV' in model_name.split()[1] or 'RC' in model_name.split()[1]:
-                clean_dict.update({new_model_name: max_weight_value})
+                clean_dict.update({new_model_name: {'model_weight': max_weight_value,
+                                                    'full_norm_tech': model_full_norm_tech}})
             elif 'ML' in model_name.split()[0] and 'ML' in model_name.split()[1]:
+
                 new_model_name_left = f"{model_name.split()[0]}"
                 new_model_name_right = f"{model_name.split()[1]}"[1:-1]
-                clean_dict.update({new_model_name_left: max_weight_value})
-                clean_dict.update({new_model_name_right: max_weight_value})
+
+                clean_dict.update({new_model_name_left: {'model_weight': max_weight_value,
+                                                         'full_norm_tech': model_full_norm_tech}})
+                clean_dict.update({new_model_name_right: {'model_weight': max_weight_value,
+                                                          'full_norm_tech': model_full_norm_tech}})
+
                 pass
             else:
                 latin_model_name = ''.join(translate_dict.get(char, char) for char in model_name.split()[0])
                 new_model_name = latin_model_name
-                max_weight_value = max(model_weight, clean_dict.get(new_model_name, 0))
-                clean_dict.update({new_model_name: max_weight_value})
+
+
+                # max_weight_value = max(model_weight, clean_dict.get(new_model_name, 0))
+
+                new_data = clean_dict.get(new_model_name, 0)
+                if new_data != 0:
+                    max_weight_value = max(model_weight, new_data.get('model_weight', 0))
+                else:
+                    max_weight_value = model_weight
+
+
+                clean_dict.update({new_model_name: {'model_weight': max_weight_value,
+                                                    'full_norm_tech': model_full_norm_tech}})
         else:
             latin_model_name = ''.join(translate_dict.get(char, char) for char in model_name)
-            clean_dict.update({latin_model_name: model_weight})
+            clean_dict.update({latin_model_name: {'model_weight': model_weight,
+                                                  'full_norm_tech': model_full_norm_tech}})
     return clean_dict
 
 
@@ -176,20 +218,22 @@ def models_data_db_set(data: dict) -> None:
     :return:
     """
     series = ('ML', 'DMH', 'OV', 'SV', 'R', 'P', 'M')
-    for model, weight in data.items():
+    for model, models_data in data.items():
         model_name = model.split('-')[0]
+
+        model_weight = Decimal(str(models_data['model_weight']))
+        full_norm_tech = Decimal(str(models_data['full_norm_tech']))
+
         for series_element in series:
             if model_name.endswith(series_element):
                 series_id = SeriesParameters.objects.get(series_name=series_element).id
                 data_to_db = {'model_name': model_name,
-                              'model_weight': weight,
-                              'series_parameters_id': series_id}
-                print(data_to_db)
+                              'model_weight': model_weight,
+                              'series_parameters_id': series_id,
+                              'full_norm_tech': full_norm_tech}
+                # print(data_to_db)
                 params = ModelParameters(**data_to_db)
                 params.save()
-
-
-
 
 
 if __name__ == '__main__':
@@ -203,4 +247,4 @@ if __name__ == '__main__':
     with open(json_file_to_save_tst, 'r') as file:
         model_names_tst = json.load(file)
     # print(clean_model_names(model_names_tst))
-    models_data_db_set(clean_model_names(model_names_tst))
+    # models_data_db_set(clean_model_names(model_names_tst))
