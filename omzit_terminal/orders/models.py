@@ -1,10 +1,10 @@
-from datetime import date
+from datetime import date, datetime
 
 from django.contrib.postgres.aggregates import StringAgg
 from django.db import models
 from django.db.models import OuterRef, Subquery, QuerySet
 from django.urls import reverse_lazy
-from django.utils.timezone import now
+from django.utils.timezone import now, make_aware
 from orders.utils.common import OrdStatus
 
 
@@ -299,8 +299,9 @@ class Orders(models.Model):
             .annotate(assigned_workers_string=StringAgg("fio", delimiter=", ", ordering="fio"))
             .values("assigned_workers_string")
         )
+        today_tz = make_aware(datetime.combine(date.today(), datetime.min.time()))
         fresh = (
-            cls.objects.exclude(acceptance_date__lt=date.today())
+            cls.objects.exclude(acceptance_date__lt=today_tz)
             .all()
             .annotate(dayworkers_fio=Subquery(assigned_workers_subquery))
             .prefetch_related("equipment", "status", "materials")

@@ -44,11 +44,13 @@
           <div class="card_row">
             <div class="equipment_card__label">  {{i}} </div>
             <div class="flex_container">  
-              {{j}}
-              <div class="one_char_spacer"></div><div class="one_char_spacer"></div>
-              <form action="{% url 'repairmen_history' object.id %}" class="right_edje_element">
-                <input type="submit"  class="fit_content_button" value="история назначений" />
-              </form>
+              {{j|default:""}}
+              {% if j %}
+                <div class="one_char_spacer"></div><div class="one_char_spacer"></div>
+                <form action="{% url 'repairmen_history' object.id %}" class="right_edje_element">
+                  <input type="submit"  class="fit_content_button" value="история назначений" />
+                </form>
+              {% endif %}
             </div>
           </div>
 

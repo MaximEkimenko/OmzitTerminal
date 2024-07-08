@@ -159,15 +159,15 @@ def orders(request) -> HttpResponse:
     return render(request, "orders/orders.html", context=context)
 
 
-def orders_archive(request):
-    archived_orders = Orders.archived_orders()
-    for i in archived_orders:
-        print(i.status, i.solution)
+class OrdersArchive(LoginRequiredMixin, ListView):
+    """
+    Отображает все заявки на ремонт, которые были завершены (приняты или отменены).
+    """
 
-    context = {
-        "orders": archived_orders,
-    }
-    return render(request, "orders/orders_archive.html", context=context)
+    template_name = "orders/orders_archive.html"
+
+    def get_queryset(self):
+        return Orders.archived_orders()
 
 
 @login_required(login_url="/scheduler/login/")
@@ -973,16 +973,22 @@ def repairmen_delete_proc(request: WSGIRequest):
     return redirect(rw)
 
 
-def repairmen_history(request, pk):
-    dayworkers = (
-        OrdersWorkers.objects.filter(order=pk)
-        .order_by("start_date")
-        .annotate(fio=F("worker__fio"))
-        .all()
-    )
-    print(dayworkers)
-    context = {"pk": pk, "object": dayworkers}
-    return render(request, "orders/repairmen_history.html", context=context)
+class RepairmenHistory(LoginRequiredMixin, ListView):
+    template_name = "orders/repairmen_history.html"
+
+    def get_queryset(self):
+        dayworkers = (
+            OrdersWorkers.objects.filter(order=self.kwargs["pk"])
+            .order_by("start_date")
+            .annotate(fio=F("worker__fio"))
+            .all()
+        )
+        return dayworkers
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"pk": self.kwargs["pk"]})
+        return context
 
 
 @login_required(login_url="/scheduler/login/")

@@ -7,6 +7,11 @@
   {{block.super}}
   <div class="col">
     <h1>Архив заявок</h1>
+    <div class="form_row">
+      <form action="{% url 'orders'%}" method="GET">
+          <input type="submit" class="input_like" value="Таблица заявок" />
+      </form>
+    </div>
 
     <table class="table">
         <thead>
@@ -22,7 +27,7 @@
             </tr>
       
         </thead>
-        {% for rec in orders%}
+        {% for rec in object_list%}
           <tr class="table_row">
             <td class="td_cell">
               <a href="{% url 'order_info' rec.id %}" class="table_link">

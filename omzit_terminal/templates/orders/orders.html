@@ -5,32 +5,26 @@
 {%endblock %} 
 {% block content %} 
   {{block.super}}
-  <div class="col">
-    <h1>Заявки на ремонт</h1>
+    <div class="col">
+      <h1>Заявки на ремонт</h1>
+      <div class='form_row'>
+      {%if role in create_order %}
+        <button id="add_order_button" class="btn">Добавить заявку</button>
+      {%endif%}
 
-    {%if role in create_order %}
-    <p>
-      <button id="add_order_button" class="btn">Добавить заявку</button>
-    </p>
-    {%endif%}
-    <p>
-      <form action="{% url 'orders_report'%}" method='get'>
-        <button type="submit">Отчет</button>
-      </form>
-    </p>
-    <p>
-      <form action="{% url 'orders_archive' %}" method='get'>
-        <button type="submit">архив</button>
-      </form>
-    </p>
-
-    <p>
-      <input
-        type="button"
-        onclick="window.location.href = '{{ request.path }}';"
-        value="Сбросить фильтр"
-      />
-    </p>
+        <form action="{% url 'orders_report'%}" method='get'>
+          <button class="input_like" type="submit">Отчет</button>
+        </form>
+        <form action="{% url 'orders_archive' %}" method='get'>
+          <button class="input_like" type="submit">архив</button>
+        </form>
+      
+        <input
+          type="button" class="input_like"
+          onclick="window.location.href = '{{ request.path }}';"
+          value="Сбросить фильтр"
+        />
+    </div>  
     <table class="table" id="st_table">
       <thead>
         <form method="get" id="filter_form">
