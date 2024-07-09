@@ -88,7 +88,13 @@
               история
             </a>
           </td>
-          <td class="td_cell status_name" data-status={{rec.status}}>{{rec.status__name}}</td>
+          <td class="td_cell status_name" data-status={{rec.status}}>
+            {% if rec.status_id == statuses.SUSPENDED %}
+              {{rec.previous_status__name}}<br>({{rec.status__name}})
+            {% else %}
+              {{rec.status__name}}
+            {% endif %}
+          </td>
           <td class="td_cell">{{rec.priority}}</td>
           <td class="td_cell">{{rec.breakdown_date}}</td>
           <td class="td_cell">{{rec.breakdown_description|default:""|truncatewords:13}}</td>
@@ -113,10 +119,8 @@
       {% endfor %}
     </table>
     
-    
 
-
-    {% comment "Добавление новой заявки" %}{% endcomment %}
+    {# Добавление новой заявки #}
     <div id="add-order-form" class="modal">
       <form
         action="{% url 'orders' %}"
@@ -166,7 +170,7 @@
       </form>
     </div>
 
-    {% comment "Удаление заявки" %}{% endcomment %}
+    {# Удаление заявки #}
 
     <div id="delete-order-form" class="modal">
       <div id="add-order-form">

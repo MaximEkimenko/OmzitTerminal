@@ -541,7 +541,7 @@ def order_card(request, pk):
         ],  # количество назначений на ремонт и кнопка для просмотра истории назначений
         "alerts": pop_flash_messages(),
     }
-    return render(request, "orders/repair_info.html", context)
+    return render(request, "orders/repair_card.html", context)
 
 
 @login_required(login_url="/scheduler/login/")

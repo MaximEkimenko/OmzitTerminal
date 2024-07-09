@@ -47,14 +47,12 @@ def get_employee_position(username):
 def custom_login_check(request) -> Literal[True]:
     """
     Проверяет, есть ли username в списке разрешенных пользователей PERMITED_USERS.
-    Если есть, прдолжает работу, если нет - возбуждает исключение PermissionDenied,
+    Если есть, продолжает работу, если нет - возбуждает исключение PermissionDenied,
     таким образом функция-представление не открывается для сторонних пользователей
 
     """
     username = request.user.username
-    if not any(map(lambda x: x == username, PERMITED_USERS)):
-        logger.warning(
-            f"Попытка доступа к рабочему месту диспетчера пользователем {request.user.username}"
-        )
+    if username not in PERMITED_USERS:
+        logger.warning(f"Попытка доступа к рабочему месту диспетчера пользователем {username}")
         raise PermissionDenied
     return True

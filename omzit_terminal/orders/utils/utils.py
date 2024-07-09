@@ -158,7 +158,7 @@ def orders_get_context(request) -> dict[str, Any]:
     alerts: всплывающие сообщения о действиях пользователя
     button_context: список, но основе которого происходит формирование кнопок
     """
-    #
+    # столбцы для фильтрации через django-filter
     cols = [
         "id",
         "equipment_id",
@@ -173,13 +173,15 @@ def orders_get_context(request) -> dict[str, Any]:
         "materials_request",
         "revision_cause",
     ]
-
+    # столбцы для отображения в таблице
     cols_extended = [
         "id",
         "equipment_id",
         "equipment__unique_name",
         "status",
+        "status_id",
         "status__name",
+        "previous_status__name",
         "priority",
         "breakdown_date",
         "breakdown_description",
@@ -202,6 +204,7 @@ def orders_get_context(request) -> dict[str, Any]:
         "order_filter": orders_filter,
         "add_order_form": AddOrderForm(),
         "alerts": pop_flash_messages(),
+        "statuses": OrdStatus,
         "button_context": button_context,
     }
 

@@ -70,6 +70,7 @@ const FIXED = "6";
 const ACCEPTED = "7";
 const CANCELLED = "8";
 const UNPRPAIRABLE = "9";
+const SUSPENDED = "10";
 
 const status_cels = document.querySelectorAll(".status_name");
 
@@ -94,40 +95,43 @@ const color_WAIT_FOR_MATERIALS = "rgba(255, 200, 47,  0.35)";
 const color_CANCELLED = "rgba(77, 72, 58, 0.3)";
 const color_SUSPENDED = "rgba(252, 229, 153, 0.3)";
 
+
 for (let i = 0; i < table_rows.length; i++) {
   let stat_cell = table_rows[i].querySelector(".status_name");
-  switch (stat_cell.innerText) {
-    case "требует ремонта":
+  console.log(stat_cell.dataset.status)
+  switch (stat_cell.dataset.status) {
+    case DETECTED:
       table_rows[i].style.background = color_DETECTED;
       break;
-    case "в ремонте":
+    case REPAIRING:
       table_rows[i].style.background = color_REPAIRING;
       break;
-    case "ремонт окончен":
+    case FIXED:
       table_rows[i].style.background = color_FIXED;
       break;
-    case "ремонт принят":
+    case ACCEPTED:
       table_rows[i].style.background = color_ACCEPTED;
       break;
-    case "ожидание акта":
+    case WAIT_FOR_ACT:
       table_rows[i].style.background = color_WAIT_FOR_ACT;
       break;
-    case "неремонтопригодно":
+    case UNPRPAIRABLE:
       table_rows[i].style.background = color_UNPRPAIRABLE;
       break;
-    case "ремонт начат":
+    case START_REPAIR:
       table_rows[i].style.background = color_START_REPAIR;
       break;
-    case "требуются материалы":
+    case WAIT_FOR_MATERIALS:
       table_rows[i].style.background = color_WAIT_FOR_MATERIALS;
       break;
-    case "ремонт отменен":
+    case CANCELLED:
       table_rows[i].style.background = color_CANCELLED;
       break;
-    case "приостановлено":
+    case SUSPENDED:
       table_rows[i].style.background = color_SUSPENDED;
   }
 }
+
 
 //===========================================
 // фильтрация оборудования при добавлении задания
