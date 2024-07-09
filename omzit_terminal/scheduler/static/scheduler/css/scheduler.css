@@ -907,6 +907,11 @@ li.dropdown {
   width:400px;
   font-size: 16px;
 }
+.equipment_card select{
+  max-width:400px;
+  font-size: 16px;
+}
+
 
 .equipment_card textarea{
   width:400px;
@@ -964,6 +969,7 @@ section{
 .table_button
 {
   width: 130px;
+  min-height: 40px;
   margin: 2px 0;
 }
 

@@ -9,15 +9,15 @@
   <div id="add-order-form">
     <form action="" class="form_form" method="POST">
       {% csrf_token %}
-      <div class="add_to_plan">
+      <div class="equipment_card">
         {% for entry in form %}
-        <div class="form_row">
-          <label for="{{ entry.id_for_label }}">{{entry.label}}</label>
+        <div class="card_row">
+          <label class="equipment_card__label" for="{{ entry.id_for_label }}">{{entry.label}}</label>
           {{entry}}
         </div>
         {% endfor %}
 
-        <div class="form_row">
+        <div class="card_row__center">
           <button
             class="form_button"
             onclick="window.location.href = `{% url 'orders' %}`;"
