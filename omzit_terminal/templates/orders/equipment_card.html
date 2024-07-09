@@ -2,7 +2,7 @@
 <div class="col">
   <h1>Карточка оборудования</h1>
    
-  
+{# секция верхних кнопок #}  
   <div class="form_row">
     <form action="{% url 'equipment'%}" method="GET">
       <input type="submit" class="input_like" value="Назад" />
@@ -14,8 +14,6 @@
     </form>
 
     <button class="input_like" id="button_delete_popup" type="button">Удалить</button>
-    
-
     {% endif %}
   </div>
 
@@ -32,6 +30,23 @@
       <div class="equipment_card__label">№ цеха</div>
       <div class="equipment_card__value">{{object.shop|default:"-"}}</div>
     </div>
+
+    <div class="card_row">
+      <div class="equipment_card__label">День ежемесячного ППР</div>
+      <div class="equipment_card__value">{{object.ppr_plan_day|default:"не указан"}}</div>
+    </div>
+
+    <div class="card_row">
+      <div class="equipment_card__label">В эксплуатации</div>
+      <div class="equipment_card__value">
+        {% if  object.in_operation %}
+          да
+        {% else %}
+          нет
+        {% endif %}
+        </div>
+    </div>
+
     <div class="card_row">
       <div class="equipment_card__label">Производитель</div>
       <div class="equipment_card__value">{{object.vendor|default:"-"}}</div>
@@ -68,6 +83,11 @@
   </div>
 </div>
 
+
+
+
+
+{# всплывающее окно удаления оборудования #}  
 <div id="confirm_delete_popup" class="modal">
   <form
     

@@ -24,6 +24,9 @@ class EditEquipmentForm(ModelForm):
     shop = forms.ModelChoiceField(
         Shops.objects, label="Местонахождение", required=False, empty_label=None
     )
+    days = [(None, "--")]
+    days.extend([(i, i) for i in range(1, 30)])
+    ppr_plan_day = forms.ChoiceField(choices=days, label="День планового ремонта", required=False)
 
     class Meta:
         model = Equipment
@@ -31,6 +34,8 @@ class EditEquipmentForm(ModelForm):
             "name",
             "inv_number",
             "shop",
+            "ppr_plan_day",
+            "in_operation",
             "vendor",
             "model",
             "serial_number",

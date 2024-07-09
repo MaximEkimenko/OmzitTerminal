@@ -111,6 +111,7 @@ class Equipment(models.Model):
     characteristics = models.TextField(blank=True, null=True, verbose_name="ТТХ")
     description = models.TextField(blank=True, null=True, verbose_name="Описание оборудования")
     ppr_plan_day = models.IntegerField(blank=True, null=True, verbose_name="День планового ремонта")
+    in_operation = models.BooleanField(default=True, verbose_name="В эксплуатации")
 
     class Meta:
         verbose_name = "Оборудование"

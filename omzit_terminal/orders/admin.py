@@ -20,9 +20,9 @@ class OrdersAdmin(admin.ModelAdmin):
 
 class EquipmentAdmin(admin.ModelAdmin):
     save_on_top = True
-    list_display = ("id", "name", "inv_number", "shop")
+    list_display = ("id", "name", "inv_number", "shop", "ppr_plan_day")
     search_fields = ["name", "inv_number"]
-    list_editable = ["name", "shop"]
+    list_editable = ["name", "shop", "ppr_plan_day"]
     ordering = ["id"]
 
 

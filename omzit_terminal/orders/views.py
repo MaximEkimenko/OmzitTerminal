@@ -662,19 +662,17 @@ def order_history(request: WSGIRequest, pk):
 
 
 class EquipmentCardView(LoginRequiredMixin, DetailView):
-    login_url = success_url = reverse_lazy("login")
+    success_url = reverse_lazy("login")
     model = Equipment
     template_name = "orders/equipment_card.html"
     pk_url_kwarg = "equipment_id"
     extra_context = {
         "edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],
-        "permitted_users": PERMITED_USERS,
     }
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({"role": get_employee_position(self.request.user.username)})
-
         return context
 
     def post(self, request, *args, **kwargs):
@@ -722,8 +720,9 @@ class EquipmentCardView(LoginRequiredMixin, DetailView):
         return redirect("equipment")
 
 
-class EquipmentCardEditView(LoginRequiredMixin, UpdateView):
-    login_url = success_url = reverse_lazy("login")
+# class EquipmentCardEditView(LoginRequiredMixin, UpdateView):
+class EquipmentCardEditView(UpdateView):
+    success_url = reverse_lazy("login")
     model = Equipment
     form_class = EditEquipmentForm
     template_name = "orders/equipment_edit.html"
@@ -740,10 +739,8 @@ class EquipmentCardEditView(LoginRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         context.update(
             {
-                # "permitted_users": PERMITED_USERS,
-                # "status": OrdStatus,
                 "edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],
-                "test": Position.Admin,
+                # "test": Position.Admin,
             }
         )
         return context
@@ -752,6 +749,10 @@ class EquipmentCardEditView(LoginRequiredMixin, UpdateView):
         form_data = form.cleaned_data
         temp = form.instance
         temp.unique_name = f"{form_data['name']} ({form_data['inv_number'][-4:]})"
+        # это ради того, чтобы удалить у оборудования день планового ремонта
+        # из формы приходить пустая строка, а в базу нужно записывать None
+        if form_data["ppr_plan_day"] == "":
+            temp.ppr_plan_day = None
         temp.save()
         return HttpResponseRedirect(self.get_success_url())
 
