@@ -727,7 +727,6 @@ class EquipmentCardEditView(UpdateView):
     form_class = EditEquipmentForm
     template_name = "orders/equipment_edit.html"
     pk_url_kwarg = "equipment_id"
-    success_url = reverse_lazy("equipment")
 
     extra_context = {
         "color": "red",
@@ -735,15 +734,22 @@ class EquipmentCardEditView(UpdateView):
         "permitted_users": PERMITED_USERS,
     }
 
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(
             {
                 "edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],
-                # "test": Position.Admin,
+                "equipment_id": self.kwargs.get("equipment_id"),
             }
         )
         return context
+
+    def post(self, request, *args, **kwargs):
+        print("hello")
+        return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
         form_data = form.cleaned_data
