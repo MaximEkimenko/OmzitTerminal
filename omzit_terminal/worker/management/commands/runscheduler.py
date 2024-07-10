@@ -74,9 +74,19 @@ class Command(BaseCommand):
         )
         logger.info("Запущена еженедельная задача: 'delete_old_job_executions'.")
 
+        logger.info('Запущена задача: "Снятие ремонтников с заявок в конце смены"')
+        scheduler.add_job(
+            test_schedule,
+            trigger=CronTrigger(hour="14", minute="28"),
+            id="Тествове задание 1",
+            max_instances=1,
+            replace_existing=True,
+            misfire_grace_time=1 * 60,
+        )
+        
         scheduler.add_job(
             shift_tasks_auto_report,
-            trigger=CronTrigger(hour="13", minute="06"),
+            trigger=CronTrigger(hour="14", minute="33"),
             id="Получение отчета по СЗ",
             max_instances=1,
             replace_existing=True,
@@ -113,7 +123,7 @@ class Command(BaseCommand):
             replace_existing=True,
             misfire_grace_time=1 * 60,
         )
-        logger.info('Запущена задача: "Снятие ремонтников с заявок в конце смены"')
+        logger.info("Запущена задача: Снятие ремонтников с заявок в конце смены")
 
         # scheduler.add_job( # TODO ФУНКЦИОНАЛ ОТЧЁТОВ законсервировано пока не понадобится
         #     days_report_create,

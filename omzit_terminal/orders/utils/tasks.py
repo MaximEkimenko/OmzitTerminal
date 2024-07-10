@@ -1,8 +1,8 @@
+from datetime import datetime
 from django.utils import timezone
 from django.db.models import F
 from orders.models import OrdersWorkers, Orders
 from orders.utils.common import OrdStatus
-from orders.utils.utils import check_order_suspend
 
 
 def clear_all_dayworkers():

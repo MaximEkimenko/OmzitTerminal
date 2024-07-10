@@ -15,27 +15,21 @@
     {%endif%}
   
   </p>
-  <p>
-    <input
-      type="button"
-      onclick="window.location.href = '{{ request.path }}';"
-      value="Сбросить фильтр"
-    />
-  </p>
+  
 
   <table class="table" id="st_table">
     <thead>
       <form method="get" id="filter_form">
         <tr class="table_header_row">
           <th class="td_cell">№</th>
-          <th class="td_cell" style="max-width:350px;">{{equipment_filter.form.name}}Оборудование
+          <th class="td_cell" style="max-width:350px;">Оборудование
             <br>
               <div class="sort-filter">
                   <input type="text" style="max-width:250px;" onkeyup="filterField(this.value, 1)" placeholder="">
               </div>
           </th>
           <th class="td_cell">
-            {{equipment_filter.form.inv_number}} Инв. номер
+            Инв. номер
             <br>
             <div class="sort-filter">
                 <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 2)" placeholder="">
@@ -43,18 +37,33 @@
 
           </th>
           <th class="td_cell">
-            {{equipment_filter.form.shop__name}}Местонахождение
+            Местонахождение
+            <br>
+            <div class="sort-filter">
+                <input type="text" style="max-width:250px;" onkeyup="filterField(this.value, 3)" placeholder="">
+            </div>
           </th>
           <th class="td_cell">
-            {{equipment_filter.form.history}}
+            День ППР
+            <br>
+            <div class="sort-filter">
+                <input type="text" style="max-width:250px;" onkeyup="filterField(this.value, 4)" placeholder="">
+            </div>
+          </th>
+
+          <th class="td_cell">
             Ремонты
+            <br>
+            <div class="sort-filter">
+                <input type="text" style="max-width:250px;" onkeyup="filterField(this.value, 5)" placeholder="">
+            </div>
           </th>
 
         </tr>
       </form>
     </thead>
     
-    {% for line in equipment_filter.qs %}
+    {% for line in table_data %}
     <tr class="table_row">
       <td class="td_cell">{{ line.row_number }}</td>
 
@@ -67,6 +76,7 @@
       </td>
       <td class="td_cell">{{ line.inv_number }}</td>
       <td class="td_cell">{{ line.shop__name }}</td>
+      <td class="td_cell">{{ line.ppr_plan_day|default:"-" }}</td>
       
       <td class="td_cell">
         {%if line.history != 0 %}  

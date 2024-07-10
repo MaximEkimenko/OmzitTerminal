@@ -68,7 +68,6 @@ from orders.utils.telegram import order_telegram_notification
 @login_required(login_url="/scheduler/login/")
 def equipment(request: WSGIRequest) -> HttpResponse:
     custom_login_check(request)
-    context = {}
     if request.method == "POST":
         new_equipment_name = AddEquipmentForm(request.POST)
         if new_equipment_name.is_valid():
@@ -91,8 +90,8 @@ def equipment(request: WSGIRequest) -> HttpResponse:
                 logger.exception(e)
         return redirect("equipment")
 
-    # cols = ["id", "name", "inv_number", "category__name"]
-    cols = ["id", "name", "inv_number", "shop__name"]
+    # столбцы, которые будут выводиться в таблице оборудования
+    cols = ["id", "name", "inv_number", "shop__name", "ppr_plan_day"]
     table_data = (
         Equipment.objects.annotate(
             row_number=Window(expression=RowNumber(), order_by="unique_name")
@@ -101,21 +100,13 @@ def equipment(request: WSGIRequest) -> HttpResponse:
         .values("row_number", "history", *cols)
     )
 
-    query_fields = ["id", "name", "inv_number", "shop__name"]
-    equipment_filter = get_filterset(request.GET, queryset=table_data, fields=query_fields)
-    context["equipment_filter"] = equipment_filter
-    context["table"] = table_data
-    context["alerts"] = pop_flash_messages()
-    context["add_equipment_form"] = AddEquipmentForm()
-    context.update(
-        {
-            "button_conditions": {
-                "create": [Position.Admin, Position.Engineer, Position.HoRT],
-            },
-            "role": get_employee_position(request.user.username),
-            "permitted_users": PERMITED_USERS,
-        }
-    )
+    context = {
+        "table_data": table_data,
+        "alerts": pop_flash_messages(),
+        "add_equipment_form": AddEquipmentForm(),
+        "button_conditions": {"create": [Position.Admin, Position.Engineer, Position.HoRT]},
+        "role": get_employee_position(request.user.username),
+    }
     return render(request, "orders/equipment.html", context=context)
 
 
