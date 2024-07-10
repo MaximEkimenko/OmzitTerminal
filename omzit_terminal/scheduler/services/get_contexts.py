@@ -4,6 +4,7 @@
 import datetime
 import json
 from decimal import Decimal, ROUND_CEILING
+from operator import itemgetter
 from pathlib import Path
 from pprint import pprint
 
@@ -11,6 +12,7 @@ from scheduler.models import WorkshopSchedule, ShiftTask, Doers, ModelParameters
 from m_logger_settings import logger  # noqa
 from scheduler.services.initial_data_set import series_parameters_set, clean_model_names, models_data_db_set  # noqa
 from django.db.models import Q
+from .schedule_handlers import get_done_rate_with_td, get_done_rate
 
 
 def get_strat_plan_context():
@@ -33,8 +35,7 @@ def get_strat_plan_context():
     #  расчёты по смещение по оси времени, скорректировать контекст
     #  вернуть контекст, перезаписать
     #  рабочее место технолога
-    # запланированное
-
+    # исходный контекст
     context = {
         "tasks": [],
         "canAdd": True,
@@ -80,64 +81,157 @@ def get_strat_plan_context():
             }
         ],
     }
-
     planned_models = []
-    plan = WorkshopSchedule.objects.filter(
+    # запрос на получение запланированных моделей
+    plan = (WorkshopSchedule.objects.filter(
         Q(order_status='запланировано')
-        | Q(order_status='в работе'))
+        | Q(order_status='в работе')
+    ).distinct()
+            .exclude(model_order_query__contains='TRUBOPROVOD')
+            .exclude(datetime_done=None)
+            ).values()
+    today = datetime.datetime.now()
+    # заполнение параметров моделей
+    dates = []
     for model in plan:
-        planned_models.append({
-            'id': model.id,
-            'model_name': model.model_name.split('-')[0],
-            'datetime_done': model.datetime_done})
-
-    # context["tasks"].append({'id': -1,
-    #                          })
-    for model in planned_models:
         model_parameters = ModelParameters.objects.filter(model_name=model['model_name']).values()
-        if model_parameters:
-            plan_datetime = datetime.datetime.combine(model['datetime_done'],
-                                                      datetime.datetime.min.time())
+        # заполнение только моделями на которые есть данные
+        if model_parameters and model['datetime_done']:
+            plan_datetime = (datetime.datetime.combine(model['datetime_done'],
+                                                       datetime.datetime.min.time())
+                             + datetime.timedelta(days=30 * 7))  # отступ в днях TODO ТЕСТЫ!!!
+            dates.append(plan_datetime)
+            # цикл изделия
             model_prod_cycle = int(model_parameters[0]['produce_cycle'].quantize(Decimal('1'),
                                                                                  ROUND_CEILING))
+            # определение процента готовности с учётом трудоёмкости
+            done_rate = get_done_rate_with_td(td=model_parameters[0]['full_norm_tech'],
+                                              model_order=model['model_order_query']
+                                              )
+            # дата начала производства
+            # TODO * 1000 для результирующего context
+            date_start = int((plan_datetime - datetime.timedelta(days=model_prod_cycle)).timestamp())
+            # потребляемая трудоёмкость в день для изделия
+            required_td = model_parameters[0]['day_hours_amount']
+            # коэффициент срочности для первоначальной сортировки (приоритет)
+            ordering = (plan_datetime - today).days / model_prod_cycle
+            # обновление списка данных
 
-            context["tasks"].append({'id': model['id'],
-                                     'name': model_parameters[0]['model_name'],
-                                     'progress': 0,
-                                     'progressByWorklog': False,
-                                     'relevance': 0,
-                                     'type': '',
-                                     'typeId': '',
-                                     'description': '',
-                                     'code': '',
-                                     'level': 0,
-                                     'status': 'STATUS_ACTIVE',
-                                     'depends': '',
-                                     'end': '',
-                                     'start': int((plan_datetime -
-                                                   datetime.timedelta(days=model_prod_cycle)).timestamp()) * 1000,
-                                     'duration': model_prod_cycle,
-                                     'startIsMilestone': False,
-                                     'endIsMilestone': False,
-                                     'collapsed': False,
-                                     'canWrite': True,
-                                     'canAdd': True,
-                                     'canDelete': True,
-                                     'canAddIssue': True,
-                                     'assigs': [],
-                                     'earlyStart': '',
-                                     'earlyFinish': '',
-                                     'latestStart': '',
-                                     'latestFinish': '',
-                                     "criticalCost": '',
-                                     "isCritical": False,
-                                     'hasChild': False,
-                                     })
+            planned_models.append({
+                'id': model['id'],
+                'ordering': ordering,
+                'model_name': model['model_name'],
+                'datetime_done': model['datetime_done'],
+                'model_order_query': model['model_order_query'],
+                'done_rate': done_rate,
+                'date_start': date_start,
+                'model_prod_cycle': model_prod_cycle,
+                'required_td': required_td,
+                'plan_datetime': plan_datetime
+            })
+    # сортировка по коэффициенту срочности
+    sorted_planned_models = sorted(planned_models, key=itemgetter('ordering'))
+    # интервал дат оп графику
+    start_date_range = datetime.datetime.now()
+    end_date_range = max(dates)  # сама поздняя дата из графика
+    daterange = [(start_date_range + datetime.timedelta(days=x)) for x in
+                 range(0, (end_date_range - start_date_range).days)]
+    # сдвиг по отсортированному списку
+    day_capacity = 200
+    for current_date in daterange:
+        required_td_list = []
+        models_in_date = []
+        for model in sorted_planned_models:
+            print(model['model_order_query'])
+            # создание списка моделей в дате
+            # model_done_date = model['plan_datetime'] + datetime.timedelta(days=model['model_prod_cycle'])
+            # сохранение дат начала, которые уже прошли
+            if datetime.datetime.fromtimestamp(model['date_start']) >= current_date:
+                new_date_start = {'date_start': current_date.timestamp()}
+            else:
+                new_date_start = {'date_start': model['date_start']}
+            model.update(new_date_start)
 
-            # context['tasks'].append()
-        else:
-            # print('we go zero here!')
-            pass
+            model_done_date = current_date + datetime.timedelta(days=model['model_prod_cycle'])
+            required_td_list.append(model['required_td'])
+
+            if sum(required_td_list) <= day_capacity:
+                continue
+                # models_in_date.append(model)
+            elif sum(required_td_list) > day_capacity:
+                new_date_start = {'date_start': current_date.timestamp()}
+                model.update(new_date_start)
+
+
+            # elif model in models_in_date:
+            #     models_in_date.remove(model)
+            #     print('removed', model)
+
+        # if model not in models_in_date:
+        #     new_date_start = {'date_start': (current_date + datetime.timedelta(days=1)).timestamp()}
+        #     model.update(new_date_start)
+
+        # if new_date_start:
+
+            # model.update({'date_start': model_done_date.timestamp() * 1000})
+            # if (model['date_start'] + datetime.timedelta(days=model['model_prod_cycle'])).timestamp() <= current_date.timestamp():
+            #     pass
+    #         #
+            # # добавление новой модели в график
+        # print(len(models_in_date))
+
+            #
+            #
+            #
+            #
+
+        # проход по списку моделей в интервале, сравнение с
+        # day_capacity = 200
+        # required_td_list.append(model['required_td'])
+        # if sum(required_td_list) <= day_capacity and current_date.timestamp() < model['date_start']:
+        #     model.update({'date_start': current_date.timestamp() * 1000})
+        # else:
+        #     model.update({'date_start': current_date + datetime.timedelta(days=1)})
+
+
+
+    for model in sorted_planned_models:
+
+
+        # результирующий контекст
+        context["tasks"].append({'id': model['id'],
+                                 'name': model['model_name'],
+                                 'progress': model['done_rate'],
+                                 'progressByWorklog': False,
+                                 'relevance': 0,
+                                 'type': '',
+                                 'typeId': '',
+                                 'description': '',
+                                 'code': model['model_order_query'],
+                                 'level': 0,
+                                 'status': 'STATUS_ACTIVE',
+                                 'depends': '',
+                                 'end': '',
+                                 'start': model['date_start'] * 1000,
+                                 'duration': model['model_prod_cycle'],
+                                 'startIsMilestone': False,
+                                 'endIsMilestone': False,
+                                 'collapsed': False,
+                                 'canWrite': True,
+                                 'canAdd': True,
+                                 'canDelete': True,
+                                 'canAddIssue': True,
+                                 'assigs': [],
+                                 'earlyStart': '',
+                                 'earlyFinish': '',
+                                 'latestStart': '',
+                                 'latestFinish': '',
+                                 "criticalCost": '',
+                                 "isCritical": False,
+                                 'hasChild': False,
+                                 }
+                                )
+
     # pprint(context)
     # json_file = Path(r'C:\Users\user-18\Desktop\json_chk.json')
     # with open(json_file, 'w') as js_file:

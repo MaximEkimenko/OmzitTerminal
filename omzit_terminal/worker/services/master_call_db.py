@@ -133,5 +133,35 @@ def select_dispatcher_call(ws_number: str, st_number) -> list or None:
     return messages_to_dispatcher
 
 
+def master_calls_count(ws_number):
+    """
+    Получение количества сменных заданий со статусом "Ожидание мастера"
+    :param ws_number:
+    :return:
+    """
+    try:
+        # подключение к БД
+        con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host)
+        con.autocommit = True
+        # запрос количества СЗ со статусом вызов мастера
+        count_query = f"""SELECT COUNT(id) from shift_task where ws_number='{ws_number}' AND
+                           st_status='ожидание мастера'"""
+        try:
+            with con.cursor() as cur:
+                cur.execute(count_query)
+                con.commit()
+                st_count = cur.fetchall()
+        except Exception as e:
+            logger.error(f'Ошибка в выборке количества сменных заданий в lines_count. {ws_number=}')
+            logger.exception(e)
+
+    except Exception as e:
+        logger.error(f'Ошибка подключения к базе при master_calls_count. {ws_number=}')
+        logger.exception(e)
+    finally:
+        con.close()
+    return st_count[0][0]
+
+
 if __name__ == '__main__':
     pass
