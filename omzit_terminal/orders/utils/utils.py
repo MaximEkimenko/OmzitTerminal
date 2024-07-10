@@ -5,7 +5,7 @@ import json
 from django import forms
 from django.contrib.postgres.aggregates import StringAgg
 from django.db import models
-from django.db.models import QuerySet, OuterRef, Subquery, Count
+from django.db.models import QuerySet, OuterRef, Subquery, Count, Prefetch
 from django.utils import timezone
 from django.utils.timezone import make_naive, make_aware
 
@@ -436,49 +436,25 @@ ORDER_REPORT_COLUMNS = (
 
 def create_ppr_orders():
     today_day = date.today().day
-    # attached_orders = (
-    #     Orders()
-    #     .fresh_orders()
-    #     .filter(equipment_id=OuterRef("pk"))
-    #     .annotate(oc=Count("pk"))
-    #     .values("oc")
-    # )
 
-    """
     attached_orders = (
-        Orders()
-        .fresh_orders()
+        Orders.fresh_orders()
         .filter(equipment_id=OuterRef("pk"))
-        .annotate(oc=Count("pk"))
+        .values("equipment_id")
+        .annotate(oc=Count("equipment_id"))
         .values("oc")
     )
+    # выводит записи оборудования и в том числе поле с количесвтом присоединенных заявок
+    # несли заявок нет, пто поле равно None, и на такое оборудование можно создавать заявки
     today_ppr_equipment = (
-        Equipment.objects
-        # .filter(ppr_plan_day=today_day)
+        Equipment.objects.filter(ppr_plan_day=16)  # выбираем оборудование за конкретный день
         .annotate(current_orders=Subquery(attached_orders))
-        .filter(current_orders__gt=0)
-        .prefetch_related("repairs")
+        # .filter(current_orders__isnull=True)
         .all()
+        .distinct()
     )
-    """
 
-    # today_ppr_equipment = (
-    #     Equipment.objects
-    #     # .filter(ppr_plan_day=today_day)
-    #     .annotate(current_orders=Count("repairs"))
-    #     .filter(current_orders__gt=0)
-    #     .prefetch_related("repairs")
-    #     .all()
-    # )
-    # for i in today_ppr_equipment:
-    #     print(i.id, i.current_orders)
+    for i in today_ppr_equipment:
+        print(i.name, i.ppr_plan_day, i.current_orders)
 
-    ppr_orders = (
-        Orders.fresh_orders()
-        .filter(is_ppr=False, equipment__ppr_plan_day__lte=today_day)
-        .select_related("equipment")
-        .all()
-        .values("equipment")
-    )
-    # print(today_ppr_equipment)
-    print(ppr_orders)
+    print(today_ppr_equipment)
