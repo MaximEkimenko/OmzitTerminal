@@ -1,6 +1,8 @@
 import calendar
 import json
 import shutil
+from decimal import Decimal
+
 from django.db.models import Sum
 import openpyxl
 from PyPDF2 import PdfMerger
@@ -15,7 +17,7 @@ from ..models import WorkshopSchedule, ShiftTask
 # from ..models import MonthPlans, DailyReport
 import matplotlib.pyplot as plt
 import matplotlib
-from omzit_terminal.settings import BASE_DIR
+from omzit_terminal.settings import BASE_DIR  # noqa
 
 
 # TODO подключить logger при расконсервации
@@ -35,13 +37,38 @@ def get_done_rate(model_order_query: str) -> float:
 
     full_td = ShiftTask.objects.filter(
         model_order_query=model_order_query).aggregate(total=Sum('norm_tech'))['total']
-    print(model_order_query, full_td)
     try:
         done_rate = round(100 * (all_st - (all_st - done_st)) / all_st, 2)
     except ZeroDivisionError:
         done_rate = 0
 
     return done_rate
+
+
+def get_done_rate_with_td(td: Decimal, model_order: str) -> float:
+    """
+    Функция расчитывает процент готовности заказ модели по полной трудоёмкости
+    :param td: полная трудоёмкость
+    :param model_order: заказ модель
+    :return:
+    """
+    if td is None:
+        return 0
+    done_st = ShiftTask.objects.filter(
+        model_order_query=model_order,
+        st_status='принято').aggregate(sum=Sum('norm_calc'))['sum']
+    if done_st:
+        try:
+            return round(float(done_st / td) * 100, 1)
+        except ZeroDivisionError:
+            return 0
+    else:
+        return 0
+    # print(done_st)
+
+    # .aggregate(sum=Sum('norm_calc'))['sum']
+    # >> > tt.objects.aggregate(total_likes=Sum('tt_like'))
+    # {'total_likes': 0.4470664529184653}
 
 
 def get_all_done_rate() -> None:

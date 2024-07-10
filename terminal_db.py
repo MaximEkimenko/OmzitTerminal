@@ -283,8 +283,7 @@ def lines_count(ws_number: str) -> tuple:
             logger.error(f'Ошибка в выборке сменных заданий с УЗК и РК. {ws_number=}')
             logger.exception(e)
     except Exception as e:
-        logger.error(f'Ошибка подключения к базе при lines_count. {ws_number=}'
-                     f'{ws_number=}')
+        logger.error(f'Ошибка подключения к базе при lines_count. {ws_number=}')
         logger.exception(e)
     finally:
         con.close()
