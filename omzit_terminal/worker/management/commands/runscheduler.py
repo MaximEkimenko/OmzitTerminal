@@ -107,7 +107,7 @@ class Command(BaseCommand):
         """
         scheduler.add_job(
             clear_all_dayworkers,
-            trigger=CronTrigger(hour="09", minute="28"),
+            trigger=CronTrigger(hour="10", minute="08"),
             id="Снятие ремонтников с заявок в конце смены",
             max_instances=1,
             replace_existing=True,

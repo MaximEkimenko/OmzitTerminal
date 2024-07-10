@@ -42,6 +42,7 @@ from orders.utils.common import (
     OrdStatus,
     MAX_DAYWORKERS_PER_ORDER,
     can_edit_workers,
+    MATERIALS_NOT_REQUIRED,
 )
 from orders.utils.roles import Position, get_employee_position, custom_login_check, PERMITED_USERS
 from orders.utils.utils import (
@@ -252,15 +253,12 @@ def order_clarify_repair(request, pk):
         if form.is_valid():
             material_correct = False
             matl = form.cleaned_data["materials"]  # объект Materials
-            # строка на основе которой будет создан новый объект Materials
+            # Строка, на основе которой будет создан новый объект Materials
             # она имеет приоритетное значение. Если она заполнена, материалы из списка перестают учитываться
             exma = form.cleaned_data["extra_materials"]
-            # по умолчанию сооздается первая секунда дня. Но когда люди указывают дату производства,
+            # По умолчанию создается первая секунда дня. Но когда люди указывают дату производства,
             # они вряд ли думают, что все будет сделано в первую секунду указанного дня
             # поэтому пускай будет последняя секунда дня
-            # et = datetime.combine(form.cleaned_data["expected_repair_date"], datetime.max.time())
-            # order.expected_repair_date = make_aware(et)
-
             order.expected_repair_date = process_repair_expect_date(
                 form.cleaned_data["expected_repair_date"]
             )
@@ -273,7 +271,10 @@ def order_clarify_repair(request, pk):
                     material_correct = True
             if material_correct:
                 order.materials = m
-                applied_status = OrdStatus.WAIT_FOR_MATERIALS
+                if m.name == MATERIALS_NOT_REQUIRED:
+                    applied_status = OrdStatus.REPAIRING
+                else:
+                    applied_status = OrdStatus.WAIT_FOR_MATERIALS
                 order.clarify_date = make_aware(datetime.now())
                 apply_order_status(order, applied_status)
                 # clear_dayworkers(order)

@@ -52,7 +52,7 @@ telegram_handle_dict = {
         "message": "Ремонт оборудования '{equipment}' ({shop}) по заявке № {id} отменен.",
         "handlers": [{"func": "send_telegram_messages", "tids": [orders_telegram_group_id]}],
     },
-    OrdStatus.UNPRPAIRABLE: {
+    OrdStatus.UNREPAIRABLE: {
         "message": "не реализовано",
         "handlers": [{"func": "fake_telegram_messages", "tids": [orders_telegram_group_id]}],
     },

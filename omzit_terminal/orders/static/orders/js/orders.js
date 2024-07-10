@@ -69,7 +69,7 @@ const REPAIRING = "5";
 const FIXED = "6";
 const ACCEPTED = "7";
 const CANCELLED = "8";
-const UNPRPAIRABLE = "9";
+const UNREPAIRABLE = "9";
 const SUSPENDED = "10";
 
 const status_cels = document.querySelectorAll(".status_name");
@@ -81,7 +81,7 @@ const statusColors = {
   WAIT_FOR_ACT: "rgba(214, 198, 53, 0.3)",
   ACCEPTED: "rgba(80, 200, 103, 0.3)",
   CANCELLED: "rgba(77, 72, 58, 0.3)",
-  UNPRPAIRABLE: "rgba(119, 0, 80, 0.3)",
+  UNREPAIRABLE: "rgba(119, 0, 80, 0.3)",
 };
 
 const color_DETECTED = "rgba(255, 25, 82, 0.3)";
@@ -115,7 +115,7 @@ for (let i = 0; i < table_rows.length; i++) {
     case WAIT_FOR_ACT:
       table_rows[i].style.background = color_WAIT_FOR_ACT;
       break;
-    case UNPRPAIRABLE:
+    case UNREPAIRABLE:
       table_rows[i].style.background = color_UNPRPAIRABLE;
       break;
     case START_REPAIR:

@@ -246,11 +246,11 @@ def get_order_edit_context(request) -> dict[str, Any]:
             OrdStatus.REPAIRING,
         ],
         "materials": [
-            OrdStatus.START_REPAIR,
+            # OrdStatus.START_REPAIR,
             OrdStatus.WAIT_FOR_MATERIALS,
         ],
         "extra_materials": [
-            OrdStatus.START_REPAIR,
+            # OrdStatus.START_REPAIR,
             OrdStatus.WAIT_FOR_MATERIALS,
         ],
         "materials_request": [OrdStatus.WAIT_FOR_MATERIALS, OrdStatus.REPAIRING],

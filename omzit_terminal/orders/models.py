@@ -292,6 +292,9 @@ class Orders(models.Model):
 
     @classmethod
     def fresh_orders(cls):
+        """
+        Список свежих заявок - либо находящихся в работе, либо законченных сегодня.
+        """
         assigned_workers_subquery = (
             Repairmen.assignable_workers.filter(
                 orders=OuterRef("pk"), assignments__end_date__isnull=True
@@ -311,7 +314,8 @@ class Orders(models.Model):
 
     @classmethod
     def archived_orders(cls):
-        not_active_order_status = [OrdStatus.ACCEPTED, OrdStatus.CANCELLED, OrdStatus.UNPRPAIRABLE]
+        """Список завершенных заявок"""
+        not_active_order_status = [OrdStatus.ACCEPTED, OrdStatus.CANCELLED, OrdStatus.UNREPAIRABLE]
         fresh = (
             cls.objects.filter(status__in=not_active_order_status)
             .all()
