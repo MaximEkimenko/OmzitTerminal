@@ -30,6 +30,7 @@ class Command(BaseCommand):
         scheduler.add_jobstore(DjangoJobStore(), "default")
 
         logger.info("Команда runscheduler выполнена успешно.")
+        """
         scheduler.add_job(
             pause_work,
             kwargs={
@@ -82,6 +83,7 @@ class Command(BaseCommand):
             misfire_grace_time=1 * 60,
         )
         logger.info('Запущена задача: "Получение отчета по СЗ"')
+        """
 
         # scheduler.add_job(
         #     json_log_refactor_and_xlsx,
@@ -92,7 +94,7 @@ class Command(BaseCommand):
         #     misfire_grace_time=1 * 60,
         # )
         # logger.info('Запущена задача: "Формирование log файлов json и xlsx"')
-
+        """
         scheduler.add_job(
             create_fio_report_schedule,
             trigger=CronTrigger(hour="12", minute="50"),
@@ -102,10 +104,10 @@ class Command(BaseCommand):
             misfire_grace_time=1 * 60,
         )
         logger.info('Запущена задача: "Формирование отчётов для рабочих"')
-
+        """
         scheduler.add_job(
             clear_all_dayworkers,
-            trigger=CronTrigger(hour="15", minute="16"),
+            trigger=CronTrigger(hour="09", minute="28"),
             id="Снятие ремонтников с заявок в конце смены",
             max_instances=1,
             replace_existing=True,
