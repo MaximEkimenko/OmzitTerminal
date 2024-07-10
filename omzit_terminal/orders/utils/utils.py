@@ -5,7 +5,7 @@ import json
 from django import forms
 from django.contrib.postgres.aggregates import StringAgg
 from django.db import models
-from django.db.models import QuerySet, OuterRef, Subquery
+from django.db.models import QuerySet, OuterRef, Subquery, Count
 from django.utils import timezone
 from django.utils.timezone import make_naive, make_aware
 
@@ -432,3 +432,53 @@ ORDER_REPORT_COLUMNS = (
     "supply_request",
     "supply_request_date",
 )
+
+
+def create_ppr_orders():
+    today_day = date.today().day
+    # attached_orders = (
+    #     Orders()
+    #     .fresh_orders()
+    #     .filter(equipment_id=OuterRef("pk"))
+    #     .annotate(oc=Count("pk"))
+    #     .values("oc")
+    # )
+
+    """
+    attached_orders = (
+        Orders()
+        .fresh_orders()
+        .filter(equipment_id=OuterRef("pk"))
+        .annotate(oc=Count("pk"))
+        .values("oc")
+    )
+    today_ppr_equipment = (
+        Equipment.objects
+        # .filter(ppr_plan_day=today_day)
+        .annotate(current_orders=Subquery(attached_orders))
+        .filter(current_orders__gt=0)
+        .prefetch_related("repairs")
+        .all()
+    )
+    """
+
+    # today_ppr_equipment = (
+    #     Equipment.objects
+    #     # .filter(ppr_plan_day=today_day)
+    #     .annotate(current_orders=Count("repairs"))
+    #     .filter(current_orders__gt=0)
+    #     .prefetch_related("repairs")
+    #     .all()
+    # )
+    # for i in today_ppr_equipment:
+    #     print(i.id, i.current_orders)
+
+    ppr_orders = (
+        Orders.fresh_orders()
+        .filter(is_ppr=False, equipment__ppr_plan_day__lte=today_day)
+        .select_related("equipment")
+        .all()
+        .values("equipment")
+    )
+    # print(today_ppr_equipment)
+    print(ppr_orders)

@@ -110,7 +110,9 @@ class Equipment(models.Model):
 
     characteristics = models.TextField(blank=True, null=True, verbose_name="ТТХ")
     description = models.TextField(blank=True, null=True, verbose_name="Описание оборудования")
-    ppr_plan_day = models.IntegerField(blank=True, null=True, verbose_name="День планового ремонта")
+    ppr_plan_day = models.IntegerField(
+        blank=True, null=True, db_index=True, verbose_name="День планового ремонта"
+    )
     in_operation = models.BooleanField(default=True, verbose_name="В эксплуатации")
 
     class Meta:
@@ -175,6 +177,8 @@ def order_directory_path(instance, filename):
 
 
 class Orders(models.Model):
+    is_ppr = models.BooleanField(default=False, verbose_name="Заявка на ППР", db_index=True)
+
     equipment = models.ForeignKey(
         Equipment, on_delete=models.PROTECT, verbose_name="Оборудование", related_name="repairs"
     )

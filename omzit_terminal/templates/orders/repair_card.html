@@ -30,7 +30,7 @@
       
       {% for i, j in order_params.items %}
         {# поле, в котром указан файл pdf со сканом заявки на материалы #}
-        {% if i == pdf_field %}
+        {% if i == special_fields.pdf_field %}
           <div class="card_row">
             <div class="equipment_card__label">  {{i}} </div>
             <div class="flex_container">  
@@ -41,8 +41,16 @@
               </form>
             </div>
           </div>
+
+        {% elif i == special_fields.equipment %}
+        <div class="card_row">
+          <div class="equipment_card__label">  {{i}} </div>
+          <div class="flex_container">  
+            <a href= "{{equipment.get_absolute_url }}" class="table_link" > <span style="word-break: break-all;">{{j|default:"" }}</span></a>
+          </div>
+        </div>
         {# поле, в котром указано количество работников, работавших над заявкой и кнопка для вывода подробной информации #}
-        {% elif i == assignments_field %}
+        {% elif i == special_fields.assignments_field %}
           <div class="card_row">
             <div class="equipment_card__label">  {{i}} </div>
             <div class="flex_container">  

@@ -61,6 +61,7 @@ from orders.utils.utils import (
     check_order_resume,
     ORDER_CARD_COLUMNS,
     remove_old_file_if_exist,
+    create_ppr_orders,
 )
 from orders.utils.telegram import order_telegram_notification
 
@@ -147,7 +148,10 @@ def orders(request) -> HttpResponse:
         else:
             print("ошибка валидации при добавлении заявки")
         return redirect("orders")
+
+    create_ppr_orders()
     context = orders_get_context(request)
+
     return render(request, "orders/orders.html", context=context)
 
 
@@ -516,8 +520,8 @@ def order_card(request, pk):
     )
     # из записи в базе данных получаем словарь с нужными нам колонками
     vd = orders_record_to_dict(order, ORDER_CARD_COLUMNS)
-
     vhd = {verbose_header[i]: vd[i] for i in ORDER_CARD_COLUMNS}
+    print(vd)
     can_edit = can_edit_workers(order.status_id, get_employee_position(request.user.username))
     context = {
         "object": order,
@@ -525,12 +529,12 @@ def order_card(request, pk):
         "status": OrdStatus,
         "can_edit_workers": can_edit,
         "permitted_users": PERMITED_USERS,
-        "pdf_field": verbose_header[
-            "material_request_file"
-        ],  # имя поля, которое надо обрабатывать особенным образом (строка с пикрепленным сканом заявки)
-        "assignments_field": verbose_header[
-            "workers_count"
-        ],  # количество назначений на ремонт и кнопка для просмотра истории назначений
+        "equipment": order.equipment,
+        "special_fields": {
+            "pdf_field": verbose_header["material_request_file"],
+            "assignments_field": verbose_header["workers_count"],
+            "equipment": verbose_header["equipment"],
+        },
         "alerts": pop_flash_messages(),
     }
     return render(request, "orders/repair_card.html", context)
