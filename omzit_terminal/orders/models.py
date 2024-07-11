@@ -200,7 +200,7 @@ class Orders(models.Model):
     priority = models.IntegerField(
         choices=PriorityChoices.choices, default=PriorityChoices.RP_4, verbose_name="Приоритет"
     )
-    breakdown_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата поломки")
+    breakdown_date = models.DateTimeField(verbose_name="Дата поломки")
     breakdown_description = models.TextField(verbose_name="Описание поломки")
     worker = models.CharField(max_length=100, blank=True, null=True, verbose_name="Работник")
     dayworkers = models.ManyToManyField(Repairmen, through=OrdersWorkers, related_name="orders")

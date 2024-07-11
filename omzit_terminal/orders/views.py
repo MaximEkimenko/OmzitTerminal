@@ -127,6 +127,7 @@ def orders(request) -> HttpResponse:
             # добавляем сотрудника, который создал заявку
             order_parameters.update(
                 {
+                    "breakdown_date": make_aware(datetime.now()),
                     "identified_employee": " ".join(
                         [request.user.last_name, request.user.first_name]
                     ),

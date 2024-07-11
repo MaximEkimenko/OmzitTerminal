@@ -1,4 +1,5 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+import calendar
 from pathlib import Path
 from typing import Any
 import json
@@ -193,7 +194,9 @@ def orders_get_context(request) -> dict[str, Any]:
         "revision_cause",
     ]
 
-    order_table_data = Orders.fresh_orders().values(*cols_extended)
+    order_table_data = (
+        Orders.fresh_orders().order_by("priority", "breakdown_date").values(*cols_extended)
+    )
     orders_filter = get_filterset(data=request.GET, queryset=order_table_data, fields=cols)
 
     # Это словарь оборудования с указанием, к какому цеху оно принадлежит.
@@ -436,32 +439,32 @@ ORDER_REPORT_COLUMNS = (
 
 
 def create_ppr_orders():
-    today_day = date.today().day
+    today = date.today()
+    # номер следующего месяца
+    next_month: int = today.month + 1 if today.month + 1 < 13 else 1
+    next_month_length = calendar.monthrange(today.year, next_month)[1]
+    # дата через месяц от сегодняшнего дня, для точного определения номера месяца и года в следующем месяце
+    next_month: date = today + timedelta(days=next_month_length)
 
-    attached_orders = (
-        Orders.fresh_orders()
-        .filter(equipment_id=OuterRef("pk"))
-        .values("equipment_id")
-        .annotate(oc=Count("equipment_id"))
-        .values("oc")
+    # проверяем, что в следующем месяце нет заявок
+    first_day_of_next_month = date(next_month.year, next_month.month, 1)
+    next_month_orders_count = (
+        Orders.fresh_orders().filter(breakdown_date__gte=first_day_of_next_month).count()
     )
-    # выводит записи оборудования и в том числе поле с количесвтом присоединенных заявок
-    # несли заявок нет, пто поле равно None, и на такое оборудование можно создавать заявки
-    today_ppr_equipment = (
-        Equipment.objects.filter(ppr_plan_day=today_day)  # выбираем оборудование за конкретный день
-        .annotate(current_orders=Subquery(attached_orders))
-        .filter(current_orders__isnull=True)
-        .all()
-        .distinct()
-    )
+    print("количество заявок на следующий месяц:", next_month_orders_count)
 
-    for equip in today_ppr_equipment:
-        new_ppr_order = Orders(
-            is_ppr=True,
-            equipment=equip,
-            breakdown_description="Плановый ремонт",
-            identified_employee="Создано автоматически",
-        )
-        new_ppr_order.save()
-
-    print(today_ppr_equipment)
+    # создаем заявки на ППР
+    ppr_equipment = Equipment.objects.exclude(ppr_plan_day__isnull=True)
+    print("количество плановых ремонтов", ppr_equipment)
+    if next_month_orders_count == 0:
+        for equip in ppr_equipment:
+            br_date = datetime(next_month.year, next_month.month, equip.ppr_plan_day, 8)
+            print(equip.id, br_date)
+            new_ppr_order = Orders(
+                is_ppr=True,
+                equipment=equip,
+                breakdown_description="Плановый ремонт",
+                breakdown_date=br_date,
+                identified_employee="Создано автоматически",
+            )
+            new_ppr_order.save()

@@ -31,11 +31,22 @@
           <tr class="table_header_row">
             <th class="td_cell">№
             </th>
+            <th class="td_cell">ППР
+              <p>
+              <select type="text" name="ppr-select" id="ppr-select-id" style="width:20px;height:20px;border-radius:0;">
+                <option value selected>--</option>
+                <option value="1">да</option>
+                <option value="0">нет</option>
+              </select>
+            </p>
+
+            </th>
+
             <th class="td_cell">
               {{order_filter.form.equipment__unique_name}}Оборудование
               <br>
               <div class="sort-filter">
-                  <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 1)" placeholder="">
+                  <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 2)" placeholder="">
                   <button type="button" onclick="sortTable(1)"><img src="{% static 'scheduler/img/sort.svg' %}"
                     alt=""></button>
               </div>
@@ -44,17 +55,17 @@
             <th class="td_cell">{{order_filter.form.status__name}} Статус
               <br>
               <div class="sort-filter">
-                  <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 3)" placeholder="">
+                  <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 4)" placeholder="">
               </div>
             </th>
             <th class="td_cell">{{order_filter.form.priority}} Приоритет
               <br>
               <div class="sort-filter">
-                  <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 4)" placeholder="">
+                  <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 5)" placeholder="">
               </div>
             </th>
             <th class="td_cell">
-              {{order_filter.form.breakdown_date}}Дата поломки
+              {{order_filter.form.breakdown_date}}Дата поломки/ППР
             </th>
             <th class="td_cell">Описание поломки</th>
             <th class="td_cell">
@@ -64,7 +75,7 @@
               Необходимые матреиалы
               <br>
               <div class="sort-filter">
-                  <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 8)" placeholder="">
+                  <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 9)" placeholder="">
               </div>
             </th>
             <th class="td_cell">{{order_filter.form.materials_request}}№ заявки на метриалы</th>
@@ -78,6 +89,14 @@
       {% for rec in order_filter.qs %}      
         <tr class="table_row">        
           <td class="td_cell">{{rec.id}}</td>
+          <td class="td_cell ppr_cell" data-ppr="{% if rec.is_ppr%}1{%else%}0{%endif%}">
+            {% if rec.is_ppr %}
+            да
+            {% else %}
+            нет
+            {% endif %}
+            
+          </td>
           <td class="td_cell">
             <a href="{% url 'order_info' rec.id %}" class="table_link">
               {{ rec.equipment__unique_name }}

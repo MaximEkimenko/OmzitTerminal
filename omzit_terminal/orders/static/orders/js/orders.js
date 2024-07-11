@@ -94,11 +94,10 @@ const color_START_REPAIR = "rgba(253, 68, 43, 0.3)";
 const color_WAIT_FOR_MATERIALS = "rgba(255, 200, 47,  0.35)";
 const color_CANCELLED = "rgba(77, 72, 58, 0.3)";
 const color_SUSPENDED = "rgba(252, 229, 153, 0.3)";
-
+const color_PPR = "rgba(25, 0, 255, 0.4)";
 
 for (let i = 0; i < table_rows.length; i++) {
   let stat_cell = table_rows[i].querySelector(".status_name");
-  console.log(stat_cell.dataset.status)
   switch (stat_cell.dataset.status) {
     case DETECTED:
       table_rows[i].style.background = color_DETECTED;
@@ -130,8 +129,11 @@ for (let i = 0; i < table_rows.length; i++) {
     case SUSPENDED:
       table_rows[i].style.background = color_SUSPENDED;
   }
+  let $ppr_cell = table_rows[i].querySelector(".ppr_cell");
+  if ($ppr_cell.dataset.ppr == "1") {
+    $ppr_cell.style.background = color_PPR;
+  }
 }
-
 
 //===========================================
 // фильтрация оборудования при добавлении задания
@@ -177,6 +179,31 @@ async function equipFilterSelect(shop_id = 0, textFragment = "") {
   for (let entry of equipmentData) {
     const $opt = create_option(entry, shop_id, textFragment);
     if ($opt) $equipmentSelect.options.add($opt);
+  }
+}
+
+//==================================================
+//          фильтрация по ППР
+//==================================================
+const $ppr_selector = document.getElementById("ppr-select-id");
+// $ppr_selector = document.querySelector("#ppr-select-id");
+$ppr_selector.addEventListener("change", filterPPR);
+
+function filterPPR(e) {
+  const selector_value = e.target.value;
+  if (selector_value) {
+    for (let i = 0; i < table_rows.length; i++) {
+      let $cellPpr = table_rows[i].querySelector(".ppr_cell");
+      if ($cellPpr.dataset.ppr == selector_value) {
+        table_rows[i].style.display = "";
+      } else {
+        table_rows[i].style.display = "none";
+      }
+    }
+  } else {
+    for (let i = 0; i < table_rows.length; i++) {
+      table_rows[i].style.display = "";
+    }
   }
 }
 

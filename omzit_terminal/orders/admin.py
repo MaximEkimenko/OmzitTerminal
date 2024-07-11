@@ -7,6 +7,7 @@ class OrdersAdmin(admin.ModelAdmin):
     save_on_top = True
     list_display = (
         "id",
+        "is_ppr",
         "equipment",
         "status",
         "breakdown_date",
