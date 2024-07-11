@@ -176,6 +176,7 @@ def orders_get_context(request) -> dict[str, Any]:
     # столбцы для отображения в таблице
     cols_extended = [
         "id",
+        "is_ppr",
         "equipment_id",
         "equipment__unique_name",
         "status",
@@ -447,14 +448,20 @@ def create_ppr_orders():
     # выводит записи оборудования и в том числе поле с количесвтом присоединенных заявок
     # несли заявок нет, пто поле равно None, и на такое оборудование можно создавать заявки
     today_ppr_equipment = (
-        Equipment.objects.filter(ppr_plan_day=16)  # выбираем оборудование за конкретный день
+        Equipment.objects.filter(ppr_plan_day=today_day)  # выбираем оборудование за конкретный день
         .annotate(current_orders=Subquery(attached_orders))
-        # .filter(current_orders__isnull=True)
+        .filter(current_orders__isnull=True)
         .all()
         .distinct()
     )
 
-    for i in today_ppr_equipment:
-        print(i.name, i.ppr_plan_day, i.current_orders)
+    for equip in today_ppr_equipment:
+        new_ppr_order = Orders(
+            is_ppr=True,
+            equipment=equip,
+            breakdown_description="Плановый ремонт",
+            identified_employee="Создано автоматически",
+        )
+        new_ppr_order.save()
 
     print(today_ppr_equipment)
