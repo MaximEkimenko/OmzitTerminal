@@ -93,6 +93,7 @@ def get_strat_plan_context():
     today = datetime.datetime.now()
     # заполнение параметров моделей
     dates = []
+
     for model in plan:
         model_parameters = ModelParameters.objects.filter(model_name=model['model_name']).values()
         # заполнение только моделями на которые есть данные
@@ -130,74 +131,49 @@ def get_strat_plan_context():
                 'plan_datetime': plan_datetime
             })
     # сортировка по коэффициенту срочности
-    sorted_planned_models = sorted(planned_models, key=itemgetter('ordering'))
+    sorted_planned_models = sorted(planned_models, key=itemgetter('ordering'))[:30]
     # интервал дат оп графику
     start_date_range = datetime.datetime.now()
     end_date_range = max(dates)  # сама поздняя дата из графика
     daterange = [(start_date_range + datetime.timedelta(days=x)) for x in
                  range(0, (end_date_range - start_date_range).days)]
+    completed_models = []
+    planned_models = []
     # сдвиг по отсортированному списку
     day_capacity = 200
     for current_date in daterange:
         required_td_list = []
-        models_in_date = []
         for model in sorted_planned_models:
-            print(model['model_order_query'])
-            # создание списка моделей в дате
-            # model_done_date = model['plan_datetime'] + datetime.timedelta(days=model['model_prod_cycle'])
-            # сохранение дат начала, которые уже прошли
-            if datetime.datetime.fromtimestamp(model['date_start']) >= current_date:
-                new_date_start = {'date_start': current_date.timestamp()}
-            else:
-                new_date_start = {'date_start': model['date_start']}
-            model.update(new_date_start)
+            if model['model_order_query'] not in completed_models:
+                # список трудоёмкостей за дату
+                required_td_list.append(model['required_td'])
+                # сохранение дат начала, которые уже прошли
+                if datetime.datetime.fromtimestamp(model['date_start']) >= current_date:
+                    # если ещё не в работе, то сегодня
+                    new_date_start = {'date_start': current_date.timestamp()}
+                    model.update(new_date_start)
 
-            model_done_date = current_date + datetime.timedelta(days=model['model_prod_cycle'])
-            required_td_list.append(model['required_td'])
+                # новая дата готовности
+                model_done_date = (datetime.datetime.fromtimestamp(model['date_start'])
+                                   + datetime.timedelta(days=model['model_prod_cycle']))
 
-            if sum(required_td_list) <= day_capacity:
-                continue
-                # models_in_date.append(model)
-            elif sum(required_td_list) > day_capacity:
-                new_date_start = {'date_start': current_date.timestamp()}
-                model.update(new_date_start)
-
-
-            # elif model in models_in_date:
-            #     models_in_date.remove(model)
-            #     print('removed', model)
-
-        # if model not in models_in_date:
-        #     new_date_start = {'date_start': (current_date + datetime.timedelta(days=1)).timestamp()}
-        #     model.update(new_date_start)
-
-        # if new_date_start:
-
-            # model.update({'date_start': model_done_date.timestamp() * 1000})
-            # if (model['date_start'] + datetime.timedelta(days=model['model_prod_cycle'])).timestamp() <= current_date.timestamp():
-            #     pass
-    #         #
-            # # добавление новой модели в график
-        # print(len(models_in_date))
-
-            #
-            #
-            #
-            #
-
-        # проход по списку моделей в интервале, сравнение с
-        # day_capacity = 200
-        # required_td_list.append(model['required_td'])
-        # if sum(required_td_list) <= day_capacity and current_date.timestamp() < model['date_start']:
-        #     model.update({'date_start': current_date.timestamp() * 1000})
-        # else:
-        #     model.update({'date_start': current_date + datetime.timedelta(days=1)})
-
-
+                if sum(required_td_list) < day_capacity and model_done_date < current_date:
+                    # добавляем в список готовых
+                    completed_models.append(model['model_order_query'])
+                    # planned_models.remove(model['model_order_query'])
+                elif sum(required_td_list) >= day_capacity:
+                    # меняем дату
+                    new_date_start = {'date_start': current_date.timestamp()}
+                    # new_date_start = {'date_start': (current_date + datetime.timedelta(days=100)).timestamp()}
+                    model.update(new_date_start)
+                elif sum(required_td_list) < day_capacity:
+                    # добавляем в список запланированных
+                    pass
+                    # model_done_date = (datetime.datetime.fromtimestamp(model['date_start'])
+                    #                    + datetime.timedelta(days=model['model_prod_cycle']))
+                    # planned_models.append(model['model_order_query'])
 
     for model in sorted_planned_models:
-
-
         # результирующий контекст
         context["tasks"].append({'id': model['id'],
                                  'name': model['model_name'],
