@@ -19,11 +19,6 @@
           <button class="input_like" type="submit">архив</button>
         </form>
       
-        <input
-          type="button" class="input_like"
-          onclick="window.location.href = '{{ request.path }}';"
-          value="Сбросить фильтр"
-        />
     </div>  
     <table class="table" id="st_table">
       <thead>
@@ -31,7 +26,12 @@
           <tr class="table_header_row">
             <th class="td_cell">№
             </th>
-            <th class="td_cell">ППР
+            <th class="td_cell">ППР<br>
+              <div class="sort-filter">
+                <input type="text" style="max-width:50px;" >
+            </div>
+
+              {% comment %}
               <p>
               <select type="text" name="ppr-select" id="ppr-select-id" style="width:20px;height:20px;border-radius:0;">
                 <option value selected>--</option>
@@ -39,48 +39,64 @@
                 <option value="0">нет</option>
               </select>
             </p>
-
+            {% endcomment %}
             </th>
 
             <th class="td_cell">
-              {{order_filter.form.equipment__unique_name}}Оборудование
+              Оборудование
               <br>
               <div class="sort-filter">
-                  <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 2)" placeholder="">
+                  <input type="text" style="max-width:120px;" >
                   <button type="button" onclick="sortTable(1)"><img src="{% static 'scheduler/img/sort.svg' %}"
                     alt=""></button>
               </div>
             </th>
             <th class="td_cell">Ремонты</th>
-            <th class="td_cell">{{order_filter.form.status__name}} Статус
+            <th class="td_cell">Статус
               <br>
               <div class="sort-filter">
-                  <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 4)" placeholder="">
+                  <input type="text" style="max-width:120px;" >
               </div>
             </th>
-            <th class="td_cell">{{order_filter.form.priority}} Приоритет
+            <th class="td_cell">Приоритет
               <br>
               <div class="sort-filter">
-                  <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 5)" placeholder="">
+                  <input type="text" style="max-width:120px;" >
               </div>
             </th>
             <th class="td_cell">
-              {{order_filter.form.breakdown_date}}Дата поломки/ППР
+              Дата поломки/ППР
             </th>
-            <th class="td_cell">Описание поломки</th>
+            <th class="td_cell">Описание поломки
+              <div class="sort-filter">
+                <input type="text" style="max-width:120px;" >
+            </div>
+            </th>
             <th class="td_cell">
-              {{order_filter.form.expected_repair_date}}Предполагаемая дата окончания ремонта
+              Предполагаемая дата окончания ремонта
             </th>
-            <th class="td_cell">{{order_filter.form.materials__name}}
+            <th class="td_cell">
               Необходимые матреиалы
               <br>
               <div class="sort-filter">
-                  <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 9)" placeholder="">
+                  <input type="text" style="max-width:120px;" >
               </div>
             </th>
-            <th class="td_cell">{{order_filter.form.materials_request}}№ заявки на метриалы</th>
-            <th class="td_cell">Исполнители</th>
-            <th class="td_cell">Доработка</th>
+            <th class="td_cell">№ заявки на метриалы
+              <div class="sort-filter">
+                <input type="text" style="max-width:120px;" >
+            </div>
+            </th>
+            <th class="td_cell">Исполнители
+              <div class="sort-filter">
+                <input type="text" style="max-width:120px;" >
+            </div>
+            </th>
+            <th class="td_cell">Доработка
+              <div class="sort-filter">
+                <input type="text" style="max-width:120px;" >
+            </div>
+            </th>
             <th class="td_cell">Действия</th>
           </tr>
         </form>
@@ -223,5 +239,8 @@
 {% block js %} 
   {{block.super }}
   <script src="{% static 'orders/js/orders.js' %}"></script>
-  <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
+  <script src="{% static 'orders/js/multifield_filter.js' %}"></script>
+
+
+  {#<script src="{% static 'scheduler/js/scheduler.js' %}"></script>#}
 {% endblock js%}
