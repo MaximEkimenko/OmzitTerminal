@@ -43,16 +43,16 @@
               <input type="text" style="max-width:250px;">  
             </div>
           </th>
-          <th class="td_cell">
+          <th class="td_cell" style="max-width:150px;">
             День ППР
             <br>
             <div class="sort-filter">
-              <input type="text" style="max-width:250px;">  
+              <input type="text" >  
             </div>
           </th>
 
-          <th class="td_cell">
-            Ремонты
+          <th class="td_cell" style="width:150px;">
+            История(кол-во срочных ремонтов) 
             <br>
             <div class="sort-filter">
               <input type="text" style="max-width:250px;">  
@@ -79,8 +79,13 @@
       <td class="td_cell">{{ line.ppr_plan_day|default:"-" }}</td>
       
       <td class="td_cell">
-        {%if line.history != 0 %}  
-          <a  class="table_link" href="{% url 'repair_history' pk=line.id %}">история ({{line.history}})</a>
+        {%if line.history %}  
+          <a  class="table_link" href="{% url 'repair_history' pk=line.id %}">
+            история 
+            {% if line.urgent_repairs_qty %}
+              ({{line.urgent_repairs_qty}})
+            {% endif %}
+          </a>
         {% endif %}
       </td>
     </tr>

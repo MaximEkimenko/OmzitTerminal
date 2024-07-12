@@ -7,7 +7,7 @@ from django.contrib.postgres.aggregates import StringAgg
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect, FileResponse, JsonResponse
 from django.db import transaction
-from django.db.models import Window, Count, ProtectedError, Subquery, OuterRef, F
+from django.db.models import Window, Count, ProtectedError, Subquery, OuterRef, F, Exists
 from django.db.models.functions import RowNumber
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, UpdateView, ListView, DeleteView
@@ -92,12 +92,20 @@ def equipment(request: WSGIRequest) -> HttpResponse:
 
     # столбцы, которые будут выводиться в таблице оборудования
     cols = ["id", "name", "inv_number", "shop__name", "ppr_plan_day"]
+    urgent_repairs = (
+        Orders.objects.exclude(is_ppr=True)
+        .filter(equipment=OuterRef("pk"))
+        .values("equipment")
+        .annotate(urgent_repairs_qty=Count("equipment"))
+    ).values("urgent_repairs_qty")
+
     table_data = (
         Equipment.objects.annotate(
             row_number=Window(expression=RowNumber(), order_by="unique_name")
         )
         .annotate(history=Count("repairs"))
-        .values("row_number", "history", *cols)
+        .annotate(urgent_repairs_qty=Subquery(urgent_repairs))
+        .values("row_number", "history", "urgent_repairs_qty", *cols)
     )
 
     context = {
