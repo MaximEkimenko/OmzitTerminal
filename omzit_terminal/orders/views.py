@@ -61,7 +61,6 @@ from orders.utils.utils import (
     check_order_resume,
     ORDER_CARD_COLUMNS,
     remove_old_file_if_exist,
-    create_ppr_orders,
 )
 from orders.utils.telegram import order_telegram_notification
 
@@ -150,7 +149,6 @@ def orders(request) -> HttpResponse:
             print("ошибка валидации при добавлении заявки")
         return redirect("orders")
 
-    create_ppr_orders()
     context = orders_get_context(request)
 
     return render(request, "orders/orders.html", context=context)
