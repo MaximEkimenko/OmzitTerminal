@@ -24,11 +24,15 @@
       <thead>
         <form method="get" id="filter_form">
           <tr class="table_header_row">
-            <th class="td_cell">№
+            <th class="td_cell">№<br>
+              <div class="sort-filter">
+                <input type="text" style="max-width:40px;" >
+            </div>
+
             </th>
             <th class="td_cell">ППР<br>
               <div class="sort-filter">
-                <input type="text" style="max-width:50px;" >
+                <input type="text" style="max-width:40px;" >
             </div>
 
               {% comment %}
@@ -238,7 +242,4 @@
   {{block.super }}
   <script src="{% static 'orders/js/orders.js' %}"></script>
   <script src="{% static 'orders/js/multifield_filter.js' %}"></script>
-
-
-  {#<script src="{% static 'scheduler/js/scheduler.js' %}"></script>#}
 {% endblock js%}

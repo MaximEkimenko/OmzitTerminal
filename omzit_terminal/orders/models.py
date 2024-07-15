@@ -161,7 +161,7 @@ class OrdersWorkers(models.Model):
     worker = models.ForeignKey(Repairmen, on_delete=models.CASCADE, related_name="assignments")
     order = models.ForeignKey("Orders", on_delete=models.CASCADE, related_name="assignments")
     start_date = models.DateTimeField(default=now)
-    end_date = models.DateTimeField(null=True)
+    end_date = models.DateTimeField(null=True, db_index=True)
 
     class Meta:
         # unique_together = ["worker", "order", "start_date"]
@@ -221,7 +221,9 @@ class Orders(models.Model):
         max_length=100, null=True, verbose_name="Работник, завершивший ремонт"
     )
 
-    acceptance_date = models.DateTimeField(null=True, verbose_name="Дата закрытия заявки")
+    acceptance_date = models.DateTimeField(
+        null=True, verbose_name="Дата закрытия заявки", db_index=True
+    )
     accepted_employee = models.CharField(
         max_length=100, null=True, verbose_name="Работник, принявший оборудование"
     )

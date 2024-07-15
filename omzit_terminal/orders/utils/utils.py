@@ -8,7 +8,7 @@ from django.utils.timezone import make_naive, make_aware
 
 from m_logger_settings import logger
 from orders.utils.common import OrdStatus, button_context
-from orders.utils.roles import Position, get_employee_position
+from orders.utils.roles import Position, get_employee_position, PERMITED_USERS
 from orders.forms import AddOrderForm
 
 from orders.models import (
@@ -191,6 +191,7 @@ def orders_get_context(request) -> dict[str, Any]:
         "alerts": pop_flash_messages(),
         "statuses": OrdStatus,
         "button_context": button_context,
+        "permitted_users": PERMITED_USERS,
     }
     return context
 

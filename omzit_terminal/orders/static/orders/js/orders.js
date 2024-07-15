@@ -129,10 +129,13 @@ for (let i = 0; i < table_rows.length; i++) {
     case SUSPENDED:
       table_rows[i].style.background = color_SUSPENDED;
   }
+
+  // подсветка ППР синим цветом
   let $ppr_cell = table_rows[i].querySelector(".ppr_cell");
   if ($ppr_cell.dataset.ppr == "1") {
     $ppr_cell.style.background = color_PPR;
   }
+
 }
 
 //===========================================

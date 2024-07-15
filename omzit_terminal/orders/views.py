@@ -114,6 +114,7 @@ def equipment(request: WSGIRequest) -> HttpResponse:
         "add_equipment_form": AddEquipmentForm(),
         "button_conditions": {"create": [Position.Admin, Position.Engineer, Position.HoRT]},
         "role": get_employee_position(request.user.username),
+        "permitted_users": PERMITED_USERS,
     }
     return render(request, "orders/equipment.html", context=context)
 

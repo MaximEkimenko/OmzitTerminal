@@ -15,15 +15,57 @@
 
     <table class="table">
         <thead>
-            <tr class="table_header_row">
-              <th class="td_cell">№ заявки</th>
-              <th class="td_cell">Оборудование</th>
-              <th class="td_cell">Дата поломки</th>
-              <th class="td_cell">Дата окончания ремонта</th>
-              <th class="td_cell">Результат</th>
-              <th class="td_cell">Описание поломки</th>
-              <th class="td_cell">Причина поломки</th>
-              <th class="td_cell">Способ устранения</th>
+            <tr class="table_header_row"><br>
+              <th class="td_cell">№ заявки
+                <div class="sort-filter">
+                  <input type="text" style="max-width:40px;" >
+              </div>
+              </th>
+              <th class="td_cell">ППР<br>
+                <div class="sort-filter">
+                  <input type="text" style="max-width:40px;" >
+              </div>
+              <th class="td_cell">Оборудование<br>
+                <div class="sort-filter">
+                  <input type="text" style="max-width:120px;" >
+              </div>
+              </th>
+              <th class="td_cell">Дата поломки<br>
+                <div class="sort-filter">
+                  <input type="text" style="max-width:120px;" >
+              </div>
+
+              </th>
+              <th class="td_cell">Дата окончания ремонта<br>
+                <div class="sort-filter">
+                  <input type="text" style="max-width:120px;" >
+              </div>
+
+              </th>
+              <th class="td_cell">Результат<br>
+                <div class="sort-filter">
+                  <input type="text" style="max-width:120px;" >
+              </div>
+
+              </th>
+              <th class="td_cell">Описание поломки<br>
+                <div class="sort-filter">
+                  <input type="text" style="max-width:120px;" >
+              </div>
+
+              </th>
+              <th class="td_cell">Причина поломки<br>
+                <div class="sort-filter">
+                  <input type="text" style="max-width:120px;" >
+              </div>
+
+              </th>
+              <th class="td_cell">Способ устранения<br>
+                <div class="sort-filter">
+                  <input type="text" style="max-width:120px;" >
+              </div>
+
+              </th>
             </tr>
       
         </thead>
@@ -33,7 +75,14 @@
               <a href="{% url 'order_info' rec.id %}" class="table_link">
                 {{rec.id}}
               </a>
-            </td>            
+            </td>
+            <td class="td_cell ppr_cell" data-ppr="{% if rec.is_ppr%}1{%else%}0{%endif%}">
+              {% if rec.is_ppr %}
+              да
+              {% else %}
+              нет
+              {% endif %}
+            </td>           
             <td class="td_cell" style="max-width:450px; word-break:break-word;">
               <a href="{% url 'repair_history' rec.equipment_id %}" class="table_link">
                 {{rec.equipment}}
@@ -61,4 +110,6 @@
 
 {% block js %} 
   {{block.super }}
+  <script src="{% static 'orders/js/multifield_filter.js' %}"></script>
+  <script src="{% static 'orders/js/PPR_highlight.js' %}"></script>
 {% endblock js%}

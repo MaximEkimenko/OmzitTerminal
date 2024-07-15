@@ -14,13 +14,51 @@
   <table class="table">
     <thead>
         <tr class="table_header_row">
-          <th class="td_cell">№ заявки</th>
-          <th class="td_cell">Дата поломки</th>
-          <th class="td_cell">Дата окончания ремонта</th>
-          <th class="td_cell">Результат</th>
-          <th class="td_cell">Описание поломки</th>
-          <th class="td_cell">Причина поломки</th>
-          <th class="td_cell">Способ устранения</th>
+          <th class="td_cell">№ заявки
+            <br>
+                <div class="sort-filter">
+                  <input type="text" style="max-width:40px;" >
+              </div>
+          </th>
+          <th class="td_cell">ППР
+            <div class="sort-filter">
+              <input type="text" style="max-width:40px;" >
+          </div>
+          </th>
+          <th class="td_cell">Дата поломки<br>
+            <div class="sort-filter">
+              <input type="text" style="max-width:120px;" >
+          </div>
+          </th>
+          <th class="td_cell">Дата окончания ремонта<br>
+            <div class="sort-filter">
+              <input type="text" style="max-width:120px;" >
+            </div>
+          </th>
+          <th class="td_cell">Результат<br>
+            <div class="sort-filter">
+              <input type="text" style="max-width:120px;" >
+            </div>
+
+          </th>
+          <th class="td_cell">Описание поломки<br>
+            <div class="sort-filter">
+              <input type="text" style="max-width:120px;" >
+            </div>
+
+          </th>
+          <th class="td_cell">Причина поломки<br>
+            <div class="sort-filter">
+              <input type="text" style="max-width:120px;" >
+            </div>
+
+          </th>
+          <th class="td_cell">Способ устранения<br>
+            <div class="sort-filter">
+              <input type="text" style="max-width:120px;" >
+            </div>
+
+          </th>
         </tr>
   
     </thead>
@@ -35,16 +73,36 @@
           </a>
         </td>
 
-        <td class="td_cell">{{rec.breakdown_date|default:""}}</td>
-        <td class="td_cell">{{rec.acceptance_date|default:""}}</td>
+        <td class="td_cell ppr_cell" data-ppr="{% if rec.is_ppr%}1{%else%}0{%endif%}">
+          {% if rec.is_ppr %}
+            да
+          {% else %}
+            нет
+          {% endif %}
+        </td>  
+
+        <td class="td_cell">{{rec.breakdown_date|default:""}}
+
+        </td>
+
+        <td class="td_cell">{{rec.acceptance_date|default:""}}
+
+        </td>
+
         <td class="td_cell">
           {% if rec.status_id == status.ACCEPTED or rec.status_id == status.CANCELLED%}
             {{rec.status}}<br>    
           {%endif%}
         </td>
-        <td class="td_cell">{{rec.breakdown_description|default:""}}</td>
-        <td class="td_cell">{{rec.breakdown_cause|default:""}}</td>
-        <td class="td_cell">{{rec.solution|default:""}}</td>
+        <td class="td_cell">
+          {{rec.breakdown_description|default:""}}
+        </td>
+        <td class="td_cell">
+          {{rec.breakdown_cause|default:""}}
+        </td>
+        <td class="td_cell">
+          {{rec.solution|default:""}}
+        </td>
       </tr>
   
 
@@ -54,5 +112,8 @@
   
 {% endblock content %} {% block js %} {{block.super }}
 
-<script src="{% static 'orders/js/orders.js' %}"></script>
+
+{#<script src="{% static 'orders/js/orders.js' %}"></script>#}
+<script src="{% static 'orders/js/multifield_filter.js' %}"></script>
+<script src="{% static 'orders/js/PPR_highlight.js' %}"></script>
 {% endblock js%}
