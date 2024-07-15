@@ -47,8 +47,6 @@
               <br>
               <div class="sort-filter">
                   <input type="text" style="max-width:120px;" >
-                  <button type="button" onclick="sortTable(1)"><img src="{% static 'scheduler/img/sort.svg' %}"
-                    alt=""></button>
               </div>
             </th>
             <th class="td_cell">Ремонты</th>
@@ -102,7 +100,7 @@
         </form>
       </thead>
       
-      {% for rec in order_filter.qs %}      
+      {% for rec in orders %}      
         <tr class="table_row">        
           <td class="td_cell">{{rec.id}}</td>
           <td class="td_cell ppr_cell" data-ppr="{% if rec.is_ppr%}1{%else%}0{%endif%}">

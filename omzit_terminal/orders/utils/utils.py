@@ -7,7 +7,6 @@ from django.utils import timezone
 from django.utils.timezone import make_naive, make_aware
 
 from m_logger_settings import logger
-from scheduler.filters import get_filterset
 from orders.utils.common import OrdStatus, button_context
 from orders.utils.roles import Position, get_employee_position
 from orders.forms import AddOrderForm
@@ -154,23 +153,9 @@ def orders_get_context(request) -> dict[str, Any]:
     alerts: всплывающие сообщения о действиях пользователя
     button_context: список, но основе которого происходит формирование кнопок
     """
-    # столбцы для фильтрации через django-filter
-    cols = [
-        "id",
-        "equipment_id",
-        "equipment__unique_name",
-        "status",
-        "status__name",
-        "priority",
-        "breakdown_date",
-        "breakdown_description",
-        "expected_repair_date",
-        "materials__name",
-        "materials_request",
-        "revision_cause",
-    ]
+
     # столбцы для отображения в таблице
-    cols_extended = [
+    cols = [
         "id",
         "is_ppr",
         "equipment_id",
@@ -193,23 +178,20 @@ def orders_get_context(request) -> dict[str, Any]:
         Orders.fresh_orders()
         .filter(breakdown_date__lt=today_plus_3)
         .order_by("priority", "breakdown_date")
-        .values(*cols_extended)
+        .values(*cols)
     )
-    orders_filter = get_filterset(data=request.GET, queryset=order_table_data, fields=cols)
 
     # Это словарь оборудования с указанием, к какому цеху оно принадлежит.
     # Нужно для реализации фильтров при создании заявки на ремонт.
-
     context = {
         "create_order": [Position.Admin, Position.HoS],  # добавить заявку
         "role": get_employee_position(request.user.username),
-        "order_filter": orders_filter,
+        "orders": order_table_data,
         "add_order_form": AddOrderForm(),
         "alerts": pop_flash_messages(),
         "statuses": OrdStatus,
         "button_context": button_context,
     }
-
     return context
 
 
@@ -353,7 +335,7 @@ def check_order_suspend(order: Orders):
 def clear_dayworkers(order: Orders):
     """
     Снимаем всех сотрудников с заявки, а дальше она, в зависимости от статуса, может перейти
-    в состояние "приостановлено"
+    в состояние "приостановлено".
     """
     active_workers = OrdersWorkers.objects.filter(order=order, end_date__isnull=True).all()
     if active_workers:
@@ -362,6 +344,12 @@ def clear_dayworkers(order: Orders):
 
 
 def remove_old_file_if_exist(file):
+    """
+    Удаляет файл, прикрепленный к заявке.
+    К заявке можно прикрепить pdf-файл со сканом заявки на материалы.
+    Данная функция вызывается, когда пользователь прикрепляет другой файл вместо существующего.
+    Старый файл при этом необходимо удалить.
+    """
     if file:
         f = Path(file.path).resolve()
         if f.exists():
