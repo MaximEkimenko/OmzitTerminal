@@ -177,7 +177,7 @@ def orders_get_context(request) -> dict[str, Any]:
     order_table_data = (
         Orders.fresh_orders()
         .filter(breakdown_date__lt=today_plus_3)
-        .order_by("priority", "breakdown_date")
+        .order_by("priority", "breakdown_date", "pk")
         .values(*cols)
     )
 

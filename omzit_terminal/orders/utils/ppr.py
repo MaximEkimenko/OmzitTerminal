@@ -24,7 +24,9 @@ def create_current_month_ppr_orders():
     )
     print("количество заявок в этом месяце:", ppr_orders_count)
     # создаем заявки на ППР
-    ppr_equipment = Equipment.objects.filter(ppr_plan_day__gte=today.day).all()
+    ppr_equipment = (
+        Equipment.objects.filter(ppr_plan_day__gte=today.day).order_by("ppr_plan_day").all()
+    )
     if ppr_orders_count == 0:
         for equip in ppr_equipment:
             br_date = datetime(today.year, today.month, equip.ppr_plan_day, 8)
@@ -60,11 +62,13 @@ def create_next_month_ppr_orders():
         .count()
     )
     print("количество заявок в следующем месяце:", next_month_orders_count)
-    # Создаем заявки на ППР.
-    # Получаем список оборудования, у которого проставлена дата ПРР и проходимся по нему,
-    # создавая на каждое оборудование заявку.
-    ppr_equipment = Equipment.objects.exclude(ppr_plan_day__isnull=True)
     if next_month_orders_count == 0:
+        # Создаем заявки на ППР.
+        # Получаем список оборудования, у которого проставлена дата ПРР и проходимся по нему,
+        # создавая на каждое оборудование заявку.
+        ppr_equipment = Equipment.objects.exclude(ppr_plan_day__isnull=True).order_by(
+            "ppr_plan_day"
+        )
         for equip in ppr_equipment:
             # для каждого оборудования создаем свою дату заявки на основе дня ППР
             br_date = datetime(next_month.year, next_month.month, equip.ppr_plan_day, 8)
