@@ -23,7 +23,7 @@ USER_GROUPS = {
         "admin3",
     ],
     Position.Engineer: ["engineer"],
-    Position.HoS: ["chief_ceh", "chief_ceh2"],
+    Position.HoS: ["chief_ceh", "chief_ceh2", "chief_ceh3"],
     Position.HoRT: ["chief_rep", "chief_rep2"],
     Position.Dispatcher: ["dispatcher", "dispatcher2"],
     Position.Worker: ["worker"],
