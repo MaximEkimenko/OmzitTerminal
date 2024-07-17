@@ -18,6 +18,7 @@ from orders.models import (
     Materials,
     Repairmen,
     OrdersWorkers,
+    WorkersLog
 )
 
 
@@ -141,6 +142,14 @@ def convert_name(doers: list[str]) -> str:
         doers_fio.append(new_name)
     return ", ".join(sorted(doers_fio))
 
+def convert_dayworkers_to_string(doers: list[Repairmen]) -> str:
+    """
+    Из списка объектов Repairmen получаем строку для демонстрации, кто из работников назначен на конкретную заявку
+    """
+    doers_fio = []
+    for doer in doers:
+        doers_fio.append(doer.fio)
+    return ", ".join(sorted(doers_fio))
 
 def orders_get_context(request) -> dict[str, Any]:
     """
@@ -170,6 +179,7 @@ def orders_get_context(request) -> dict[str, Any]:
         "expected_repair_date",
         "materials__name",
         "dayworkers_fio",
+        "dayworkers_string",
         "materials_request",
         "revision_cause",
     ]
@@ -342,6 +352,15 @@ def clear_dayworkers(order: Orders):
     if active_workers:
         active_workers.update(end_date=timezone.now())
         check_order_suspend(order)
+    # строковое представление
+    WorkersLog.objects.create(order=order,
+                              dayworkers_string=order.dayworkers_string,
+                              start_date=order.inspection_date,
+                              end_date=timezone.now())
+    order.dayworkers_string = None
+    order.inspection_date = None
+    order.save()
+
 
 
 def remove_old_file_if_exist(file):

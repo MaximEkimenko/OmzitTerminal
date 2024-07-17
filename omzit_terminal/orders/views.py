@@ -60,7 +60,7 @@ from orders.utils.utils import (
     clear_dayworkers,
     check_order_resume,
     ORDER_CARD_COLUMNS,
-    remove_old_file_if_exist,
+    remove_old_file_if_exist, convert_dayworkers_to_string,
 )
 from orders.utils.telegram import order_telegram_notification
 
@@ -216,14 +216,16 @@ def order_assign_workers(request, pk):
                     )
                 # или начинаем новый ремонт
                 else:
-                    order.inspection_date = make_aware(datetime.now())
-                    order.inspected_employee = " ".join(
-                        [request.user.last_name, request.user.first_name]
-                    )
                     applied_status = OrdStatus.START_REPAIR
                     alert_message = (
                         f"Начат ремонт оборудования {order.equipment} по заявке № {order.id}."
                     )
+                order.dayworkers_string = convert_dayworkers_to_string(fios)
+                order.inspection_date = make_aware(datetime.now())
+                order.inspected_employee = " ".join(
+                    [request.user.last_name, request.user.first_name]
+                )
+
                 success = apply_order_status(order, applied_status)
                 if success:
                     create_flash_message(alert_message)

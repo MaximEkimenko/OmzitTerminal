@@ -171,6 +171,13 @@ class OrdersWorkers(models.Model):
         return f"worker: {self.worker.fio}   order:{self.order.id} start_date:{self.start_date}  end_date:{self.end_date} "
 
 
+class WorkersLog(models.Model):
+    order = models.ForeignKey("Orders", on_delete=models.CASCADE, related_name="workers_log")
+    dayworkers_string  = models.CharField(max_length=256, verbose_name="Ремонтники")
+    start_date = models.DateTimeField(db_index=True)
+    end_date = models.DateTimeField(db_index=True)
+
+
 def order_directory_path(instance, filename):
     """Формирует путь для сохранения файлов, прикрепленных к заявкам"""
     return f"order_{instance.pk}/{filename}"
@@ -203,7 +210,9 @@ class Orders(models.Model):
     breakdown_date = models.DateTimeField(verbose_name="Дата поломки")
     breakdown_description = models.TextField(verbose_name="Описание поломки")
     worker = models.CharField(max_length=100, blank=True, null=True, verbose_name="Работник")
+
     dayworkers = models.ManyToManyField(Repairmen, through=OrdersWorkers, related_name="orders")
+    dayworkers_string = models.CharField(max_length=256, blank=True, null=True, verbose_name="Ремонтники")
     identified_employee = models.CharField(
         max_length=100, null=True, verbose_name="Работник, создавший заявку"
     )

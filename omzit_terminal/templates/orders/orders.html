@@ -94,6 +94,9 @@
                 <input type="text" style="max-width:120px;" >
             </div>
             </th>
+            <th class="td_cell">Строка исполнителей
+            </th>
+
             <th class="td_cell">Доработка
               <div class="sort-filter">
                 <input type="text" style="max-width:120px;" >
@@ -139,6 +142,7 @@
           <td class="td_cell" >{{rec.materials__name|default:""}}</td>
           <td class="td_cell" >{{rec.materials_request|default:""}}</td>
           <td class="td_cell" >{{rec.dayworkers_fio|default:""}}</td>
+          <td class="td_cell" >{{rec.dayworkers_string|default:""}}</td>
           <td class="td_cell" >{{rec.revision_cause|default:"" |safe}}</td>
           <td class="td_cell">
           {% for b in  button_context%}
