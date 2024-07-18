@@ -1,21 +1,19 @@
 from datetime import datetime
-from django.utils import timezone
-from django.db.models import F
-from orders.models import OrdersWorkers, Orders
-from orders.utils.common import OrdStatus
 from orders.utils.ppr import create_current_month_ppr_orders, create_next_month_ppr_orders
+from orders.utils.workers_process import clear_all_dayworkers, clear_all_string_dayworkers
 
-CREATE_NEXT_MONTH_PPR_DAY = 27
+# День, когда надо создавать заявки ППР на следующий месяц
+# CREATE_NEXT_MONTH_PPR_DAY = 27
 
+# тестовое значение
+CREATE_NEXT_MONTH_PPR_DAY = 15
 
-def clear_all_dayworkers():
-    active_workers = OrdersWorkers.objects.filter(end_date__isnull=True).all()
-    if active_workers:
-        active_workers.update(end_date=timezone.now())
-    Orders.objects.filter(status__in=[OrdStatus.START_REPAIR, OrdStatus.REPAIRING]).update(
-        status=OrdStatus.SUSPENDED, previous_status=F("status")
-    )
-
+def suspend_orders_end_of_day():
+    """
+    Снимает работников со всех активных заявок в конце рабочего дня
+    """
+    clear_all_dayworkers()
+    clear_all_string_dayworkers()
 
 def create_ppr_at_first_run():
     create_current_month_ppr_orders()

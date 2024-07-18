@@ -10,11 +10,11 @@ from django_apscheduler.models import DjangoJobExecution
 from django_apscheduler import util
 
 from orders.utils.tasks import (
-    clear_all_dayworkers,
     create_ppr_at_first_run,
     create_ppr_for_next_month,
-    CREATE_NEXT_MONTH_PPR_DAY,
+    CREATE_NEXT_MONTH_PPR_DAY, suspend_orders_end_of_day,
 )
+from orders.utils.workers_process import clear_all_dayworkers
 from worker.views import pause_work, resume_work  # noqa
 
 from m_logger_settings import logger, json_log_refactor_and_xlsx  # noqa
@@ -40,9 +40,7 @@ class Command(BaseCommand):
         """
         scheduler.add_job(
             pause_work,
-            kwargs={
-                "is_lunch": True,
-            },
+            kwargs={'is_lunch': True, },
             trigger=CronTrigger(hour="12"),
             id="Приостановка работы в обед",
             max_instances=1,
@@ -62,9 +60,7 @@ class Command(BaseCommand):
 
         scheduler.add_job(
             resume_work,
-            kwargs={
-                "is_lunch": True,
-            },
+            kwargs={'is_lunch': True, },
             trigger=CronTrigger(hour="13"),
             id="Возобновление работы после обеда",
             max_instances=1,
@@ -74,33 +70,24 @@ class Command(BaseCommand):
 
         scheduler.add_job(
             delete_old_job_executions,
-            trigger=CronTrigger(day_of_week="mon", hour="00", minute="00"),
+            trigger=CronTrigger(
+                day_of_week="mon", hour="00", minute="00"
+            ),
             id="delete_old_job_executions",
             max_instances=1,
             replace_existing=True,
         )
         logger.info("Запущена еженедельная задача: 'delete_old_job_executions'.")
 
-        logger.info('Запущена задача: "Снятие ремонтников с заявок в конце смены"')
-        scheduler.add_job(
-            test_schedule,
-            trigger=CronTrigger(hour="14", minute="28"),
-            id="Тествове задание 1",
-            max_instances=1,
-            replace_existing=True,
-            misfire_grace_time=1 * 60,
-        )
-        
         scheduler.add_job(
             shift_tasks_auto_report,
-            trigger=CronTrigger(hour="14", minute="33"),
+            trigger=CronTrigger(hour="07", minute="30"),
             id="Получение отчета по СЗ",
             max_instances=1,
             replace_existing=True,
             misfire_grace_time=1 * 60,
         )
         logger.info('Запущена задача: "Получение отчета по СЗ"')
-        """
 
         # scheduler.add_job(
         #     json_log_refactor_and_xlsx,
@@ -111,28 +98,31 @@ class Command(BaseCommand):
         #     misfire_grace_time=1 * 60,
         # )
         # logger.info('Запущена задача: "Формирование log файлов json и xlsx"')
-        """
+
         scheduler.add_job(
             create_fio_report_schedule,
-            trigger=CronTrigger(hour="12", minute="50"),
+            trigger=CronTrigger(hour="20", minute="00"),
             id="Формирование отчётов для рабочих",
             max_instances=1,
             replace_existing=True,
             misfire_grace_time=1 * 60,
         )
         logger.info('Запущена задача: "Формирование отчётов для рабочих"')
+
         """
         scheduler.add_job(
-            clear_all_dayworkers,
-            trigger=CronTrigger(hour="10", minute="08"),
+            suspend_orders_end_of_day,
+            # trigger=CronTrigger(hour="20", minute="0"),
+            trigger=CronTrigger(minute="*/4"),
             id="Снятие ремонтников с заявок в конце смены",
             max_instances=1,
             replace_existing=True,
             misfire_grace_time=1 * 60,
         )
         logger.info("Запущена задача: Снятие ремонтников с заявок в конце смены")
+
         # запускаем задание два дня подряд, на случай, если в первый раз не отработало
-        ppr_run_days = f"{CREATE_NEXT_MONTH_PPR_DAY},{CREATE_NEXT_MONTH_PPR_DAY+1}"
+        ppr_run_days = f"{CREATE_NEXT_MONTH_PPR_DAY},{CREATE_NEXT_MONTH_PPR_DAY + 1}"
         scheduler.add_job(
             create_ppr_for_next_month,
             trigger=CronTrigger(day=ppr_run_days, hour=22),

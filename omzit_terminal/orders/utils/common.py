@@ -138,7 +138,7 @@ button_context = [
         title="снять всех исполнителей",
         url="clear_workers",
         states=[OrdStatus.START_REPAIR, OrdStatus.REPAIRING],
-        groups=[Position.Admin],
+        groups=[Position.Admin, Position.HoRT, Position.Repairman],
     ),
 ]
 

@@ -337,3 +337,5 @@ class Orders(models.Model):
             .prefetch_related("equipment", "status")
         )
         return fresh
+
+

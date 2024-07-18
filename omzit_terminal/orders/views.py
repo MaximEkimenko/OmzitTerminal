@@ -1004,12 +1004,6 @@ class RepairmenHistory(LoginRequiredMixin, ListView):
         return context
 
 
-@login_required(login_url="/scheduler/login/")
-def clear_workers_proc(request: WSGIRequest, pk):
-    order = Orders.objects.get(pk=pk)
-    clear_dayworkers(order)
-    return redirect("orders")
-
 
 @login_required(login_url="/scheduler/login/")
 def order_upload_pdf(request: WSGIRequest, pk):

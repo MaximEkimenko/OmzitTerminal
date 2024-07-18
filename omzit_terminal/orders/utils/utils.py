@@ -352,7 +352,15 @@ def clear_dayworkers(order: Orders):
     if active_workers:
         active_workers.update(end_date=timezone.now())
         check_order_suspend(order)
-    # строковое представление
+    # удаляем работников в строковом представлении
+    remove_dayworkers_from_order(order)
+
+
+def remove_dayworkers_from_order(order: Orders):
+    """
+    Очищаем поля исполнителей и начала ремонта в заявке и сохраняем данные об исполнителях
+    и времени их работыв в таблицу WorkersLog
+    """
     WorkersLog.objects.create(order=order,
                               dayworkers_string=order.dayworkers_string,
                               start_date=order.inspection_date,
@@ -360,6 +368,7 @@ def clear_dayworkers(order: Orders):
     order.dayworkers_string = None
     order.inspection_date = None
     order.save()
+
 
 
 

@@ -19,11 +19,16 @@
       </form>
       {%endif %}
       
+      {% comment %}
+      Пока что кнопка редактрования исполнителей не нужна ввижу отказа от отношения many-to-many
+      Можно только назначить или снять всех исполнителей
+      
       {% if can_edit_workers %}
         <form action="{% url 'repairmen_edit' object.id %}">
           <input type="submit" class="input_like"  value="Редактировать исполнителей" />
         </form>
       {%endif %}      
+      {% endcomment %}
     </div>
 
     <div class="equipment_card">
