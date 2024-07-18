@@ -338,4 +338,31 @@ class Orders(models.Model):
         )
         return fresh
 
+    @classmethod
+    def busy_workers(cls, repairmen_ids: list[int]) -> QuerySet["Repairmen"]:
+        """
+        Возвращает список объектов работников, которых выбрал пользователь, но они уже заняты на другой заявке.
+        Чтобы не добавлять их повторно к другому заданию.
+        """
+        # Находим все заявки у которых непустые поля "исполнители"
+        orders_with_workers = cls.fresh_orders().exclude(dayworkers_string__isnull=True).values('dayworkers_string')
+        all_names_str = set()
+        # разрезаем фамилии из заявок, на которых заняты рабочие
+        # и получаем список фамилий, которые уже заняты на других заявках
+        for order in orders_with_workers:
+            all_names_str.update(order['dayworkers_string'].split(", "))
+
+        # busy_fio_list = list(all_names_str)
+        # print(busy_fio_list)
+        busy_repaimnen = Repairmen.objects.filter(fio__in=all_names_str).all()
+        print("Занятые сотрудники", busy_repaimnen)
+
+
+        repaimnen_intesesction = (Repairmen.objects
+                                .filter(fio__in=all_names_str, pk__in=repairmen_ids)
+                                .all())
+        print("Добавляемые сотрудники", repaimnen_intesesction)
+        return repaimnen_intesesction
+
+
 

@@ -28,6 +28,7 @@ from .views import (
     OrdersArchive,
     RepairmenHistory,
     filter_data,
+    clear_workers_proc,
 )
 
 urlpatterns = [
@@ -62,4 +63,5 @@ urlpatterns = [
     path("show_pdf/<int:pk>", show_pdf, name="show_pdf"),
     path("orders_archive/", OrdersArchive.as_view(), name="orders_archive"),
     path("filter_data/", filter_data, name="filter_data"),
+    #path("clear_workers/<int:pk>", clear_workers_proc, name="clear_workers"),
 ]

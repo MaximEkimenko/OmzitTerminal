@@ -113,7 +113,7 @@ class Command(BaseCommand):
         scheduler.add_job(
             suspend_orders_end_of_day,
             # trigger=CronTrigger(hour="20", minute="0"),
-            trigger=CronTrigger(minute="*/4"),
+            trigger=CronTrigger(minute="*/5"),
             id="Снятие ремонтников с заявок в конце смены",
             max_instances=1,
             replace_existing=True,

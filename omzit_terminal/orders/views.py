@@ -194,11 +194,14 @@ def order_assign_workers(request, pk):
             if len(fios) == len(set(fios)):  # если нет повторений в списке fios, добавляем запись
                 fios_ids = [i.id for i in fios]
                 # проверяем, есть ли среди указанных работников те, кто уже назначен на другую заявку
-                busy_workers = Repairmen.busy_workers(fios_ids)
+                # busy_workers = Repairmen.busy_workers(fios_ids)
+                busy_workers = Orders.busy_workers(fios_ids)
                 # если есть, оставляем форму без изменения и отправляем сообщение об ошибке
                 if busy_workers:
                     for worker in busy_workers:
-                        create_flash_message(f"{worker.fio} занят на заявке № {worker.order}")
+                        # не могу получить место заявки, потому что нет связи многие-ко многим
+                        # create_flash_message(f"{worker.fio} занят на заявке № {worker.order}")
+                        create_flash_message(f"{worker.fio} занят на другой заявке")
                     form = AssignWorkersForm(form.cleaned_data)
                     context.update({"object": order, "form": form, "alerts": pop_flash_messages()})
                     return render(request, "orders/repair_start.html", context)
@@ -952,6 +955,13 @@ class RepairmenEdit(ListView):
             create_flash_message(form.errors["name"][0])
 
         return redirect(rw)
+
+
+@login_required(login_url="/scheduler/login/")
+def clear_workers_proc(request: WSGIRequest, pk):
+    order = Orders.objects.get(pk=pk)
+    clear_dayworkers(order)
+    return redirect("orders")
 
 
 @login_required(login_url="/scheduler/login/")
