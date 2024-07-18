@@ -361,13 +361,16 @@ def remove_dayworkers_from_order(order: Orders):
     Очищаем поля исполнителей и начала ремонта в заявке и сохраняем данные об исполнителях
     и времени их работыв в таблицу WorkersLog
     """
-    WorkersLog.objects.create(order=order,
-                              dayworkers_string=order.dayworkers_string,
-                              start_date=order.inspection_date,
-                              end_date=timezone.now())
-    order.dayworkers_string = None
-    order.inspection_date = None
-    order.save()
+    # нужно проверять, а не прикреплены ли к заявке исполнители
+    # потому что отменить заявку можно в любой момент, даже когда к ней не прикреплены исполнители
+    if order.dayworkers_string is not None:
+        WorkersLog.objects.create(order=order,
+                                  dayworkers_string=order.dayworkers_string,
+                                  start_date=order.inspection_date,
+                                  end_date=timezone.now())
+        order.dayworkers_string = None
+        order.inspection_date = None
+        order.save()
 
 
 

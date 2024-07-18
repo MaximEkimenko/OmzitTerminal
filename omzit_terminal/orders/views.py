@@ -392,7 +392,6 @@ def order_accept_repair(request, pk):
         order.accepted_employee = " ".join([request.user.last_name, request.user.first_name])
         applied_status = OrdStatus.ACCEPTED
         apply_order_status(order, applied_status)
-        clear_dayworkers(order)
         alert_message = "Отремонтированное оборудование принято"
         create_flash_message(alert_message)
         order_telegram_notification(applied_status, order)
