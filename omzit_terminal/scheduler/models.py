@@ -35,7 +35,7 @@ class WorkshopSchedule(models.Model):
     workshop = models.PositiveSmallIntegerField(verbose_name='Цех', null=True)
     model_name = models.CharField(max_length=30, verbose_name='Модель изделия', validators=[model_regex])
     datetime_done = models.DateField(null=True, verbose_name='Планируемая дата готовности')
-    # TODO добавить unique=True
+    calculated_datetime_done = models.DateField(null=True, verbose_name='Расчётная дата готовности')
     order = models.CharField(max_length=100, verbose_name='Номер заказа', validators=[order_regex])
     order_status = models.CharField(max_length=20, default='не запланировано', verbose_name='Статус заказа')
 
@@ -60,6 +60,16 @@ class WorkshopSchedule(models.Model):
     constructor_query_td_fio = models.CharField(max_length=30, null=True, verbose_name='Передал КД')
     tehnolog_query_td_fio = models.CharField(max_length=30, null=True, verbose_name='Утвердил / загрузил')
     product_category = models.CharField(max_length=30, null=True, verbose_name='Категория изделия')
+
+    def save(self, *args, **kwargs):
+        """
+        Копирование значения datetime_done в calculated_datetime_done
+        при создании новой записи
+        """
+        if not self.calculated_datetime_done:
+            self.calculated_datetime_done = self.datetime_done
+        super().save(*args, **kwargs)
+
 
     # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
     # # Пример структуры {

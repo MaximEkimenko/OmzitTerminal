@@ -202,28 +202,28 @@
             async function saveGanttOnServer() {
                 //this is a simulation: save data to the local storage or to the textarea
                 //saveInLocalStorage();
-
                 var prj = ge.saveProject()
                 // console.log(prj)
                 download(JSON.stringify(prj, null, '\t'), 'MyProject.json', 'application/json')
-                const options = {
-                    method: 'POST', // HTTP method
-                    headers: {
-                        'Content-Type': 'application/json', // specify the content type as JSON
-                    },
-                    body: JSON.stringify(prj, null, '\t'), // convert JavaScript object to JSON string
-                }
-                try {
-                    const response = await fetch(`${baseUrl}`, options) // make the fetch request
-                    console.log(response)
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`) // handle HTTP errors
-                    }
-                    const responseData = response.json() // parse the JSON response
-                    console.log(responseData) // log the response data
-                } catch (error) {
-                    console.error('Error making POST request:', error) // log any errors
-                }
+                // const options = { # TODO REMOVE THIS!!!!!
+                //     method: 'POST', // HTTP method
+                //     headers: {
+                //         'Content-Type': 'application/json', // specify the content type as JSON
+                //     },
+                //     body: JSON.stringify(prj, null, '\t'), // convert JavaScript object to JSON string
+                // }
+                // try {
+                //     const response = await fetch(`${baseUrl}`, options) // make the fetch request
+                //     // console.log(response)
+                //     if (!response.ok) {
+                //         throw new Error(`HTTP error! status: ${response.status}`) // handle HTTP errors
+                //     }
+                //     const responseData = response.json() // parse the JSON response
+                //     // console.log(responseData) // log the response data
+                // } catch (error) {
+                //     console.error('Error making POST request:', error) // log any errors
+                // }
+
                 /*
 
   delete prj.resources;
@@ -267,6 +267,30 @@
 
   });
   */
+            }
+            async function sendGanttOnServer() {
+                var prj = ge.saveProject()
+                // console.log(prj)
+
+                const options = {
+                    method: 'POST', // HTTP method
+                    headers: {
+                        'Content-Type': 'application/json', // specify the content type as JSON
+                    },
+                    body: JSON.stringify(prj, null, '\t'), // convert JavaScript object to JSON string
+                }
+                try {
+                    const response = await fetch(`${baseUrl}`, options) // make the fetch request
+                    // console.log(response)
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`) // handle HTTP errors
+                    }
+                    const responseData = response.json() // parse the JSON response
+                    // console.log(responseData) // log the response data
+                } catch (error) {
+                    console.error('Error making POST request:', error) // log any errors
+                }
+                location.reload()
             }
 
             // Function to download data to a file
@@ -716,18 +740,35 @@
                     </div>
 
                     <div>
+                        <a href="http://192.168.8.163:8000/scheduler/strat_plan1/"> цех 1 </a>
+                        |
+                        <a href="http://192.168.8.163:8000/scheduler/strat_plan2/"> цех 2 </a>
+                        <!-- prettier-ignore -->
+
                         <button
                             onclick="saveGanttOnServer();"
                             class="button first big requireWrite"
                             title="Save"
                         >
-                            Сохранить
+                            Сохранить файл
                         </button>
+
+                        <button
+                            onclick="sendGanttOnServer();"
+                            class="button first big requireWrite"
+                            title="Save_1"
+                        >
+                            Сохранить на сервер
+                        </button>
+
                         <input type="file" name="load-file" id="load-file" />
-                        <label for="load-file">Загрузить</label>
-                        <button onclick="newProject();" class="button requireWrite newproject">
+                        <!-- <label for="load-file">Загрузить</label> -->
+                        <!-- <button onclick="newProject();" class="button requireWrite newproject">
                             <em>очистить проект</em>
-                        </button>
+                        </button> -->
+                        <span style="margin-left: 10px; font-size: 24px; font-weight: bold"
+                            >График для цеха {{ workshop }}</span
+                        >
                         <button
                             class="button login"
                             title="login/enroll"
@@ -752,48 +793,23 @@
                 <table class="gdfTable" cellspacing="0" cellpadding="0">
                     <thead>
                         <tr style="height: 40px">
-                            <th class="gdfColHeader" style="width: 10px; border-right: none">№</th>
-                            <th class="gdfColHeader" style="width: 10px"></th>
+                            <th class="gdfColHeader gdfResizable" style="width: 10px">№</th>
+                            <th class="gdfColHeader gdfResizable" style="width: 50px">Статус</th>
                             <th class="gdfColHeader gdfResizable" style="width: 100px">Шифр</th>
-                            <th class="gdfColHeader gdfResizable" style="width: 10px">
+                            <th class="gdfColHeader gdfResizable" style="width: 100px">
                                 Наименование
                             </th>
-                            <th
-                                class="gdfColHeader gdfResizable"
-                                align="center"
-                                style="width: 17px"
-                                title="Дата запуска как рубеж"
-                            >
-                                <span class="teamworkIcon" style="font-size: 8px">^</span>
-                            </th>
+
                             <th class="gdfColHeader gdfResizable" style="width: 100px">Запуск</th>
-                            <th
-                                class="gdfColHeader"
-                                align="center"
-                                style="width: 17px"
-                                title="Дата окончания как рубеж"
-                            >
-                                <span class="teamworkIcon" style="font-size: 8px">^</span>
-                            </th>
+
                             <th class="gdfColHeader gdfResizable" style="width: 100px">
                                 Окончание
                             </th>
-                            <th class="gdfColHeader gdfResizable" style="width: 50px">Цикл</th>
-                            <th class="gdfColHeader gdfResizable" style="width: 20px">
+                            <th class="gdfColHeader gdfResizable" style="width: 100px">Цикл</th>
+                            <th class="gdfColHeader gdfResizable" style="width: 100px">
                                 % готовности
                             </th>
-                            <th
-                                class="gdfColHeader gdfResizable requireCanSeeDep"
-                                style="width: 50px"
-                            >
-                                связь
-                            </th>
-                            <th
-                                class="gdfColHeader gdfResizable"
-                                style="width: 10px; text-align: left; padding-left: 10px"
-                            >
-                                отвественный
-                            </th>
+                            <th class="gdfColHeader gdfResizable" style="width: 100px">описание</th>
                         </tr>
                     </thead>
                 </table>
@@ -811,14 +827,20 @@
       <div class="exp-controller" align="center"></div>
       <input type="text" name="name" value="(#=obj.name#)" placeholder="name">
     </td>
-    <td class="gdfCell" align="center"><input type="checkbox" name="startIsMilestone"></td>
+    
     <td class="gdfCell"><input type="text" name="start"  value="" class="date"></td>
-    <td class="gdfCell" align="center"><input type="checkbox" name="endIsMilestone"></td>
+    
     <td class="gdfCell"><input type="text" name="end" value="" class="date"></td>
     <td class="gdfCell"><input type="text" name="duration" autocomplete="off" value="(#=obj.duration#)"></td>
     <td colspan="10" class="gdfCell"><input type="text" name="progress" class="validated" entrytype="PERCENTILE" autocomplete="off" value="(#=obj.progress?obj.progress:''#)" (#=obj.progressByWorklog?"readOnly":""#)></td>
-    <td class="gdfCell requireCanSeeDep"><input type="text" name="depends" autocomplete="off" value="(#=obj.depends#)" (#=obj.hasExternalDep?"readonly":""#)></td>
-    <td class="gdfCell taskAssigs">(#=obj.getAssigsString()#)</td>
+    
+ 
+
+    
+    
+    
+    
+    
   </tr>
          -->
             </div>
@@ -930,9 +952,9 @@
           <label for="status" class=" ">статус</label><br>
           <select id="status" name="status" class="taskStatus" status="(#=obj.status#)"  onchange="$(this).attr('STATUS',$(this).val());">
             <option value="STATUS_ACTIVE" class="taskStatus" status="STATUS_ACTIVE" >активный</option>
-            <option value="STATUS_WAITING" class="taskStatus" status="STATUS_WAITING" >задерживается</option>
+            <option value="STATUS_WAITING" class="taskStatus" status="STATUS_WAITING" >в ожидании</option>
             <option value="STATUS_SUSPENDED" class="taskStatus" status="STATUS_SUSPENDED" >задерживается</option>
-            <option value="STATUS_DONE" class="taskStatus" status="STATUS_DONE" >выполнено</option>
+            
             <option value="STATUS_FAILED" class="taskStatus" status="STATUS_FAILED" >провалено</option>
             <option value="STATUS_UNDEFINED" class="taskStatus" status="STATUS_UNDEFINED" >неопределён</option>
           </select>
@@ -947,25 +969,18 @@
           </tr>
           <tr>
             <td colspan="4">
-              <label for="description">Описание</label><br>
+              <label for="description">дата по договору</label><br>
               <textarea rows="3" cols="30" id="description" name="description" class="formElements" style="width:100%"></textarea>
             </td>
           </tr>
         </table>
 
-    <h2>Отвественные</h2>
-  <table  cellspacing="1" cellpadding="0" width="100%" id="assigsTable">
-    <tr>
-      <th style="width:100px;">имя</th>
-      <th style="width:70px;">роль</th>
-      <th style="width:30px;">время выполнения</th>
-      <th style="width:30px;" id="addAssig"><span class="teamworkIcon" style="cursor: pointer">+</span></th>
-    </tr>
-  </table>
-
   <div style="text-align: right; padding-top: 20px">
     <span id="saveButton" class="button first" onClick="$(this).trigger('saveFullEditor.gantt');">Сохранить</span>
   </div>
+
+
+
 
   </div>
   -->

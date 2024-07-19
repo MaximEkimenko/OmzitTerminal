@@ -15,12 +15,15 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.core.exceptions import PermissionDenied
 
 from api.serializers import ShiftTaskSerializer, ShiftTaskIdSerializer
 from scheduler.models import ShiftTask
 from worker.services.master_call_db import continue_work
 from worker.services.master_call_function import get_client_ip, send_call_master, send_call_dispatcher
 from worker.views import resume_work
+from scheduler.models import WorkshopSchedule
+
 
 
 class ShiftTaskListView(ListAPIView):
@@ -146,21 +149,45 @@ class CallDispatcherView(APIView):
 
 @csrf_exempt
 def save_strat_plan(request):
+    """
+    Получение данных из страницы STRAT плана и их сохранение в БД
+    :param request:
+    :return:
+    """
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)  # Parse the JSON data from the request
-            pprint(data)
-            # Process the data (e.g., save to database, perform calculations, etc.)
-            # Create a response
+            # получение данных
+            data = json.loads(request.body)
+            # обновление данных в БД
+            json_ids = [item['id'] for item in data['tasks']]  # все id для обновления
+            schedules_to_update = WorkshopSchedule.objects.filter(pk__in=json_ids)  # все объекты для обновления
+            # словарь для получения данных json по id
+            json_data_by_id = {item['id']: item for item in data['tasks']}
+
+            for schedule in schedules_to_update:
+                json_item = json_data_by_id[schedule.pk]
+                # расчётная дата сдачи
+                schedule.calculated_datetime_done = datetime.datetime.fromtimestamp(json_item['end'] / 1000).date()
+                # степень готовности
+                schedule.done_rate = json_item['progress']
+                # статус завершено при готовности 100 %
+                if json_item['progress'] >= 100:
+                    schedule.order_status = 'завершено'
+                else:
+                    schedule.order_status = schedule.order_status
+
+            WorkshopSchedule.objects.bulk_update(schedules_to_update, ['calculated_datetime_done', 'done_rate',
+                                                                       'order_status'])
             response_data = {
-                'status': 'success',
-                'message': 'Data received'
+                'status': 'ok',
+                'message': 'данные получены'
             }
             return JsonResponse(response_data, status=200)
         except json.JSONDecodeError:
-            return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+            return JsonResponse({'status': 'error', 'message': 'Неверный формат JSON'}, status=400)
     else:
-        return JsonResponse({'status': 'error', 'message': 'Only POST method allowed'}, status=405)
+        raise PermissionDenied
+        # return JsonResponse({'status': 'error', 'message': 'Only POST method allowed'}, status=405)
 
 
 

@@ -17,7 +17,7 @@ urlpatterns = [
     path('td_query/', td_query, name='td_query'),
     path('instruction/', show_instruction, name='instruction'),
     path('scheme/', show_workshop_scheme, name='scheme'),
-    path('strat_plan/', strat_plan, name='strat_plan'),
+    path('strat_plan<int:workshop>/', strat_plan, name='strat_plan'),
     path('st_report_<str:start>_<str:end>/', shift_tasks_reports, name='st_reports'),
     path('view_st_report_<str:start>_<str:end>/', shift_tasks_report_view, name='view_st_report'),
 

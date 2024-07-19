@@ -27,7 +27,7 @@ from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw, Pl
 # from .models import  DailyReport, MonthPlans # TODO функционал отчётов ЗАКОНСЕРВИРОВАНО
 from .models import WorkshopSchedule, ShiftTask, Doers
 
-from .services.get_contexts import get_strat_plan_context
+from .services.get_contexts import NEW_get_strat_plan_context
 from .services.schedule_handlers import get_all_done_rate, make_workshop_plan_plot, create_pdf_report, report_merger
 from worker.services.master_call_function import terminal_message_to_id
 from .services.sz_reports import get_start_end_st_report, create_shift_task_report
@@ -596,16 +596,17 @@ def shift_tasks_report_view(request, start: str = "", end: str = ""):
     return render(request, fr"schedulerwp/view_report.html", context=context)
 
 
-
-def strat_plan(request) -> HttpResponse:
+def strat_plan(request, workshop) -> HttpResponse:
     """
     Страница стратегического планирования
     :param request:
     :return:
     """
     # получение данных
-    context = get_strat_plan_context()
-    return render(request, 'scheduler/strat_plan/gantt.html', context={'json': json.dumps(context)})
+    # context = get_strat_plan_context()
+    context = NEW_get_strat_plan_context(workshop)
+    return render(request, 'scheduler/strat_plan/gantt.html', context={'json': json.dumps(context),
+                                                                       'workshop': workshop})
     # return render(request, 'api/gantt.html')
 
 
