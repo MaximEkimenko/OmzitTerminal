@@ -417,9 +417,11 @@ ORDER_CARD_COLUMNS = (
 )
 ORDER_REPORT_COLUMNS = (
     "id",
+    "is_ppr",
     "equipment",
     "status",
     "priority",
+    "dayworkers_string",
     "materials",
     "materials_request",
     "breakdown_date",

@@ -257,18 +257,7 @@ class Orders(models.Model):
     def __str__(self):
         return f"{self.pk} {self.equipment} {self.status} {self.breakdown_date}"
 
-    def assigned_workers(self):
-        """
-        Возвращает список ремонтников, занимающихся в данный момент этим заданием
-        """
-        return self.assignments.filter(end_date__isnull=True).all()
-
-    def involved_workers(self):
-        """
-        Возвращает список ремонтников, принимавших участие в данном ремонте
-        """
-        return self.dayworkers.all()
-
+    
     def active_workers_count(self) -> int:
         """
         Возвращает количество работников, приписанных к заявке в данный момент

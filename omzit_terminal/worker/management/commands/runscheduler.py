@@ -12,7 +12,9 @@ from django_apscheduler import util
 from orders.utils.tasks import (
     create_ppr_at_first_run,
     create_ppr_for_next_month,
-    CREATE_NEXT_MONTH_PPR_DAY, suspend_orders_end_of_day,
+    CREATE_NEXT_MONTH_PPR_DAY,
+    suspend_orders_end_of_day,
+    test_job_1
 )
 from orders.utils.workers_process import clear_all_dayworkers
 from worker.views import pause_work, resume_work  # noqa
@@ -120,6 +122,7 @@ class Command(BaseCommand):
             misfire_grace_time=1 * 60,
         )
         logger.info("Запущена задача: Снятие ремонтников с заявок в конце смены")
+
 
         # запускаем задание два дня подряд, на случай, если в первый раз не отработало
         ppr_run_days = f"{CREATE_NEXT_MONTH_PPR_DAY},{CREATE_NEXT_MONTH_PPR_DAY + 1}"
