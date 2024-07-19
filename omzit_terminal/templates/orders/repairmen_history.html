@@ -15,7 +15,7 @@
         <thead>
             <tr class="table_header_row">
               <th class="td_cell">№ </th>
-              <th class="td_cell">ФИО</th>
+              <th class="td_cell">Работники</th>
               <th class="td_cell">Дата начала</th>
               <th class="td_cell">Дата окончания</th>
             </tr>
@@ -25,7 +25,7 @@
             {% for worker in object_list%}
             <tr class="table_row">
             <td class="td_cell">{{forloop.counter}}</td>
-            <td class="td_cell">{{worker.fio}}</td>
+            <td class="td_cell">{{worker.dayworkers_string}}</td>
             <td class="td_cell">{{worker.start_date}}</td>
             <td class="td_cell">{{worker.end_date|default:"-"}}</td>
             </tr>

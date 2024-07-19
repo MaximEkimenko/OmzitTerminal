@@ -143,7 +143,7 @@ class PriorityChoices(models.IntegerChoices):
 
 class WorkersLog(models.Model):
     order = models.ForeignKey("Orders", on_delete=models.CASCADE, related_name="workers_log")
-    dayworkers_string  = models.CharField(max_length=256, verbose_name="Ремонтники")
+    dayworkers_string = models.CharField(max_length=256, verbose_name="Ремонтники")
     start_date = models.DateTimeField(db_index=True)
     end_date = models.DateTimeField(db_index=True)
 

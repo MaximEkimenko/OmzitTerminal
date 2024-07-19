@@ -19,7 +19,7 @@ from m_logger_settings import logger
 from orders.report import create_order_report
 
 
-from orders.models import Orders, Equipment, Shops
+from orders.models import Orders, Equipment, Shops, WorkersLog
 from orders.forms import (
     AddEquipmentForm,
     AddOrderForm,
@@ -485,51 +485,26 @@ def order_card(request, pk):
     """
     Выводит информацию о заявке (показывет все поля из модели, которые можно показать).
     """
-    # классный старый запрос, который надо удалить
-    """
-    # подзапрос, который сливает исполнителей из mny-to-many-отношения в одну строку
-    assigned_workers_subquery = (
-        Repairmen.assignable_workers.filter(
-            orders=OuterRef("pk"), assignments__end_date__isnull=True
-        )
-        .values("orders")
-        .annotate(assigned_workers_string=StringAgg("fio", delimiter=", ", ordering="fio"))
-        .values("assigned_workers_string")
-    )
-
-    # подзапрос, считающий сколько всего людей было назначено на ремонт, включая повторные назначения
     assignments_count = (
-        OrdersWorkers.objects.filter(order=OuterRef("pk"))
+        WorkersLog.objects.filter(order=OuterRef("pk"))
         .values("order")
-        # тут можно посчитать все эпизоды назначения либо уникальных сотрудников, которых назначили
-        .annotate(assignments=Count("worker", distinct=False))
+        .annotate(assignments=Count("order", distinct=False))
         .values("assignments")
     )
 
     order = (
         Orders.objects.filter(pk=pk)
-        .annotate(dayworkers_fio=Subquery(assigned_workers_subquery))
-        .annotate(workers_count=Subquery(assignments_count))
-        .first()
-    )
-
-    """
-    # обосранный новый запрос
-    order = (
-        Orders.objects.filter(pk=pk)
+        .annotate(assignments_count=Subquery(assignments_count))
         .first()
     )
     # получаем подписи к полям таблицы
     verbose_header = get_order_verbose_names()
 
-    # получаем подписи к полям таблицы
-    verbose_header.update(
-        {"dayworkers_fio": "Исполнители", "workers_count": "Назначений на ремонт"}
-    )
+    # подписываем новое поле (подпись нужна, так как по полям идем в цикле, и у каждого поля должна быть подпись )
+    verbose_header.update({"assignments_count": "Назначения на ремонт"})
     # из записи в базе данных получаем словарь с нужными нам колонками
     vd = orders_record_to_dict(order, ORDER_CARD_COLUMNS)
     vhd = {verbose_header[i]: vd[i] for i in ORDER_CARD_COLUMNS}
-    print(vd)
     can_edit = can_edit_workers(order.status_id, get_employee_position(request.user.username))
     context = {
         "object": order,
@@ -540,7 +515,7 @@ def order_card(request, pk):
         "equipment": order.equipment,
         "special_fields": {
             "pdf_field": verbose_header["material_request_file"],
-            "assignments_field": verbose_header["workers_count"],
+            "assignments_field": verbose_header["assignments_count"],
             "equipment": verbose_header["equipment"],
         },
         "alerts": pop_flash_messages(),
@@ -913,14 +888,11 @@ class RepairmenHistory(LoginRequiredMixin, ListView):
     template_name = "orders/repairmen_history.html"
 
     def get_queryset(self):
-        #TODO переписать, избавиться от OrdersWorkers
-        # dayworkers = (
-        #     OrdersWorkers.objects.filter(order=self.kwargs["pk"])
-        #     .order_by("start_date")
-        #     .annotate(fio=F("worker__fio"))
-        #     .all()
-        # )
-        dayworkers = None
+        dayworkers = (
+            WorkersLog.objects.filter(order=self.kwargs["pk"])
+            .order_by("start_date")
+            .all()
+        )
         return dayworkers
 
     def get_context_data(self, *, object_list=None, **kwargs):
