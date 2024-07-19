@@ -940,3 +940,12 @@ def show_pdf(request, pk):
 def filter_data(request):
     equipment_json = list(Equipment.objects.all().values("id", "unique_name", "shop_id"))
     return JsonResponse({"filter": equipment_json})
+
+def PPR_calendar(request: WSGIRequest):
+    equipment_with_PPR = Equipment.equipment_with_PPR().values("id", "name", "shop_id", "ppr_plan_day", "inv_number")
+    shops = Shops.objects.all()
+    context = {"table_data": equipment_with_PPR,
+               "shops": shops,
+               "range": range(1, 32)
+               }
+    return render(request, "orders/PPR_calendar.html", context=context)

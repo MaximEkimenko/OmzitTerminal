@@ -26,6 +26,7 @@ from .views import (
     RepairmenHistory,
     filter_data,
     clear_workers_proc,
+    PPR_calendar,
 )
 
 urlpatterns = [
@@ -59,4 +60,6 @@ urlpatterns = [
     path("orders_archive/", OrdersArchive.as_view(), name="orders_archive"),
     path("filter_data/", filter_data, name="filter_data"),
     path("clear_workers/<int:pk>", clear_workers_proc, name="clear_workers"),
+    path("ppr_calendar/", PPR_calendar, name="ppr_calendar"),
+
 ]

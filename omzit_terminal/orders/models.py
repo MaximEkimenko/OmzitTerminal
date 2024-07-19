@@ -98,7 +98,8 @@ class Equipment(models.Model):
     ppr_plan_day = models.IntegerField(
         blank=True, null=True, db_index=True, verbose_name="День планового ремонта"
     )
-    in_operation = models.BooleanField(default=True, verbose_name="В эксплуатации")
+    in_operation = models.BooleanField(default=True, verbose_name="Находится эксплуатации")
+    make_ppr_order = models.BooleanField(default=True, verbose_name="Формировать заявки ППР каждый месяц")
 
     class Meta:
         verbose_name = "Оборудование"
@@ -107,6 +108,11 @@ class Equipment(models.Model):
 
     def get_absolute_url(self):
         return reverse_lazy("equipment_card", kwargs={"equipment_id": self.pk})
+
+    @classmethod
+    def equipment_with_PPR(cls) -> QuerySet["Equipment"]:
+        equipment = cls.objects.exclude(ppr_plan_day__isnull=True).order_by('ppr_plan_day', 'name').all()
+        return equipment
 
     def __str__(self):
         return self.unique_name

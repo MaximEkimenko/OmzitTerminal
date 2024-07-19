@@ -138,6 +138,20 @@ h4 {
   text-align: center;
 }
 
+
+.table_row_small:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.td_cell_small {
+  font-size: 14px; 
+  border: solid 1px orange;
+  background-color: transparent;
+  padding: 3px;
+  text-align: center;
+}
+
+
 .td_cell_dt {
   border: solid 1px orange;
   background-color: transparent;
