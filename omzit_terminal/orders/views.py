@@ -6,23 +6,20 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.postgres.aggregates import StringAgg
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect, FileResponse, JsonResponse
-from django.db import transaction
-from django.db.models import Window, Count, ProtectedError, Subquery, OuterRef, F, Exists
+from django.db.models import Window, Count, ProtectedError, Subquery, OuterRef
 from django.db.models.functions import RowNumber
 from django.urls import reverse_lazy
-from django.views.generic import DetailView, UpdateView, ListView, DeleteView
+from django.views.generic import DetailView, UpdateView, ListView
 from django.forms.models import model_to_dict
 from django.core.handlers.wsgi import WSGIRequest
-from django.utils import timezone
 from django.utils.timezone import make_aware
 
 
 from m_logger_settings import logger
-from scheduler.filters import get_filterset
 from orders.report import create_order_report
 
 
-from orders.models import Orders, Equipment, Shops, Repairmen, OrdersWorkers
+from orders.models import Orders, Equipment, Shops
 from orders.forms import (
     AddEquipmentForm,
     AddOrderForm,
@@ -35,12 +32,10 @@ from orders.forms import (
     OrderEditForm,
     RepairCancelForm,
     AddShop,
-    AssignRepairman,
     UploadPDFFile,
 )
 from orders.utils.common import (
     OrdStatus,
-    MAX_DAYWORKERS_PER_ORDER,
     can_edit_workers,
     MATERIALS_NOT_REQUIRED,
 )
@@ -58,7 +53,6 @@ from orders.utils.utils import (
     check_order_suspend,
     orders_get_context,
     clear_dayworkers,
-    check_order_resume,
     ORDER_CARD_COLUMNS,
     remove_old_file_if_exist, convert_dayworkers_to_string,
 )
@@ -194,7 +188,6 @@ def order_assign_workers(request, pk):
             if len(fios) == len(set(fios)):  # если нет повторений в списке fios, добавляем запись
                 fios_ids = [i.id for i in fios]
                 # проверяем, есть ли среди указанных работников те, кто уже назначен на другую заявку
-                # busy_workers = Repairmen.busy_workers(fios_ids)
                 busy_workers = Orders.busy_workers(fios_ids)
                 # если есть, оставляем форму без изменения и отправляем сообщение об ошибке
                 if busy_workers:
@@ -205,11 +198,6 @@ def order_assign_workers(request, pk):
                     form = AssignWorkersForm(form.cleaned_data)
                     context.update({"object": order, "form": form, "alerts": pop_flash_messages()})
                     return render(request, "orders/repair_start.html", context)
-
-                # добавляем работников к ремонту
-                # order.dayworkers.add(*fios)
-                for new_worker in fios:
-                    OrdersWorkers.objects.create(order=order, worker=new_worker)
                 # если мы попали сюда (добавляем работников), значит ремонт либо начат, либо возобновлен
                 # если ремонт был приостановлен, возобновляем предыдущую стадию
                 if order.previous_status_id in (OrdStatus.START_REPAIR, OrdStatus.REPAIRING):
@@ -497,6 +485,8 @@ def order_card(request, pk):
     """
     Выводит информацию о заявке (показывет все поля из модели, которые можно показать).
     """
+    # классный старый запрос, который надо удалить
+    """
     # подзапрос, который сливает исполнителей из mny-to-many-отношения в одну строку
     assigned_workers_subquery = (
         Repairmen.assignable_workers.filter(
@@ -523,6 +513,12 @@ def order_card(request, pk):
         .first()
     )
 
+    """
+    # обосранный новый запрос
+    order = (
+        Orders.objects.filter(pk=pk)
+        .first()
+    )
     # получаем подписи к полям таблицы
     verbose_header = get_order_verbose_names()
 
@@ -902,109 +898,29 @@ def shop_delete_proc(request: WSGIRequest):
     return redirect("shops")
 
 
-class RepairmenEdit(ListView):
-    """
-    Педставление для редактирования (добавления и удаления) работников, приписанных к заявке на ремонт
-    """
-
-    # model = Repairmen
-    template_name = "orders/repairmen_edit.html"
-
-    def get_queryset(self):
-        qs = (
-            Orders.objects.get(pk=self.kwargs["pk"])
-            .dayworkers.filter(assignments__end_date__isnull=True)
-            .order_by("fio")
-        )
-        return qs
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(
-            {
-                "alerts": pop_flash_messages(),
-                "add_form": AssignRepairman(),
-                "order_id": self.kwargs["pk"],
-            }
-        )
-        return context
-
-    def post(self, request, *args, **kwargs):
-        """
-        Добавляет работника к заявке
-        """
-        rw = reverse_lazy("repairmen_edit", args=(self.kwargs["pk"],))
-        form = AssignRepairman(request.POST)
-        if form.is_valid():
-            order = Orders.objects.get(pk=self.kwargs["pk"])
-            new_worker = form.cleaned_data["fio"]
-            busy_worker = Repairmen.busy_workers([new_worker.pk]).first()
-            print("занятый сторудник:", busy_worker)
-            if busy_worker:
-                create_flash_message(f"{busy_worker.fio} занят на заявке № {busy_worker.order}")
-                return redirect(rw)
-            # на заявку можно назначить только MAX_DAYWORKERS_PER_ORDER работников
-            if order.active_workers_count() >= MAX_DAYWORKERS_PER_ORDER:
-                create_flash_message("Назначено слишком много работников.")
-            else:
-                OrdersWorkers.objects.create(order=order, worker=new_worker)
-                check_order_resume(order)
-                create_flash_message("Работник добавлен к заявке.")
-
-        else:
-            create_flash_message(form.errors["name"][0])
-
-        return redirect(rw)
-
-
 @login_required(login_url="/scheduler/login/")
 def clear_workers_proc(request: WSGIRequest, pk):
+    """
+    Снимает всех сотрудников с задания.
+    Вызывается при нажатии на кнопу "снять всех сотрудников" на главной странице заявок
+    """
     order = Orders.objects.get(pk=pk)
     clear_dayworkers(order)
     return redirect("orders")
-
-
-@login_required(login_url="/scheduler/login/")
-def repairmen_delete_proc(request: WSGIRequest):
-    if request.method == "POST":
-        pk = request.POST.get("commit-delete-button")
-        order_id = request.POST.get("order_id")
-        try:
-            order = Orders.objects.get(pk=order_id)
-            OrdersWorkers.objects.filter(order=order_id, worker=pk).all().update(
-                end_date=timezone.now()
-            )
-            check_order_suspend(order)
-
-        except Exception as e:
-            alert_message = f"Ошибка при удалении работника из заявки"
-            create_flash_message(alert_message)
-            message = (
-                f"Ошибка при удалении работника id {pk} "
-                f"из заявки №  {order_id}. Пользователь {request.user.username}"
-            )
-            logger.error(message)
-            logger.exception(e)
-        else:
-            alert_message = f"Работник снят с заявки."
-            create_flash_message(alert_message)
-            message = f"Работник id {pk} снят с заявки № {order_id}. Удалил пользователь {request.user.username}"
-            logger.info(message)
-
-    rw = reverse_lazy("repairmen_edit", args=(order_id,))
-    return redirect(rw)
 
 
 class RepairmenHistory(LoginRequiredMixin, ListView):
     template_name = "orders/repairmen_history.html"
 
     def get_queryset(self):
-        dayworkers = (
-            OrdersWorkers.objects.filter(order=self.kwargs["pk"])
-            .order_by("start_date")
-            .annotate(fio=F("worker__fio"))
-            .all()
-        )
+        #TODO переписать, избавиться от OrdersWorkers
+        # dayworkers = (
+        #     OrdersWorkers.objects.filter(order=self.kwargs["pk"])
+        #     .order_by("start_date")
+        #     .annotate(fio=F("worker__fio"))
+        #     .all()
+        # )
+        dayworkers = None
         return dayworkers
 
     def get_context_data(self, *, object_list=None, **kwargs):

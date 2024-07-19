@@ -17,7 +17,7 @@ from orders.models import (
     OrderStatus,
     Materials,
     Repairmen,
-    OrdersWorkers,
+    # OrdersWorkers,
     WorkersLog
 )
 
@@ -178,7 +178,6 @@ def orders_get_context(request) -> dict[str, Any]:
         "breakdown_description",
         "expected_repair_date",
         "materials__name",
-        "dayworkers_fio",
         "dayworkers_string",
         "materials_request",
         "revision_cause",
@@ -348,12 +347,8 @@ def clear_dayworkers(order: Orders):
     Снимаем всех сотрудников с заявки, а дальше она, в зависимости от статуса, может перейти
     в состояние "приостановлено".
     """
-    active_workers = OrdersWorkers.objects.filter(order=order, end_date__isnull=True).all()
-    if active_workers:
-        active_workers.update(end_date=timezone.now())
-        check_order_suspend(order)
-    # удаляем работников в строковом представлении
     remove_dayworkers_from_order(order)
+    check_order_suspend(order)
 
 
 def remove_dayworkers_from_order(order: Orders):
@@ -371,8 +366,6 @@ def remove_dayworkers_from_order(order: Orders):
         order.dayworkers_string = None
         order.inspection_date = None
         order.save()
-
-
 
 
 def remove_old_file_if_exist(file):
@@ -393,7 +386,6 @@ ORDER_CARD_COLUMNS = (
     "equipment",
     "status",
     "priority",
-    "dayworkers_fio",
     "workers_count",
     "materials",
     "materials_request",
@@ -427,7 +419,6 @@ ORDER_REPORT_COLUMNS = (
     "equipment",
     "status",
     "priority",
-    "dayworkers_fio",
     "materials",
     "materials_request",
     "breakdown_date",

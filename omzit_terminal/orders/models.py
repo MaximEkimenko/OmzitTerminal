@@ -31,21 +31,6 @@ class Repairmen(models.Model):
         verbose_name = "Ремонтник"
         verbose_name_plural = "Ремонтники"
 
-    @classmethod
-    def busy_workers(cls, repairmen_ids: list[int]) -> QuerySet["Repairmen"]:
-        sq = OrdersWorkers.objects.filter(worker=OuterRef("pk"), end_date__isnull=True).values(
-            "order"
-        )
-        busy_workers: QuerySet["Repairmen"] = (
-            cls.assignable_workers.filter(pk__in=repairmen_ids)
-            .annotate(order=Subquery(sq))
-            .filter(
-                order__isnull=False
-            )  # нужно, чтобы не выдавались сотрудники, не приписанные к заданию
-            .all()
-        )
-        return busy_workers
-
 
 class Shops(models.Model):
     name = models.CharField(max_length=255, unique=True, verbose_name="Местонахождение")
@@ -156,21 +141,6 @@ class PriorityChoices(models.IntegerChoices):
     RP_3 = 3, "3"
     RP_4 = 4, "4"
 
-
-class OrdersWorkers(models.Model):
-    worker = models.ForeignKey(Repairmen, on_delete=models.CASCADE, related_name="assignments")
-    order = models.ForeignKey("Orders", on_delete=models.CASCADE, related_name="assignments")
-    start_date = models.DateTimeField(default=now)
-    end_date = models.DateTimeField(null=True, db_index=True)
-
-    class Meta:
-        # unique_together = ["worker", "order", "start_date"]
-        pass
-
-    def __str__(self):
-        return f"worker: {self.worker.fio}   order:{self.order.id} start_date:{self.start_date}  end_date:{self.end_date} "
-
-
 class WorkersLog(models.Model):
     order = models.ForeignKey("Orders", on_delete=models.CASCADE, related_name="workers_log")
     dayworkers_string  = models.CharField(max_length=256, verbose_name="Ремонтники")
@@ -211,7 +181,7 @@ class Orders(models.Model):
     breakdown_description = models.TextField(verbose_name="Описание поломки")
     worker = models.CharField(max_length=100, blank=True, null=True, verbose_name="Работник")
 
-    dayworkers = models.ManyToManyField(Repairmen, through=OrdersWorkers, related_name="orders")
+    # dayworkers = models.ManyToManyField(Repairmen, through=OrdersWorkers, related_name="orders")
     dayworkers_string = models.CharField(max_length=256, blank=True, null=True, verbose_name="Ремонтники")
     identified_employee = models.CharField(
         max_length=100, null=True, verbose_name="Работник, создавший заявку"
@@ -303,28 +273,26 @@ class Orders(models.Model):
         """
         Возвращает количество работников, приписанных к заявке в данный момент
         """
-        return self.assignments.filter(end_date__isnull=True).count()
+        if self.dayworkers_string:
+            count = len(self.dayworkers_string.split(", "))
+        else:
+            count = 0
+        return count
+
 
     @classmethod
     def fresh_orders(cls):
         """
         Список свежих заявок - либо находящихся в работе, либо законченных сегодня.
         """
-        assigned_workers_subquery = (
-            Repairmen.assignable_workers.filter(
-                orders=OuterRef("pk"), assignments__end_date__isnull=True
-            )
-            .values("orders")
-            .annotate(assigned_workers_string=StringAgg("fio", delimiter=", ", ordering="fio"))
-            .values("assigned_workers_string")
-        )
         today_tz = make_aware(datetime.combine(date.today(), datetime.min.time()))
         fresh = (
             cls.objects.exclude(acceptance_date__lt=today_tz)
             .all()
-            .annotate(dayworkers_fio=Subquery(assigned_workers_subquery))
             .prefetch_related("equipment", "status", "materials")
         )
+
+
         return fresh
 
     @classmethod
@@ -351,17 +319,10 @@ class Orders(models.Model):
         # и получаем список фамилий, которые уже заняты на других заявках
         for order in orders_with_workers:
             all_names_str.update(order['dayworkers_string'].split(", "))
-
-        # busy_fio_list = list(all_names_str)
-        # print(busy_fio_list)
-        busy_repaimnen = Repairmen.objects.filter(fio__in=all_names_str).all()
-        print("Занятые сотрудники", busy_repaimnen)
-
-
         repaimnen_intesesction = (Repairmen.objects
                                 .filter(fio__in=all_names_str, pk__in=repairmen_ids)
                                 .all())
-        print("Добавляемые сотрудники", repaimnen_intesesction)
+
         return repaimnen_intesesction
 
 
