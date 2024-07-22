@@ -32,7 +32,7 @@ from orders.forms import (
     OrderEditForm,
     RepairCancelForm,
     AddShop,
-    UploadPDFFile,
+    UploadPDFFile, ChangePPRForm,
 )
 from orders.utils.common import (
     OrdStatus,
@@ -67,6 +67,8 @@ def equipment(request: WSGIRequest) -> HttpResponse:
         if new_equipment_name.is_valid():
             try:
                 eq_params = new_equipment_name.cleaned_data
+                if eq_params['ppr_plan_day'] == "":
+                    eq_params.update({'ppr_plan_day': None})
                 eq_params.update(
                     {"unique_name": f"{eq_params['name']} ({eq_params['inv_number'][-4:]})"}
                 )
@@ -726,10 +728,6 @@ class EquipmentCardEditView(UpdateView):
         )
         return context
 
-    def post(self, request, *args, **kwargs):
-        print("hello")
-        return super().post(request, *args, **kwargs)
-
     def form_valid(self, form):
         form_data = form.cleaned_data
         temp = form.instance
@@ -944,8 +942,31 @@ def filter_data(request):
 def PPR_calendar(request: WSGIRequest):
     equipment_with_PPR = Equipment.equipment_with_PPR().values("id", "name", "shop_id", "ppr_plan_day", "inv_number")
     shops = Shops.objects.all()
-    context = {"table_data": equipment_with_PPR,
+    context = {"object_list": equipment_with_PPR,
                "shops": shops,
-               "range": range(1, 32)
+               "range": range(1, 32),
+               'form': ChangePPRForm()
                }
     return render(request, "orders/PPR_calendar.html", context=context)
+
+
+class PPRСalendar(ListView):
+    template_name = "orders/PPR_calendar.html"
+    extra_context = {
+        "shops":  Shops.objects.all(),
+        "range": range(1, 32),
+        'form': ChangePPRForm()
+        }
+    def get_queryset(self):
+        return Equipment.equipment_with_PPR().values("id", "name", "shop_id", "ppr_plan_day", "inv_number")
+
+    def post(self, request):
+        form = ChangePPRForm(request.POST)
+        if form.is_valid():
+            pk = form.cleaned_data['pk']
+            ppr_plan_day = form.cleaned_data["ppr_plan_day"]
+            if ppr_plan_day == "":
+                ppr_plan_day = None
+            Equipment.objects.filter(pk=pk).update(ppr_plan_day=ppr_plan_day)
+        return redirect("ppr_calendar")
+

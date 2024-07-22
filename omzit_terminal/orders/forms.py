@@ -14,10 +14,13 @@ class AddEquipmentForm(ModelForm):
     shop = forms.ModelChoiceField(
         Shops.objects, label="Местонажождение", required=False, empty_label=None
     )
+    days = [(None, "--")]
+    days.extend([(i, i) for i in range(1, 32)])
+    ppr_plan_day = forms.ChoiceField(choices=days, label="День планового ремонта", required=False)
 
     class Meta:
         model = Equipment
-        fields = ["name", "inv_number", "shop"]
+        fields = ["name", "inv_number", "shop", "ppr_plan_day"]
 
 
 class EditEquipmentForm(ModelForm):
@@ -25,7 +28,7 @@ class EditEquipmentForm(ModelForm):
         Shops.objects, label="Местонахождение", required=False, empty_label=None
     )
     days = [(None, "--")]
-    days.extend([(i, i) for i in range(1, 30)])
+    days.extend([(i, i) for i in range(1, 32)])
     ppr_plan_day = forms.ChoiceField(choices=days, label="День планового ремонта", required=False)
 
     class Meta:
@@ -63,6 +66,11 @@ class AddOrderForm(ModelForm):
         model = Orders
         fields = ["equipment", "priority", "breakdown_description", "worker"]
 
+class ChangePPRForm(forms.Form):
+    pk = forms.IntegerField(widget=forms.HiddenInput())
+    days = [(None, "--")]
+    days.extend([(i, i) for i in range(1, 32)])
+    ppr_plan_day = forms.ChoiceField(choices=days, label="День планового ремонта", required=False)
 
 class AssignWorkersForm(forms.Form):
     # qs_st_fio = Repairmen.assignable_workers.all().order_by("fio")
