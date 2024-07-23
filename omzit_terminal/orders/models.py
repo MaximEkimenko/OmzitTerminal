@@ -12,6 +12,11 @@ class Assignable(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(assignable=True)
 
+class ReferenceMaterials(models.Model):
+    filename = models.CharField(max_length=255, verbose_name="Имя файла")
+    sheetname = models.CharField(max_length=255, verbose_name="Имя листа")
+    content = models.TextField(verbose_name="Содержание")
+
 
 class Repairmen(models.Model):
     fio = models.CharField(max_length=255, null=False, blank=False, verbose_name="ФИО")

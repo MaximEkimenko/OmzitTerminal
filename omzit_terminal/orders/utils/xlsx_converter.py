@@ -67,9 +67,7 @@ def xlsx_to_html(wb: Workbook,
         html_row = "<thead></htead>"
         html_rows.append(html_row)
         for row in ws.iter_rows():
-            html_row = """
-            <table> <tr>
-            """
+            html_row = """<tr>"""
             for cell in row:
 
                 if cell.fill.patternType is not None:

@@ -19,7 +19,7 @@ from m_logger_settings import logger
 from orders.report import create_order_report
 
 
-from orders.models import Orders, Equipment, Shops, WorkersLog
+from orders.models import Orders, Equipment, Shops, WorkersLog, ReferenceMaterials
 from orders.forms import (
     AddEquipmentForm,
     AddOrderForm,
@@ -32,13 +32,17 @@ from orders.forms import (
     OrderEditForm,
     RepairCancelForm,
     AddShop,
-    UploadPDFFile, ChangePPRForm,
+    UploadPDFFile,
+    ChangePPRForm,
+    ConvertExcelForm
+
 )
 from orders.utils.common import (
     OrdStatus,
     can_edit_workers,
     MATERIALS_NOT_REQUIRED,
 )
+from orders.utils.reference_materials import add_reference_materials
 from orders.utils.roles import Position, get_employee_position, custom_login_check, PERMITED_USERS
 from orders.utils.utils import (
     create_flash_message,
@@ -963,4 +967,21 @@ class PPRСalendar(ListView):
 
 
 def reference_matreials(request):
-    return render(request, "orders/reference_materials.html")
+    object_list = ReferenceMaterials.objects.all()
+    context = {"object_list":object_list}
+    return render(request, "orders/reference_materials.html", context)
+
+def convert_excel(request):
+    if request.method == "POST":
+        form = ConvertExcelForm(request.POST, request.FILES)
+        if form.is_valid():
+            file= form.cleaned_data["file"]
+            add_reference_materials(file)
+        return redirect("ppr_calendar")
+    form = ConvertExcelForm()
+    context = {"form": form}
+    return render(request, "orders/convert_excel.html", context)
+
+class ShowReference(DetailView):
+    model = ReferenceMaterials
+    template_name = "orders/show_reference.html"
