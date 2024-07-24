@@ -62,7 +62,7 @@ def xlsx_to_html(wb: Workbook,
         for i in first_merged_cells:
             excluded_cells.remove(i)
         # построение HTML-документа
-        html_row = "<table>"
+        html_row = f'<table class= "{ classes.get("table", "") if classes else "table"}">'
         html_rows = [html_row]
         html_row = "<thead></htead>"
         html_rows.append(html_row)

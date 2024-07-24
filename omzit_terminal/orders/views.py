@@ -969,7 +969,11 @@ class PPRСalendar(ListView):
 @login_required(login_url="/scheduler/login/")
 def reference_matreials(request):
     object_list = ReferenceMaterials.objects.all()
-    context = {"object_list":object_list, "alerts": pop_flash_messages(), }
+    context = {"object_list":object_list,
+               "alerts": pop_flash_messages(),
+               "role": get_employee_position(request.user.username),
+               "edit_materials": [Position.Admin, Position.HoRT, Position.Engineer],
+               }
     return render(request, "orders/reference_materials.html", context)
 
 

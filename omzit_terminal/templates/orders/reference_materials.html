@@ -9,9 +9,11 @@
       <form action="{% url 'ppr_calendar' %}">
         <button type="submit" class="btn">График ППР</button>
       </form>
-      <form action="{% url 'convert_excel' %}">
-        <button type="submit" class="btn">Добавить материалы</button>
-      </form>   
+      {% if role in edit_materials %}
+        <form action="{% url 'convert_excel' %}">
+          <button type="submit" class="btn">Добавить материалы</button>
+        </form>   
+      {% endif %}
     </div>
 
 
@@ -24,9 +26,11 @@
                 {{item.filename}} /  {{item.sheetname}}
                 </a>
                 <div class="equipment_card__spacer"></div>
-                <form action="{% url "reference_delete" item.pk %}" method="get">
+                {% if role in edit_materials %}
+                  <form action="{% url "reference_delete" item.pk %}" method="get">
                     <button type="submit" class="btn" name="delete_reference" value={{item.pk}}>удалить</button>
-                </form>
+                  </form>
+                {% endif %}
             </div>
         {% endfor %}
     </div>
