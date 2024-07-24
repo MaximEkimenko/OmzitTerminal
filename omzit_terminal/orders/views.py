@@ -966,22 +966,48 @@ class PPRСalendar(ListView):
         return redirect("ppr_calendar")
 
 
+@login_required(login_url="/scheduler/login/")
 def reference_matreials(request):
     object_list = ReferenceMaterials.objects.all()
-    context = {"object_list":object_list}
+    context = {"object_list":object_list, "alerts": pop_flash_messages(), }
     return render(request, "orders/reference_materials.html", context)
+
 
 def convert_excel(request):
     if request.method == "POST":
         form = ConvertExcelForm(request.POST, request.FILES)
         if form.is_valid():
-            file= form.cleaned_data["file"]
+            file = form.cleaned_data["file"]
             add_reference_materials(file)
-        return redirect("ppr_calendar")
+        return redirect("reference")
     form = ConvertExcelForm()
     context = {"form": form}
     return render(request, "orders/convert_excel.html", context)
 
-class ShowReference(DetailView):
+class ShowReference(LoginRequiredMixin, DetailView):
     model = ReferenceMaterials
     template_name = "orders/show_reference.html"
+
+
+@login_required(login_url="/scheduler/login/")
+def reference_delete_proc(request: WSGIRequest, pk):
+    try:
+        ReferenceMaterials.objects.filter(pk=pk).delete()
+        alert_message = f"Справочный материал удален"
+        create_flash_message(alert_message)
+        message = (
+            f"Удален удален справочный материал  id {pk}.Удалил пользователь {request.user.username}"
+        )
+        logger.info(message)
+    except Exception as e:
+        alert_message = f"Ошибка при удалении местоположения"
+        create_flash_message(alert_message)
+        message = (
+            f"Ошибка при удалении српавочного материала id {pk} "
+            f"пользователем {request.user.username}"
+        )
+        logger.error(message)
+        logger.exception(e)
+
+    return redirect("reference")
+

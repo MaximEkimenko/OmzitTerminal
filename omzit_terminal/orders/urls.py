@@ -26,7 +26,7 @@ from .views import (
     RepairmenHistory,
     filter_data,
     clear_workers_proc,
-    PPRСalendar, reference_matreials, convert_excel, ShowReference,
+    PPRСalendar, reference_matreials, convert_excel, ShowReference, reference_delete_proc,
 )
 
 urlpatterns = [
@@ -64,7 +64,7 @@ urlpatterns = [
     path("reference/", reference_matreials, name="reference"),
     path("reference/<int:pk>", ShowReference.as_view(), name="show_reference"),
     path("convert_excel/", convert_excel, name="convert_excel"),
-
+    path("ref_delete/<int:pk>", reference_delete_proc, name="reference_delete"),
 
 
 ]

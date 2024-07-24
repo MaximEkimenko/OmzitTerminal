@@ -14,6 +14,8 @@ class Assignable(models.Manager):
 
 class ReferenceMaterials(models.Model):
     filename = models.CharField(max_length=255, verbose_name="Имя файла")
+    # нужно, чтобы отслеживать повторяющиеся названия и модифицировать их
+    original_name = models.CharField(max_length=255, verbose_name="Оригинальное название листа")
     sheetname = models.CharField(max_length=255, verbose_name="Имя листа")
     content = models.TextField(verbose_name="Содержание")
 

@@ -319,6 +319,7 @@ input {
   height: 25px;
 }
 
+
 .input_like {
   font-size: 14px;
   border-radius: 7px;
@@ -906,6 +907,7 @@ li.dropdown {
   margin: 0.5rem 0;
   border-bottom: 1px solid #4b4d48;
 }
+
 .equipment_card__label {
   width: 40%;
   padding: 0 0 0 auto;

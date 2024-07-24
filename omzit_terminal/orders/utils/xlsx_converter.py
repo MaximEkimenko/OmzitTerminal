@@ -37,7 +37,7 @@ def xlsx_to_html(wb: Workbook,
     """
     if not worksheets:
         worksheets = wb.sheetnames
-    print(worksheets)
+    # print(worksheets)
     converted_worksheets = {}
     for sheet_name in worksheets:
         ws = wb[sheet_name]
