@@ -1012,6 +1012,5 @@ def reference_delete_proc(request: WSGIRequest, pk):
         )
         logger.error(message)
         logger.exception(e)
-
     return redirect("reference")
 
