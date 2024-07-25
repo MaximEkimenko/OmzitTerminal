@@ -7,12 +7,18 @@
 <div class="col">
   <div id="add-order-form">
     <h2>Добавить скан заявки на материалы:</h2>
+    <div class="equipment_card">
     <form action="" class="form_form" method="POST"  enctype="multipart/form-data">
       {% csrf_token %}
-      <div class="add_to_plan">
+      
+        <div class="card_row__center">
+        Файл должен быть эксель-документом с расширением xlsx.
+        </div>
+        <div class="card_row__center">  
         {{form.as_p}}
+        </div>
     
-        <div class="form_row">
+        <div class="card_row__center">
           <button
             class="form_button"
             onclick="window.location.href = `{% url 'reference' %}`;"
@@ -25,8 +31,9 @@
             <p class="green_word">Загрузить</p>
           </button>
         </div>
-      </div>
+      
     </form>
+  </div>
   </div>
 </div>
 

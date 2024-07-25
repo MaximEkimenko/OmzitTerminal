@@ -17,7 +17,9 @@ def get_cell_border(cell: Cell) -> str:
         b_s = getattr(cell.border, direction)
         # гранича есть и ее стиль отличается о дефолтного (то есть граница установлена пользователем)
         if b_s and b_s.style is not None:
-            border_style += f"border-{direction}: solid 1px;"
+            # мне нужно чтобы границы ячеек были как в остальных таблицах на сайте,
+            # поэтому цвет применяю явно
+            border_style += f"border-{direction}: solid 1px orange;"
         else:
             border_style += f"border-{direction}: none; "
     return border_style
@@ -84,15 +86,14 @@ def xlsx_to_html(wb: Workbook,
 
     def make_cell(cell: Cell, tag: str, use_clsasses: bool) -> str:
         """
-        Превращает ячейку эксель-докумениа в ячейку html-таблицы.
+        Превращает ячейку эксель-документа в ячейку html-таблицы.
         @param cell: Ячейка из экселя.
-        @param tag: Тэг <td> или <th>, в зависимости от того, в заголовке ячейка или в теле таблицы.
+        @param tag: Тэг td или th, в зависимости от того, в заголовке ячейка или в теле таблицы.
         @param use_clsasses: применять к тэгам классы стилей или форматировать каждую ячейку индивидуально
         с помошью параметра style.
         @return: Возвращает html-тег ячейки таблицы с определенным классом или индивидуальным стилем,
         скопированным с эксель ячейки. Главнаое свойство, которе копироуется из стиля - это границы ячейки.
         Индивидуальное применение границ позволяет рисовать красивые таблицы: именно так, как сони сделаны в экселе.
-
         """
         value = cell.value if cell.value is not None else ""
         cell_content = None
@@ -185,11 +186,12 @@ def xlsx_to_html(wb: Workbook,
 
 def html_save(directory, converted_sheets: dict, style_file=None):
     """
-
-    @param directory:
-    @param converted_sheets:
-    @param style_file:
-    @return:
+    Сохраняет сконвертированные листы в файлы, предварительно обернув их в основные html-теги.
+    Сохраняемые имеют имена листов обработанного эксель-документа.
+    @param directory: Каталог, куда выгружать сконвертированные файлы.
+    @param converted_sheets: Словарь, содержащий сконвертированные листы.
+    @param style_file: Путь к файлу стилей. Если указан, то он добавляется в ссылку на стили.
+    @return: Ничего не возвращает.
     """
     html_template = """
         <!DOCTYPE html>
@@ -249,9 +251,9 @@ def get_workbook(xlsx_file: str) -> Workbook:
 test_classes = {"table": "table_css",
                 "thead": "thead_css",
                 "tbody": "tbody_css",
-                # "tr": "tr_css",
-                # "th": "th_css",
-                # "td": "td_css",
+                "tr": "tr_css",
+                "th": "th_css",
+                "td": "td_css",
                 }
 
 if __name__ == '__main__':

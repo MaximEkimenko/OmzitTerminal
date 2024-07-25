@@ -237,7 +237,14 @@ class UploadPDFFile(forms.ModelForm):
             raise ValidationError("Допускается загружать только pdf-файлы.")
         return filename
 
+
 class ConvertExcelForm(forms.Form):
-    # file = forms.CharField(widget=forms.ClearableFileInput())
     file = forms.FileField()
+
+    def clean_file(self):
+        filename = self.cleaned_data["file"]
+        p = Path(filename.name).suffix
+        if p.lower() != ".xlsx":
+            raise ValidationError("Допускается загружать только эксель-файлы.")
+        return filename
 

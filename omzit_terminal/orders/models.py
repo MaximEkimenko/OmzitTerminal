@@ -75,6 +75,19 @@ class FlashMessage(models.Model):
     def __str__(self):
         return self.name
 
+    @classmethod
+    def create_flash_message(cls, name: str):
+        cls.objects.create(name=name)
+
+    @classmethod
+    def pop_flash_messages(cls) -> list[str]:
+        fm = cls.objects.all()
+        l = []
+        for m in fm:
+            l.append(m.name)
+        fm.delete()
+        return l
+
 
 class Equipment(models.Model):
     name = models.CharField(max_length=255, verbose_name="Название оборудования")

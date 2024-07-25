@@ -647,6 +647,9 @@ def order_history(request: WSGIRequest, pk):
 
 
 class EquipmentCardView(LoginRequiredMixin, DetailView):
+    """
+    Выводит карточку оборудования
+    """
     success_url = reverse_lazy("login")
     model = Equipment
     template_name = "orders/equipment_card.html"
@@ -705,8 +708,11 @@ class EquipmentCardView(LoginRequiredMixin, DetailView):
         return redirect("equipment")
 
 
-# class EquipmentCardEditView(LoginRequiredMixin, UpdateView):
-class EquipmentCardEditView(UpdateView):
+
+class EquipmentCardEditView(LoginRequiredMixin, UpdateView):
+    """
+    Карточка редактирования оборудования
+    """
     success_url = reverse_lazy("login")
     model = Equipment
     form_class = EditEquipmentForm
@@ -745,6 +751,9 @@ class EquipmentCardEditView(UpdateView):
 
 
 def order_report(request):
+    """
+    Создает файл отчета с заявками на ремонт
+    """
     try:
         exel_file = create_order_report()
         logger.info(f"Пользователь {request.user} успешно загрузил отчёт в excel.")
@@ -756,6 +765,9 @@ def order_report(request):
 
 
 class ShopsView(ListView):
+    """
+    Показывает страницу со списком цехов
+    """
     model = Shops
     template_name = "orders/shops.html"
 
@@ -782,13 +794,6 @@ class ShopsView(ListView):
             create_flash_message(form.errors["name"][0])
 
         return redirect("shops")
-
-
-class ShopsEdit(UpdateView):
-    model = Shops
-    form_class = AddShop
-    template_name = "orders/shops_edit.html"
-    success_url = reverse_lazy("shops")
 
 
 @login_required(login_url="/scheduler/login/")
@@ -982,13 +987,34 @@ def convert_excel(request):
         form = ConvertExcelForm(request.POST, request.FILES)
         if form.is_valid():
             file = form.cleaned_data["file"]
-            add_reference_materials(file)
+            result = add_reference_materials(file)
+            if result is None:
+                message = (
+                    f"Добавлены справочные материалы из файла '{file.name}'. Добавил пользователь {request.user.username}"
+                )
+                logger.info(message)
+            # ошибка конвертирования эксель-файла
+            else:
+                create_flash_message("Ошибка при добавлении справочных материалов.")
+                message = (
+                    f"Ошибка при добавлении справочных материалов из файла '{file.name}' "
+                    f"пользователем {request.user.username}"
+                )
+                logger.error(message)
+                logger.exception(result)
+        # ошибка валидации формы
+        else:
+            context = {"form": form}
+            return render(request, "orders/convert_excel.html", context)
         return redirect("reference")
     form = ConvertExcelForm()
     context = {"form": form}
     return render(request, "orders/convert_excel.html", context)
 
 class ShowReference(LoginRequiredMixin, DetailView):
+    """
+    Показывает страничку со списком справочных материало по обслуживанию оборудования
+    """
     model = ReferenceMaterials
     template_name = "orders/show_reference.html"
 
