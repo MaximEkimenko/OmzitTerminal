@@ -72,7 +72,7 @@
 
       <td class="td_cell" style="max-width:350px;">
         <a
-          href="{% url 'equipment_card' equipment_id=line.id %}"
+          href="{% url 'equipment_card' line.id %}"
           class="table_link"
           >{{ line.name }}</a
         >
@@ -83,7 +83,7 @@
       
       <td class="td_cell">
         {%if line.history %}  
-          <a  class="table_link" href="{% url 'repair_history' pk=line.id %}">
+          <a  class="table_link" href="{% url 'repair_history' line.id %}">
             история 
             {% if line.urgent_repairs_qty %}
               ({{line.urgent_repairs_qty}})

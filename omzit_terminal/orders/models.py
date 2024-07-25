@@ -12,12 +12,17 @@ class Assignable(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(assignable=True)
 
+
 class ReferenceMaterials(models.Model):
     filename = models.CharField(max_length=255, verbose_name="Имя файла")
     # нужно, чтобы отслеживать повторяющиеся названия и модифицировать их
     original_name = models.CharField(max_length=255, verbose_name="Оригинальное название листа")
     sheetname = models.CharField(max_length=255, verbose_name="Имя листа")
     content = models.TextField(verbose_name="Содержание")
+
+
+    def get_absolute_url(self):
+        return reverse_lazy("reference", kwargs={"pk": self.pk})
 
 
 class Repairmen(models.Model):
@@ -127,7 +132,7 @@ class Equipment(models.Model):
         ordering = ["unique_name"]
 
     def get_absolute_url(self):
-        return reverse_lazy("equipment_card", kwargs={"equipment_id": self.pk})
+        return reverse_lazy("equipment_card", kwargs={"pk": self.pk})
 
     @classmethod
     def equipment_with_PPR(cls) -> QuerySet["Equipment"]:

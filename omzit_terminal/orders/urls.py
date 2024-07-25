@@ -25,17 +25,17 @@ from .views import (
     RepairmenHistory,
     filter_data,
     clear_workers_proc,
-    PPRСalendar, reference_matreials, convert_excel, ShowReference, reference_delete_proc,
+    PPRСalendar,
+    convert_excel,
+    ShowReference,
+    reference_delete_proc,
+    ReferenceMaterialsList,
 )
 
 urlpatterns = [
     path("equipment/", equipment, name="equipment"),
-    path("equipment/<int:equipment_id>/", EquipmentCardView.as_view(), name="equipment_card"),
-    path(
-        "equipment_edit/<int:equipment_id>/",
-        EquipmentCardEditView.as_view(),
-        name="equipment_card_edit",
-    ),
+    path("equipment/<int:pk>/", EquipmentCardView.as_view(), name="equipment_card"),
+    path("equipment_edit/<int:pk>/", EquipmentCardEditView.as_view(), name="equipment_card_edit"),
     path("start_repair/<int:pk>", order_assign_workers, name="start_repair"),
     path("clarify_repair/<int:pk>", order_clarify_repair, name="clarify_repair"),
     path("confirm_materials/<int:pk>", order_confirm_materials, name="confirm_materials"),
@@ -59,7 +59,7 @@ urlpatterns = [
     path("filter_data/", filter_data, name="filter_data"),
     path("clear_workers/<int:pk>", clear_workers_proc, name="clear_workers"),
     path("ppr_calendar/", PPRСalendar.as_view(), name="ppr_calendar"),
-    path("reference/", reference_matreials, name="reference"),
+    path("reference/", ReferenceMaterialsList.as_view(), name="reference"),
     path("reference/<int:pk>", ShowReference.as_view(), name="show_reference"),
     path("convert_excel/", convert_excel, name="convert_excel"),
     path("ref_delete/<int:pk>", reference_delete_proc, name="reference_delete"),

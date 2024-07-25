@@ -8,12 +8,7 @@
         <button type="submit" class="btn">Список оборудования</button>
       </form>
       
-      <form action="">
-        
-          <button type="submit" class="btn">Добавить ППР</button>
-      </form>
-      <form action=" {% url "reference" %}">
-        
+      <form action=" {% url "reference" %}">        
         <button type="submit" class="btn">Справочные материалы</button>
       </form>
 
@@ -55,7 +50,7 @@
 
       <td class="td_cell_small" style="max-width:350px;">
         <a
-          href="{% url 'equipment_card' equipment_id=line.id %}"
+          href="{% url 'equipment_card' pk=line.id %}"
           class="table_link"
           data-pk="{{line.id}}"
           data-ppr="{{line.ppr_plan_day}}"

@@ -633,6 +633,9 @@ def order_delete_proc(request: WSGIRequest):
 
 @login_required(login_url="/scheduler/login/")
 def order_history(request: WSGIRequest, pk):
+    """
+    Показывает все ремонты для конкретного оборудования
+    """
     equipment: Equipment = Equipment.objects.filter(pk=pk).values(*["id", "name", "unique_name"])[0]
     orders: Orders = Orders.objects.filter(equipment_id=pk).order_by("breakdown_date").all()
     context = {
@@ -651,14 +654,13 @@ class EquipmentCardView(LoginRequiredMixin, DetailView):
     success_url = reverse_lazy("login")
     model = Equipment
     template_name = "orders/equipment_card.html"
-    pk_url_kwarg = "equipment_id"
-    extra_context = {
-        "edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],
-    }
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({"role": get_employee_position(self.request.user.username)})
+        context.update({
+            "role": get_employee_position(self.request.user.username),
+            "edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],
+        })
         return context
 
     def post(self, request, *args, **kwargs):
@@ -706,35 +708,20 @@ class EquipmentCardView(LoginRequiredMixin, DetailView):
         return redirect("equipment")
 
 
-
 class EquipmentCardEditView(LoginRequiredMixin, UpdateView):
     """
-    Карточка редактирования оборудования
+    Карточка редактирования оборудования.
     """
-    success_url = reverse_lazy("login")
     model = Equipment
     form_class = EditEquipmentForm
     template_name = "orders/equipment_edit.html"
-    pk_url_kwarg = "equipment_id"
-
     extra_context = {
-        "color": "red",
-        "edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],
-        "permitted_users": PERMITED_USERS,
-    }
+                "edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],
+                "permitted_users": PERMITED_USERS,
+            }
 
     def get_success_url(self):
         return self.object.get_absolute_url()
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(
-            {
-                "edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],
-                "equipment_id": self.kwargs.get("equipment_id"),
-            }
-        )
-        return context
 
     def form_valid(self, form):
         form_data = form.cleaned_data
@@ -764,7 +751,9 @@ def order_report(request):
 
 class ShopsView(ListView):
     """
-    Показывает страницу со списком цехов
+    Показывает страницу со списком цехов. На странице можно добавлять, редактировать и удалять цеха.
+    Добавление обрабатывается в этом же классе в методе post, а удаление и редактирование происходит
+    путем перехода на другие эндпоинты.
     """
     model = Shops
     template_name = "orders/shops.html"
@@ -782,7 +771,7 @@ class ShopsView(ListView):
 
     def post(self, request, *args, **kwargs):
         """
-        Обрабатывает удаление оборудования
+        Обрабатывает добавление местонахождения
         """
         form = AddShop(request.POST)
         if form.is_valid():
@@ -799,8 +788,7 @@ def shop_edit_proc(request: WSGIRequest):
     """
     Техническая функция для изменения названия местоположения оборудования.
     Принимает строку с измененным местоположением, пытается применить это изменение и делает
-    редирект на ту же самую страницу, с которой была вызвана
-
+    редирект на ту же самую страницу, с которой была вызвана.
     """
     if request.method == "POST":
         form = AddShop(request.POST)
@@ -838,6 +826,11 @@ def shop_edit_proc(request: WSGIRequest):
 
 @login_required(login_url="/scheduler/login/")
 def shop_delete_proc(request: WSGIRequest):
+    """
+    Функция удаляет местоположение (при нажатии на соответствующую кнопку на странице редактирования мест),
+    если к нему не привязано ни одно оборудование.
+    После удаления перенаправляет на ту же самую страницу редактирования местоположений.
+    """
     if request.method == "POST":
         pk = request.POST.get("commit-delete-button")
         try:
@@ -882,7 +875,7 @@ def shop_delete_proc(request: WSGIRequest):
 def clear_workers_proc(request: WSGIRequest, pk):
     """
     Снимает всех сотрудников с задания.
-    Вызывается при нажатии на кнопу "снять всех сотрудников" на главной странице заявок
+    Вызывается при нажатии на кнопку "снять всех сотрудников" на главной странице заявок
     """
     order = Orders.objects.get(pk=pk)
     clear_dayworkers(order)
@@ -890,6 +883,9 @@ def clear_workers_proc(request: WSGIRequest, pk):
 
 
 class RepairmenHistory(LoginRequiredMixin, ListView):
+    """
+    Демонстрирует список работников, которые были прикреплены к конкретной заявке за всё время ремонта.
+    """
     template_name = "orders/repairmen_history.html"
 
     def get_queryset(self):
@@ -930,6 +926,9 @@ def order_upload_pdf(request: WSGIRequest, pk):
 
 
 def show_pdf(request, pk):
+    """
+    Открывает PDF-файл со сканом заявки на материалы из карточки заявки на ремонт (при нажатии на кнопку).
+    """
     order: Orders = Orders.objects.get(pk=pk)
     f = Path(order.material_request_file.path)
     if f.exists():
@@ -943,12 +942,20 @@ def show_pdf(request, pk):
 
 
 def filter_data(request):
+    """
+    Возвращает json при добавлении нового оборудования. json нужен для фильтрации оборудования по цехам.
+    Так как на странице информация о принадлежности оборудования к конкретному цеху отсутствует,
+    ее нужно запрашивать отдельно.
+    """
     equipment_json = list(Equipment.objects.all().values("id", "unique_name", "shop_id"))
     return JsonResponse({"filter": equipment_json})
 
 
 
 class PPRСalendar(ListView):
+    """
+    Показывает график ППР для оборудования. На странице возможно изменить день ППР для конкретного оборудования.
+    """
     template_name = "orders/PPR_calendar.html"
     extra_context = {
         "shops":  Shops.objects.all(),
@@ -969,18 +976,28 @@ class PPRСalendar(ListView):
         return redirect("ppr_calendar")
 
 
-@login_required(login_url="/scheduler/login/")
-def reference_matreials(request):
-    object_list = ReferenceMaterials.objects.all()
-    context = {"object_list":object_list,
-               "alerts": FlashMessage.pop_flash(),
-               "role": get_employee_position(request.user.username),
-               "edit_materials": [Position.Admin, Position.HoRT, Position.Engineer],
-               }
-    return render(request, "orders/reference_materials.html", context)
+class ReferenceMaterialsList(ListView):
+    """
+    Показывает страничку со списком справочных материалов по обслуживанию оборудования
+    """
+    model = ReferenceMaterials
+    template_name = "orders/reference_materials.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+                   "alerts": FlashMessage.pop_flash(),
+                   "role": get_employee_position(self.request.user.username),
+                   "edit_materials": [Position.Admin, Position.HoRT, Position.Engineer],
+                   })
+        return context
 
 
 def convert_excel(request):
+    """
+    Страница, где можно выбрать эксель файл и сконвертировать его листы в справочные материалы
+    (html-страницы, которые помещаются в базу и могут быть отображены по ссылке).
+    """
     if request.method == "POST":
         form = ConvertExcelForm(request.POST, request.FILES)
         if form.is_valid():
@@ -1011,7 +1028,7 @@ def convert_excel(request):
 
 class ShowReference(LoginRequiredMixin, DetailView):
     """
-    Показывает страничку со списком справочных материало по обслуживанию оборудования
+    Показывает страницу со сконвертированным из экселя справочным материалом, предварительно достав ее из базы
     """
     model = ReferenceMaterials
     template_name = "orders/show_reference.html"
@@ -1019,6 +1036,10 @@ class ShowReference(LoginRequiredMixin, DetailView):
 
 @login_required(login_url="/scheduler/login/")
 def reference_delete_proc(request: WSGIRequest, pk):
+    """
+    Функция для удаления справочных материалов. На экране она не отображается.
+    Происходит переход по ссылке, удалени записи в базе и редирект на страницу со списком материалов.
+    """
     try:
         ReferenceMaterials.objects.filter(pk=pk).delete()
         alert_message = f"Справочный материал удален"
