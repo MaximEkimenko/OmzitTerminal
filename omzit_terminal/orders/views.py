@@ -19,7 +19,7 @@ from m_logger_settings import logger
 from orders.report import create_order_report
 
 
-from orders.models import Orders, Equipment, Shops, WorkersLog, ReferenceMaterials
+from orders.models import Orders, Equipment, Shops, WorkersLog, ReferenceMaterials, FlashMessage
 from orders.forms import (
     AddEquipmentForm,
     AddOrderForm,
@@ -45,8 +45,6 @@ from orders.utils.common import (
 from orders.utils.reference_materials import add_reference_materials
 from orders.utils.roles import Position, get_employee_position, custom_login_check, PERMITED_USERS
 from orders.utils.utils import (
-    create_flash_message,
-    pop_flash_messages,
     get_doers_list,
     orders_record_to_dict,
     get_order_verbose_names,
@@ -79,13 +77,13 @@ def equipment(request: WSGIRequest) -> HttpResponse:
                 x = Equipment(**eq_params)
                 x.save()
                 alert_message = "Новое оборудование добавлено!"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 eq_name = new_equipment_name.cleaned_data["name"]
                 logger.info(f'Новое оборудование "{eq_name}" добавлено в таблицу Equipment')
                 # TODO отправка сообщения в телеграм
             except Exception as e:
                 alert_message = "Ошибка добавления оборудования"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.error("Ошибка записи в таблицу Equipment.")
                 logger.exception(e)
         return redirect("equipment")
@@ -110,7 +108,7 @@ def equipment(request: WSGIRequest) -> HttpResponse:
 
     context = {
         "table_data": table_data,
-        "alerts": pop_flash_messages(),
+        "alerts": FlashMessage.pop_flash(),
         "add_equipment_form": AddEquipmentForm(),
         "button_conditions": {"create": [Position.Admin, Position.Engineer, Position.HoRT]},
         "role": get_employee_position(request.user.username),
@@ -146,12 +144,12 @@ def orders(request) -> HttpResponse:
                 new_order.save()
             except Exception as e:
                 alert_message = "Ошибка добавления в заявки"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.error("Ошибка записи в таблицу Orders.")
                 logger.exception(e)
             else:
                 alert_message = "Новая заявка на ремонт добавлена!"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.info(f"Заявка № {new_order.id} добавлена в таблицу Orders")
                 order_telegram_notification(OrdStatus.DETECTED, new_order)
         else:
@@ -199,10 +197,10 @@ def order_assign_workers(request, pk):
                 if busy_workers:
                     for worker in busy_workers:
                         # не могу получить место заявки, потому что нет связи многие-ко многим
-                        # create_flash_message(f"{worker.fio} занят на заявке № {worker.order}")
-                        create_flash_message(f"{worker.fio} занят на другой заявке")
+                        # FlashMessage.create_flash(f"{worker.fio} занят на заявке № {worker.order}")
+                        FlashMessage.create_flash(f"{worker.fio} занят на другой заявке")
                     form = AssignWorkersForm(form.cleaned_data)
-                    context.update({"object": order, "form": form, "alerts": pop_flash_messages()})
+                    context.update({"object": order, "form": form, "alerts": FlashMessage.pop_flash()})
                     return render(request, "orders/repair_start.html", context)
                 # если мы попали сюда (добавляем работников), значит ремонт либо начат, либо возобновлен
                 # если ремонт был приостановлен, возобновляем предыдущую стадию
@@ -225,17 +223,17 @@ def order_assign_workers(request, pk):
 
                 success = apply_order_status(order, applied_status)
                 if success:
-                    create_flash_message(alert_message)
+                    FlashMessage.create_flash(alert_message)
                     logger.info(alert_message)
                     order_telegram_notification(applied_status, order)
 
                 return redirect("orders")
             else:
                 alert_message = f"Исполнители дублируются. Измените исполнителей."
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.error(alert_message)
                 form = AssignWorkersForm(form.cleaned_data)
-                context.update({"object": order, "form": form, "alerts": pop_flash_messages()})
+                context.update({"object": order, "form": form, "alerts": FlashMessage.pop_flash()})
                 return render(request, "orders/repair_start.html", context)
 
     form = AssignWorkersForm()
@@ -281,12 +279,12 @@ def order_clarify_repair(request, pk):
                 apply_order_status(order, applied_status)
                 # clear_dayworkers(order)
                 alert_message = "Данные по ремонту уточнены"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
 
                 order_telegram_notification(applied_status, order)
             else:
                 alert_message = f"Некорректно указаны материалы"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.error(alert_message)
             return redirect("orders")
 
@@ -320,7 +318,7 @@ def order_confirm_materials(request, pk):
                 # так что вызывает функцию с тем же статусом
                 apply_order_status(order, OrdStatus.WAIT_FOR_MATERIALS)
                 alert_message = "Номер заявки на материалы внесен."
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
 
         else:
             # нажата кнопка "материалы в наличии"
@@ -330,7 +328,7 @@ def order_confirm_materials(request, pk):
             applied_status = OrdStatus.REPAIRING
             apply_order_status(order, applied_status)
             alert_message = f"Наличие материалов для ремонта по заявке {order.id} подтверждено."
-            create_flash_message(alert_message)
+            FlashMessage.create_flash(alert_message)
             logger.info(alert_message)
             order_telegram_notification(applied_status, order)
             check_order_suspend(order)
@@ -359,7 +357,7 @@ def order_finish_repair(request, pk):
                 apply_order_status(order, applied_status)
             except Exception as e:
                 alert_message = f"Ошибка записи при завершении ремонта оборудования {order.equipment} по заявке {order.id}"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.error(alert_message)
                 logger.exception(e)
             else:
@@ -367,7 +365,7 @@ def order_finish_repair(request, pk):
                 alert_message = (
                     f"Ремонт оборудования {order.equipment} по заявке {order.id} закончен"
                 )
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.info(alert_message)
                 order_telegram_notification(applied_status, order)
 
@@ -390,7 +388,7 @@ def order_accept_repair(request, pk):
         applied_status = OrdStatus.ACCEPTED
         apply_order_status(order, applied_status)
         alert_message = "Отремонтированное оборудование принято"
-        create_flash_message(alert_message)
+        FlashMessage.create_flash(alert_message)
         order_telegram_notification(applied_status, order)
         return redirect("orders")
 
@@ -427,14 +425,14 @@ def order_revision(request, pk):
                     f"Ошибка записи при возвращении оборудования {order.equipment} "
                     f"по заявке {order.id} на доработку"
                 )
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.error(alert_message)
                 logger.exception(e)
             else:
                 alert_message = (
                     f"Оборудование {order.equipment} по заявке {order.id} возвращено на доработку"
                 )
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.info(alert_message)
                 order_telegram_notification(
                     applied_status,
@@ -468,7 +466,7 @@ def order_cancel_repair(request, pk):
 
             except Exception as e:
                 alert_message = f"Ошибка записи при отмене ремонта оборудования {order.equipment} по заявке {order.id}"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.error(alert_message)
                 logger.exception(e)
             else:
@@ -476,7 +474,7 @@ def order_cancel_repair(request, pk):
                 alert_message = (
                     f"Ремонт оборудования {order.equipment} по заявке {order.id} отменен"
                 )
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.info(alert_message)
                 order_telegram_notification(applied_status, order)
         return redirect("orders")
@@ -524,7 +522,7 @@ def order_card(request, pk):
             "assignments_field": verbose_header["assignments_count"],
             "equipment": verbose_header["equipment"],
         },
-        "alerts": pop_flash_messages(),
+        "alerts": FlashMessage.pop_flash(),
     }
     return render(request, "orders/repair_card.html", context)
 
@@ -555,14 +553,14 @@ def order_edit(request, pk):
                 Orders.objects.filter(pk=pk).update(**cd)
             except Exception as e:
                 alert_message = f"Ошибка редактирования заявки № {order.id}"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 message = f"Ошибка при редактировании заявки № {order.id} пользователем {request.user.username}\n"
                 message += f"Попытка внести данные: {cd}"
                 logger.info(message)
                 logger.exception(e)
             else:
                 alert_message = f"Заявка № {order.id} успешно отредактирована"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 message = (
                     f"Заявка № {order.id} отредактирована пользователем {request.user.username}\n"
                 )
@@ -609,12 +607,12 @@ def order_delete_proc(request: WSGIRequest):
                 try:
                     Orders.objects.filter(pk=pk).delete()
                     alert_message = f"Заявка на ремонт удалена"
-                    create_flash_message(alert_message)
+                    FlashMessage.create_flash(alert_message)
                     message = f"Удалена заявка id {pk}.Удалил пользователь {request.user.username}"
                     logger.info(message)
                 except Exception as e:
                     alert_message = f"Ошибка при удалении заявки"
-                    create_flash_message(alert_message)
+                    FlashMessage.create_flash(alert_message)
                     message = (
                         f"Ошибка при удалении заявки id {pk} "
                         f"пользователем {request.user.username}"
@@ -623,7 +621,7 @@ def order_delete_proc(request: WSGIRequest):
                     logger.exception(e)
             else:
                 alert_message = f"Нельзя удалить заявку"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 message = (
                     f"Попытка удалить заявку id {pk} при некорректном статусе {order.status} "
                     f"пользователем {request.user.username}"
@@ -672,7 +670,7 @@ class EquipmentCardView(LoginRequiredMixin, DetailView):
             try:
                 Equipment.objects.filter(pk=pk).delete()
                 alert_message = f"Оборудование удалено"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 message = (
                     f"Удалено оборудование id {pk}.Удалил пользователь {request.user.username}"
                 )
@@ -682,7 +680,7 @@ class EquipmentCardView(LoginRequiredMixin, DetailView):
                 alert_message = (
                     f"Оборудование не может быть удалено, так как к нему привязаны заявки ремонтов"
                 )
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 message = (
                     f" К оборудованию id {pk} привязаны ремонты, поэтому оно не может быть "
                     f"удалено пользователем {request.user.username}"
@@ -692,7 +690,7 @@ class EquipmentCardView(LoginRequiredMixin, DetailView):
 
             except Exception as e:
                 alert_message = f"Ошибка при удалении оборудования"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 message = (
                     f"Ошибка при удалении оборудования id {pk} "
                     f"пользователем {request.user.username}"
@@ -702,7 +700,7 @@ class EquipmentCardView(LoginRequiredMixin, DetailView):
 
         else:
             alert_message = f"Не найден идентификатор оборудования"
-            create_flash_message(alert_message)
+            FlashMessage.create_flash(alert_message)
             message = f"Для удаления поступил пустой идентификатор оборудования {pk}.  Пользователь {request.user.username}"
             logger.error(message)
         return redirect("equipment")
@@ -775,7 +773,7 @@ class ShopsView(ListView):
         context = super().get_context_data(**kwargs)
         context.update(
             {
-                "alerts": pop_flash_messages(),
+                "alerts": FlashMessage.pop_flash(),
                 "add_form": AddShop(),
                 "edit_form": AddShop(),
             }
@@ -789,9 +787,9 @@ class ShopsView(ListView):
         form = AddShop(request.POST)
         if form.is_valid():
             form.save()
-            create_flash_message("Местонахождение создано.")
+            FlashMessage.create_flash("Местонахождение создано.")
         else:
-            create_flash_message(form.errors["name"][0])
+            FlashMessage.create_flash(form.errors["name"][0])
 
         return redirect("shops")
 
@@ -822,13 +820,13 @@ def shop_edit_proc(request: WSGIRequest):
                     alert_message = (
                         f"местонахождение {shop_name} было изменено на {form.cleaned_data['name']}"
                     )
-                    create_flash_message(alert_message)
+                    FlashMessage.create_flash(alert_message)
                     logger.info(
                         f"id {pk} местонахождение {shop_name} было изменено на {form.cleaned_data['name']}. Пользователь {request.user.username}"
                     )
                 except Exception as e:
                     alert_message = f"Ошибка при изменении местоположения {shop_name}"
-                    create_flash_message(alert_message)
+                    FlashMessage.create_flash(alert_message)
                     logger.error(
                         f"Ошибка при изменении местоположения id {pk}  {shop_name}  на {form.cleaned_data['name']}. "
                         f"Пользователь {request.user.username}"
@@ -850,7 +848,7 @@ def shop_delete_proc(request: WSGIRequest):
             try:
                 Shops.objects.filter(pk=pk).delete()
                 alert_message = f"Местоположение удалено"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 message = (
                     f"Удалено местпоположение id {pk}.Удалил пользователь {request.user.username}"
                 )
@@ -859,7 +857,7 @@ def shop_delete_proc(request: WSGIRequest):
                 alert_message = (
                     f"Местоположение не может быть удалено, так как нему привязано оборудование"
                 )
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 message = (
                     f" К местоположению id {pk} привязано оборудование, поэтому оно не может быть "
                     f"удалено пользователем {request.user.username}"
@@ -869,7 +867,7 @@ def shop_delete_proc(request: WSGIRequest):
 
             except Exception as e:
                 alert_message = f"Ошибка при удалении местоположения"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 message = (
                     f"Ошибка при удалении местоположения id {pk} "
                     f"пользователем {request.user.username}"
@@ -940,7 +938,7 @@ def show_pdf(request, pk):
     else:
         order.material_request_file = None
         order.save()
-        create_flash_message("Файл не обнаружен")
+        FlashMessage.create_flash("Файл не обнаружен")
         return redirect(reverse_lazy("order_info", args=(pk,)))
 
 
@@ -975,7 +973,7 @@ class PPRСalendar(ListView):
 def reference_matreials(request):
     object_list = ReferenceMaterials.objects.all()
     context = {"object_list":object_list,
-               "alerts": pop_flash_messages(),
+               "alerts": FlashMessage.pop_flash(),
                "role": get_employee_position(request.user.username),
                "edit_materials": [Position.Admin, Position.HoRT, Position.Engineer],
                }
@@ -995,7 +993,7 @@ def convert_excel(request):
                 logger.info(message)
             # ошибка конвертирования эксель-файла
             else:
-                create_flash_message("Ошибка при добавлении справочных материалов.")
+                FlashMessage.create_flash("Ошибка при добавлении справочных материалов.")
                 message = (
                     f"Ошибка при добавлении справочных материалов из файла '{file.name}' "
                     f"пользователем {request.user.username}"
@@ -1024,14 +1022,14 @@ def reference_delete_proc(request: WSGIRequest, pk):
     try:
         ReferenceMaterials.objects.filter(pk=pk).delete()
         alert_message = f"Справочный материал удален"
-        create_flash_message(alert_message)
+        FlashMessage.create_flash(alert_message)
         message = (
             f"Удален удален справочный материал  id {pk}.Удалил пользователь {request.user.username}"
         )
         logger.info(message)
     except Exception as e:
         alert_message = f"Ошибка при удалении местоположения"
-        create_flash_message(alert_message)
+        FlashMessage.create_flash(alert_message)
         message = (
             f"Ошибка при удалении српавочного материала id {pk} "
             f"пользователем {request.user.username}"

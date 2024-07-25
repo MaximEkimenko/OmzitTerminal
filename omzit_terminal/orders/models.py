@@ -76,11 +76,11 @@ class FlashMessage(models.Model):
         return self.name
 
     @classmethod
-    def create_flash_message(cls, name: str):
+    def create_flash(cls, name: str):
         cls.objects.create(name=name)
 
     @classmethod
-    def pop_flash_messages(cls) -> list[str]:
+    def pop_flash(cls) -> list[str]:
         fm = cls.objects.all()
         l = []
         for m in fm:

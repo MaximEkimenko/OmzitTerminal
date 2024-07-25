@@ -17,8 +17,7 @@ from orders.models import (
     OrderStatus,
     Materials,
     Repairmen,
-    # OrdersWorkers,
-    WorkersLog
+    WorkersLog,
 )
 
 
@@ -42,19 +41,6 @@ def get_order_verbose_names() -> dict[str, str]:
             else:
                 verbose_names[field.name] = field.name
     return verbose_names
-
-
-def create_flash_message(name: str):
-    FlashMessage.objects.create(name=name)
-
-
-def pop_flash_messages() -> list[str]:
-    fm = FlashMessage.objects.all()
-    l = []
-    for m in fm:
-        l.append(m.name)
-    FlashMessage.objects.all().delete()
-    return l
 
 
 def get_table_data(q: QuerySet) -> dict[str, Any]:
@@ -197,7 +183,7 @@ def orders_get_context(request) -> dict[str, Any]:
         "role": get_employee_position(request.user.username),
         "orders": order_table_data,
         "add_order_form": AddOrderForm(),
-        "alerts": pop_flash_messages(),
+        "alerts": FlashMessage.pop_flash(),
         "statuses": OrdStatus,
         "button_context": button_context,
         "permitted_users": PERMITED_USERS,
@@ -300,12 +286,12 @@ def create_extra_materials(exma: str) -> Materials | None:
         if m is None:
             m = Materials.objects.create(name=exma)
             alert_message = "Добавлены новые материалы"
-            create_flash_message(alert_message)
+            FlashMessage.create_flash(alert_message)
             logger.info(f"Созданы новые материалы для ремонта {exma}")
 
     except Exception as e:
         alert_message = "Ошибка при выборе материалов"
-        create_flash_message(alert_message)
+        FlashMessage.create_flash(alert_message)
         logger.error(f"Ошибка при выборе или удалении материалов {exma}")
         logger.exception(e)
         m = None
