@@ -165,7 +165,6 @@ class OrdersArchive(LoginRequiredMixin, ListView):
     """
     Отображает все заявки на ремонт, которые были завершены (приняты или отменены).
     """
-
     template_name = "orders/orders_archive.html"
 
     def get_queryset(self):
@@ -245,6 +244,9 @@ def order_assign_workers(request, pk):
 
 @login_required(login_url="/scheduler/login/")
 def order_clarify_repair(request, pk):
+    """
+    Экран этапа, когда уточняются делатл ремонта, а именно примерная дата исполнения ремонта и требуемые материалы
+    """
     order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
         pk=pk
     )
@@ -277,7 +279,6 @@ def order_clarify_repair(request, pk):
                     applied_status = OrdStatus.WAIT_FOR_MATERIALS
                 order.clarify_date = make_aware(datetime.now())
                 apply_order_status(order, applied_status)
-                # clear_dayworkers(order)
                 alert_message = "Данные по ремонту уточнены"
                 FlashMessage.create_flash(alert_message)
 
@@ -296,6 +297,7 @@ def order_clarify_repair(request, pk):
 @login_required(login_url="/scheduler/login/")
 def order_confirm_materials(request, pk):
     """
+    Экран подтверждения требуемых для ремонта материалов
     Здесь совершаются два действия.
     1) Если материалы в наличии или не требуются, происходит переход на этап "в ремонте". И
      онт тут же приостанавливается, так как работники на этапе подтверждения материалов были сняты.
@@ -340,6 +342,9 @@ def order_confirm_materials(request, pk):
 
 @login_required(login_url="/scheduler/login/")
 def order_finish_repair(request, pk):
+    """
+    Экран завершения ремонта
+    """
     order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
         pk=pk
     )
@@ -379,6 +384,9 @@ def order_finish_repair(request, pk):
 
 @login_required(login_url="/scheduler/login/")
 def order_accept_repair(request, pk):
+    """
+    Экран завершения заявки, когда отремонтированное оборудование принимается в работу.
+    """
     if request.method == "POST":
         order: Orders = Orders.objects.prefetch_related(
             "equipment", "equipment__shop", "status"
@@ -399,6 +407,9 @@ def order_accept_repair(request, pk):
 
 @login_required(login_url="/scheduler/login/")
 def order_revision(request, pk):
+    """
+    Экран возвращения оконченного ремонта на доработку
+    """
     order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
         pk=pk
     )
@@ -448,6 +459,9 @@ def order_revision(request, pk):
 
 @login_required(login_url="/scheduler/login/")
 def order_cancel_repair(request, pk):
+    """
+    Экран отмены ремонта
+    """
     order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
         pk=pk
     )
@@ -488,6 +502,7 @@ def order_cancel_repair(request, pk):
 def order_card(request, pk):
     """
     Выводит информацию о заявке (показывет все поля из модели, которые можно показать).
+    А так же пару кнопок: список назначений на ремонт и кнопку добавления пдф-файла.
     """
     assignments_count = (
         WorkersLog.objects.filter(order=OuterRef("pk"))
@@ -529,6 +544,10 @@ def order_card(request, pk):
 
 @login_required(login_url="/scheduler/login/")
 def order_edit(request, pk):
+    """
+    Выводит форму редактирования заявки. Отдельные поля формы могут быть отключены в зависимости
+    от стадии ремонта и роли пользователя.
+    """
     order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
         pk=pk
     )
@@ -574,12 +593,13 @@ def order_edit(request, pk):
         "object": order,
         "form": form,
     }
+    # условия для отрисовки полей формы
     conditions = get_order_edit_context(request)
     for key, field in form.fields.items():
         if (
             order.status_id not in conditions["stages"][key]
             or conditions["role"] not in conditions["employees"][key]
-        ):
+        ):  # если условия редактирования не удовлетворяют, то отключаем поля путем модификации виджетов формы
             x = dict(field.widget.attrs)
             x["disabled"] = "disabled"
             field.widget.attrs = x
@@ -588,7 +608,11 @@ def order_edit(request, pk):
 
 
 @login_required(login_url="/scheduler/login/")
+
 def order_delete_proc(request: WSGIRequest):
+    """
+    Удаляет заявку на ремонт
+    """
     if request.method == "POST":
         pk = request.POST.get("delete_button")
         try:
@@ -651,7 +675,6 @@ class EquipmentCardView(LoginRequiredMixin, DetailView):
     """
     Выводит карточку оборудования
     """
-    success_url = reverse_lazy("login")
     model = Equipment
     template_name = "orders/equipment_card.html"
 
