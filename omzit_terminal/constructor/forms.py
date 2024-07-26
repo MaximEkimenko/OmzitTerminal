@@ -2,7 +2,7 @@ from django import forms
 # from tehnolog.models import ProductModel
 from django.forms import ModelChoiceField
 from django.db.models import Q
-from scheduler.models import ShiftTask, WorkshopSchedule, Doers
+from scheduler.models import ShiftTask, WorkshopSchedule, Doers  # noqa
 from django.forms import ClearableFileInput, FileField
 from django.core.validators import FileExtensionValidator
 
@@ -11,7 +11,6 @@ class QueryAnswerForm(ModelChoiceField):  # переопределение ме�
     """
     Класс для переопределения вывода ModelChoiceField
     """
-
     def label_from_instance(self, obj):
         return obj.model_order_query
 

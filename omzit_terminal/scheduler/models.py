@@ -44,7 +44,8 @@ class WorkshopSchedule(models.Model):
     query_prior = models.PositiveSmallIntegerField(verbose_name='Приоритет заявки чертежей', default=1)
     done_rate = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=0,
                                     verbose_name='процент готовности')
-    td_status = models.CharField(max_length=20, default='запрошено', verbose_name='Статус технической документации')
+    td_status = models.CharField(max_length=20, default='запрошено', null=True,
+                                 verbose_name='Статус технической документации')
     td_query_datetime = models.DateTimeField(auto_now_add=True, null=True,
                                              verbose_name='дата/время запроса документации')
     td_remarks = models.TextField(blank=True, verbose_name='замечания к КД')
@@ -60,6 +61,17 @@ class WorkshopSchedule(models.Model):
     constructor_query_td_fio = models.CharField(max_length=30, null=True, verbose_name='Передал КД')
     tehnolog_query_td_fio = models.CharField(max_length=30, null=True, verbose_name='Утвердил / загрузил')
     product_category = models.CharField(max_length=30, null=True, verbose_name='Категория изделия')
+
+    # TODO добавлено для функционала strat моделей без параметров
+    #  при глобальном рефакторинге: models.ForeignKey(ModelParameters, ...)
+    #  либо работа только с таблицей ModelParameters
+    produce_cycle = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=1,
+                                        verbose_name='Производственный цикл')
+    # def __str__(self):
+    #     fields = [f"{field.name}: {getattr(self, field.name)}" for field in self._meta.fields]
+    #     return "\n".join(fields)
+    def __str__(self):
+        return self.model_order_query
 
     def save(self, *args, **kwargs):
         """

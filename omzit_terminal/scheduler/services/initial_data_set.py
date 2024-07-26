@@ -63,11 +63,11 @@ def series_parameters_set() -> None:
         },
         {
             'series_name': 'R',
-            'cycle_polynom_koef': list(reversed([Decimal('0.21446424625724'),
-                                                 Decimal('-2.00393257283599'),
-                                                 Decimal('6.08211796013855'),
-                                                 Decimal('-3.82285906703149'),
-                                                 Decimal('6.12988710720749')])),
+            'cycle_polynom_koef': list(reversed([Decimal('0.0209215527528083'),
+                                                 Decimal('-0.418180948395113'),
+                                                 Decimal('2.50961085233185'),
+                                                 Decimal('-1.79236224953406'),
+                                                 Decimal('6.32828374214917')])),
             'difficulty_koef': Decimal('1')
         },
         {
@@ -165,14 +165,11 @@ def clean_model_names(models_data: dict[str]) -> dict[str:float]:
         model_full_norm_tech = model_data['full_norm_tech']
         if len(model_name.split()) > 1:
             new_model_name = f"{model_name.split()[0]}{model_name.split()[1]}"
-
-
             new_data = clean_dict.get(new_model_name, 0)
             if new_data != 0:
                 max_weight_value = max(model_weight, new_data.get('model_weight', 0))
             else:
                 max_weight_value = model_weight
-
 
             if 'SW' in model_name.split()[1] or 'SV' in model_name.split()[1] or 'RC' in model_name.split()[1]:
                 clean_dict.update({new_model_name: {'model_weight': max_weight_value,
@@ -186,8 +183,6 @@ def clean_model_names(models_data: dict[str]) -> dict[str:float]:
                                                          'full_norm_tech': model_full_norm_tech}})
                 clean_dict.update({new_model_name_right: {'model_weight': max_weight_value,
                                                           'full_norm_tech': model_full_norm_tech}})
-
-                pass
             else:
                 latin_model_name = ''.join(translate_dict.get(char, char) for char in model_name.split()[0])
                 new_model_name = latin_model_name
@@ -246,5 +241,5 @@ if __name__ == '__main__':
     json_file_to_save_tst = r'D:\АСУП\Python\Projects\OmzitTerminal\misc\all_weights.json'
     with open(json_file_to_save_tst, 'r') as file:
         model_names_tst = json.load(file)
-    # print(clean_model_names(model_names_tst))
-    # models_data_db_set(clean_model_names(model_names_tst))
+    print(clean_model_names(model_names_tst))
+    models_data_db_set(clean_model_names(model_names_tst))

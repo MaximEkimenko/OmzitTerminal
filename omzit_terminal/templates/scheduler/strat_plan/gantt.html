@@ -146,26 +146,26 @@
 
                 //this is the real implementation
                 /*
-  //var taskId = $("#taskSelector").val();
-  var prof = new Profiler("loadServerSide");
-  prof.reset();
+            //var taskId = $("#taskSelector").val();
+            var prof = new Profiler("loadServerSide");
+            prof.reset();
 
-  $.getJSON("ganttAjaxController.jsp", {CM:"LOADPROJECT",taskId:taskId}, function(response) {
-    //console.debug(response);
-    if (response.ok) {
-      prof.stop();
+            $.getJSON("ganttAjaxController.jsp", {CM:"LOADPROJECT",taskId:taskId}, function(response) {
+              //console.debug(response);
+              if (response.ok) {
+                prof.stop();
 
-      ge.loadProject(response.project);
-      ge.checkpoint(); //empty the undo stack
+                ge.loadProject(response.project);
+                ge.checkpoint(); //empty the undo stack
 
-      if (typeof(callback)=="function") {
-        callback(response);
-      }
-    } else {
-      jsonErrorHandling(response);
-    }
-  });
-  */
+                if (typeof(callback)=="function") {
+                  callback(response);
+                }
+              } else {
+                jsonErrorHandling(response);
+              }
+            });
+            */
 
                 return ret
             }
@@ -203,6 +203,8 @@
                 //this is a simulation: save data to the local storage or to the textarea
                 //saveInLocalStorage();
                 var prj = ge.saveProject()
+
+                // prj['workshop'] = 1111
                 // console.log(prj)
                 download(JSON.stringify(prj, null, '\t'), 'MyProject.json', 'application/json')
                 // const options = { # TODO REMOVE THIS!!!!!
@@ -226,50 +228,87 @@
 
                 /*
 
-  delete prj.resources;
-  delete prj.roles;
+            delete prj.resources;
+            delete prj.roles;
 
-  var prof = new Profiler("saveServerSide");
-  prof.reset();
+            var prof = new Profiler("saveServerSide");
+            prof.reset();
 
-  if (ge.deletedTaskIds.length>0) {
-    if (!confirm("TASK_THAT_WILL_BE_REMOVED\n"+ge.deletedTaskIds.length)) {
-      return;
-    }
-  }
-
-  $.ajax("ganttAjaxController.jsp", {
-    dataType:"json",
-    data: {CM:"SVPROJECT",prj:JSON.stringify(prj)},
-    type:"POST",
-
-    success: function(response) {
-      if (response.ok) {
-        prof.stop();
-        if (response.project) {
-          ge.loadProject(response.project); //must reload as "tmp_" ids are now the good ones
-        } else {
-          ge.reset();
-        }
-      } else {
-        var errMsg="Errors saving project\n";
-        if (response.message) {
-          errMsg=errMsg+response.message+"\n";
-        }
-
-        if (response.errorMessages.length) {
-          errMsg += response.errorMessages.join("\n");
-        }
-
-        alert(errMsg);
-      }
-    }
-
-  });
-  */
+            if (ge.deletedTaskIds.length>0) {
+              if (!confirm("TASK_THAT_WILL_BE_REMOVED\n"+ge.deletedTaskIds.length)) {
+                return;
+              }
             }
+
+            $.ajax("ganttAjaxController.jsp", {
+              dataType:"json",
+              data: {CM:"SVPROJECT",prj:JSON.stringify(prj)},
+              type:"POST",
+
+              success: function(response) {
+                if (response.ok) {
+                  prof.stop();
+                  if (response.project) {
+                    ge.loadProject(response.project); //must reload as "tmp_" ids are now the good ones
+                  } else {
+                    ge.reset();
+                  }
+                } else {
+                  var errMsg="Errors saving project\n";
+                  if (response.message) {
+                    errMsg=errMsg+response.message+"\n";
+                  }
+
+                  if (response.errorMessages.length) {
+                    errMsg += response.errorMessages.join("\n");
+                  }
+
+                  alert(errMsg);
+                }
+              }
+
+            });
+            */
+            }
+
+            async function deleteModelFromServer() {
+                // write function which will delete selected row
+                // const options = {
+                //     method: 'POST', // HTTP method
+                //     headers: {
+                //         'Content-Type': 'application/json', // specify the content type as JSON
+                //     },
+                // var ge
+                // ge = new GanttMaster()
+                // ge.init($('#workSpace'))
+                // loadI18n() //overwrite with localized ones
+                // //in order to force compute the best-fitting zoom level
+                // delete ge.gantt.zoom
+                // var project = loadFromLocalStorage()
+                // // загрузка из контекста view django
+                // var new_json = JSON.parse(`{{ json|safe }}`) // Array of Objects.
+                // ge.loadProject(new_json)
+                // ge.checkpoint() //empty the undo stack
+                // console.log(ge.testGantt())
+                // console.log($('#taskSelector').val)
+                // console.log(JSON.stringify({ CM: 'DELETE', taskId: $('#taskSelector').val() }))
+                // }
+                // try {
+                //     const response = await fetch(`${baseUrl}`, options) // make the fetch request
+                //     // console.log(response)
+                //     if (!response.ok) {
+                //         throw new Error(`HTTP error! status: ${response.status}`) // handle HTTP errors
+                //     }
+                //     const responseData = response.json() // parse the JSON response
+                //     // console.log(responseData) // log the response data
+                // } catch (error) {
+                //     console.error('Error making POST request:', error)
+            }
+
             async function sendGanttOnServer() {
                 var prj = ge.saveProject()
+                // добавление цеха в ответный json
+                prj.workshop = `{{ workshop }}`
                 // console.log(prj)
 
                 const options = {
@@ -281,16 +320,18 @@
                 }
                 try {
                     const response = await fetch(`${baseUrl}`, options) // make the fetch request
-                    // console.log(response)
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`) // handle HTTP errors
                     }
+                    location.reload()
                     const responseData = response.json() // parse the JSON response
                     // console.log(responseData) // log the response data
                 } catch (error) {
                     console.error('Error making POST request:', error) // log any errors
+                    alert(`Ошикба в имени модели или заказа:
+                    Имя модели может содержать только цифры и буквы латинского алфавита и знак '-' тире.  
+                    Имя заказа может содержать только цифры, буквы, знаки тире "-" и скобки "()".`)
                 }
-                location.reload()
             }
 
             // Function to download data to a file
@@ -329,7 +370,7 @@
                 $('#gimBaPrj').val('')
 
                 /*  var uriContent = "data:text/html;charset=utf-8," + encodeURIComponent(JSON.stringify(prj));
-   neww=window.open(uriContent,"dl");*/
+             neww=window.open(uriContent,"dl");*/
             }
 
             function loadFromLocalStorage() {
@@ -576,7 +617,7 @@
                                 style="max-width: 136px; padding-right: 15px"
                         /></a>
 
-                        <button
+                        <!-- <button
                             onclick="$('#workSpace').trigger('undo.gantt');return false;"
                             class="button textual icon requireCanWrite"
                             title="undo"
@@ -597,18 +638,18 @@
                             title="insert above"
                         >
                             <span class="teamworkIcon">l</span>
-                        </button>
+                        </button> -->
                         <button
                             onclick="$('#workSpace').trigger('addBelowCurrentTask.gantt');return false;"
                             class="button textual icon requireCanWrite requireCanAdd"
-                            title="insert below"
+                            title="Добавить"
                         >
                             <span class="teamworkIcon">X</span>
                         </button>
                         <span
                             class="ganttButtonSeparator requireCanWrite requireCanInOutdent"
                         ></span>
-                        <button
+                        <!-- <button
                             onclick="$('#workSpace').trigger('outdentCurrentTask.gantt');return false;"
                             class="button textual icon requireCanWrite requireCanInOutdent"
                             title="un-indent task"
@@ -638,8 +679,9 @@
                             title="move down"
                         >
                             <span class="teamworkIcon">j</span>
-                        </button>
-                        <span class="ganttButtonSeparator requireCanWrite requireCanDelete"></span>
+                        </button> -->
+                        <!-- СТАРАЯ ВЕРСИЯ КНОПКИ УДАЛЕНИЯ -->
+                        <!-- <span class="ganttButtonSeparator requireCanWrite requireCanDelete"></span>
                         <button
                             onclick="$('#workSpace').trigger('deleteFocused.gantt');return false;"
                             class="button textual icon delete requireCanWrite"
@@ -647,8 +689,10 @@
                         >
                             <span class="teamworkIcon">&cent;</span>
                         </button>
-                        <span class="ganttButtonSeparator"></span>
-                        <button
+                        <span class="ganttButtonSeparator"></span> -->
+                        <!-- onclick="deleteModelFromServer();" -->
+
+                        <!-- <button
                             onclick="$('#workSpace').trigger('expandAll.gantt');return false;"
                             class="button textual icon"
                             title="EXPAND_ALL"
@@ -663,7 +707,7 @@
                             <span class="teamworkIcon">5</span>
                         </button>
 
-                        <span class="ganttButtonSeparator"></span>
+                        <span class="ganttButtonSeparator"></span> -->
                         <button
                             onclick="$('#workSpace').trigger('zoomMinus.gantt'); return false;"
                             class="button textual icon"
@@ -679,7 +723,7 @@
                             <span class="teamworkIcon">(</span>
                         </button>
                         <span class="ganttButtonSeparator"></span>
-                        <button
+                        <!-- <button
                             onclick="$('#workSpace').trigger('print.gantt');return false;"
                             class="button textual icon"
                             title="Print"
@@ -694,7 +738,7 @@
                         >
                             <span class="teamworkIcon">&pound;</span>
                         </button>
-                        <span class="ganttButtonSeparator requireCanSeeCriticalPath"></span>
+                        <span class="ganttButtonSeparator requireCanSeeCriticalPath"></span> -->
                         <button
                             onclick="ge.splitter.resize(.1);return false;"
                             class="button textual icon"
@@ -713,7 +757,18 @@
                         >
                             <span class="teamworkIcon">R</span>
                         </button>
+                        <span class="ganttButtonSeparator requireCanWrite requireCanDelete"></span>
+
                         <span class="ganttButtonSeparator"></span>
+                        <button
+                            onclick="$('#workSpace').trigger('deleteTask.gantt');return false;"
+                            class="button textual icon delete requireCanWrite"
+                            title="Удалить"
+                        >
+                            <span class="teamworkIcon">&cent;</span>
+                        </button>
+                        <span class="ganttButtonSeparator"></span>
+                        <!-- <span class="ganttButtonSeparator"></span>
                         <button
                             onclick="$('#workSpace').trigger('fullScreen.gantt');return false;"
                             class="button textual icon"
@@ -735,8 +790,8 @@
                             title="edit resources"
                         >
                             <span class="teamworkIcon">M</span>
-                        </button>
-                        &nbsp; &nbsp; &nbsp; &nbsp;
+                        </button> -->
+                        <!-- &nbsp; &nbsp; &nbsp; &nbsp; -->
                     </div>
 
                     <div>
@@ -770,6 +825,13 @@
                             >График для цеха {{ workshop }}</span
                         >
                         <button
+                            onclick="window.location.href = '/scheduler/'"
+                            class="button first big requireWrite"
+                            title="Save_1"
+                        >
+                            Таблица графика
+                        </button>
+                        <!-- <button
                             class="button login"
                             title="login/enroll"
                             onclick="loginEnroll($(this));"
@@ -784,7 +846,7 @@
                             style="display: none"
                         >
                             <em>collaborate</em>
-                        </button>
+                        </button> -->
                     </div>
                 </div>
             </div>
@@ -795,10 +857,8 @@
                         <tr style="height: 40px">
                             <th class="gdfColHeader gdfResizable" style="width: 10px">№</th>
                             <th class="gdfColHeader gdfResizable" style="width: 50px">Статус</th>
-                            <th class="gdfColHeader gdfResizable" style="width: 100px">Шифр</th>
-                            <th class="gdfColHeader gdfResizable" style="width: 100px">
-                                Наименование
-                            </th>
+                            <th class="gdfColHeader gdfResizable" style="width: 100px">Заказ</th>
+                            <th class="gdfColHeader gdfResizable" style="width: 100px">Модель</th>
 
                             <th class="gdfColHeader gdfResizable" style="width: 100px">Запуск</th>
 
@@ -832,15 +892,7 @@
     
     <td class="gdfCell"><input type="text" name="end" value="" class="date"></td>
     <td class="gdfCell"><input type="text" name="duration" autocomplete="off" value="(#=obj.duration#)"></td>
-    <td colspan="10" class="gdfCell"><input type="text" name="progress" class="validated" entrytype="PERCENTILE" autocomplete="off" value="(#=obj.progress?obj.progress:''#)" (#=obj.progressByWorklog?"readOnly":""#)></td>
-    
- 
-
-    
-    
-    
-    
-    
+    <td colspan="10" class="gdfCell"><input type="text" name="progress" class="validated" entrytype="PERCENTILE" autocomplete="off" value="(#=obj.progress?obj.progress:''#)" (#=obj.progressByWorklog?"readOnly":""#)></td>   
   </tr>
          -->
             </div>

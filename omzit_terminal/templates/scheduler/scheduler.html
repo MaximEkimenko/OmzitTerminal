@@ -1,3 +1,4 @@
+<!-- prettier-ignore -->
 {% extends 'base.html' %}
 {% load static %}
 
@@ -7,192 +8,326 @@
 
 {% block body %}
 <h1>Рабочее место планировщика</h1>
-        {% if alert %}
+{% if alert %}
+<div>
+    <p class="alert_gone" id="id_alert">{{ alert }}</p>
+    <script>
+        const notification = document.getElementById('id_alert')
+        setTimeout(() => notification.remove(), 10000)
+    </script>
+</div>
+{% endif %}
+<!-- Кнопка заказать КД -->
+<button class="id_make_order_query_btn btn" value="" title="Заказать КД">Заказать КД</button> <br />
+<!-- Кнопка график -->
+<button
+    class="btn"
+    onclick="window.location.href = '{{ request.path }}strat_plan1/'"
+    value=""
+    title="График"
+>
+    График</button
+><br />
+<!-- Основная таблица интерфейса -->
+<!--Заявки КД-->
+<div class="col scheduler">
+    <h3 class="table_h3">График производства</h3>
+    <p>
+        <input
+            type="button"
+            onclick="window.location.href = '{{ request.path }}';"
+            value="Сбросить фильтр"
+        />
+    </p>
+    <table class="table" title="Заявки на документацию">
+        <form method="get" id="filter_form2">
+            <tr class="table_header_row">
+                <td class="td_cell">{{ filter_q.form.workshop }}Цех</td>
+                <td class="td_cell">{{ filter_q.form.model_order_query }} Заказ-модель</td>
+                <td class="td_cell">{{ filter_q.form.query_prior }}Приоритет заявки чертежей</td>
+                <td class="td_cell">{{ filter_q.form.td_status }}Статус завяки чертежей</td>
+                <td class="td_cell">
+                    {{ filter_q.form.datetime_done }}Дата готовности по договору
+                </td>
+                <td class="td_cell">
+                    {{ filter_q.form.calculated_datetime_done }} Дата готовности планируемая
+                </td>
+                <td class="td_cell">{{ filter_q.form.order_status }} Статус заказа</td>
+                <td class="td_cell">{{ filter_q.form.done_rate }} % готовности</td>
+                <td class="td_cell">Действие</td>
+            </tr>
+        </form>
+        {% for line in filter_q.qs %}
+        <tr class="table_row">
+            {% if line.workshop %}
+            <td class="td_cell">{{ line.workshop }}</td>
+            {% else %}
+            <td class="td_cell"></td>
+            {% endif %}
+            <td class="td_cell">{{ line.model_order_query }}</td>
+            <td class="td_cell">{{ line.query_prior }}</td>
+            <td class="td_cell">{{ line.td_status }}</td>
+            {% if line.datetime_done %}
+            <td class="td_cell">{{ line.datetime_done }}</td>
+            {% else %}
+            <td class="td_cell" style="color: red; font-weight: bold">Неопределено</td>
+            {% endif %}
+            <td class="td_cell">{{ line.calculated_datetime_done }}</td>
+            <td class="td_cell">{{ line.order_status }}</td>
+            <td class="td_cell">{{ line.done_rate }}</td>
+            <td class="td_cell">
+                <!-- prettier-ignore -->
+                {% comment %}
+                {% if line.td_status == "утверждено" and line.order_status != "в работе" and line.order_status != "запланировано" and line.order_status != 
+                "завершено" or line.workshop == None and line.order_status == 'в работе' %}
+                {% endcomment %}
+                {% if line.workshop == None %}
+                <button
+                    class="id_plan_workshop_btn btn"
+                    value="{{ line.model_order_query }}"
+                    title="Создать сменные задания"
+                >
+                    Создать сменные задания
+                </button>
+                <!-- prettier-ignore -->
+                {% endif%}
+
+                <!-- {% if order_status != "завершено" %}
+                <button
+                    class="id_new_datetime_done_btn btn"
+                    value="{{ line.model_order_query }}"
+                    title="Редактировать дату договора"
+                >
+                    Редактировать дату договора
+                </button>
+                {% endif%} -->
+
+                <!-- prettier-ignore -->
+                {% if line.td_status == "не заказано" %}
+                <button
+                    class="id_order_model_btn btn"
+                    value="{{ line.model_order_query }}"
+                    title="Запросить КД"
+                >
+                    Заказать КД
+                </button>
+                {% endif%}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+<!--График цеха СТАРАЯ ВЕРСИЯ-->
+<!-- <div class="col" scheduler>
+    <h3 class="table_h3">График производства</h3>
+    <p>
+        <input
+            type="button"
+            onclick="window.location.href = '{{ request.path }}';"
+            value="Сбросить фильтр"
+        />
+    </p>
+    <table title="График цехов" class="table">
+        <form method="get" id="filter_form1">
+            <tr class="table_header_row">
+                <td class="td_cell">{{ filter_w.form.workshop }}Цех</td>
+                <td class="td_cell">{{ filter_w.form.order }} Заказ</td>
+                <td class="td_cell">{{ filter_w.form.model_name }} Изделие</td>
+                <td class="td_cell">{{ filter_w.form.datetime_done }}Дата готовности</td>
+                <td class="td_cell">{{ filter_w.form.order_status }} Статус заказа</td>
+                <td class="td_cell">{{ filter_w.form.done_rate }} % готовности</td>
+            </tr>
+        </form>
+        {% for line in filter_w.qs %}
+        <tr class="table_row">
+            {% for el in line.values %}
+            <td class="td_cell"><p class="">{{ el }}</p></td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+</div> -->
+<!-- Форма запроса КД -->
+<div id="order_model" class="modal">
+    <form
+        class="form_form modal-content"
+        id="id_order_model_form"
+        action="{% url 'td_query' %}"
+        method="post"
+        enctype="multipart/form-data"
+    >
+        {% csrf_token %}
+        <div class="add_to_plan">
+            <h3>Форма для запроса КД</h3>
+            <div class="form_inner_label">{{ form_query_draw.order_query.label }}</div>
+            <div class="form_inner_div">{{ form_query_draw.order_query }}</div>
+
+            <div class="form_inner_label">{{ form_query_draw.model_query.label }}</div>
+            <div class="form_inner_div">{{ form_query_draw.model_query }}</div>
+
+            <div class="form_inner_label">{{ form_query_draw.query_prior.label }}</div>
+            <div class="form_inner_div">{{ form_query_draw.query_prior }}</div>
             <div>
-                <p class='alert_gone' id="id_alert"> {{ alert }} </p>
-                <script>
-                    const notification = document.getElementById("id_alert");
-                    setTimeout(() => notification.remove(), 10000)
-                </script>
+                <button type="submit" class="form_button">
+                    <p class="red_word">Запросить чертеж</p>
+                </button>
             </div>
-        {% endif %}
-        <!-- Кнопка заказать КД -->
-        <button class="id_make_order_query_btn btn" value="" title="Заказать КД">Заказать КД</button>
-        <br />
-        <!-- Основная таблица интерфейса -->
-        <!--Заявки КД-->
-        <div class="col scheduler">
-            <h3 class="table_h3">Заявки на документацию</h3>
-            <p>
-                <input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр" />
-            </p>
-            <table class="table" title="Заявки на документацию">
-                <form method="get" id="filter_form2">
-                    <tr class="table_header_row">
-                        <td class="td_cell">{{ filter_q.form.model_order_query }} Заказ-модель</td>
-                        <td class="td_cell">{{ filter_q.form.query_prior }}Приоритет</td>
-                        <td class="td_cell">{{ filter_q.form.td_status }}Статус завяки</td>
-                        <td class="td_cell">Действие</td>
-                    </tr>
-                </form>
-                {% for line in filter_q.qs %}
-                <tr class="table_row">
-                    <td class="td_cell">{{ line.model_order_query }}</td>
-                    <td class="td_cell">{{ line.query_prior }}</td>
-                    <td class="td_cell">{{ line.td_status }}</td>
-                    <td class="td_cell">
-                        <!-- prettier-ignore -->
-                        {% if line.td_status == "утверждено" and line.order_status != "в работе" and line.order_status != "запланировано" and line.order_status != "завершено" %}
-                        <button
-                            class="id_plan_workshop_btn btn"
-                            value="{{ line.model_order_query }}"
-                            title="Запланировать"
-                        >
-                            Запланировать
-                        </button>
-                        {% endif%}
-                    </td>
-                </tr>
-                {% endfor %}
-            </table>
         </div>
-        <!--График цеха-->
-        <div class="col" scheduler>
-            <h3 class="table_h3">График производства</h3>
-            <p>
-                <input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр" />
-            </p>
-            <table title="График цехов" class="table">
-                <form method="get" id="filter_form1">
-                    <tr class="table_header_row">
-                        <td class="td_cell">{{ filter_w.form.workshop }}Цех</td>
-                        <td class="td_cell">{{ filter_w.form.order }} Заказ</td>
-                        <td class="td_cell">{{ filter_w.form.model_name }} Изделие</td>
-                        <td class="td_cell">{{ filter_w.form.datetime_done }}Дата готовности</td>
-                        <td class="td_cell">{{ filter_w.form.order_status }} Статус заказа</td>
-                        <td class="td_cell">{{ filter_w.form.done_rate }} % готовности</td>
-                    </tr>
-                </form>
-                {% for line in filter_w.qs %}
-                <tr class="table_row">
-                    {% for el in line.values %}
-                    <td class="td_cell"><p class="">{{ el }}</p></td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
-            </table>
+    </form>
+</div>
+<!--форма планирования цеха-->
+<div id="plan_workshop" class="modal">
+    <form
+        id="id_plan_workshop_form"
+        action="{% url 'scheduler' %}"
+        method="post"
+        enctype="multipart/form-data"
+        class="form_form modal-content"
+    >
+        {% csrf_token %}
+        <div class="add_to_plan">
+            <h3>Форма для планирования</h3>
+            <div class="form_inner_label">{{ form_workshop_plan.model_order_query.label }}</div>
+            <div class="form_inner_div">{{ form_workshop_plan.model_order_query }}</div>
+            <br />
+            <div class="form_inner_label">{{ form_workshop_plan.workshop.label }}</div>
+            <div class="form_inner_div">{{ form_workshop_plan.workshop }}</div>
+            <br />
+            <div class="form_inner_label">{{ form_workshop_plan.category.label }}</div>
+            <div class="form_inner_div">{{ form_workshop_plan.category }}</div>
+            <br />
+            <div class="form_inner_label">{{ form_workshop_plan.datetime_done.label }}</div>
+            <div class="form_inner_div">{{ form_workshop_plan.datetime_done }}</div>
+            <div>
+                <button type="submit" class="form_button">
+                    <p class="green_word">Создать СЗ</p>
+                </button>
+            </div>
         </div>
-        <!-- Форма запроса КД -->
-        <div class="modal" id="order_model">
-            <form
-                class="form_form modal-content"
-                id="if_order_model_form"
-                action="{% url 'td_query' %}"
-                method="post"
-                enctype="multipart/form-data"
-            >
-                {% csrf_token %}
-                <div class="add_to_plan">
-                    <h3>Форма для запроса КД</h3>
-                    <div class="form_inner_label">{{ form_query_draw.order_query.label }}</div>
-                    <div class="form_inner_div">{{ form_query_draw.order_query }}</div>
+    </form>
+</div>
 
-                    <div class="form_inner_label">{{ form_query_draw.model_query.label }}</div>
-                    <div class="form_inner_div">{{ form_query_draw.model_query }}</div>
-
-                    <div class="form_inner_label">{{ form_query_draw.query_prior.label }}</div>
-                    <div class="form_inner_div">{{ form_query_draw.query_prior }}</div>
-                    <div>
-                        <button type="submit" class="form_button">
-                            <p class="red_word">Запросить чертеж</p>
-                        </button>
-                    </div>
-                </div>
-            </form>
+<!--форма редактирования даты-->
+<div id="new_datetime_done" class="modal">
+    <form
+        id="id_new_datetime_done_form"
+        action="{% url 'new_datetimedone' %}"
+        method="post"
+        enctype="multipart/form-data"
+        class="form_form modal-content"
+    >
+        {% csrf_token %}
+        <div class="add_to_plan">
+            <h3>Форма для планирования</h3>
+            <div class="form_inner_label">
+                {{ form_change_datetime_done.model_order_query.label }}
+            </div>
+            <div class="form_inner_div">{{ form_change_datetime_done.model_order_query }}</div>
+            <br />
+            <div class="form_inner_label">{{ form_change_datetime_done.datetime_done.label }}</div>
+            <div class="form_inner_div">{{ form_change_datetime_done.datetime_done }}</div>
+            <div>
+                <button type="submit" class="form_button">
+                    <p class="green_word">Редактировать</p>
+                </button>
+            </div>
         </div>
-        <!--форма планирования цеха-->
-        <div id="plan_workshop" class="modal">
-            <form
-                id="id_plan_workshop_form"
-                action="{% url 'scheduler' %}"
-                method="post"
-                enctype="multipart/form-data"
-                class="form_form modal-content"
-            >
-                {% csrf_token %}
-                <div class="add_to_plan">
-                    <h3>Форма для планирования</h3>
-                    <div class="form_inner_label">{{ form_workshop_plan.model_order_query.label }}</div>
-                    <div class="form_inner_div">{{ form_workshop_plan.model_order_query }}</div>
-                    <br />
-                    <div class="form_inner_label">{{ form_workshop_plan.workshop.label }}</div>
-                    <div class="form_inner_div">{{ form_workshop_plan.workshop }}</div>
-                    <br />
-                    <div class="form_inner_label">{{ form_workshop_plan.category.label }}</div>
-                    <div class="form_inner_div">{{ form_workshop_plan.category }}</div>
-                    <br />
-                    <div class="form_inner_label">{{ form_workshop_plan.datetime_done.label }}</div>
-                    <div class="form_inner_div">{{ form_workshop_plan.datetime_done }}</div>
-                    <div>
-                        <button type="submit" class="form_button">
-                            <p class="green_word">Запланировать</p>
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-        <script>
-            // кнопки планирования
-            document.addEventListener("DOMContentLoaded", function () {
-                // При загрузке документа
-                const sel = id_plan_workshop_form.elements.model_order_query; // Получаем все селекты
-                const buttons = document.querySelectorAll(".id_plan_workshop_btn"); // Получаем кнопки с классом
-                buttons.forEach(function (c) {
-                    // Для каждой кнопки
-                    c.onclick = function () {
-                        // Слушаем нажатие
-                        // Если нажата, то выбирает тот option, который в тексте кнопки.
-                        const modal = document.querySelector("#plan_workshop");
-                        modal.style.display = "block";
-                        for (var n = 0; n < sel.length; n++) {
-                            if (sel.options[n].text == c.value) sel.options[n].selected = true;
-                        }
-                        window.onclick = function (event) {
-                            if (event.target == modal) {
-                                modal.style.display = "none";
-                            }
-                        };
-                    };
-                });
-                // Кнопка заказать КД
-                const button_query = document.querySelectorAll(".id_make_order_query_btn"); // Получаем кнопки с классом
-                button_query.forEach(function (c) {
-                    // Для каждой кнопки
-                    c.onclick = function () {
-                        // Слушаем нажатие
-                        const modal_query = document.querySelector("#order_model");
-                        modal_query.style.display = "block";
-                        window.onclick = function (event) {
-                            if (event.target == modal_query) {
-                                modal_query.style.display = "none";
-                            }
-                        };
-                    };
-                });
-            });
-        </script>
-        <br> <br>
-        <a href="{% url 'schedulerwp' %}" class="btn">Распределение</a>
-        <div style="height: 150px"></div>
+    </form>
+</div>
 
-
-        <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
-        <script>
-            function onChange1() {
-                document.getElementById("filter_form1").submit();
+<script>
+    // Кнопки
+    document.addEventListener('DOMContentLoaded', function () {
+        // Кнопка запланировать в строке
+        const sel = id_plan_workshop_form.elements.model_order_query // Получаем все селекты
+        const buttons = document.querySelectorAll('.id_plan_workshop_btn') // Получаем кнопки с классом
+        buttons.forEach(function (c) {
+            // Для каждой кнопки
+            c.onclick = function () {
+                // Слушаем нажатие
+                // Если нажата, то выбирает тот option, который в тексте кнопки.
+                const modal = document.querySelector('#plan_workshop')
+                modal.style.display = 'block'
+                for (var n = 0; n < sel.length; n++) {
+                    if (sel.options[n].text == c.value) sel.options[n].selected = true
+                }
+                window.onclick = function (event) {
+                    if (event.target == modal) {
+                        modal.style.display = 'none'
+                    }
+                }
             }
-            function onChange2() {
-                document.getElementById("filter_form2").submit();
+        })
+        // Кнопка редатировать в строке
+        const sel_red = id_new_datetime_done_form.elements.model_order_query // Получаем все селекты
+        const buttons_red = document.querySelectorAll('.id_new_datetime_done_btn') // Получаем кнопки с классом
+        buttons_red.forEach(function (c) {
+            // Для каждой кнопкиы
+            c.onclick = function () {
+                // Слушаем нажатие
+                // Если нажата, то выбирает тот option, который в тексте кнопки.
+                const modal = document.querySelector('#new_datetime_done')
+                modal.style.display = 'block'
+                for (var n = 0; n < sel_red.length; n++) {
+                    if (sel_red.options[n].text == c.value) sel_red.options[n].selected = true
+                }
+                window.onclick = function (event) {
+                    if (event.target == modal) {
+                        modal.style.display = 'none'
+                    }
+                }
             }
-        </script>
+        })
+        // Кнопка заказать КД в строке
+        const td_sel = id_order_model_form.elements.model_query // Получаем все селекты
+        const td_buttons = document.querySelectorAll('.id_order_model_btn') // Получаем кнопки с классом
+        td_buttons.forEach(function (c) {
+            // Для каждой кнопки
+            c.onclick = function () {
+                // Слушаем нажатие
+                // Если нажата, то выбирает тот option, который в тексте кнопки.
+                const modal = document.querySelector('#order_model')
+                modal.style.display = 'block'
+                for (var n = 0; n < td_sel.length; n++) {
+                    if (td_sel.options[n].text == c.value) td_sel.options[n].selected = true
+                }
+                window.onclick = function (event) {
+                    if (event.target == modal) {
+                        modal.style.display = 'none'
+                    }
+                }
+            }
+        })
+
+        // Кнопка заказать КД в начале страницы
+        const button_query = document.querySelectorAll('.id_make_order_query_btn') // Получаем кнопки с классом
+        button_query.forEach(function (c) {
+            // Для каждой кнопки
+            c.onclick = function () {
+                // Слушаем нажатие
+                const modal_query = document.querySelector('#order_model')
+                modal_query.style.display = 'block'
+                window.onclick = function (event) {
+                    if (event.target == modal_query) {
+                        modal_query.style.display = 'none'
+                    }
+                }
+            }
+        })
+    })
+</script>
+<br />
+<br />
+<a href="{% url 'schedulerwp' %}" class="btn">Распределение</a>
+<div style="height: 150px"></div>
+
+<script src="{% static 'scheduler/js/scheduler.js' %}"></script>
+<script>
+    function onChange1() {
+        document.getElementById('filter_form1').submit()
+    }
+    function onChange2() {
+        document.getElementById('filter_form2').submit()
+    }
+</script>
 {% endblock %}

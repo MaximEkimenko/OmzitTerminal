@@ -529,7 +529,9 @@ Ganttalendar.prototype.drawTask = function (task) {
         }
 
         //task label
-        svg.text(taskSvg, '100%', 18, task.name, {
+        // svg.text(taskSvg, '100%', 18, task.code + '_' + task.name, {
+        //!!!! Отображение подписи в виде заказ-модели
+        svg.text(taskSvg, '100%', 18, task.model_order_query, {
             class: 'taskLabelSVG',
             transform: 'translate(20,-5)',
         })
@@ -657,7 +659,6 @@ Ganttalendar.prototype.drawLink = function (from, to, type) {
     //console.debug("drawLink")
     var self = this
     var peduncolusSize = 10
-
     /**
      * Given an item, extract its rendered position
      * width and height into a structure.

@@ -1,9 +1,9 @@
 from django.urls import path
 from .views import (scheduler, schedulerwp, schedulerfio, LoginUser, logout_user, td_query, show_workshop_scheme, plan,
-                    shift_tasks_reports, shift_tasks_report_view, strat_plan)
+                    shift_tasks_reports, shift_tasks_report_view, strat_plan, new_datetimedone)
 
 # from .views import plan_resort, report # TODO ФУНКЦИОНАЛ ОТЧЁТОВ ЗАКОНСЕРВИРОВАНО
-from constructor.views import show_instruction
+from constructor.views import show_instruction  # noqa
 
 # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
 # from .views import create_shift_tasks_from_spec, create_specification, test_scheduler
@@ -14,10 +14,11 @@ urlpatterns = [
     path('schedulerfio<int:ws_number>_<str:model_order_query>', schedulerfio, name='schedulerfio'),
     path('login/', LoginUser.as_view(), name='login'),
     path('logout/', logout_user, name='logout'),
-    path('td_query/', td_query, name='td_query'),
+    path('td_query/', td_query, name='td_query'),  # запрос чертежей
+    path('new_datetimedone/', new_datetimedone, name='new_datetimedone'),  # запрос чертежей
     path('instruction/', show_instruction, name='instruction'),
     path('scheme/', show_workshop_scheme, name='scheme'),
-    path('strat_plan<int:workshop>/', strat_plan, name='strat_plan'),
+    path('strat_plan<int:workshop>/', strat_plan, name='strat_plan'),  # стратегическое планирование
     path('st_report_<str:start>_<str:end>/', shift_tasks_reports, name='st_reports'),
     path('view_st_report_<str:start>_<str:end>/', shift_tasks_report_view, name='view_st_report'),
 

@@ -239,6 +239,16 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
     Получение контекста для strat_plan ПЕРВАЯ ВЕРСИЯ
     :return:
     """
+
+    # Первоначальные заполнения данных
+    # series_parameters_set()  # заполнение первоначальных данных для моделей параметров серии
+    # json_file_to_save_tst = r'D:\АСУП\Python\Projects\OmzitTerminal\misc\all_weights.json'
+    # with open(json_file_to_save_tst, 'r') as file:
+    #     model_data = json.load(file)
+    # existing_models = clean_model_names(model_data)
+    # # первоначальное заполнение данных серий и моделей
+    # models_data_db_set(existing_models)
+
     # исходный контекст
     context = {
         'workshop': workshop,
@@ -291,16 +301,27 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
     plan = (WorkshopSchedule.objects.filter(
         Q(order_status='запланировано')
         | Q(order_status='в работе')
-    ).filter(workshop=workshop).distinct()
-            .exclude(model_order_query__contains='TRUBOPROVOD')
-            .exclude(datetime_done=None)
+        | Q(order_status='не запланировано')
+        )
+            .filter(workshop=workshop)
+            .distinct()
             ).values()
     today = datetime.datetime.now()
     # заполнение параметров моделей
     dates = []
 
     for model in plan:
-        model_parameters = ModelParameters.objects.filter(model_name=model['model_name']).values()
+        banned_models = ('TRUBOPROVOD', 'PAROPEREGREVATEL',  'SHIBER', 'shiber')
+        md_name: str = model['model_name']
+        mod_ord: str = model['model_order_query']
+        if 'SV' in md_name:
+            md_name = md_name[:md_name.find('-')]
+            # print(model['model_order_query'])
+        for ban in banned_models:
+            if ban in mod_ord:
+                md_name = 'unknown'
+        # model_parameters = ModelParameters.objects.filter(model_name=model['model_name']).values()
+        model_parameters = ModelParameters.objects.filter(model_name=md_name).values()
         # заполнение только моделями на которые есть данные
         plan_datetime = datetime.datetime.combine(model['calculated_datetime_done'], datetime.datetime.min.time())
         if model_parameters and plan_datetime:
@@ -319,7 +340,6 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
             # выбор процента наибольшего процента готовности
             if done_rate < model['done_rate']:
                 done_rate = model['done_rate']
-
             # дата начала производства
             # TODO * 1000 для результирующего context
             date_start = (plan_datetime - datetime.timedelta(days=model_prod_cycle)).timestamp()
@@ -332,7 +352,7 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
             _planned_models.append({
                 'id': model['id'],
                 'ordering': ordering,
-                'model_name': model['model_order_query'],
+                'model_name': model['model_name'],
                 # 'datetime_done': datetime.datetime.combine(model['datetime_done'], datetime.datetime.min.time()),
                 # 'datetime_done': plan_datetime,
                 'datetime_done': model['datetime_done'],
@@ -343,6 +363,30 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
                 'required_td': required_td,
                 'plan_datetime': plan_datetime,
                 'status': 'STATUS_ACTIVE',
+                'order': model['order']
+            })
+        else:
+            # Отображение всех заказов независимо от наличия параметров
+            plan_datetime = datetime.datetime.combine(model['calculated_datetime_done'], datetime.datetime.min.time())
+            model_prod_cycle = int(model['produce_cycle'].quantize(Decimal('1'), ROUND_CEILING))
+            done_rate = float(model['done_rate'])
+            ordering = (plan_datetime - today).days / model_prod_cycle
+
+            _planned_models.append({
+                'id': model['id'],
+                'ordering': ordering,
+                'model_name': model['model_name'],
+                # 'datetime_done': datetime.datetime.combine(model['datetime_done'], datetime.datetime.min.time()),
+                # 'datetime_done': plan_datetime,
+                'datetime_done': model['datetime_done'],
+                'model_order_query': model['model_order_query'],
+                'done_rate': done_rate,
+                'date_start': plan_datetime.timestamp(),
+                'model_prod_cycle': model_prod_cycle,
+                'required_td': 20,
+                'plan_datetime': plan_datetime,
+                'status': 'STATUS_ACTIVE',
+                'order': model['order']
             })
 
     # сортировка по коэффициенту срочности
@@ -360,14 +404,11 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
         max_day_capacity = 200
     completed_models = set()  # готовые
     planned_models = set()  # запланированные
-    json_file = 'json.json'
-    json_list = []
-
     today_timestamp = datetime.datetime.now().timestamp()
     for current_timestamp in daterange:
         used_td = []
         for index, model in enumerate(sorted_planned_models):
-            # model['required_td'] = 20 # TODO тесты равное потребление для простоты
+            # model['required_td'] = 20 # TODO тесты равное потребление - для простоты визуализации
             if model['model_order_query'] not in completed_models:
                 used_td.append(model['required_td'])
                 sum_used_td = sum(used_td)
@@ -391,17 +432,15 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
                     if sum_used_td < max_day_capacity:  # трудоёмкость есть
                         # планируем
                         planned_models.add(model['model_order_query'])
-                        model['date_start'] = current_timestamp
+                        model['date_start'] = current_timestamp - 86400
                         model['model_done_date'] = model['date_start'] + model['model_prod_cycle'] * 86400
                     else:  # иначе трудоёмкости нет
                         # смещение
                         model['date_start'] = current_timestamp + 86400
-                        # model['model_done_date'] = model['date_start'] + model['model_prod_cycle'] * 86400
                 else:  # иначе запланировано
-                    if current_timestamp > model['model_done_date']:  # срок готовности подошел
+                    if current_timestamp >= model['model_done_date']:  # срок готовности подошел
                         completed_models.add(model['model_order_query'])  # в готовые
                         planned_models.remove(model['model_order_query'])
-
             # для json
             # model.update({'date_start_format': datetime.datetime.fromtimestamp(model['date_start'])})
             # json_list.append(model)
@@ -423,8 +462,7 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
                                  'type': '',
                                  'typeId': '',
                                  'description': model['datetime_done'].strftime('%d.%m.%Y'),
-
-                                 'code': model['model_order_query'],
+                                 'code': model['order'],
                                  'level': 0,
                                  'status': model['status'],
                                  'depends': '',

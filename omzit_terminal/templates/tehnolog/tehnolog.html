@@ -1,166 +1,172 @@
-{% extends 'base.html' %}
-{% load static %}
-
-{% block title %}
-Рабочее место технолога
-{% endblock %}
-
+{% extends 'base.html' %} {% load static %} {% block title %} Рабочее место технолога {% endblock %}
 {% block body %}
-        <div class="legend">
-            <div>
-                <p>Папка с чертежами: \\SVR-003\draws</p>
+<div class="legend">
+    <div>
+        <p>Папка с чертежами: \\SVR-003\draws</p>
+    </div>
+</div>
+<h1>Рабочее место технолога</h1>
+{% if alert %}
+<div>
+    <p class="alert_gone" id="id_alert">{{ alert }}</p>
+    <script>
+        const notification = document.getElementById('id_alert')
+        setTimeout(() => notification.remove(), 10000)
+    </script>
+</div>
+{% endif %}
+<!-- Форма корректировки order_model_query -->
+<div id="correction_form" class="modal">
+    <form
+        id="id_correction_form"
+        action="{% url 'new_model_query' %}"
+        method="post"
+        enctype="multipart/form-data"
+        class="form_form modal-content"
+    >
+        {% csrf_token %}
+        <div class="add_to_plan">
+            <h3>Форма корректировки заказ-модель</h3>
+            <div class="form-error">{{ change_model_query_form.non_field_errors }}</div>
+            {% for each_form in change_model_query_form %}
+            <div class="form_inner_label">
+                <label for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
             </div>
+            <div class="form_inner_div">{{ each_form }}</div>
+            <div class="form-error">{{ each_form.errors }}</div>
+            {% endfor %}
+            <button type="submit" class="form_button">переименовать</button>
         </div>
-        <h1>Рабочее место технолога</h1>
-        {% if alert %}
-            <div>
-                <p class='alert_gone' id="id_alert"> {{ alert }} </p>
-                <script>
-                    const notification = document.getElementById("id_alert");
-                    setTimeout(() => notification.remove(), 10000)
-                </script>
+    </form>
+</div>
+<!-- Форма отправки КД на доработку -->
+<div id="id_modal_draw_back" class="modal">
+    <form
+        id="id_draw_back_form"
+        action="{% url 'send_draw_back' %}"
+        method="post"
+        enctype="multipart/form-data"
+        class="form_form modal-content"
+    >
+        {% csrf_token %}
+        <div class="add_to_plan">
+            <h3>Форма возварата КД на доработку</h3>
+            <div class="form-error">{{ send_draw_back_form.non_field_errors }}</div>
+            {% for each_form in send_draw_back_form %}
+            <div class="form_inner_label" style="vertical-align: middle">
+                <label for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
             </div>
-        {% endif %}
-        <!-- Форма корректировки order_model_query -->
-        <div id="correction_form" class="modal">
-            <form
-                id="id_correction_form"
-                action="{% url 'new_model_query' %}"
-                method="post"
-                enctype="multipart/form-data"
-                class="form_form modal-content"
-            >
-                {% csrf_token %}
-                <div class="add_to_plan">
-                    <h3>Форма корректировки заказ-модель</h3>
-                    <div class="form-error">{{ change_model_query_form.non_field_errors }}</div>
-                    {% for each_form in change_model_query_form %}
-                    <div class="form_inner_label">
-                        <label for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
-                    </div>
-                    <div class="form_inner_div">{{ each_form }}</div>
-                    <div class="form-error">{{ each_form.errors }}</div>
-                    {% endfor %}
-                    <button type="submit" class="form_button">переименовать</button>
-                </div>
-            </form>
-        </div>
-        <!-- Форма отправки КД на доработку -->
-        <div id="id_modal_draw_back" class="modal">
-            <form
-                id="id_draw_back_form"
-                action="{% url 'send_draw_back' %}"
-                method="post"
-                enctype="multipart/form-data"
-                class="form_form modal-content"
-            >
-                {% csrf_token %}
-                <div class="add_to_plan">
-                    <h3>Форма возварата КД на доработку</h3>
-                    <div class="form-error">{{ send_draw_back_form.non_field_errors }}</div>
-                    {% for each_form in send_draw_back_form %}
-                    <div class="form_inner_label" style="vertical-align: middle">
-                        <label for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
-                    </div>
-                    <div class="form_inner_div">{{ each_form }}</div>
+            <div class="form_inner_div">{{ each_form }}</div>
 
-                    <div class="form-error">{{ each_form.errors }}</div>
-                    {% endfor %}
-                    <button type="submit" class="form_button"><p class="red_word">Отправить</p></button>
-                </div>
-            </form>
+            <div class="form-error">{{ each_form.errors }}</div>
+            {% endfor %}
+            <button type="submit" class="form_button"><p class="red_word">Отправить</p></button>
         </div>
-        <!-- Форма загрузки ТД -->
-        <div id="id_modal_td" class="modal">
-            <form
-                id="id_td_form"
-                action="{% url 'tehnolog' %}"
-                method="post"
-                enctype="multipart/form-data"
-                class="form_form modal-content"
-            >
-                {% csrf_token %}
-                <div class="add_to_plan">
-                    <h3>Форма для загрузки технологических данных</h3>
-                    <div class="form-error">{{ get_teh_data_form.non_field_errors }}</div>
-                    {% for each_form in get_teh_data_form %}
-                    <div class="form_inner_label">
-                        <label for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
-                    </div>
-                    <div class="form_inner_div">{{ each_form }}</div>
-                    <div class="form-error">{{ each_form.errors }}</div>
-                    {% endfor %}
-                    <button type="submit" class="form_button"><p class="green_word">Добавить</p></button>
-                </div>
-            </form>
+    </form>
+</div>
+<!-- Форма загрузки ТД -->
+<div id="id_modal_td" class="modal">
+    <form
+        id="id_td_form"
+        action="{% url 'tehnolog' %}"
+        method="post"
+        enctype="multipart/form-data"
+        class="form_form modal-content"
+    >
+        {% csrf_token %}
+        <div class="add_to_plan">
+            <h3>Форма для загрузки технологических данных</h3>
+            <div class="form-error">{{ get_teh_data_form.non_field_errors }}</div>
+            {% for each_form in get_teh_data_form %}
+            <div class="form_inner_label">
+                <label for="{{ each_form.id_for_label }}">{{each_form.label}}: </label>
+            </div>
+            <div class="form_inner_div">{{ each_form }}</div>
+            <div class="form-error">{{ each_form.errors }}</div>
+            {% endfor %}
+            <button type="submit" class="form_button"><p class="green_word">Добавить</p></button>
         </div>
-        <!-- Основная таблица интерфейса -->
-        {% if td_queries %}
-        <div class="table_div">
-            <h3>Заявки на документацию</h3>
-            <p>
-                <input type="button" onclick="window.location.href = '{{ request.path }}';" value="Сбросить фильтр" />
-            </p>
-            <table title="Заявки на документацию" class="table">
-                <tr class="table_header_row">
-                    <form method="get" id="filter_form">
-                        <td class="td_cell">{{ filter.form.model_order_query }} Заказ-модель</td>
+    </form>
+</div>
+<!-- Основная таблица интерфейса -->
+{% if td_queries %}
+<div class="table_div">
+    <h3>Заявки на документацию</h3>
+    <p>
+        <input
+            type="button"
+            onclick="window.location.href = '{{ request.path }}';"
+            value="Сбросить фильтр"
+        />
+    </p>
+    <table title="Заявки на документацию" class="table">
+        <tr class="table_header_row">
+            <form method="get" id="filter_form">
+                <td class="td_cell">{{ filter.form.model_order_query }} Заказ-модель</td>
 
-                        <td class="td_cell">{{ filter.form.query_prior }}Приоритет</td>
-                        <td class="td_cell">{{ filter.form.td_status }} Статус заявки</td>
-                    </form>
-                    <td class="td_cell">Действия</td>
-                </tr>
-                {% for line in filter.qs %}
-                <tr class="table_row">
-                    <td class="td_cell">{{ line.model_order_query }}</td>
-                    <td class="td_cell">{{ line.query_prior }}</td>
-                    <td class="td_cell">{{ line.td_status }}</td>
-                    <td class="td_cell">
+                <td class="td_cell">{{ filter.form.query_prior }}Приоритет</td>
+                <td class="td_cell">{{ filter.form.td_status }} Статус заявки</td>
+            </form>
+            <td class="td_cell">Действия</td>
+        </tr>
+        {% for line in filter.qs %}
+        <tr class="table_row">
+            <td class="td_cell">{{ line.model_order_query }}</td>
+            <td class="td_cell">{{ line.query_prior }}</td>
+            <td class="td_cell">{{ line.td_status }}</td>
+            <td class="td_cell">
+                {% if line.td_status != "запрошено" %}
+                <!-- кнопка загрузить технологические данные -->
+                <button
+                    class="td_upload_btn btn"
+                    value="{{ line.model_order_query }}"
+                    title="Загрузить ТД"
+                >
+                    Загрузить ТД
+                </button>
+                <!-- prettier-ignore -->
+                {% endif %} 
                         {% if line.td_status != "запрошено" %}
-                        <!-- кнопка загрузить технологические данные -->
-                        <button class="td_upload_btn btn" value="{{ line.model_order_query }}" title="Загрузить ТД">
-                            Загрузить ТД
-                        </button>
-                        <!-- prettier-ignore -->
-                        {% endif %} 
+                <!-- Кнопока вернуть чертёж на доработку -->
+                <button
+                    class="draw_back_btn btn"
+                    value="{{ line.model_order_query }}"
+                    title="Вернуть КД на доработку"
+                >
+                    Вернуть КД
+                </button>
+                <!-- prettier-ignore -->
+                {% endif %} 
                         {% if line.td_status != "запрошено" %}
-                        <!-- Кнопока вернуть чертёж на доработку -->
-                        <button
-                            class="draw_back_btn btn"
-                            value="{{ line.model_order_query }}"
-                            title="Вернуть КД на доработку"
-                        >
-                            Вернуть КД
-                        </button>
-                        <!-- prettier-ignore -->
-                        {% endif %} 
-                        {% if line.td_status != "запрошено" %}
-                        <!-- Кнопка дополнить КД -->
-                        <button class="upload_draw btn" value="{{ line.model_order_query }}" title="Загрузить КД">
-                            Дополнить КД
-                        </button>
-                        <!-- prettier-ignore -->
-                        {% endif %} 
+                <!-- Кнопка дополнить КД -->
+                <button
+                    class="upload_draw btn"
+                    value="{{ line.model_order_query }}"
+                    title="Загрузить КД"
+                >
+                    Дополнить КД
+                </button>
+                <!-- prettier-ignore -->
+                {% endif %} 
                         {% if line.order_status != "запланировано" and line.order_status != "в работе" %}
-                        <!-- Переименовать заказ-модель -->
-                        <button
-                            class="change_omq btn"
-                            value="{{ line.model_order_query }}"
-                            title="Откорректировать заказ-модель"
-                        >
-                            Переименовать ЗМ
-                        </button>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </table>
-            {% else %}
-            <p>Заявки на КД отсутствуют отсутствуют</p>
-            {% endif %}
-            <br />
-            {% comment %}<!--
+                <!-- Переименовать заказ-модель -->
+                <button
+                    class="change_omq btn"
+                    value="{{ line.model_order_query }}"
+                    title="Откорректировать заказ-модель"
+                >
+                    Переименовать ЗМ
+                </button>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>Заявки на КД отсутствуют</p>
+    {% endif %}
+    <br />
+    {% comment %}<!--
                 {% if downtimes %}
                 <h3>Простои</h3>
                 <table class="table" title="">
@@ -190,143 +196,143 @@
                     {% endfor %}
                 </table>
                 {% endif %}-->
-            {% endcomment %}
+    {% endcomment %}
+</div>
+<br />
+<br />
+<div id="id_modal_td_kd" class="modal">
+    <form
+        id="id_td_kd_form"
+        class="form_form modal-content"
+        action="{% url 'tehnolog' %}"
+        method="post"
+        enctype="multipart/form-data"
+    >
+        {% csrf_token %}
+        <div class="add_to_plan">
+            <h3>Форма загрузки КД</h3>
+            <div class="form_inner_label">{{ draw_files_upload_form.model_order_query.label }}</div>
+            <div class="form_inner_div">{{ draw_files_upload_form.model_order_query }}</div>
+            <br />
+            <div class="form_inner_label">{{ draw_files_upload_form.draw_files.label }}</div>
+            <div class="form_inner_div">{{ draw_files_upload_form.draw_files }}</div>
+            <div>
+                <button type="submit" class="form_button">
+                    <p class="red_word">Загрузить чертежи</p>
+                </button>
+            </div>
         </div>
-        <br />
-        <br />
-        <div id="id_modal_td_kd" class="modal">
-            <form
-                id="id_td_kd_form"
-                class="form_form modal-content"
-                action="{% url 'tehnolog' %}"
-                method="post"
-                enctype="multipart/form-data"
-            >
-                {% csrf_token %}
-                <div class="add_to_plan">
-                    <h3>Форма загрузки КД</h3>
-                    <div class="form_inner_label">{{ draw_files_upload_form.model_order_query.label }}</div>
-                    <div class="form_inner_div">{{ draw_files_upload_form.model_order_query }}</div>
-                    <br />
-                    <div class="form_inner_label">{{ draw_files_upload_form.draw_files.label }}</div>
-                    <div class="form_inner_div">{{ draw_files_upload_form.draw_files }}</div>
-                    <div>
-                        <button type="submit" class="form_button">
-                            <p class="red_word">Загрузить чертежи</p>
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-        <!-- prettier-ignore -->
-        <script src="{% static 'tehnolog/js/tehnolog.js' %}"></script>
-        <script>
-            // кнопка загрузить ТД
-            document.addEventListener("DOMContentLoaded", function () {
-                // При загрузке документа
-                const sel = id_td_form.elements.model_order_query; // Получаем все селекты
-                const buttons = document.querySelectorAll(".td_upload_btn"); // Получаем кнопки с классом
-                buttons.forEach(function (c) {
-                    // Для каждой кнопки
-                    c.onclick = function () {
-                        // Слушаем нажатие
-                        // Если нажата, то выбирает тот option, который в тексте кнопки.
-                        const modal = document.querySelector("#id_modal_td");
-                        modal.style.display = "block";
-                        for (var n = 0; n < sel.length; n++) {
-                            if (sel.options[n].text == c.value) sel.options[n].selected = true;
-                        }
-                        id_td_form.elements.list_names.focus();
-                        window.onclick = function (event) {
-                            if (event.target == modal) {
-                                modal.style.display = "none";
-                            }
-                        };
-                    };
-                });
-            });
-        </script>
-        <script>
-            // кнопка вернуть КД
-            document.addEventListener("DOMContentLoaded", function () {
-                // При загрузке документа
-                const sel = id_draw_back_form.elements.model_order_query; // Получаем все селекты
-                const buttons = document.querySelectorAll(".draw_back_btn"); // Получаем кнопки с классом
-                buttons.forEach(function (c) {
-                    // Для каждой кнопки
-                    c.onclick = function () {
-                        // Слушаем нажатие
-                        // Если нажата, то выбирает тот option, который в тексте кнопки.
-                        const modal = document.querySelector("#id_modal_draw_back");
-                        modal.style.display = "block";
-                        for (var n = 0; n < sel.length; n++) {
-                            if (sel.options[n].text == c.value) sel.options[n].selected = true;
-                        }
-                        id_draw_back_form.elements.td_remarks.focus();
-                        window.onclick = function (event) {
-                            if (event.target == modal) {
-                                modal.style.display = "none";
-                            }
-                        };
-                    };
-                });
-            });
-        </script>
-        <script>
-            // кнопка вернуть КД
-            document.addEventListener("DOMContentLoaded", function () {
-                // При загрузке документа
-                const sel = id_correction_form.elements.model_order_query; // Получаем все селекты
-                const buttons = document.querySelectorAll(".change_omq"); // Получаем кнопки с классом
-                buttons.forEach(function (c) {
-                    // Для каждой кнопки
-                    c.onclick = function () {
-                        // Слушаем нажатие
-                        // Если нажата, то выбирает тот option, который в тексте кнопки.
-                        const modal = document.querySelector("#correction_form");
-                        modal.style.display = "block";
-                        for (var n = 0; n < sel.length; n++) {
-                            if (sel.options[n].text == c.value) sel.options[n].selected = true;
-                        }
-                        // correction_form.elements.td_remarks.focus();
-                        window.onclick = function (event) {
-                            if (event.target == modal) {
-                                modal.style.display = "none";
-                            }
-                        };
-                    };
-                });
-            });
-        </script>
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                // кнопка дополнить КД
-                const sel = id_td_kd_form.elements.model_order_query; // Получаем все селекты
-                const buttons = document.querySelectorAll(".upload_draw"); // Получаем кнопки с классом
-                buttons.forEach(function (c) {
-                    // Для каждой кнопки
-                    c.onclick = function () {
-                        // Слушаем нажатие
-                        // Если нажата, то выбирает тот option, который в тексте кнопки.
-                        const modal = document.querySelector("#id_modal_td_kd");
-                        modal.style.display = "block";
-                        for (var n = 0; n < sel.length; n++) {
-                            if (sel.options[n].text == c.value) sel.options[n].selected = true;
-                        }
-                        window.onclick = function (event) {
-                            if (event.target == modal) {
-                                modal.style.display = "none";
-                            }
-                        };
-                    };
-                });
-            });
-        </script>
-        <script>
-            function onChange() {
-                document.getElementById("filter_form").submit();
+    </form>
+</div>
+<!-- prettier-ignore -->
+<script src="{% static 'tehnolog/js/tehnolog.js' %}"></script>
+<script>
+    // кнопка загрузить ТД
+    document.addEventListener('DOMContentLoaded', function () {
+        // При загрузке документа
+        const sel = id_td_form.elements.model_order_query // Получаем все селекты
+        const buttons = document.querySelectorAll('.td_upload_btn') // Получаем кнопки с классом
+        buttons.forEach(function (c) {
+            // Для каждой кнопки
+            c.onclick = function () {
+                // Слушаем нажатие
+                // Если нажата, то выбирает тот option, который в тексте кнопки.
+                const modal = document.querySelector('#id_modal_td')
+                modal.style.display = 'block'
+                for (var n = 0; n < sel.length; n++) {
+                    if (sel.options[n].text == c.value) sel.options[n].selected = true
+                }
+                id_td_form.elements.list_names.focus()
+                window.onclick = function (event) {
+                    if (event.target == modal) {
+                        modal.style.display = 'none'
+                    }
+                }
             }
-        </script>
+        })
+    })
+</script>
+<script>
+    // кнопка вернуть КД
+    document.addEventListener('DOMContentLoaded', function () {
+        // При загрузке документа
+        const sel = id_draw_back_form.elements.model_order_query // Получаем все селекты
+        const buttons = document.querySelectorAll('.draw_back_btn') // Получаем кнопки с классом
+        buttons.forEach(function (c) {
+            // Для каждой кнопки
+            c.onclick = function () {
+                // Слушаем нажатие
+                // Если нажата, то выбирает тот option, который в тексте кнопки.
+                const modal = document.querySelector('#id_modal_draw_back')
+                modal.style.display = 'block'
+                for (var n = 0; n < sel.length; n++) {
+                    if (sel.options[n].text == c.value) sel.options[n].selected = true
+                }
+                id_draw_back_form.elements.td_remarks.focus()
+                window.onclick = function (event) {
+                    if (event.target == modal) {
+                        modal.style.display = 'none'
+                    }
+                }
+            }
+        })
+    })
+</script>
+<script>
+    // кнопка вернуть КД
+    document.addEventListener('DOMContentLoaded', function () {
+        // При загрузке документа
+        const sel = id_correction_form.elements.model_order_query // Получаем все селекты
+        const buttons = document.querySelectorAll('.change_omq') // Получаем кнопки с классом
+        buttons.forEach(function (c) {
+            // Для каждой кнопки
+            c.onclick = function () {
+                // Слушаем нажатие
+                // Если нажата, то выбирает тот option, который в тексте кнопки.
+                const modal = document.querySelector('#correction_form')
+                modal.style.display = 'block'
+                for (var n = 0; n < sel.length; n++) {
+                    if (sel.options[n].text == c.value) sel.options[n].selected = true
+                }
+                // correction_form.elements.td_remarks.focus();
+                window.onclick = function (event) {
+                    if (event.target == modal) {
+                        modal.style.display = 'none'
+                    }
+                }
+            }
+        })
+    })
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // кнопка дополнить КД
+        const sel = id_td_kd_form.elements.model_order_query // Получаем все селекты
+        const buttons = document.querySelectorAll('.upload_draw') // Получаем кнопки с классом
+        buttons.forEach(function (c) {
+            // Для каждой кнопки
+            c.onclick = function () {
+                // Слушаем нажатие
+                // Если нажата, то выбирает тот option, который в тексте кнопки.
+                const modal = document.querySelector('#id_modal_td_kd')
+                modal.style.display = 'block'
+                for (var n = 0; n < sel.length; n++) {
+                    if (sel.options[n].text == c.value) sel.options[n].selected = true
+                }
+                window.onclick = function (event) {
+                    if (event.target == modal) {
+                        modal.style.display = 'none'
+                    }
+                }
+            }
+        })
+    })
+</script>
+<script>
+    function onChange() {
+        document.getElementById('filter_form').submit()
+    }
+</script>
 
-        <div style="height: 150px"></div>
+<div style="height: 150px"></div>
 {% endblock %}
