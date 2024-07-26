@@ -1,9 +1,7 @@
 {% extends "orders/testrep_base.html" %} {% load static %} {%block content%}
 <div class="col">
     <h1>График ППР</h1>
-    
-    <div class="form_row">
-      
+    <div class="form_row">  
       <form action="{% url 'equipment' %}">
         <button type="submit" class="btn">Список оборудования</button>
       </form>
@@ -13,6 +11,7 @@
       </form>
 
     </div>
+
   <div><label for="id_shops">Фильтр по местонахождению</label> 
     <select id="id_shops" class="input_like">
         <option value="">------</option>
@@ -95,9 +94,11 @@
       </div>
       
       <div class="card_row__center">
-        <button type="submit" class="form_button">
-          <p class="green_word">Изменить</p>
-        </button>
+        {%if role in edit_ppr_button%}
+          <button type="submit" class="form_button">
+            <p class="green_word">Изменить</p>
+          </button>
+        {% endif %}
       </div>
       <div class="form-error">{{ add_equipment_form.errors }}</div>
     </div>

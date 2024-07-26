@@ -3,20 +3,19 @@
   <h1>Оборудование</h1>
   
   
-
+  <div class="form_row">        
     {%if role in button_conditions.create%}
-    <div class="form_row">        
+    
       <button id="add_equipment_button" class="btn">Добавить оборудование</button>
       <form action="{% url 'shops' %}">
         <button type="submit" class="btn">Добавить местонахождение</button>
       </form>
-      <form action="{% url 'ppr_calendar' %}">
-        <button type="submit" class="btn">График ППР</button>
-      </form>
-
-    </div>
+    
     {%endif%}
-  
+    <form action="{% url 'ppr_calendar' %}">
+      <button type="submit" class="btn">График ППР</button>
+    </form>
+  </div>
   </p>
   
 

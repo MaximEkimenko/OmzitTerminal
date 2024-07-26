@@ -980,13 +980,21 @@ class PPRСalendar(ListView):
     Показывает график ППР для оборудования. На странице возможно изменить день ППР для конкретного оборудования.
     """
     template_name = "orders/PPR_calendar.html"
-    extra_context = {
-        "shops":  Shops.objects.all(),
-        "range": range(1, 32),
-        'form': ChangePPRForm()
-        }
+
     def get_queryset(self):
         return Equipment.equipment_with_PPR().values("id", "name", "shop_id", "ppr_plan_day", "inv_number")
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            "shops":  Shops.objects.all(),
+            "range": range(1, 32),
+            'form': ChangePPRForm(),
+            "role": get_employee_position(self.request.user.username),
+            "edit_ppr_button": [Position.Admin, Position.HoRT, Position.Engineer],
+        })
+        return context
 
     def post(self, request):
         form = ChangePPRForm(request.POST)
