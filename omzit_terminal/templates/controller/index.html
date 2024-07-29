@@ -1,0 +1,32 @@
+{% extends "base.html" %} 
+{% block body %}
+<h1>Учет брака</h1>
+<div class='form_row'>
+    <form action="{% url 'controller:create' %}">
+        <button class="btn">Добавить акт о браке</button>
+    </form>
+</div>
+<table class="table">
+    <thead>
+        <tr class="table_header_row">
+            {% for header_item in header %}
+             <th class="td_cell_small">{{header_item}}</th>
+            {% endfor %}
+            <th class="td_cell_small">Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for object in object_list %}
+        <tr class="table_header_row"> 
+            {% for data in object %}
+            <td class="td_cell_small">{{data| default:""}}</td>
+            {% endfor %}
+            <td class="td_cell_small">
+                <button class="table_button">Изменить</button>
+            </td>
+        </tr>    
+    {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
