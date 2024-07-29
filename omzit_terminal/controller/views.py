@@ -3,6 +3,8 @@ from django.views.generic import DetailView, UpdateView, ListView, TemplateView,
 from django.urls import reverse_lazy, reverse
 from django.http import HttpResponse, HttpResponseRedirect, FileResponse, JsonResponse
 from django.forms.models import model_to_dict
+
+from controller.forms import EditDefectForm
 from scheduler.models import ShiftTask
 from controller.models import DefectAct
 from controller.utils.utils import get_model_verbose_names
@@ -27,13 +29,22 @@ def index(request):
             DefectAct.objects.create(**obj_dict)
             act_count += 1
         acts = DefectAct.objects.all()
-    print(type(acts[0]), acts[0])
-    header = list(get_model_verbose_names(DefectAct).values())
-    print(header)
-    context = {'object_list': acts.values_list(), "header": header}
+
+
+
+    context = {'object_list': acts}
     return render(request, "controller/index.html", context)
 
 class CreateDefectAct(CreateView):
     model = DefectAct
-    fields = ["datetime_fail", "act_number", "workshop", "operation", "processing_object", "control_object"]
+    form_class = EditDefectForm
+    
     template_name = "controller/create_defect.html"
+    success_url = reverse_lazy("controller:index")
+
+class EditDefectAct(UpdateView):
+    form_class = EditDefectForm
+    model = DefectAct
+    template_name = "controller/create_defect.html"
+    success_url = reverse_lazy("controller:index")
+

@@ -39,3 +39,5 @@ class DefectAct(models.Model):
     def str(self):
         return self.abv
 
+    def get_absolute_url(self):
+        return reverse_lazy("controller:edit", kwargs={'pk': self.pk})
