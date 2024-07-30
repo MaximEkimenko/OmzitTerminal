@@ -1,14 +1,16 @@
 from datetime import timedelta
-from django.shortcuts import render
+from pathlib import Path
+from django.shortcuts import render, redirect
 from django.views.generic import DetailView, UpdateView, ListView, TemplateView, CreateView
 from django.urls import reverse_lazy, reverse
 from django.http import HttpResponse, HttpResponseRedirect, FileResponse, JsonResponse
 from django.forms.models import model_to_dict
 
-from controller.forms import EditDefectForm
+from controller.forms import EditDefectForm, FilesUploadForm
 from scheduler.models import ShiftTask
 from controller.models import DefectAct
 from controller.utils.utils import get_model_verbose_names
+from tehnolog.services.service_handlers import handle_uploaded_file
 
 def index(request):
     acts = DefectAct.objects.all()
@@ -55,3 +57,24 @@ class EditDefectAct(UpdateView):
     template_name = "controller/create_defect.html"
     success_url = reverse_lazy("controller:index")
 
+
+def upload_files(request, pk):
+    act = DefectAct.objects.get(pk=pk)
+    context = {"object": act}
+    if request.method == "POST":
+        form = FilesUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            print(form.cleaned_data)
+            dest_dir = Path(r"D:\Projects\OmzitTerminal\omzit_terminal\files").joinpath(str(pk))
+            if not dest_dir.exists():
+                dest_dir.mkdir()
+            for file in form.cleaned_data["files"]:
+                handle_uploaded_file(file, str(file), dest_dir)
+
+            return redirect("controller:index")
+        else:
+            context.update({"form": form})
+            return render(request, 'controller/upload_files.html', context)
+    form = FilesUploadForm()
+    context.update({"form": form})
+    return render(request, 'controller/upload_files.html', context)

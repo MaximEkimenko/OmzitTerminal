@@ -1,8 +1,86 @@
 {% extends "base.html" %} 
 {% block body %}
-<form method="POST">
-    {% csrf_token %}
-    {{form.as_p}}
-    <button class="btn">Отправить</button>
-</form>
+<div class="col">
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="equipment_card">
+            <div class="card_row">
+            <div class="equipment_card__label">{{form.datetime_fail.label}}</div>
+            <div class="equipment_card__value">{{form.datetime_fail}}</div>
+            </div>
+            <div class="card_row">
+                <div class="equipment_card__label">{{form.act_number.label}}</div>
+                <div class="equipment_card__value">{{form.act_number}}</div>
+            </div>
+            <div class="card_row">
+                <div class="equipment_card__label">{{form.workshop.label}}</div>
+                <div class="equipment_card__value">{{form.workshop}}</div>
+            </div>
+            <div class="card_row">
+                <div class="equipment_card__label">{{form.operation.label}}</div>
+                <div class="equipment_card__value">{{form.operation}}</div>
+            </div>
+            <div class="card_row">
+                <div class="equipment_card__label">{{form.processing_object.label}}</div>
+                <div class="equipment_card__value">{{form.processing_object}}</div>
+            </div>
+            <div class="card_row">
+                <div class="equipment_card__label">{{form.control_object.label}}</div>
+                <div class="equipment_card__value">{{form.control_object}}</div>
+            </div>
+            <div class="card_row">
+                <div class="equipment_card__label">{{form.quantity.label}}</div>
+                <div class="equipment_card__value">{{form.quantity}}</div>
+            </div>
+            <div class="card_row">
+                <div class="equipment_card__label">{{form.inconsistencies.label}}</div>
+                <div class="equipment_card__value">{{form.inconsistencies}}</div>
+            </div>
+            <div class="card_row">
+                <div class="equipment_card__label">{{form.remark.label}}</div>
+                <div class="equipment_card__value">{{form.remark}}</div>
+            </div>
+            <div class="card_row">
+                <div class="equipment_card__label">{{form.tech_service.label}}</div>
+                <div class="equipment_card__value">{{form.tech_service}}</div>
+            </div>
+            <div class="card_row">
+                <div class="equipment_card__label">{{form.tech_solution.label}}</div>
+                <div class="equipment_card__value">{{form.tech_solution}}</div>
+            </div>
+
+
+
+            <div class="card_row">
+                <div class="equipment_card__label">{{form.fixable.label}}</div>
+                <div class="equipment_card__value">{{form.fixable}}</div>
+            </div>
+
+            <div class="card_row">
+                <div class="equipment_card__label">{{form.fio_failer.label}}</div>
+                <div class="equipment_card__value">{{form.fio_failer}}</div>
+            </div>
+            <div class="card_row">
+                <div class="equipment_card__label">{{form.master_finish_wp.label}}</div>
+                <div class="equipment_card__value">{{form.master_finish_wp}}</div>
+            </div>
+            <div class="card_row">
+                <div class="equipment_card__label">{{form.cause.label}}</div>
+                <div class="equipment_card__value">{{form.cause}}</div>
+            </div>
+            {% if not object.from_shift_task  or object.fixing_time is None %}
+                <div class="card_row">
+                    <div class="equipment_card__label">{{form.manual_fixing_time.label}}</div>
+                    <div class="equipment_card__value">{{form.manual_fixing_time}}</div>
+                </div>
+            {% endif %}
+            
+            <div class="card_row__center">
+                <button class="btn"> Отправить</button>
+            </div>
+        </div>
+    </form>
+
+</div>
 {% endblock %}

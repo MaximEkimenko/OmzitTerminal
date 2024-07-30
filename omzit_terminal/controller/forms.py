@@ -1,18 +1,18 @@
 from datetime import timedelta
 from django import forms
 from controller.models import DefectAct
-
+from constructor.forms import MultipleFileField
 class EditDefectForm(forms.ModelForm):
     manual_fixing_time = forms.FloatField(
-        widget=forms.NumberInput(attrs={'step': "0.1", 'placeholder': "Время в часах, например 1.5"}),
+        widget=forms.NumberInput(attrs={'placeholder': "Время в часах, например 1.5"}),
         label="Время исправления"
     )
     class Meta:
         model = DefectAct
         fields = [
             "datetime_fail", "act_number", "workshop", "operation", "processing_object",
-            "control_object","quantity", "inconsistencies", "remark", "tech_service",
-            "tech_solution", "fixable", "media", "fio_failer", "master_finish_wp", "cause"
+            "control_object", "quantity", "inconsistencies", "remark", "tech_service",
+            "tech_solution", "fixable", "fio_failer", "master_finish_wp", "cause"
         ]
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -34,3 +34,7 @@ class EditDefectForm(forms.ModelForm):
             self.fields["manual_fixing_time"].widget.attrs = {"disabled": "disabled"}
 
 
+
+
+class FilesUploadForm(forms.Form):
+    files = MultipleFileField()

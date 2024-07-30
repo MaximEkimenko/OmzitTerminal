@@ -22,12 +22,11 @@
              <th class="td_cell_small">Тех. служба</th>
              <th class="td_cell_small">Тех. решение</th>
              <th class="td_cell_small">брак исправимый</th>
-             <th class="td_cell_small">Ссылка на файлы</th>
              <th class="td_cell_small">Виновник</th>
              <th class="td_cell_small">Время исправления</th>
              <th class="td_cell_small">Причина</th>
              <th class="td_cell_small">Ответственный мастер</th>
-
+             <th class="td_cell_small">Ссылка на файлы</th>
             <th class="td_cell_small">Действия</th>
         </tr>
     </thead>
@@ -46,16 +45,25 @@
             <td class="td_cell_small">{{object.tech_service| default:""}}</td>
             <td class="td_cell_small">{{object.tech_solution| default:""}}</td>
             <td class="td_cell_small">{{object.fixable| default:""}}</td>
-            <td class="td_cell_small">{{object.media| default:""}}</td>
+            
             <td class="td_cell_small">{{object.fio_failer| default:""}}</td>
             <td class="td_cell_small">{{object.fixing_time| default:""}}</td>
             <td class="td_cell_small">{{object.cause| default:""}}</td>
             <td class="td_cell_small">{{object.master_finish_wp| default:""}}</td>
-
+            
+            <td class="td_cell_small"><a class="table_link" href="filr:///D:/Projects/OmzitTerminal/omzit_terminal/files/1"> Файлы</td>
+        
             
             <td class="td_cell_small">
                 <form action="{% url 'controller:edit' object.pk %}">
-                    <button class="table_button" value="{{object}}">Изменить</button>
+                    <button class="table_button">Изменить</button>
+                </form>
+                <form action="{% url 'controller:upload_files' object.pk %}">
+                    <button class="table_button">Добавить файлы</button>
+                </form>                    
+                <form action="">
+                    <button class="table_button">Удалить файлы</button>
+                </form>
                 </form>
             </td>
         </tr>    
