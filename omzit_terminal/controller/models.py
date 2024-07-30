@@ -14,6 +14,7 @@ class DefectAct(models.Model):
         ('MAT', 'брак материала')
     )
 
+    from_shift_task = models.BooleanField(default=False, verbose_name="создано из ShiftTask", )
     datetime_fail = models.DateTimeField(null=False, verbose_name='Дата')
     act_number = models.CharField(max_length=60, null=False, verbose_name='№ Акта')
     workshop = models.PositiveSmallIntegerField(verbose_name='Цех', null=True)
@@ -28,7 +29,7 @@ class DefectAct(models.Model):
     fixable = models.BooleanField(verbose_name="брак исправимый", null=True)
     media = models.CharField(max_length=255, null=True, blank=True,  verbose_name='Ссылка на файлы')
     fio_failer = models.CharField(max_length=255, null=True, verbose_name='Виновник')
-    fixing_time = models.DurationField(null=True, verbose_name="Время исправления")
+    fixing_time = models.DurationField(null=True, blank=True, verbose_name="Время исправления")
     cause = models.CharField(max_length=4, choices=CHOICES, null=True, verbose_name='Причина')
     master_finish_wp = models.CharField(max_length=30, null=True, verbose_name='Ответственный мастер')
     completed = models.BooleanField(default=False, blank=True, verbose_name="Форма заполнена")

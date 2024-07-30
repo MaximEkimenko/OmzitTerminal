@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django.shortcuts import render
 from django.views.generic import DetailView, UpdateView, ListView, TemplateView, CreateView
 from django.urls import reverse_lazy, reverse
@@ -14,18 +15,20 @@ def index(request):
 
     if len(acts) < 1:
         act_count = 1
-        ts = ShiftTask.objects.filter(st_status__icontains="брак").oredr_by("-datetime_fail").all().values()
-        print(len(ts))
+        ts = ShiftTask.objects.filter(st_status__icontains="брак").order_by("-datetime_fail").all()
         for task in ts:
-            df = task["datetime_fail"]
-
+            df = task.datetime_fail
+            fix_time = None
+            if nst := task.next_shift_task:
+                fix_time = nst.decision_time - nst.datetime_job_start
             obj_dict = {
-                "datetime_fail": task["datetime_fail"],
+                "datetime_fail": task.datetime_fail,
                 "act_number": f"{df.month}.{df.year}/{act_count}",
-                "workshop": task["workshop"],
-                "operation": task["op_number"] + " " + task["op_name_full"],
+                "workshop": task.workshop,
+                "operation": task.op_number + " " + task.op_name_full,
+                "fixing_time": fix_time,
+                "from_shift_task": True,
             }
-            print(task["datetime_fail"])
             DefectAct.objects.create(**obj_dict)
             act_count += 1
         acts = DefectAct.objects.all()
@@ -41,6 +44,10 @@ class CreateDefectAct(CreateView):
     
     template_name = "controller/create_defect.html"
     success_url = reverse_lazy("controller:index")
+
+    def form_valid(self, form):
+        form.instance.fixing_time = timedelta(hours=1) * form.cleaned_data["manual_fixing_time"]
+        return super().form_valid(form)
 
 class EditDefectAct(UpdateView):
     form_class = EditDefectForm
