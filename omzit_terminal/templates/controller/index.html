@@ -56,7 +56,7 @@
             <td class="td_cell_small">{{object.get_cause_display| default:""}}</td>
             <td class="td_cell_small">{{object.master_finish_wp| default:""}}</td>
             <td class="td_cell_small">
-                {% if object.media_ref %}
+                {% if object.media_ref  and object.media_count > 0 %}
                     <a class="table_link" href="{% url 'controller:file_list' object.media_ref %}">Файлы({{object.media_count}})
                 {% endif %}
              </td>
