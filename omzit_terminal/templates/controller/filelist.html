@@ -1,0 +1,9 @@
+{% extends "base.html" %} 
+{% block body %}
+    <h1>Файлы к акту {{object.act_number}}</h1>
+    {% for path, name in files.items %}
+    <div class="card_row">
+        <a class="table_link" href="{% url  'controller:show_file' path %}" >{{name}}</a>
+    </div>
+    {% endfor %}
+{% endblock body %}

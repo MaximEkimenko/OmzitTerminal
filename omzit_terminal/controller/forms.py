@@ -5,7 +5,7 @@ from constructor.forms import MultipleFileField
 class EditDefectForm(forms.ModelForm):
     manual_fixing_time = forms.FloatField(
         widget=forms.NumberInput(attrs={'placeholder': "Время в часах, например 1.5"}),
-        label="Время исправления"
+        label="Время исправления", required=False
     )
     class Meta:
         model = DefectAct
@@ -33,7 +33,10 @@ class EditDefectForm(forms.ModelForm):
         if self.instance.from_shift_task and self.instance.fixing_time:
             self.fields["manual_fixing_time"].widget.attrs = {"disabled": "disabled"}
 
-
+    def is_valid(self):
+        print(self)
+        x = super().is_valid()
+        return x
 
 
 class FilesUploadForm(forms.Form):

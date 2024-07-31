@@ -7,6 +7,7 @@ from django.http import HttpResponse, HttpResponseRedirect, FileResponse, JsonRe
 from django.forms.models import model_to_dict
 
 from controller.forms import EditDefectForm, FilesUploadForm
+from controller.apps import ControllerConfig as App
 from scheduler.models import ShiftTask
 from controller.models import DefectAct
 from controller.utils.utils import get_model_verbose_names
@@ -48,7 +49,8 @@ class CreateDefectAct(CreateView):
     success_url = reverse_lazy("controller:index")
 
     def form_valid(self, form):
-        form.instance.fixing_time = timedelta(hours=1) * form.cleaned_data["manual_fixing_time"]
+        if fix_time := form.cleaned_data["manual_fixing_time"]:
+            form.instance.fixing_time = timedelta(hours=1) * fix_time
         return super().form_valid(form)
 
 class EditDefectAct(UpdateView):
@@ -57,6 +59,11 @@ class EditDefectAct(UpdateView):
     template_name = "controller/create_defect.html"
     success_url = reverse_lazy("controller:index")
 
+    def form_valid(self, form):
+        if fix_time := form.cleaned_data["manual_fixing_time"]:
+            form.instance.fixing_time = timedelta(hours=1) * fix_time
+        return super().form_valid(form)
+
 
 def upload_files(request, pk):
     act = DefectAct.objects.get(pk=pk)
@@ -64,13 +71,18 @@ def upload_files(request, pk):
     if request.method == "POST":
         form = FilesUploadForm(request.POST, request.FILES)
         if form.is_valid():
-            print(form.cleaned_data)
-            dest_dir = Path(r"D:\Projects\OmzitTerminal\omzit_terminal\files").joinpath(str(pk))
+            directory = str(pk)
+            dest_dir = App.DEFECTS_BASE_PATH.joinpath(directory)
             if not dest_dir.exists():
                 dest_dir.mkdir()
+            filecount = 0
             for file in form.cleaned_data["files"]:
-                handle_uploaded_file(file, str(file), dest_dir)
-
+                filename = handle_uploaded_file(file, str(file), dest_dir)
+                if filename:
+                    filecount += 1
+            act.media_ref = directory
+            act.media_count = filecount
+            act.save()
             return redirect("controller:index")
         else:
             context.update({"form": form})
@@ -78,3 +90,16 @@ def upload_files(request, pk):
     form = FilesUploadForm()
     context.update({"form": form})
     return render(request, 'controller/upload_files.html', context)
+
+
+def file_list(request, pk):
+    def_act = DefectAct.objects.get(pk=pk)
+    directory = def_act.act_number
+    dir_path = App.DEFECTS_BASE_PATH.joinpath(str(def_act.pk))
+    files = {f: f.name for f in dir_path.iterdir() if f.is_file()}
+    print(files)
+    context = {"object": def_act, "files": files}
+    return render(request, "controller/filelist.html", context)
+
+def show_file(request, path):
+    return FileResponse(open(path, "rb"))

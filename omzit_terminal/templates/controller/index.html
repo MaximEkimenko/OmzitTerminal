@@ -6,8 +6,8 @@
         <button class="btn">Добавить акт о браке</button>
     </form>
 </div>
-<table class="table">
 
+<table class="table">
     <thead>
         <tr class="table_header_row">
              <th class="td_cell_small">Дата</th>
@@ -44,15 +44,22 @@
             <td class="td_cell_small">{{object.remark| default:""}}</td>
             <td class="td_cell_small">{{object.tech_service| default:""}}</td>
             <td class="td_cell_small">{{object.tech_solution| default:""}}</td>
-            <td class="td_cell_small">{{object.fixable| default:""}}</td>
-            
+            <td class="td_cell_small">
+                {% if object.fixable %}
+                    да
+                {% else %}
+                    нет
+                {% endif %}
+            </td>
             <td class="td_cell_small">{{object.fio_failer| default:""}}</td>
             <td class="td_cell_small">{{object.fixing_time| default:""}}</td>
-            <td class="td_cell_small">{{object.cause| default:""}}</td>
+            <td class="td_cell_small">{{object.get_cause_display| default:""}}</td>
             <td class="td_cell_small">{{object.master_finish_wp| default:""}}</td>
-            
-            <td class="td_cell_small"><a class="table_link" href="filr:///D:/Projects/OmzitTerminal/omzit_terminal/files/1"> Файлы</td>
-        
+            <td class="td_cell_small">
+                {% if object.media_ref %}
+                    <a class="table_link" href="{% url 'controller:file_list' object.media_ref %}">Файлы({{object.media_count}})
+                {% endif %}
+             </td>
             
             <td class="td_cell_small">
                 <form action="{% url 'controller:edit' object.pk %}">

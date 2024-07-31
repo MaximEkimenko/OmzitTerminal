@@ -1,7 +1,7 @@
 {% extends "base.html" %} 
 {% block body %}
 <div class="col">
-
+    {% include "controller/form_errors.html" %}
     <form method="POST">
         {% csrf_token %}
         <div class="equipment_card">
@@ -69,12 +69,12 @@
                 <div class="equipment_card__label">{{form.cause.label}}</div>
                 <div class="equipment_card__value">{{form.cause}}</div>
             </div>
-            {% if not object.from_shift_task  or object.fixing_time is None %}
+            
                 <div class="card_row">
                     <div class="equipment_card__label">{{form.manual_fixing_time.label}}</div>
                     <div class="equipment_card__value">{{form.manual_fixing_time}}</div>
                 </div>
-            {% endif %}
+            
             
             <div class="card_row__center">
                 <button class="btn"> Отправить</button>
