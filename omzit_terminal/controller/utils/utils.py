@@ -1,35 +1,67 @@
 from pathlib import Path
-from django.db.models import Model
+from django.db.models import Model, Subquery
 from controller.apps import ControllerConfig as App
 from m_logger_settings import logger
 from scheduler.models import ShiftTask
 from controller.models import DefectAct
 from django.db.models import QuerySet
 
-def import_acts_from_shift_task(first_number)-> QuerySet:
-    """
-    Выбирает все записи из ShiftTask, которые отмечены как "брак" и на их основе создает акты о браке
-    @param first_number:
-    @return:
-    """
-    act_count = first_number
-    ts = ShiftTask.objects.filter(st_status__icontains="брак").order_by("-datetime_fail").all()
-    for task in ts:
-        df = task.datetime_fail
+
+def format_act_number(date, number):
+    return f"{date.month:02}.{date.year}-{number:02}"
+
+
+def insert_shifttask_records(qs:QuerySet, number: int):
+    act_number = number
+    for task in qs:
+        date_fail = task.datetime_fail
         fix_time = None
         if nst := task.next_shift_task:
             fix_time = nst.decision_time - nst.datetime_job_start
         obj_dict = {
             "datetime_fail": task.datetime_fail,
-            "act_number": f"{df.month}.{df.year}/{act_count}",
+            "tech_number": act_number,
+            "act_number": format_act_number(date_fail, act_number),
             "workshop": task.workshop,
             "operation": task.op_number + " " + task.op_name_full,
             "fixing_time": fix_time,
-            "from_shift_task": True,
+            "shift_task": task
         }
         DefectAct.objects.create(**obj_dict)
-        act_count += 1
-    return DefectAct.objects.all()
+        act_number += 1
+
+
+def import_acts_from_shift_task(first_number):
+    """
+    Выбирает все записи из ShiftTask, которые отмечены как "брак" и на их основе создает акты о браке.
+    Это делает ся в начале на этапе первоначального заполнения таблицы, когда в ней еще ничего нет.
+    Номера актов взять неоткуда, поэтому передается параметр, с какого числа будут формироваться акты.
+    @param first_number:
+    """
+    # TODO: try-except
+    ts = ShiftTask.objects.filter(st_status__icontains="брак").order_by("datetime_fail").all()
+    insert_shifttask_records(ts, first_number)
+
+
+def add_defect_acts():
+    """
+    # Периодически запускается и форирует акты, на основе сменных заданий,
+    # на которые еще нет ссылок в таблице DefectAct
+    # @return:
+    # """
+    # выбираем в таблице актов ссылки на сменные задания, которые уже добавлены
+    shifttask_fers = DefectAct.objects.exclude(shift_task__isnull=True).values("shift_task")
+    # выбираем из сменных заданий записи с маркировкой "брак", которые еще не добавлены в акты о браке
+    ts = (
+          ShiftTask.objects
+          .filter(st_status__icontains="брак")
+          .exclude(pk__in=Subquery(shifttask_fers))
+          .order_by("datetime_fail").all()
+          )
+    act_number = DefectAct.last_act_number() + 1
+    #TODO: try-except
+    insert_shifttask_records(ts, act_number)
+
 
 
 

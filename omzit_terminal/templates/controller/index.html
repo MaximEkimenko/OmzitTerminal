@@ -26,7 +26,7 @@
              <th class="td_cell_small">Время исправления</th>
              <th class="td_cell_small">Причина</th>
              <th class="td_cell_small">Ответственный мастер</th>
-             <th class="td_cell_small">Ссылка на файлы</th>
+             <th class="td_cell_small">Файлы</th>
             <th class="td_cell_small">Действия</th>
         </tr>
     </thead>
@@ -47,7 +47,7 @@
             <td class="td_cell_small">
                 {% if object.fixable %}
                     да
-                {% else %}
+                {% elif object.fixable is False %}
                     нет
                 {% endif %}
             </td>
@@ -68,10 +68,6 @@
                 <form action="{% url 'controller:upload_files' object.pk %}">
                     <button class="table_button">Добавить файлы</button>
                 </form>                    
-                <form action="">
-                    <button class="table_button">Удалить файлы</button>
-                </form>
-                </form>
             </td>
         </tr>    
     {% endfor %}

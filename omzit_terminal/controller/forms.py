@@ -10,7 +10,7 @@ class EditDefectForm(forms.ModelForm):
     class Meta:
         model = DefectAct
         fields = [
-            "datetime_fail", "act_number", "workshop", "operation", "processing_object",
+            "datetime_fail", "workshop", "operation", "processing_object",
             "control_object", "quantity", "inconsistencies", "remark", "tech_service",
             "tech_solution", "fixable", "fio_failer", "master_finish_wp", "cause"
         ]
@@ -30,11 +30,10 @@ class EditDefectForm(forms.ModelForm):
             float_hours = round(self.instance.fixing_time/timedelta(hours=1), 4)
             self.initial.update({"manual_fixing_time": float_hours})
 
-        if self.instance.from_shift_task and self.instance.fixing_time:
+        if self.instance.shift_task and self.instance.fixing_time:
             self.fields["manual_fixing_time"].widget.attrs = {"disabled": "disabled"}
 
     def is_valid(self):
-        print(self)
         x = super().is_valid()
         return x
 

@@ -1,17 +1,19 @@
 {% extends "base.html" %} 
 {% block body %}
 <div class="col">
+    {% if form.instance.pk %}
+        <h1>Редактирование акта о браке № {{form.instance.act_number}} </h1>
+    {% else %}
+        <h1>Добавление нового акта о браке</h1>
+    {% endif %} 
+    
     {% include "controller/form_errors.html" %}
     <form method="POST">
         {% csrf_token %}
         <div class="equipment_card">
             <div class="card_row">
-            <div class="equipment_card__label">{{form.datetime_fail.label}}</div>
-            <div class="equipment_card__value">{{form.datetime_fail}}</div>
-            </div>
-            <div class="card_row">
-                <div class="equipment_card__label">{{form.act_number.label}}</div>
-                <div class="equipment_card__value">{{form.act_number}}</div>
+                <div class="equipment_card__label">{{form.datetime_fail.label}}</div>
+                <div class="equipment_card__value">{{form.datetime_fail}}</div>
             </div>
             <div class="card_row">
                 <div class="equipment_card__label">{{form.workshop.label}}</div>
@@ -49,9 +51,6 @@
                 <div class="equipment_card__label">{{form.tech_solution.label}}</div>
                 <div class="equipment_card__value">{{form.tech_solution}}</div>
             </div>
-
-
-
             <div class="card_row">
                 <div class="equipment_card__label">{{form.fixable.label}}</div>
                 <div class="equipment_card__value">{{form.fixable}}</div>
@@ -68,16 +67,19 @@
             <div class="card_row">
                 <div class="equipment_card__label">{{form.cause.label}}</div>
                 <div class="equipment_card__value">{{form.cause}}</div>
-            </div>
-            
+            </div>            
                 <div class="card_row">
                     <div class="equipment_card__label">{{form.manual_fixing_time.label}}</div>
                     <div class="equipment_card__value">{{form.manual_fixing_time}}</div>
                 </div>
-            
-            
             <div class="card_row__center">
-                <button class="btn"> Отправить</button>
+                <button class="btn">
+                    {% if form.instance.pk %}
+                        Отредактировать
+                    {% else %}
+                        Добавить
+                    {% endif %} 
+                </button>
             </div>
         </div>
     </form>

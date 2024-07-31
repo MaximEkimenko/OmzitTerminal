@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect
 from django.views.generic import DetailView, UpdateView, ListView, TemplateView, CreateView
 from django.urls import reverse_lazy, reverse
 from django.http import HttpResponse, HttpResponseRedirect, FileResponse, JsonResponse
+from django.db.models import Max
 from django.forms.models import model_to_dict
 
 from controller.forms import EditDefectForm, FilesUploadForm
@@ -11,7 +12,11 @@ from controller.apps import ControllerConfig as App
 
 from controller.models import DefectAct
 from controller.utils.utils import check_directory
-from controller.utils.utils import get_model_verbose_names, import_acts_from_shift_task
+from controller.utils.utils import (get_model_verbose_names,
+                                    import_acts_from_shift_task,
+                                    format_act_number,
+                                    add_defect_acts
+                                    )
 from tehnolog.services.service_handlers import handle_uploaded_file
 from m_logger_settings import logger
 
@@ -23,23 +28,37 @@ def index(request):
     # импортируем записи из ShiftTask если таблица брака пустая
     if len(acts) < 1:
         import_acts_from_shift_task(1)
-
+    add_defect_acts()
     context = {'object_list': acts}
     return render(request, "controller/index.html", context)
 
+
 class CreateDefectAct(CreateView):
+    """
+    Представление для ручного создания нового акта о браке
+    """
     model = DefectAct
     form_class = EditDefectForm
-    
     template_name = "controller/create_defect.html"
     success_url = reverse_lazy("controller:index")
 
     def form_valid(self, form):
+        last_num = DefectAct.last_act_number()
+        if last_num:
+            current_num = last_num + 1
+        else:
+            current_num = 1
+            logger.error("В базе DefectAct отсутствуют записи. Новой записи присвоен номер 1")
+        form.instance.tech_number = current_num
+        form.instance.act_number = format_act_number(form.cleaned_data["datetime_fail"], current_num)
         if fix_time := form.cleaned_data["manual_fixing_time"]:
             form.instance.fixing_time = timedelta(hours=1) * fix_time
         return super().form_valid(form)
 
 class EditDefectAct(UpdateView):
+    """
+    Представление для редактирования акта о браке
+    """
     form_class = EditDefectForm
     model = DefectAct
     template_name = "controller/create_defect.html"
