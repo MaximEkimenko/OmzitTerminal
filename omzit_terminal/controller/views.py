@@ -40,6 +40,11 @@ def index(request):
 
 
 class DisableFieldsMixin(FormMixin):
+    """
+    Миксин, выполняющий две задачи:
+    1) отключает отдельные поля формы в зависимости от роли пользователя.
+    2) Переводит число во временной интервал при сохранении в базу срока исправления брака.
+    """
     def get_context_data(self, **kwargs):
         role = get_employee_position(self.request.user.username)
         kwargs.update({"permissions": FIELD_EDIT_PERMISSIONS, "role": role})
@@ -53,6 +58,11 @@ class DisableFieldsMixin(FormMixin):
                 form.fields[permission].disabled = True
         return context
 
+    def form_valid(self, form):
+        # нужно преобразовать время в часах(float), поступивший из формы, и в интервал времени и в таком виде сохранять
+        if fix_time := form.cleaned_data["manual_fixing_time"]:
+            form.instance.fixing_time = timedelta(hours=1) * fix_time
+        return super().form_valid(form)
 
 class CreateDefectAct(DisableFieldsMixin, CreateView):
     """
@@ -86,10 +96,11 @@ class EditDefectAct(DisableFieldsMixin, UpdateView):
     template_name = "controller/create_defect.html"
     success_url = reverse_lazy("controller:index")
 
-
     def form_valid(self, form):
-        if fix_time := form.cleaned_data["manual_fixing_time"]:
-            form.instance.fixing_time = timedelta(hours=1) * fix_time
+        # Случай, когда поле "дата" было отключено в форме. Но в модели оно обязательно,
+        # и записывать в нее данные нужно. Просто берем изначальные данные из формы и присваиваем модели.
+        if form.cleaned_data.get("datetime_fail") is None:
+            form.instance.datetime_fail = form.initial["datetime_fail"]
         return super().form_valid(form)
 
 

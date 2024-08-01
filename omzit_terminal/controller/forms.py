@@ -32,6 +32,15 @@ class EditDefectForm(forms.ModelForm):
             self.fields["manual_fixing_time"].widget.attrs = {"disabled": "disabled"}
 
     def is_valid(self):
+        """
+        На случай редактирования записи: datetime_fail обязательное, но при редактировании оно
+        для некоторых пользователей может быть отключено. А отключенные поля не попадают в измененные
+        данные, соответственно форма не проходит валидацию.
+        Я проверяю, что поле изначально было заполнено, и в этом случае помечаю поле как необязательное.
+        Тогда валидация формы проходит.
+        """
+        if self.initial.get("datetime_fail"):
+            self.fields["datetime_fail"].required = False
         x = super().is_valid()
         return x
 
