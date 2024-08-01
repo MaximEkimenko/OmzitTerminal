@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Literal
-
+from collections import namedtuple
 from django.core.exceptions import PermissionDenied
 
 from m_logger_settings import logger
@@ -19,11 +19,7 @@ class Position(int, Enum):
 
 
 USER_GROUPS = {
-    Position.Admin: [
-        "admin",
-        "admin2",
-        "admin3",
-    ],
+    Position.Admin: ["admin", "admin2", "admin3",],
     Position.Engineer: ["engineer"],
     Position.HoS: ["chief_ceh", "chief_ceh2", "chief_ceh3"],
     Position.HoRT: ["chief_rep", "chief_rep2"],
@@ -34,9 +30,9 @@ USER_GROUPS = {
     Position.Technolog: ["tehnolog", "tehnolog1", "tehnolog2"],
 }
 
-PERMITED_USERS = []
+PERMITTED_USERS = []
 for g in USER_GROUPS.values():
-    PERMITED_USERS.extend(g)
+    PERMITTED_USERS.extend(g)
 
 
 def get_employee_position(username):
@@ -51,21 +47,46 @@ def get_employee_position(username):
 
 def custom_login_check(request) -> Literal[True]:
     """
-    Проверяет, есть ли username в списке разрешенных пользователей PERMITED_USERS.
+    Проверяет, есть ли username в списке разрешенных пользователей PERMITTED_USERS.
     Если есть, продолжает работу, если нет - возбуждает исключение PermissionDenied,
     таким образом функция-представление не открывается для сторонних пользователей
 
     """
     username = request.user.username
-    if username not in PERMITED_USERS:
+    if username not in PERMITTED_USERS:
         logger.warning(f"Попытка доступа к рабочему месту диспетчера пользователем {username}")
         raise PermissionDenied
     return True
 
-permitted_apps = {
-    "orders": [Position.HoS, Position.HoRT, Position.Engineer, Position.Repairman, Position.Dispatcher, Position.Worker],
-    "equipment": [Position.HoS, Position.HoRT, Position.Engineer,
-                  Position.Repairman, Position.Dispatcher, Position.Worker],
-    "controller:index": [Position.Controller, Position.Technolog, Position.HoS],
+DropdownMenuItem = namedtuple("DropdownMenuItem", ["roles", "title", "link"])
+
+menu_items = {
+        "tehnolog": DropdownMenuItem(
+        [Position.Technolog],
+        "Технолог",
+        "tehnolog"
+    ),
+    "orders": DropdownMenuItem(
+        [Position.HoS, Position.HoRT, Position.Engineer, Position.Repairman, Position.Dispatcher, Position.Worker],
+        "Заявки на ремонт",
+        "orders",
+        ),
+    "equipment": DropdownMenuItem(
+        [Position.HoS, Position.HoRT, Position.Engineer,Position.Repairman, Position.Dispatcher, Position.Worker],
+        "Оборудование",
+        "equipment"
+    ),
+    "controller": DropdownMenuItem(
+        [Position.Controller, Position.Technolog, Position.HoS],
+        "Акты о браке",
+        "controller:index"
+    ),
 }
 
+
+def get_menu_context(request) -> dict:
+    return {
+        "role": get_employee_position(request.user.username),
+        "permitted_users": PERMITTED_USERS,
+        "menu_items": menu_items
+        }

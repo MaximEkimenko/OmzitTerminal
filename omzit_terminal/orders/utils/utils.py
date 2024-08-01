@@ -8,7 +8,7 @@ from django.utils.timezone import make_naive, make_aware
 
 from m_logger_settings import logger
 from orders.utils.common import OrdStatus, button_context
-from orders.utils.roles import Position, get_employee_position, PERMITED_USERS
+from orders.utils.roles import Position, get_employee_position, PERMITTED_USERS, menu_items, get_menu_context
 from orders.forms import AddOrderForm
 
 from orders.models import (
@@ -180,14 +180,13 @@ def orders_get_context(request) -> dict[str, Any]:
     # Нужно для реализации фильтров при создании заявки на ремонт.
     context = {
         "create_order": [Position.Admin, Position.HoS],  # добавить заявку
-        "role": get_employee_position(request.user.username),
         "orders": order_table_data,
         "add_order_form": AddOrderForm(),
         "alerts": FlashMessage.pop_flash(),
         "statuses": OrdStatus,
         "button_context": button_context,
-        "permitted_users": PERMITED_USERS,
     }
+    context.update(get_menu_context(request))
     return context
 
 
