@@ -1,11 +1,13 @@
 {% extends "base.html" %} 
 {% block body %}
 <h1>Учет брака</h1>
+{% if role in create_act_role %}
 <div class='form_row'>
     <form action="{% url 'controller:create' %}">
         <button class="btn">Добавить акт о браке</button>
     </form>
 </div>
+{% endif %}
 
 <table class="table">
     <thead>

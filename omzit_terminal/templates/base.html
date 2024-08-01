@@ -72,7 +72,20 @@
                 </div>
             </li>
 
+            {% elif 'tehnolog' in user.username %}
+            <li class="dropdown">
+                <a href="javascript:void(0)" class="dropbtn">Меню</a>
+                <div class="dropdown-content">
+                    <a href="{% url 'tehnolog' %}"> Технолог </a>
+                    <a href="{% url 'controller:index' %}"> Контролер </a>
+                </div>
+            </li>
+
             {% endif %}
+
+  
+
+
 
             {% if user.is_authenticated %}
             <li><a href="{% url 'instruction' %}">Инструкция</a></li>

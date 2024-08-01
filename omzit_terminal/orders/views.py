@@ -600,15 +600,12 @@ def order_edit(request, pk):
             order.status_id not in conditions["stages"][key]
             or conditions["role"] not in conditions["employees"][key]
         ):  # если условия редактирования не удовлетворяют, то отключаем поля путем модификации виджетов формы
-            x = dict(field.widget.attrs)
-            x["disabled"] = "disabled"
-            field.widget.attrs = x
+            field.disabled = True
     context.update({"permitted_users": PERMITED_USERS})
     return render(request, "orders/repair_edit.html", context)
 
 
 @login_required(login_url="/scheduler/login/")
-
 def order_delete_proc(request: WSGIRequest):
     """
     Удаляет заявку на ремонт

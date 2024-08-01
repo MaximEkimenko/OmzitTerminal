@@ -14,6 +14,8 @@ class Position(int, Enum):
     Dispatcher = 5  # человек, подтверждающий наличие материалов для ремонта
     Worker = 6  # Работник. Может смотреть, но ни к каким кнопкам у него доступа нет
     Repairman = 7
+    Controller = 8
+    Technolog = 9
 
 
 USER_GROUPS = {
@@ -28,7 +30,10 @@ USER_GROUPS = {
     Position.Dispatcher: ["dispatcher", "dispatcher2"],
     Position.Worker: ["worker"],
     Position.Repairman: ["repair", "repair2", "repair3", "repair4"],
+    Position.Controller: ["controler", "controler2", "controler3"],
+    Position.Technolog: ["tehnolog", "tehnolog1", "tehnolog2"],
 }
+
 PERMITED_USERS = []
 for g in USER_GROUPS.values():
     PERMITED_USERS.extend(g)
@@ -56,3 +61,11 @@ def custom_login_check(request) -> Literal[True]:
         logger.warning(f"Попытка доступа к рабочему месту диспетчера пользователем {username}")
         raise PermissionDenied
     return True
+
+permitted_apps = {
+    "orders": [Position.HoS, Position.HoRT, Position.Engineer, Position.Repairman, Position.Dispatcher, Position.Worker],
+    "equipment": [Position.HoS, Position.HoRT, Position.Engineer,
+                  Position.Repairman, Position.Dispatcher, Position.Worker],
+    "controller:index": [Position.Controller, Position.Technolog, Position.HoS],
+}
+

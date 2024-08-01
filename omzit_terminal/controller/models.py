@@ -31,7 +31,7 @@ class DefectAct(models.Model):
     tech_service = models.CharField(max_length=255, null=True, blank=True, verbose_name='Тех. служба')
     tech_solution = models.CharField(max_length=1000, null=True, blank=True, verbose_name='Тех. решение')
     fixable = models.BooleanField(verbose_name="брак исправимый", null=True, blank=True)
-    fio_failer = models.CharField(max_length=255, null=True, blank=True,  verbose_name='Виновник')
+    fio_failer = models.CharField(max_length=255, null=True, blank=True,  verbose_name='Исполнитель')
     fixing_time = models.DurationField(null=True, blank=True, verbose_name="Время исправления")
     cause = models.CharField(max_length=4, choices=CHOICES, null=True, blank=True, verbose_name='Причина')
     master_finish_wp = models.CharField(max_length=30, null=True, blank=True, verbose_name='Ответственный мастер')

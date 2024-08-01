@@ -2,11 +2,14 @@ from datetime import timedelta
 from django import forms
 from controller.models import DefectAct
 from constructor.forms import MultipleFileField
+from controller.utils.edit_permissions import FIELD_EDIT_PERMISSIONS
 class EditDefectForm(forms.ModelForm):
     manual_fixing_time = forms.FloatField(
         widget=forms.NumberInput(attrs={'placeholder': "Время в часах, например 1.5"}),
         label="Время исправления", required=False
     )
+    textarea_attrs = {"cols": 33, "rows": 5}
+    textarea_fields = ["operation", "processing_object", "control_object", "remark", "inconsistencies", "tech_solution"]
     class Meta:
         model = DefectAct
         fields = [
@@ -14,22 +17,17 @@ class EditDefectForm(forms.ModelForm):
             "control_object", "quantity", "inconsistencies", "remark", "tech_service",
             "tech_solution", "fixable", "fio_failer", "master_finish_wp", "cause"
         ]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["datetime_fail"].widget = forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"})
-        self.fields["operation"].widget = forms.Textarea(attrs={"cols": 33, "rows": 5})
-        self.fields["processing_object"].widget = forms.Textarea(attrs={"cols": 33, "rows": 5})
-        self.fields["control_object"].widget = forms.Textarea(attrs={"cols": 33, "rows": 5})
-        self.fields["remark"].widget = forms.Textarea(attrs={"cols": 33, "rows": 5})
-        self.fields["inconsistencies"].widget = forms.Textarea(attrs={"cols": 33, "rows": 5})
-        self.fields["remark"].widget = forms.Textarea(attrs={"cols": 33, "rows": 5})
-        self.fields["tech_solution"].widget = forms.Textarea(attrs={"cols": 33, "rows": 5})
+        for field in self.textarea_fields:
+            self.fields[field].widget = forms.Textarea(attrs=self.textarea_attrs)
 
         # отключаем поле, если время исправнения было импортировано из ShiftTask, руками его редактировать не надо
         if self.instance.fixing_time:
             float_hours = round(self.instance.fixing_time/timedelta(hours=1), 4)
             self.initial.update({"manual_fixing_time": float_hours})
-
         if self.instance.shift_task and self.instance.fixing_time:
             self.fields["manual_fixing_time"].widget.attrs = {"disabled": "disabled"}
 

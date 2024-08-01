@@ -6,6 +6,7 @@ from django.urls import reverse_lazy, reverse
 from django.http import HttpResponse, HttpResponseRedirect, FileResponse, JsonResponse
 from django.db.models import Max
 from django.forms.models import model_to_dict
+from django.views.generic.edit import FormMixin
 
 from controller.forms import EditDefectForm, FilesUploadForm
 from controller.apps import ControllerConfig as App
@@ -17,8 +18,10 @@ from controller.utils.utils import (get_model_verbose_names,
                                     format_act_number,
                                     add_defect_acts
                                     )
+from orders.utils.roles import get_employee_position, Position
 from tehnolog.services.service_handlers import handle_uploaded_file
 from m_logger_settings import logger
+from controller.utils.edit_permissions import FIELD_EDIT_PERMISSIONS
 
 def index(request):
     """
@@ -29,11 +32,29 @@ def index(request):
     if len(acts) < 1:
         import_acts_from_shift_task(1)
     add_defect_acts()
-    context = {'object_list': acts}
+    context = {'object_list': acts,
+               "role": get_employee_position(request.user.username),
+               "create_act_role": [Position.Admin, Position.Controller],
+               }
     return render(request, "controller/index.html", context)
 
 
-class CreateDefectAct(CreateView):
+class DisableFieldsMixin(FormMixin):
+    def get_context_data(self, **kwargs):
+        role = get_employee_position(self.request.user.username)
+        kwargs.update({"permissions": FIELD_EDIT_PERMISSIONS, "role": role})
+        context = super().get_context_data(**kwargs)
+        form = context['form']
+        print(form.Meta.fields)
+
+        for permission in FIELD_EDIT_PERMISSIONS:
+            print(role, FIELD_EDIT_PERMISSIONS[permission])
+            if role not in FIELD_EDIT_PERMISSIONS[permission]:
+                form.fields[permission].disabled = True
+        return context
+
+
+class CreateDefectAct(DisableFieldsMixin, CreateView):
     """
     Представление для ручного создания нового акта о браке
     """
@@ -41,6 +62,7 @@ class CreateDefectAct(CreateView):
     form_class = EditDefectForm
     template_name = "controller/create_defect.html"
     success_url = reverse_lazy("controller:index")
+    extra_context = {"permissions": FIELD_EDIT_PERMISSIONS}
 
     def form_valid(self, form):
         last_num = DefectAct.last_act_number()
@@ -55,7 +77,7 @@ class CreateDefectAct(CreateView):
             form.instance.fixing_time = timedelta(hours=1) * fix_time
         return super().form_valid(form)
 
-class EditDefectAct(UpdateView):
+class EditDefectAct(DisableFieldsMixin, UpdateView):
     """
     Представление для редактирования акта о браке
     """
@@ -63,6 +85,7 @@ class EditDefectAct(UpdateView):
     model = DefectAct
     template_name = "controller/create_defect.html"
     success_url = reverse_lazy("controller:index")
+
 
     def form_valid(self, form):
         if fix_time := form.cleaned_data["manual_fixing_time"]:
