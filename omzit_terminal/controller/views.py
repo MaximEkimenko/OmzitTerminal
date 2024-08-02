@@ -16,7 +16,7 @@ from controller.utils.utils import check_directory
 from controller.utils.utils import (get_model_verbose_names,
                                     import_acts_from_shift_task,
                                     format_act_number,
-                                    add_defect_acts
+                                    add_defect_acts, check_media_ref
                                     )
 from orders.utils.roles import get_employee_position, Position, PERMITTED_USERS, menu_items, get_menu_context
 from tehnolog.services.service_handlers import handle_uploaded_file
@@ -105,7 +105,7 @@ class EditDefectAct(DisableFieldsMixin, UpdateView):
 def upload_files(request, pk):
     """
     Функция в которой происходит добавление файлов в каталог, ассоциированный с актом о браке.
-    Сначала проверяеся, существует ли каталог, при необходимости он сождается и в него копируются файлы.
+    Сначала проверяеся, существует ли каталог, при необходимости он создается и в него копируются файлы.
     Так же происходит подсчет файлов, для отображения количества файлов в таблице.
     """
     act = DefectAct.objects.get(pk=pk)
@@ -113,8 +113,10 @@ def upload_files(request, pk):
     if request.method == "POST":
         form = FilesUploadForm(request.POST, request.FILES)
         if form.is_valid():
-            directory = str(pk)
-            dest_dir = check_directory(directory)
+            another_act = check_media_ref(act)
+            print(another_act)
+            print("указывают на один объект? ", another_act == act)
+            dest_dir = check_directory(act)
             if dest_dir:
                 logger.info(f"Создан каталог '{dest_dir}' для акта о браке {act.act_number}")
                 filecount = len([f for f in dest_dir.iterdir() if f.is_file()])
@@ -123,7 +125,6 @@ def upload_files(request, pk):
                     if filename:
                         logger.info(f"Файл '{filename}' добавлен к акту о браке '{act.act_number}'")
                         filecount += 1
-                act.media_ref = directory
                 act.media_count = filecount
                 act.save()
             else:
@@ -132,9 +133,11 @@ def upload_files(request, pk):
             return redirect("controller:index")
         else:
             context.update({"form": form})
+            context.update(get_menu_context(request))
             return render(request, 'controller/upload_files.html', context)
     form = FilesUploadForm()
     context.update({"form": form})
+    context.update(get_menu_context(request))
     return render(request, 'controller/upload_files.html', context)
 
 
@@ -144,15 +147,19 @@ def file_list(request, pk):
     Происходит сканирование файлов в каталоге, ассоциированном с актом и их отображение.
     На случай если каталог кто-то удалил, происходит его проверка и создание при необходимости,
     чтобы не возникала ошибка.
-    А так жепроисходит пересчет количества файлов, потому что в этом представлении их можно удалять.
+    А так же происходит пересчет количества файлов, потому что в этом представлении их можно удалять.
     """
     act = DefectAct.objects.get(pk=pk)
-    check_directory(act.media_ref)
-    dir_path = App.DEFECTS_BASE_PATH.joinpath(str(act.pk))
+    check_directory(act)
+    dir_path = App.DEFECTS_BASE_PATH.joinpath(act.media_ref)
     files = {f: f.name for f in dir_path.iterdir() if f.is_file()}
     act.media_count = len(files)
     act.save()
-    context = {"object": act, "files": files}
+    context = {"object": act,
+               "files": files,
+               "allow_to_delete": [Position.Admin, Position.Controller],
+               }
+    context.update(get_menu_context(request))
     return render(request, "controller/filelist.html", context)
 
 def show_file(request, path: str):

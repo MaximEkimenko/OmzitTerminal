@@ -8,8 +8,15 @@ class EditDefectForm(forms.ModelForm):
         widget=forms.NumberInput(attrs={'placeholder': "Время в часах, например 1.5"}),
         label="Время исправления", required=False
     )
+    field_order = [
+        "datetime_fail", "workshop", "operation", "processing_object", "control_object",
+        "quantity", "inconsistencies", "remark", "tech_service", "tech_solution",
+        "cause", "fixable", "fio_failer", "master_finish_wp", "manual_fixing_time",
+    ]
+
     textarea_attrs = {"cols": 33, "rows": 5}
     textarea_fields = ["operation", "processing_object", "control_object", "remark", "inconsistencies", "tech_solution"]
+
     class Meta:
         model = DefectAct
         fields = [

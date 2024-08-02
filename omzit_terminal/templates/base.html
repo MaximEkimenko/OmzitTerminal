@@ -43,17 +43,9 @@
 
                 </div>
             </li>
-            
-            {% comment %} {% elif user.username in permitted_users %}
-            <li class="dropdown">
-                <a href="javascript:void(0)" class="dropbtn">Меню</a>
-                <div class="dropdown-content">
-                    <a href="{% url 'orders' %}"> Заявки на ремонт</a>
-                    <a href="{% url 'equipment' %}"> Оборудование</a>
-                </div>
-            </li> {% endcomment %}
-
-
+            {% comment %}
+                Формирует выпалающий список приложений на основе того, к какой роли принадлежит пользователь.
+            {% endcomment %}
             {% elif user.username in permitted_users %}
             <li class="dropdown">
                 <a href="javascript:void(0)" class="dropbtn">Меню</a>

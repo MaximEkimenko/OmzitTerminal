@@ -13,9 +13,12 @@
     <div class="card_row">
         <a class="table_link" href="{% url  'controller:show_file' path %}" >{{name}}</a>
         <div class="equipment_card__spacer"></div>
+        {% if role in allow_to_delete %}
         <form action="{%url 'controller:delete_file_proc' object.pk path %}">
         <button class="btn" >удалить</button>
         </form>
+        {% endif %}
+
     </div>
     {% endfor %}
     </div>    

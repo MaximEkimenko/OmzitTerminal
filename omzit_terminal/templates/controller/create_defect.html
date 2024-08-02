@@ -6,6 +6,12 @@
     {% else %}
         <h1>Добавление нового акта о браке</h1>
     {% endif %} 
+
+    <div class="form_row">
+        <form action="{% url 'controller:index'%}" method="GET">
+            <button type="submit" class="btn">Назад</button>
+        </form>
+    </div>
     {% include "controller/form_errors.html" %}
     <form method="POST">
         {% csrf_token %}

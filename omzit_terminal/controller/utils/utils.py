@@ -82,18 +82,32 @@ def get_model_verbose_names(model: Model) -> dict[str, str]:
     return verbose_names
 
 
-def check_directory(path: str) -> Path:
+def check_media_ref(act: DefectAct):
+    """
+    Определяет как должна формироваться папка с файлами для акта о браке.
+    Она может быть ключом id или номер акта, главное ее вид определить в одном месте
+    @param act:
+    @return:
+    """
+    if not act.media_ref:
+        act.media_ref = act.act_number
+        act.save()
+    return act
+
+def check_directory(act:DefectAct) -> Path:
     """
     Проверяет, существует ли директория. Если нет, то создает ее и возвращает абсолютный путь к директории
     @param path: строка с названием директории (одно словоБ может быть даже id записи об актах)
     @return: абсолютный путь к директории
     """
-    dest_dir = App.DEFECTS_BASE_PATH.joinpath(path)
+    print(act, type(act))
+    print(act.media_ref)
+    dest_dir = App.DEFECTS_BASE_PATH.joinpath(act.media_ref)
     if not dest_dir.exists():
         try:
             dest_dir.mkdir()
         except Exception as e:
-            logger.error(f"Ошибка при создании каталога '{path}' для акта о браке")
+            logger.error(f"Ошибка при создании каталога '{act.media_ref}' для акта о браке")
             logger.exception(e)
             return None
     return dest_dir
