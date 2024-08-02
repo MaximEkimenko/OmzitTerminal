@@ -12,6 +12,12 @@ def format_act_number(date, number):
 
 
 def insert_shifttask_records(qs:QuerySet, number: int):
+    """
+
+    @param qs:
+    @param number:
+    @return:
+    """
     act_number = number
     for task in qs:
         date_fail = task.datetime_fail
@@ -33,22 +39,12 @@ def insert_shifttask_records(qs:QuerySet, number: int):
         act_number += 1
 
 
-def import_acts_from_shift_task(first_number):
+def add_defect_acts(first_number=1):
     """
-    Выбирает все записи из ShiftTask, которые отмечены как "брак" и на их основе создает акты о браке.
-    Это делает ся в начале на этапе первоначального заполнения таблицы, когда в ней еще ничего нет.
-    Номера актов взять неоткуда, поэтому передается параметр, с какого числа будут формироваться акты.
-    @param first_number:
-    """
-    # TODO: try-except
-    ts = ShiftTask.objects.filter(st_status__icontains="брак").order_by("datetime_fail").all()
-    insert_shifttask_records(ts, first_number)
-
-
-def add_defect_acts():
-    """
-    # Периодически запускается и форирует акты, на основе сменных заданий,
-    # на которые еще нет ссылок в таблице DefectAct
+    При первом запуске надо указать номер, с которого начинается нумерация актов.
+    Периодически запускается и формиует акты, на основе сменных заданий,
+    на которые еще нет ссылок в таблице DefectAct.
+    Отдельно запускается при запуске приложения, чтобы импортировать все подходящие записи из ShiftTask
     # @return:
     # """
     # выбираем в таблице актов ссылки на сменные задания, которые уже добавлены
@@ -60,8 +56,12 @@ def add_defect_acts():
           .exclude(pk__in=Subquery(shifttask_fers))
           .order_by("datetime_fail").all()
           )
-    act_number = DefectAct.last_act_number() + 1
-    #TODO: try-except
+
+    act_number = first_number
+    # если в таблице уже есть акты о браке, то берем номер последнего и увеличиваем на единицу
+    last_act_number = DefectAct.last_act_number()
+    if last_act_number is not None:
+        act_number = last_act_number + 1
     insert_shifttask_records(ts, act_number)
 
 

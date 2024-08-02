@@ -15,7 +15,6 @@ from controller.models import DefectAct
 from controller.utils.report import create_report
 from controller.utils.utils import check_directory
 from controller.utils.utils import (get_model_verbose_names,
-                                    import_acts_from_shift_task,
                                     format_act_number,
                                     add_defect_acts, check_media_ref
                                     )
@@ -29,10 +28,6 @@ def index(request):
     Отображает список актов о браке
     """
     acts = DefectAct.objects.all()
-    # импортируем записи из ShiftTask если таблица брака пустая
-    if len(acts) < 1:
-        import_acts_from_shift_task(1)
-    add_defect_acts()
     context = {'object_list': acts,
                "create_act_role": [Position.Admin, Position.Controller],
                }

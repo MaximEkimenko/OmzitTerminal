@@ -14,9 +14,9 @@ from orders.utils.tasks import (
     create_ppr_for_next_month,
     CREATE_NEXT_MONTH_PPR_DAY,
     suspend_orders_end_of_day,
-    test_job_1
 )
-from orders.utils.workers_process import clear_all_dayworkers
+from controller.utils.tasks import create_defect_act_at_first_run, add_defect_act_from_shift_task
+
 from worker.views import pause_work, resume_work  # noqa
 
 from m_logger_settings import logger, json_log_refactor_and_xlsx  # noqa
@@ -114,8 +114,7 @@ class Command(BaseCommand):
         """
         scheduler.add_job(
             suspend_orders_end_of_day,
-            # trigger=CronTrigger(hour="20", minute="0"),
-            trigger=CronTrigger(minute="*/5"),
+            trigger=CronTrigger(hour="20", minute="0"),
             id="Снятие ремонтников с заявок в конце смены",
             max_instances=1,
             replace_existing=True,
@@ -145,6 +144,28 @@ class Command(BaseCommand):
             misfire_grace_time=1 * 60,
         )
         logger.info("Запущена задача по первоначальному созданию заявок ППР")
+
+        scheduler.add_job(
+            create_defect_act_at_first_run,
+            "date",
+            id="Прервоначальное заполнение таблицы актов о браке",
+            max_instances=1,
+            replace_existing=True,
+            misfire_grace_time=1 * 60,
+        )
+        logger.info("Запущена задача по первоначальному заполнению таблицы актов о браке из ShiftTask")
+
+        scheduler.add_job(
+            create_defect_act_at_first_run,
+            trigger=CronTrigger(hour=23),
+            #trigger=CronTrigger(minute="*"),
+            id="Ежедневная проверка сменных заданий на брак",
+            max_instances=1,
+            replace_existing=True,
+            misfire_grace_time=1 * 60,
+        )
+        logger.info("Запущена задача по ежедневному добавлению брака из сменных заданий в таблицу актов о браке")
+
 
         # scheduler.add_job( # TODO ФУНКЦИОНАЛ ОТЧЁТОВ законсервировано пока не понадобится
         #     days_report_create,
