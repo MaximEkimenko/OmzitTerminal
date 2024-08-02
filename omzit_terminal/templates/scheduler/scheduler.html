@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block body %}
+
 <h1>Рабочее место планировщика</h1>
 {% if alert %}
 <div>
@@ -20,6 +21,7 @@
 <!-- Кнопка заказать КД -->
 <button class="id_make_order_query_btn btn" value="" title="Заказать КД">Заказать КД</button> <br />
 <!-- Кнопка график -->
+
 <button
     class="btn"
     onclick="window.location.href = '{{ request.path }}strat_plan1/'"
@@ -29,8 +31,9 @@
     График</button
 ><br />
 <!-- Основная таблица интерфейса -->
-<!--Заявки КД-->
+
 <div class="col scheduler">
+    <a href=" \\SVR-003\draws"> cc </a>
     <h3 class="table_h3">График производства</h3>
     <p>
         <input
@@ -50,6 +53,9 @@
                     {{ filter_q.form.datetime_done }}Дата готовности по договору
                 </td>
                 <td class="td_cell">
+                    {{ filter_q.form.calculated_datetime_start }}Дата запуска планируемая
+                </td>
+                <td class="td_cell">
                     {{ filter_q.form.calculated_datetime_done }} Дата готовности планируемая
                 </td>
                 <td class="td_cell">{{ filter_q.form.order_status }} Статус заказа</td>
@@ -67,12 +73,15 @@
             <td class="td_cell">{{ line.model_order_query }}</td>
             <td class="td_cell">{{ line.query_prior }}</td>
             <td class="td_cell">{{ line.td_status }}</td>
+
             {% if line.datetime_done %}
             <td class="td_cell">{{ line.datetime_done }}</td>
             {% else %}
             <td class="td_cell" style="color: red; font-weight: bold">Неопределено</td>
             {% endif %}
-            <td class="td_cell">{{ line.calculated_datetime_done }}</td>
+            <td class="td_cell">{{ line.calculated_datetime_start }}</td>
+            <td class="td_cell">{{ line.datetime_done }}</td>
+
             <td class="td_cell">{{ line.order_status }}</td>
             <td class="td_cell">{{ line.done_rate }}</td>
             <td class="td_cell">
@@ -92,15 +101,15 @@
                 <!-- prettier-ignore -->
                 {% endif%}
 
-                <!-- {% if order_status != "завершено" %}
+                {% if order_status != "завершено" %}
                 <button
                     class="id_new_datetime_done_btn btn"
                     value="{{ line.model_order_query }}"
-                    title="Редактировать дату договора"
+                    title="Редактировать даты договора"
                 >
-                    Редактировать дату договора
+                    Редактировать даты договора
                 </button>
-                {% endif%} -->
+                {% endif%}
 
                 <!-- prettier-ignore -->
                 {% if line.td_status == "не заказано" %}
@@ -224,8 +233,16 @@
             </div>
             <div class="form_inner_div">{{ form_change_datetime_done.model_order_query }}</div>
             <br />
-            <div class="form_inner_label">{{ form_change_datetime_done.datetime_done.label }}</div>
-            <div class="form_inner_div">{{ form_change_datetime_done.datetime_done }}</div>
+            <div class="form_inner_label">
+                {{ form_change_datetime_done.contract_start_date.label }}
+            </div>
+            <div class="form_inner_div">{{ form_change_datetime_done.contract_start_date }}</div>
+            <br />
+            <div class="form_inner_label">
+                {{ form_change_datetime_done.contract_end_date.label }}
+            </div>
+            <div class="form_inner_div">{{ form_change_datetime_done.contract_end_date }}</div>
+
             <div>
                 <button type="submit" class="form_button">
                     <p class="green_word">Редактировать</p>

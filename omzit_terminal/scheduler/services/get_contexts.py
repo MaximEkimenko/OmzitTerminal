@@ -4,7 +4,7 @@
 import datetime
 import json
 import time
-from decimal import Decimal, ROUND_CEILING
+from decimal import Decimal, ROUND_CEILING, ROUND_HALF_EVEN, ROUND_FLOOR
 from operator import itemgetter
 from pathlib import Path
 from pprint import pprint
@@ -302,7 +302,7 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
         Q(order_status='запланировано')
         | Q(order_status='в работе')
         | Q(order_status='не запланировано')
-        )
+    )
             .filter(workshop=workshop)
             .distinct()
             ).values()
@@ -311,7 +311,7 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
     dates = []
 
     for model in plan:
-        banned_models = ('TRUBOPROVOD', 'PAROPEREGREVATEL',  'SHIBER', 'shiber')
+        banned_models = ('TRUBOPROVOD', 'PAROPEREGREVATEL', 'SHIBER', 'shiber')
         md_name: str = model['model_name']
         mod_ord: str = model['model_order_query']
         if 'SV' in md_name:
@@ -332,7 +332,8 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
             dates.append(plan_datetime)
             # цикл изделия
             model_prod_cycle = int(model_parameters[0]['produce_cycle'].quantize(Decimal('1'),
-                                                                                 ROUND_CEILING))
+                                                                                 ROUND_HALF_EVEN))
+            # model_prod_cycle = float(model_parameters[0]['produce_cycle'])
             # определение процента готовности с учётом трудоёмкости
             done_rate = get_done_rate_with_td(td=model_parameters[0]['full_norm_tech'],
                                               model_order=model['model_order_query']
@@ -363,14 +364,20 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
                 'required_td': required_td,
                 'plan_datetime': plan_datetime,
                 'status': 'STATUS_ACTIVE',
-                'order': model['order']
+                'order': model['order'],
+                'contract_start_date': model['contract_start_date'],
+                'contract_end_date': model['contract_end_date'],
+                'is_fixed': model['is_fixed']
             })
         else:
             # Отображение всех заказов независимо от наличия параметров
             plan_datetime = datetime.datetime.combine(model['calculated_datetime_done'], datetime.datetime.min.time())
-            model_prod_cycle = int(model['produce_cycle'].quantize(Decimal('1'), ROUND_CEILING))
+            # model_prod_cycle = int(model['produce_cycle'].quantize(Decimal('1'), ROUND_HALF_EVEN))
+            model_prod_cycle = float(model['produce_cycle'])
             done_rate = float(model['done_rate'])
             ordering = (plan_datetime - today).days / model_prod_cycle
+
+            date_start = (plan_datetime - datetime.timedelta(days=model_prod_cycle)).timestamp()
 
             _planned_models.append({
                 'id': model['id'],
@@ -381,12 +388,16 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
                 'datetime_done': model['datetime_done'],
                 'model_order_query': model['model_order_query'],
                 'done_rate': done_rate,
-                'date_start': plan_datetime.timestamp(),
+                # 'date_start': plan_datetime.timestamp(),
+                'date_start': date_start,
                 'model_prod_cycle': model_prod_cycle,
                 'required_td': 20,
                 'plan_datetime': plan_datetime,
                 'status': 'STATUS_ACTIVE',
-                'order': model['order']
+                'order': model['order'],
+                'contract_start_date': model['contract_start_date'],
+                'contract_end_date': model['contract_end_date'],
+                'is_fixed': model['is_fixed']
             })
 
     # сортировка по коэффициенту срочности
@@ -401,14 +412,20 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
     if workshop == 1:
         max_day_capacity = 180  # максимальная трудоёмкость в день
     elif workshop == 2:
-        max_day_capacity = 200
+        max_day_capacity = 290
     completed_models = set()  # готовые
     planned_models = set()  # запланированные
     today_timestamp = datetime.datetime.now().timestamp()
+
     for current_timestamp in daterange:
         used_td = []
         for index, model in enumerate(sorted_planned_models):
-            # model['required_td'] = 20 # TODO тесты равное потребление - для простоты визуализации
+            # обработка зафиксированных (если зафиксировано, то сразу в запланированные)
+            if model['is_fixed']:
+                # used_td.append(model['required_td'])
+                planned_models.add(model['model_order_query'])
+                model['model_done_date'] = model['date_start'] + model['model_prod_cycle'] * 86400
+                # model['date_start'] = model['date_start'] + 86400
             if model['model_order_query'] not in completed_models:
                 used_td.append(model['required_td'])
                 sum_used_td = sum(used_td)
@@ -418,21 +435,21 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
                     model['model_done_date'] = model['date_start'] + model['model_prod_cycle'] * 86400
                     # статус отставание
                     if (model['date_start'] + model['model_prod_cycle'] * 86400 * (model['done_rate'] / 100)
-                            < today_timestamp):
+                            < today_timestamp - 86400):
                         model['status'] = 'STATUS_SUSPENDED'
                     # статус провал
                     if model['model_done_date'] < today_timestamp:
                         model['status'] = 'STATUS_FAILED'
                 else:
                     # статус ожидания (присваивается если запуск не ранее чем через 30 дней)
-                    if model['date_start'] > today_timestamp + 30 * 86400:
+                    if model['date_start'] > today_timestamp + 10 * 86400:
                         model['status'] = 'STATUS_WAITING'
                 # если не запланировано
                 if model['model_order_query'] not in planned_models:
                     if sum_used_td < max_day_capacity:  # трудоёмкость есть
                         # планируем
                         planned_models.add(model['model_order_query'])
-                        model['date_start'] = current_timestamp - 86400
+                        model['date_start'] = current_timestamp
                         model['model_done_date'] = model['date_start'] + model['model_prod_cycle'] * 86400
                     else:  # иначе трудоёмкости нет
                         # смещение
@@ -440,20 +457,30 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
                 else:  # иначе запланировано
                     if current_timestamp >= model['model_done_date']:  # срок готовности подошел
                         completed_models.add(model['model_order_query'])  # в готовые
-                        planned_models.remove(model['model_order_query'])
-            # для json
-            # model.update({'date_start_format': datetime.datetime.fromtimestamp(model['date_start'])})
-            # json_list.append(model)
-    # print(planned_models)
-    # with open(json_file, 'w') as jf:
-    #     json.dump(json_list, jf, indent=4, default=str)
-
-
-
+                        # planned_models.remove(model['model_order_query'])
 
     for model in sorted_planned_models:
         # for model in update_production_schedule(sorted_planned_models, 200):
         # результирующий контекст
+        if model['contract_start_date']:
+            contract_start_date = datetime.datetime.combine(model['contract_start_date'],
+                                                            datetime.datetime.min.time()).timestamp() * 1000,
+            contract_start_date_str = model['contract_start_date'].strftime('%d.%m.%Y')
+        else:
+            contract_start_date = None
+            contract_start_date_str = ''
+        if model['contract_end_date']:
+            contract_end_date = datetime.datetime.combine(model['contract_end_date'],
+                                                          datetime.datetime.min.time()).timestamp() * 1000,
+            contract_end_date_str = model['contract_end_date'].strftime('%d.%m.%Y')
+        else:
+            contract_end_date = None
+            contract_end_date_str = ''
+
+
+        # print(f'{model["date_start"] * 1000=}')
+        # print(f'{model["model_order_query"]=}')
+
         context["tasks"].append({'id': model['id'],
                                  'name': model['model_name'],
                                  'progress': int(model['done_rate']),
@@ -467,7 +494,7 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
                                  'status': model['status'],
                                  'depends': '',
                                  'end': '',
-                                 'start': int(model['date_start']) * 1000,
+                                 'start': model['date_start'] * 1000,
                                  'duration': model['model_prod_cycle'],
                                  'startIsMilestone': False,
                                  'endIsMilestone': False,
@@ -484,32 +511,16 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
                                  "criticalCost": '',
                                  "isCritical": False,
                                  'hasChild': False,
-                                 'model_order_query': model['model_order_query']
+                                 'model_order_query': model['model_order_query'],
+                                 # datetime.datetime.combine(model['calculated_datetime_done'],
+                                 #                           datetime.datetime.min.time())
+                                 'contract_start_date': contract_start_date,
+                                 'contract_end_date': contract_end_date,
+                                 'contract_start_date_str': str(contract_start_date_str),
+                                 'contract_end_date_str': str(contract_end_date_str),
+                                 'is_fixed': model['is_fixed']
                                  }
                                 )
-
-    # pprint(context)
-    # json_file = Path(r'C:\Users\user-18\Desktop\json_chk.json')
-    # with open(json_file, 'w') as js_file:
-    #     json.dump(context, js_file, indent=2)
-
-    # параметры запланированных моделей
-
-    # for planned_model in planned_models:
-    #     if planned_model in short_existing_models:
-    #         print(f'Совпадание моделей {planned_model}')
-    #
-    #     else:
-    #         print(f'НЕСовпадание моделей {planned_model}')
-
-    # for plan_model in planned_models:
-    #     if existing_model == plan_model:
-    #         print(f'Совпадание моделей {plan_model}-{existing_model}')
-
-    # pprint(planned_models)
-
-    #  заполнение данных для моделей параметров моделей изделия
-
     return context
 
 

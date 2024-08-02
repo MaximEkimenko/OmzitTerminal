@@ -857,6 +857,9 @@
                         <tr style="height: 40px">
                             <th class="gdfColHeader gdfResizable" style="width: 10px">№</th>
                             <th class="gdfColHeader gdfResizable" style="width: 50px">Статус</th>
+                            <th class="gdfColHeader gdfResizable" style="width: 50px">
+                                Зафиксировано
+                            </th>
                             <th class="gdfColHeader gdfResizable" style="width: 100px">Заказ</th>
                             <th class="gdfColHeader gdfResizable" style="width: 100px">Модель</th>
 
@@ -866,10 +869,16 @@
                                 Окончание
                             </th>
                             <th class="gdfColHeader gdfResizable" style="width: 100px">Цикл</th>
+
                             <th class="gdfColHeader gdfResizable" style="width: 100px">
                                 % готовности
                             </th>
-                            <th class="gdfColHeader gdfResizable" style="width: 100px">описание</th>
+                            <th class="gdfColHeader gdfResizable" style="width: 100px">
+                                дата начала договора
+                            </th>
+                            <th class="gdfColHeader gdfResizable" style="width: 100px">
+                                дата окончания договора
+                            </th>
                         </tr>
                     </thead>
                 </table>
@@ -882,17 +891,31 @@
     
     <td class="gdfCell" align="center"><div class="taskStatus cvcColorSquare" status="(#=obj.status#)"></div></td>
 
+
+    <td class="gdfCell" align="center"><input type="checkbox" name="is_fixed" value="(#=obj.is_fixed?obj.is_fixed:''#)"></td>
+
+    
+
     <td class="gdfCell"><input type="text" name="code" value="(#=obj.code?obj.code:''#)" placeholder=""></td>
     <td class="gdfCell indentCell" style="padding-left:(#=obj.level*10+18#)px;">
       <div class="exp-controller" align="center"></div>
       <input type="text" name="name" value="(#=obj.name#)" placeholder="name">
     </td>
     
+    
+    
     <td class="gdfCell"><input type="text" name="start"  value="" class="date"></td>
     
     <td class="gdfCell"><input type="text" name="end" value="" class="date"></td>
     <td class="gdfCell"><input type="text" name="duration" autocomplete="off" value="(#=obj.duration#)"></td>
-    <td colspan="10" class="gdfCell"><input type="text" name="progress" class="validated" entrytype="PERCENTILE" autocomplete="off" value="(#=obj.progress?obj.progress:''#)" (#=obj.progressByWorklog?"readOnly":""#)></td>   
+    
+    
+    <td class="gdfCell"><input type="text" name="progress" class="validated" entrytype="PERCENTILE" autocomplete="off" value="(#=obj.progress?obj.progress:''#)" ></td>   
+    
+    <td class="gdfCell"><input type="text" name="contract_start_date_str" value="(#=obj.contract_start_date_str?obj.contract_start_date_str:''#)" placeholder=""></td>
+
+    <td class="gdfCell"><input type="text" name="contract_end_date_str" value="(#=obj.contract_end_date_str?obj.contract_end_date_str:''#)" placeholder=""></td>
+
   </tr>
          -->
             </div>
@@ -982,14 +1005,21 @@
       <tr class="dateRow">
         <td nowrap="">
           <div style="position:relative">
-            <label for="start">Начало</label>&nbsp;&nbsp;&nbsp;&nbsp;
-            <input type="checkbox" id="startIsMilestone" name="startIsMilestone" value="yes"> &nbsp;<label for="startIsMilestone">как рубеж</label>&nbsp;
+            
+            
+            
+            <input type="checkbox" name="is_fixed" id="is_fixed" checked="(#=obj.is_fixed?obj.is_fixed:''#)"> <label for="is_fixed">зафиксировано</label>&nbsp;
+
+            
+            
+
+
             <br><input type="text" name="start" id="start" size="8" class="formElements dateField validated date" autocomplete="off" maxlength="255" value="" oldvalue="1" entrytype="DATE">
             <span title="calendar" id="starts_inputDate" class="teamworkIcon openCalendar" onclick="$(this).dateField({inputField:$(this).prevAll(':input:first'),isSearchField:false});">m</span>          </div>
         </td>
         <td nowrap="">
-          <label for="end">Конец</label>&nbsp;&nbsp;&nbsp;&nbsp;
-          <input type="checkbox" id="endIsMilestone" name="endIsMilestone" value="yes"> &nbsp;<label for="endIsMilestone">как рубеж</label>&nbsp;
+          
+          
           <br><input type="text" name="end" id="end" size="8" class="formElements dateField validated date" autocomplete="off" maxlength="255" value="" oldvalue="1" entrytype="DATE">
           <span title="calendar" id="ends_inputDate" class="teamworkIcon openCalendar" onclick="$(this).dateField({inputField:$(this).prevAll(':input:first'),isSearchField:false});">m</span>
         </td>

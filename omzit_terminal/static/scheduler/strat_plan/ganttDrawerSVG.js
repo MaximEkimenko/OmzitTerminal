@@ -219,10 +219,11 @@ Ganttalendar.prototype.drawTask = function (task) {
     //console.debug("drawTask", task.name,this.master.showBaselines,this.taskHeight);
     var self = this
     //var prof = new Profiler("ganttDrawTask");
-
+    // console.log(task)
     if (self.master.showBaselines) {
         var baseline = self.master.baselines[task.id]
         if (baseline) {
+            //BASELINE
             //console.debug("baseLine",baseline)
             var baseTask = $(_createBaselineSVG(task, baseline))
             baseTask.css('opacity', 0.5)
@@ -230,7 +231,18 @@ Ganttalendar.prototype.drawTask = function (task) {
         }
     }
 
+    // НОВОЕ ЗАДАНИЕ
+    // var black_task = task
+    // black_task.start = task.start - 2 * task.duration * 86400 * 1000
+    // black_task.duration = task.duration
+    // // black_task.end = task.start - 1 * task.duration * 86400 * 1000
+    // black_task.canWrite = false
+    // // console.log(black_task.start)
+    // var black_box = $(_createTaskSVG(black_task))
+    // task.ganttElement = black_box
+
     var taskBox = $(_createTaskSVG(task))
+
     task.ganttElement = taskBox
 
     if (self.showCriticalPath && task.isCritical) taskBox.addClass('critical')
@@ -440,7 +452,7 @@ Ganttalendar.prototype.drawTask = function (task) {
 
     function _createTaskSVG(task) {
         var svg = self.svg
-
+        // console.log(task)
         var dimensions = {
             x: Math.round((task.start - self.startMillis) * self.fx),
             y:
@@ -450,6 +462,23 @@ Ganttalendar.prototype.drawTask = function (task) {
             width: Math.max(Math.round((task.end - task.start) * self.fx), 1),
             height: self.master.showBaselines ? self.taskHeight / 1.3 : self.taskHeight,
         }
+        // РИСОВАНИЕ ПРЯМОУГОЛЬНИКА ПО ДОГОВОРУ
+        // начало даты по договору
+
+        let contract_start_date = task.contract_start_date
+        let contract_end_date = task.contract_end_date
+        const x = Math.round((contract_start_date - self.startMillis) * self.fx)
+        const y =
+            task.rowElement.position().top +
+            task.rowElement.offsetParent().scrollTop() +
+            self.taskVertOffset
+        // ширина полосы (длительность договора)
+        width = Math.max(Math.round((contract_end_date - contract_start_date) * self.fx), 1)
+        // высота полосы
+        height = self.master.showBaselines ? self.taskHeight / 1.3 : self.taskHeight / 4 // поделено на 2, для видимости задачи
+        contract_svg = self.svg.rect(taskSvg, x, y, width, height, { class: 'randomGantt' })
+
+        ////
         var taskSvg = svg.svg(
             self.tasksGroup,
             dimensions.x,
@@ -564,7 +593,6 @@ Ganttalendar.prototype.drawTask = function (task) {
 
     function _createBaselineSVG(task, baseline) {
         var svg = self.svg
-
         var dimensions = {
             x: Math.round((baseline.startDate - self.startMillis) * self.fx),
             y:
@@ -656,7 +684,7 @@ Ganttalendar.prototype.addTask = function (task) {
 //<%-------------------------------------- GANT DRAW LINK SVG ELEMENT --------------------------------------%>
 //'from' and 'to' are tasks already drawn
 Ganttalendar.prototype.drawLink = function (from, to, type) {
-    //console.debug("drawLink")
+    // console.debug('drawLink')
     var self = this
     var peduncolusSize = 10
     /**
@@ -875,6 +903,15 @@ Ganttalendar.prototype.redrawTasks = function (drawAll) {
         }
         if (drawAll || (row >= startRowAdd && row < endRowAdd)) {
             this.drawTask(task)
+
+            // ЕЩЕ ОДНО НОВОЕ ЗАДАНИЕ
+            // console.log(task)
+            // console.log(task.start)
+            // var new_task = task
+            // new_task.duration = 100
+            // new_task.start = 1722189600000
+            // this.drawTask(new_task)
+
             self.master.firstVisibleTaskIndex =
                 self.master.firstVisibleTaskIndex == -1 ? i : self.master.firstVisibleTaskIndex
             self.master.lastVisibleTaskIndex = i
@@ -891,6 +928,15 @@ Ganttalendar.prototype.redrawTasks = function (drawAll) {
         var x = Math.round((new Date().getTime() - self.startMillis) * self.fx)
         self.svg.line(gridGroup, x, 0, x, '100%', { class: 'ganttTodaySVG' })
     }
+
+    //!!! TODO DELETE draw random date
+    // console.log(self.endMillis)
+    // console.log((new Date().getTime() - self.startMillis) * self.fx)
+
+    // console.log((new Date(2024, 1, 1).getTime() - self.startMillis / 1.01) * self.fx)
+
+    // var y = Math.round((new Date(2024, 1, 1).getTime() - self.startMillis / 1.01) * self.fx)
+    // self.svg.line(gridGroup, y, 0, y, '200%', { class: 'randomGantt' })
 
     //prof.stop();
 }

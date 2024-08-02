@@ -192,18 +192,25 @@ def save_strat_plan(request):
                     next_max_id = next_max_id + 1
             json_ids = [item['id'] for item in data['tasks']]  # все id для обновления
             schedules_to_update = WorkshopSchedule.objects.filter(pk__in=json_ids)  # все объекты для обновления
+            # print(schedules_to_update[0])
             existing_ids = set(schedules_to_update.values_list('pk', flat=True))  # существующие id
             # словарь для получения данных json по id
             json_data_by_id = {item['id']: item for item in data['tasks']}
             # список для обновления данных
             for schedule in schedules_to_update:
                 json_item = json_data_by_id[schedule.pk]
-                # расчётная дата сдачи
-                schedule.calculated_datetime_done = datetime.datetime.fromtimestamp(json_item['end'] / 1000).date()
+                # расчётная дата сдачи с + # TODO костыль компенсации смещения на 1 день
+                schedule.calculated_datetime_done = ((datetime.datetime.fromtimestamp(json_item['end'] / 1000).date())
+                                                     + datetime.timedelta(days=1))
                 # степень готовности
                 schedule.done_rate = json_item['progress']
                 # цикл производства
                 schedule.produce_cycle = json_item['duration']
+                # расчётная дата запуска
+                schedule.calculated_datetime_start = (schedule.calculated_datetime_done -
+                                                      datetime.timedelta(days=schedule.produce_cycle))
+                # фиксирование в графике
+                schedule.is_fixed = json_item.get('is_fixed', False)
                 # статус завершено при готовности 100 %
                 if json_item['progress'] >= 100:
                     schedule.order_status = 'завершено'
@@ -216,8 +223,10 @@ def save_strat_plan(request):
                 for json_id in json_ids:
                     if json_id not in existing_ids:
                         json_item = json_data_by_id[json_id]
+
                         calculated_datetime_done = datetime.datetime.fromtimestamp(
-                            json_item['end'] / 1000).date()
+                            int(json_item['end'] / 1000)).date()
+
                         if json_item['progress'] >= 100:
                             order_status = 'завершено'
                         elif json_item['progress'] == 0:
@@ -225,6 +234,8 @@ def save_strat_plan(request):
                         else:
                             order_status = 'в работе'
                         produce_cycle = json_item['duration']
+
+                        is_fixed = json_item.get('is_fixed', False)
                         new_schedule = WorkshopSchedule(
                             pk=json_id,
                             workshop=int(data['workshop']),
@@ -238,7 +249,8 @@ def save_strat_plan(request):
                             order_status=order_status,
                             query_prior=4,
                             done_rate=json_item['progress'],
-                            produce_cycle=produce_cycle
+                            produce_cycle=produce_cycle,
+                            is_fixed=is_fixed
                         )
                         new_schedules.append(new_schedule)
             except Exception as e:
@@ -247,7 +259,7 @@ def save_strat_plan(request):
             try:
                 WorkshopSchedule.objects.bulk_update(schedules_to_update,
                                                      ['calculated_datetime_done', 'done_rate', 'produce_cycle',
-                                                      'order_status'])
+                                                      'order_status', 'is_fixed', 'calculated_datetime_start'])
                 logger.debug('Данные планирования успешно обновлены.')
             except Exception as e:
                 logger.error('Ошибка при обновлении данных WorkshopSchedule.')
@@ -293,4 +305,3 @@ def delete_model_from_start_plan(request, model_id):
         logger.error('Ошибка при удалении модели из WorkshopSchedule.')
         logger.exception(e)
         return JsonResponse({'status': 'error', 'message': 'Ошибка при удалении модели'}, status=500)
-

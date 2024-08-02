@@ -36,6 +36,7 @@ class WorkshopSchedule(models.Model):
     model_name = models.CharField(max_length=30, verbose_name='Модель изделия', validators=[model_regex])
     datetime_done = models.DateField(null=True, verbose_name='Планируемая дата готовности')
     calculated_datetime_done = models.DateField(null=True, verbose_name='Расчётная дата готовности')
+    calculated_datetime_start = models.DateField(null=True, verbose_name='Расчётная дата запуска')
     order = models.CharField(max_length=100, verbose_name='Номер заказа', validators=[order_regex])
     order_status = models.CharField(max_length=20, default='не запланировано', verbose_name='Статус заказа')
 
@@ -67,6 +68,13 @@ class WorkshopSchedule(models.Model):
     #  либо работа только с таблицей ModelParameters
     produce_cycle = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=1,
                                         verbose_name='Производственный цикл')
+    contract_start_date = models.DateField(null=True, verbose_name='Дата начала по договору')
+    contract_end_date = models.DateField(null=True, verbose_name='Дата готовности по договору')
+
+    is_fixed = models.BooleanField(default=False, verbose_name='фиксация в план')
+
+
+
     # def __str__(self):
     #     fields = [f"{field.name}: {getattr(self, field.name)}" for field in self._meta.fields]
     #     return "\n".join(fields)

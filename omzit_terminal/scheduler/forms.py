@@ -55,13 +55,20 @@ class ChangeDateTimeDone(forms.Form):
     """
     query_set = WorkshopSchedule.objects.all()
     model_order_query = QueryAnswerForm(query_set, empty_label='выберите заказ-модель', label='Заказ-модель')
-    datetime_done = forms.DateField(label='Редактируемая дата под договору', required=True,
-                                    widget=forms.SelectDateWidget(empty_label=("год", "месяц", "день"),
-                                                                  years=(datetime.datetime.now().year,
-                                                                         datetime.datetime.now().year + 1)))
-
-
-
+    # datetime_done = forms.DateField(label='Редактируемая дата под договору', required=True,
+    #                                 widget=forms.SelectDateWidget(empty_label=("год", "месяц", "день"),
+    #                                                               years=(datetime.datetime.now().year,
+    #                                                                      datetime.datetime.now().year + 1)))
+    contract_start_date = forms.DateField(label='Дата начала по договору', required=True,
+                                          widget=forms.SelectDateWidget(empty_label=("год", "месяц", "день"),
+                                                                        years=(datetime.datetime.now().year - 1,
+                                                                               datetime.datetime.now().year,
+                                                                               datetime.datetime.now().year + 1)))
+    contract_end_date = forms.DateField(label='Дата окончания по договору', required=True,
+                                        widget=forms.SelectDateWidget(empty_label=("год", "месяц", "день"),
+                                                                      years=(datetime.datetime.now().year - 1,
+                                                                             datetime.datetime.now().year,
+                                                                             datetime.datetime.now().year + 1)))
 
 
 class SchedulerWorkplaceLabel(ModelChoiceField):  # переопределение метода отображения строки результатов для РЦ

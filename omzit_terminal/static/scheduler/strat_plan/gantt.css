@@ -603,6 +603,17 @@ select.taskStatus {
     stroke-linecap: 'round';
     stroke-dasharray: 2, 2;
 }
+/* Класс сроков под договору */
+.randomGantt {
+    stroke-width: 2px;
+    /* stroke: goldenrod !important; */
+    stroke: goldenrod !important;
+    fill: goldenrod !important;
+    stroke-linecap: 'round';
+    /* opacity: 0.3; */
+    opacity: 0.8;
+    /* stroke-dasharray: 2, 2; */
+}
 
 .colorByStatus .taskStatusSVG[status='STATUS_ACTIVE'] {
     fill: green;
@@ -683,10 +694,13 @@ select.taskStatus {
     opacity: 1;
 }
 
+/* model_order_query class */
 .taskLabelSVG {
     stroke: none;
-    fill: #999;
-    font-size: 12px;
+    /* fill: #999; */
+    fill: black !important;
+    font-size: 20px;
+    font-weight: bold;
 }
 
 .critical .taskLinkPathSVG {

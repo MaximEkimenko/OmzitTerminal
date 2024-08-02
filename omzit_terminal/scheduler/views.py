@@ -30,6 +30,7 @@ from .services.get_contexts import NEW_get_strat_plan_context
 from .services.schedule_handlers import get_all_done_rate, make_workshop_plan_plot, create_pdf_report, report_merger
 from worker.services.master_call_function import terminal_message_to_id  # noqa
 from .services.sz_reports import get_start_end_st_report, create_shift_task_report
+from .services.db_fields_to_excel import db_fields_to_excel
 from orders.utils.roles import Position, get_employee_position  # noqa
 
 # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
@@ -171,6 +172,7 @@ def scheduler(request):
                          'query_prior',  # приоритет чертежа
                          'td_status',  # статус заявки чертежа
                          'datetime_done',  # дата готовности по договору
+                         'calculated_datetime_start',  # дата запуска планируемая
                          'calculated_datetime_done',  # дата из графика
                          'order_status',  # статус заказа
                          'done_rate',  # степень готовности
@@ -194,14 +196,15 @@ def scheduler(request):
                 # заполнение срока готовности, категория изделия, статус изделия, ФИО планировщика
                 (WorkshopSchedule.objects.filter
                     (
-                        model_order_query=form_workshop_plan.cleaned_data['model_order_query'].model_order_query).update
+                    model_order_query=form_workshop_plan.cleaned_data['model_order_query'].model_order_query).update
                     (
-                        datetime_done=form_workshop_plan.cleaned_data['datetime_done'],
-                        workshop=form_workshop_plan.cleaned_data['workshop'],
-                        product_category=str(form_workshop_plan.cleaned_data['category']),
-                        order_status='запланировано',
-                        dispatcher_plan_ws_fio=f'{request.user.first_name} {request.user.last_name}'
-                    ))
+                    datetime_done=form_workshop_plan.cleaned_data['datetime_done'],
+                    workshop=form_workshop_plan.cleaned_data['workshop'],
+                    product_category=str(form_workshop_plan.cleaned_data['category']),
+                    order_status='запланировано',
+                    dispatcher_plan_ws_fio=f'{request.user.first_name} {request.user.last_name}',
+                    calculated_datetime_done=form_workshop_plan.cleaned_data['datetime_done']
+                ))
                 # Заполнение данных СЗ, статус СЗ, ФИО планировщика, категория изделия,
                 alert = 'Данные в график успешно занесены! '
                 logger.info(f'Данные заказа {form_workshop_plan.cleaned_data["model_order_query"].model_order_query} '
@@ -209,12 +212,12 @@ def scheduler(request):
                 # заполнение модели ShiftTask данными планирования цехов
                 (ShiftTask.objects.filter
                     (
-                        model_order_query=form_workshop_plan.cleaned_data['model_order_query'].model_order_query).update
+                    model_order_query=form_workshop_plan.cleaned_data['model_order_query'].model_order_query).update
                     (
-                        workshop=form_workshop_plan.cleaned_data['workshop'],
-                        datetime_done=form_workshop_plan.cleaned_data['datetime_done'],
-                        product_category=str(form_workshop_plan.cleaned_data['category']),
-                    ))
+                    workshop=form_workshop_plan.cleaned_data['workshop'],
+                    datetime_done=form_workshop_plan.cleaned_data['datetime_done'],
+                    product_category=str(form_workshop_plan.cleaned_data['category']),
+                ))
                 alert += 'Данные сменного задания успешно занесены.'
                 context = {'form_workshop_plan': form_workshop_plan, 'td_queries': td_queries, 'alert': alert,
                            'form_query_draw': form_query_draw, 'form_change_datetime_done': form_change_datetime_done,
@@ -326,17 +329,23 @@ def new_datetimedone(request):
         if form_change_datetime_done.is_valid():
             # заказ_модель
             model_order_query = str(form_change_datetime_done.cleaned_data['model_order_query']).strip()
+            print('!!!!!!!!!', model_order_query, '!!!!!!!!!!!')
             try:
                 # обновление графика цеха данными запроса на чертеж
                 model_order_to_update = WorkshopSchedule.objects.get(model_order_query=model_order_query)
                 model_order_to_update.dispatcher_query_td_fio = f"{request.user.first_name} {request.user.last_name}"
-                model_order_to_update.datetime_done = form_change_datetime_done.cleaned_data['datetime_done']
+                # занесение данных по договору
+                model_order_to_update.contract_start_date = form_change_datetime_done.cleaned_data[
+                    'contract_start_date']
+                model_order_to_update.contract_end_date = form_change_datetime_done.cleaned_data[
+                    'contract_end_date']
+                model_order_to_update.datetime_done = model_order_to_update.contract_end_date
                 # сохранение данных
                 model_order_to_update.save()
                 # сообщение об успехе для отправки в группу телеграм
-                success_group_message = (f"Изменена дата готовности под договору: "
-                                         f"{form_change_datetime_done.cleaned_data['model_query']}."
-                                         f"Изменил: {request.user.first_name} {request.user.last_name}.")
+                # success_group_message = (f"Изменена дата готовности под договору: "
+                #                          f"{form_change_datetime_done.cleaned_data['model_query']}."
+                #                          f"Изменил: {request.user.first_name} {request.user.last_name}.")
                 try:
                     # отправка сообщения
                     pass  # TODO отключено на тесты
@@ -344,9 +353,9 @@ def new_datetimedone(request):
                 except Exception as e:
                     logger.error('Ошибка отправки сообщения ботом при заказе чертежей в td_query')
                     logger.exception(e)
-                logger.info(f'Дата готовности под договору изменена успешно.\n{success_group_message}')
+                logger.info(f'Даты по договору успешно занесены.')
             except Exception as e:
-                logger.error(f'Ошибка изменения даты готовности по договору {model_order_query}')
+                logger.error(f'Ошибка изменения дат по договору {model_order_query}')
                 logger.exception(e)
         else:
             logger.error('Невалидные данные формы редактирования даты готовности по договору.')
@@ -764,9 +773,22 @@ def strat_plan(request, workshop) -> HttpResponse:
     # получение данных
     # context = get_strat_plan_context()
     context = NEW_get_strat_plan_context(workshop)
+
+    field_tuple = ('заказ и модель',
+                   'Дата начала по договору', 'Дата готовности по договору',
+                   'Расчётная дата готовности', 'Расчётная дата запуска',)
+
+    db_fields_to_excel(DBmodel=WorkshopSchedule, db_verbose_names=field_tuple, report_name='strat_plan_report')
     return render(request, 'scheduler/strat_plan/gantt.html', context={'json': json.dumps(context),
                                                                        'workshop': workshop})
     # return render(request, 'api/gantt.html')
+
+# def serve_local_file(request, file_path):
+#     local_file_path = os.path.join('', file_path)
+#     print(local_file_path)
+#     if os.path.exists(local_file_path):
+#         return FileResponse(open(local_file_path, 'rb'))
+
 
 # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
 # @login_required(login_url="login")
