@@ -63,7 +63,7 @@ omzit_master_group1_id = admin_id
 omzit_master_group2_id = admin_id
 
 ws_numbers_c1 = ('11', '12', '13', '14', '15', '16')  # терминалы цех 1
-ws_numbers_c2 = ('22', '23', '24', '25', '26', '27', '28', '29', '210', '211')  # терминалы цех 2
+ws_numbers_c2 = ('22', '23', '24', '25', '26', '27', '28', '29', '210', '211', '212')  # терминалы цех 2
 
 # fios
 id_fios = {admin_id: 'Екименко М.А.',  # цех 1
@@ -212,20 +212,21 @@ async def otk_call(callback_query: types.CallbackQuery, callback_data: dict):
     master_id = callback_data.get('user_id')
     ws_number = callback_data.get('ws_number')
     logger.debug(f'FROM_otk_call_callback_data: {ws_number=}, {id_fios.get(int(master_id), master_id)}')
-    # Статус ожидание контролёра
-    status_change_to_otk(ws_number=ws_number, initiator_id=master_id)
-    st_count = lines_count(ws_number=str(ws_number))[0]  # количество СЗ с ожиданием контролёра
     if str(ws_number) in ws_numbers_c1:
         send_master_group = omzit_master_group1_id
     elif str(ws_number) in ws_numbers_c2:
         send_master_group = omzit_master_group2_id
     # обработка большого количества вызовов ОТК
+    st_count = lines_count(ws_number=str(ws_number))[0]  # количество СЗ с ожиданием контролёра
     if st_count > 10:
-        await bot.send_message(chat_id=send_master_group, text=f"Вызов контролёра более чем на 10 СЗ недопустим."
+        await bot.send_message(chat_id=send_master_group, text=f"Вызов контролёра более чем на 8 СЗ недопустим.\n"
                                                                f"Сдайте сменные задания ОТК.")
         logger.warning(f'Попытка вызвать ОТК на более 10 СЗ одновременно.'
                        f'{ws_number=}, {id_fios.get(int(master_id), master_id)}')
         return
+    # Статус ожидание контролёра
+    status_change_to_otk(ws_number=ws_number, initiator_id=master_id)
+    st_count = lines_count(ws_number=str(ws_number))[0]  # количество СЗ с ожиданием контролёра
     ultra_sound_string = lines_count(ws_number=str(ws_number))[1]  # количество СЗ с ожиданием контролёра
     logger.info(f'Количество сменных заданий для приёмки {st_count=}, Наличие УЗК, или рентгена: {ultra_sound_string=}')
     # отправка сообщения о заявке на контролёра в группу ОТК
