@@ -1,18 +1,19 @@
 from django.urls import path
 from .views import (
-    index,
     CreateDefectAct,
     EditDefectAct,
     upload_files,
     file_list,
     show_file,
     delete_file_proc,
-    defect_report
+    defect_report,
+    DefectsView
 )
 app_name = "controller"
 
 urlpatterns = [
-    path("", index, name="index"),
+    # path("", index, name="index"),
+    path("", DefectsView.as_view(), name="index"),
     path("create/", CreateDefectAct.as_view(), name="create"),
     path("edit/<int:pk>/", EditDefectAct.as_view(), name="edit"),
     path("upload/<int:pk>/", upload_files, name="upload_files"),

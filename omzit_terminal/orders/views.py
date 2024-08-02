@@ -60,6 +60,7 @@ from orders.utils.utils import (
     remove_old_file_if_exist, convert_dayworkers_to_string,
 )
 from orders.utils.telegram import order_telegram_notification
+from controller.utils.mixins import RoleMixin
 
 
 @login_required(login_url="/scheduler/login/")
@@ -161,19 +162,16 @@ def orders(request) -> HttpResponse:
     return render(request, "orders/orders.html", context=context)
 
 
-class OrdersArchive(LoginRequiredMixin, ListView):
+class OrdersArchive(LoginRequiredMixin, RoleMixin,  ListView):
     """
     Отображает все заявки на ремонт, которые были завершены (приняты или отменены).
     """
     template_name = "orders/orders_archive.html"
+    login_url = "/scheduler/login/"
 
     def get_queryset(self):
         return Orders.archived_orders()
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(get_menu_context(self.request))
-        return context
 
 @login_required(login_url="/scheduler/login/")
 def order_assign_workers(request, pk):
@@ -690,17 +688,17 @@ def order_history(request: WSGIRequest, pk):
     return render(request, "orders/repair_history.html", context)
 
 
-class EquipmentCardView(LoginRequiredMixin, DetailView):
+class EquipmentCardView(LoginRequiredMixin, RoleMixin, DetailView):
     """
     Выводит карточку оборудования
     """
     model = Equipment
     template_name = "orders/equipment_card.html"
+    login_url = "/scheduler/login/"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({"edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],})
-        context.update(get_menu_context(self.request))
         return context
 
     def post(self, request, *args, **kwargs):
@@ -748,22 +746,16 @@ class EquipmentCardView(LoginRequiredMixin, DetailView):
         return redirect("equipment")
 
 
-class EquipmentCardEditView(LoginRequiredMixin, UpdateView):
+class EquipmentCardEditView(LoginRequiredMixin, RoleMixin, UpdateView):
     """
     Карточка редактирования оборудования.
     """
     model = Equipment
     form_class = EditEquipmentForm
     template_name = "orders/equipment_edit.html"
+    login_url = "/scheduler/login/"
     extra_context = {"edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],}
 
-    def get_success_url(self):
-        return self.object.get_absolute_url()
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(get_menu_context(self.request))
-        return context
 
     def form_valid(self, form):
         form_data = form.cleaned_data
@@ -791,7 +783,7 @@ def order_report(request):
     return redirect("orders")
 
 
-class ShopsView(ListView):
+class ShopsView(RoleMixin, ListView):
     """
     Показывает страницу со списком цехов. На странице можно добавлять, редактировать и удалять цеха.
     Добавление обрабатывается в этом же классе в методе post, а удаление и редактирование происходит
@@ -809,7 +801,6 @@ class ShopsView(ListView):
                 "edit_form": AddShop(),
             }
         )
-        context.update(get_menu_context(self.request))
         return context
 
     def post(self, request, *args, **kwargs):
@@ -925,11 +916,12 @@ def clear_workers_proc(request: WSGIRequest, pk):
     return redirect("orders")
 
 
-class RepairmenHistory(LoginRequiredMixin, ListView):
+class RepairmenHistory(LoginRequiredMixin, RoleMixin, ListView):
     """
     Демонстрирует список работников, которые были прикреплены к конкретной заявке за всё время ремонта.
     """
     template_name = "orders/repairmen_history.html"
+    login_url = "/scheduler/login/"
 
     def get_queryset(self):
         dayworkers = (
@@ -942,7 +934,6 @@ class RepairmenHistory(LoginRequiredMixin, ListView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({"pk": self.kwargs["pk"]})
-        context.update(get_menu_context(self.request))
         return context
 
 
@@ -998,11 +989,12 @@ def filter_data(request):
 
 
 
-class PPRСalendar(ListView):
+class PPRСalendar(LoginRequiredMixin, RoleMixin, ListView):
     """
     Показывает график ППР для оборудования. На странице возможно изменить день ППР для конкретного оборудования.
     """
     template_name = "orders/PPR_calendar.html"
+    login_url = "/scheduler/login/"
 
     def get_queryset(self):
         return Equipment.equipment_with_PPR().values("id", "name", "shop_id", "ppr_plan_day", "inv_number")
@@ -1016,7 +1008,6 @@ class PPRСalendar(ListView):
             'form': ChangePPRForm(),
             "edit_ppr_button": [Position.Admin, Position.HoRT, Position.Engineer],
         })
-        context.update(get_menu_context(self.request))
         return context
 
     def post(self, request):
@@ -1030,7 +1021,7 @@ class PPRСalendar(ListView):
         return redirect("ppr_calendar")
 
 
-class ReferenceMaterialsList(ListView):
+class ReferenceMaterialsList(LoginRequiredMixin, RoleMixin, ListView):
     """
     Показывает страничку со списком справочных материалов по обслуживанию оборудования
     """
@@ -1043,7 +1034,6 @@ class ReferenceMaterialsList(ListView):
                    "alerts": FlashMessage.pop_flash(),
                    "edit_materials": [Position.Admin, Position.HoRT, Position.Engineer],
                    })
-        context.update(get_menu_context(self.request))
         return context
 
 
@@ -1082,17 +1072,14 @@ def convert_excel(request):
     context.update(get_menu_context(request))
     return render(request, "orders/convert_excel.html", context)
 
-class ShowReference(LoginRequiredMixin, DetailView):
+
+class ShowReference(LoginRequiredMixin, RoleMixin,  DetailView):
     """
     Показывает страницу со сконвертированным из экселя справочным материалом, предварительно достав ее из базы
     """
     model = ReferenceMaterials
     template_name = "orders/show_reference.html"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(get_menu_context(self.request))
-        return context
 
 @login_required(login_url="/scheduler/login/")
 def reference_delete_proc(request: WSGIRequest, pk):

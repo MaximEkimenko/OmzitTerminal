@@ -1,73 +1,41 @@
 from datetime import timedelta
 from pathlib import Path
 from django.shortcuts import render, redirect
-from django.views.generic import DetailView, UpdateView, ListView, TemplateView, CreateView
-from django.urls import reverse_lazy, reverse
-from django.http import HttpResponse, HttpResponseRedirect, FileResponse, JsonResponse
-from django.db.models import Max
-from django.forms.models import model_to_dict
-from django.views.generic.edit import FormMixin, ContextMixin
+from django.views.generic import UpdateView, ListView, CreateView
+from django.urls import reverse_lazy
+from django.http import FileResponse
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 from controller.forms import EditDefectForm, FilesUploadForm
 from controller.apps import ControllerConfig as App
 
 from controller.models import DefectAct
+from controller.utils.mixins import RoleMixin, DisableFieldsMixin
 from controller.utils.report import create_report
 from controller.utils.utils import check_directory
-from controller.utils.utils import (get_model_verbose_names,
-                                    format_act_number,
-                                    add_defect_acts, check_media_ref
+from controller.utils.utils import (format_act_number,
+                                    check_media_ref
                                     )
-from orders.utils.roles import get_employee_position, Position, PERMITTED_USERS, menu_items, get_menu_context
+from orders.utils.roles import Position, get_menu_context
 from tehnolog.services.service_handlers import handle_uploaded_file
 from m_logger_settings import logger
 from controller.utils.edit_permissions import FIELD_EDIT_PERMISSIONS
 
-def index(request):
+
+class DefectsView(LoginRequiredMixin, RoleMixin, ListView):
     """
-    Отображает список актов о браке
+    Показывает таблицу с актами о браке
     """
-    acts = DefectAct.objects.all()
-    context = {'object_list': acts,
-               "create_act_role": [Position.Admin, Position.Controller],
-               }
-    context.update(get_menu_context(request))
-    return render(request, "controller/index.html", context)
+    model = DefectAct
+    template_name = "controller/index.html"
+    login_url = "/scheduler/login/"
+    extra_context = {"create_act_role": [Position.Admin, Position.Controller],}
 
 
-class DisableFieldsMixin(FormMixin):
-    """
-    Миксин, выполняющий две задачи:
-    1) отключает отдельные поля формы в зависимости от роли пользователя.
-    2) Переводит число во временной интервал при сохранении в базу срока исправления брака.
-    """
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update({"create_act_role": [Position.Admin, Position.Controller]})
-        context.update(get_menu_context(self.request))
-        form = context['form']
-        for permission in FIELD_EDIT_PERMISSIONS:
-            if context["role"] not in FIELD_EDIT_PERMISSIONS[permission]:
-                form.fields[permission].disabled = True
-        return context
-
-    def form_valid(self, form):
-        # нужно преобразовать время в часах(float), поступивший из формы, и в интервал времени и в таком виде сохранять
-        if fix_time := form.cleaned_data["manual_fixing_time"]:
-            form.instance.fixing_time = timedelta(hours=1) * fix_time
-        return super().form_valid(form)
-
-
-class CreateDefectAct(DisableFieldsMixin, CreateView):
+class CreateDefectAct(LoginRequiredMixin, DisableFieldsMixin, RoleMixin, CreateView):
     """
     Представление для ручного создания нового акта о браке
     """
-    model = DefectAct
-    form_class = EditDefectForm
-    template_name = "controller/create_defect.html"
-    success_url = reverse_lazy("controller:index")
-    extra_context = {"permissions": FIELD_EDIT_PERMISSIONS}
-
     def form_valid(self, form):
         last_num = DefectAct.last_act_number()
         if last_num:
@@ -81,15 +49,11 @@ class CreateDefectAct(DisableFieldsMixin, CreateView):
             form.instance.fixing_time = timedelta(hours=1) * fix_time
         return super().form_valid(form)
 
-class EditDefectAct(DisableFieldsMixin, UpdateView):
+
+class EditDefectAct(LoginRequiredMixin, DisableFieldsMixin, RoleMixin, UpdateView):
     """
     Представление для редактирования акта о браке
     """
-    form_class = EditDefectForm
-    model = DefectAct
-    template_name = "controller/create_defect.html"
-    success_url = reverse_lazy("controller:index")
-
     def form_valid(self, form):
         # Случай, когда поле "дата" было отключено в форме. Но в модели оно обязательно,
         # и записывать в нее данные нужно. Просто берем изначальные данные из формы и присваиваем модели.
