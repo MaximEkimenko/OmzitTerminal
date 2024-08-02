@@ -7,6 +7,7 @@ from .views import (
     file_list,
     show_file,
     delete_file_proc,
+    defect_report
 )
 app_name = "controller"
 
@@ -18,5 +19,7 @@ urlpatterns = [
     path("filelist/<int:pk>/", file_list, name="file_list"),
     path("show_file/<path:path>/", show_file, name="show_file"),
     path("del_file/<int:pk>/<path:path>/", delete_file_proc, name="delete_file_proc"),
+    path("report", defect_report, name="defect_report"),
+
 
 ]

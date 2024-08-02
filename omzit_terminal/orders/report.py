@@ -6,6 +6,7 @@ from datetime import datetime
 from django.utils.timezone import make_naive
 from openpyxl import Workbook
 
+from controller.utils.utils import get_model_verbose_names
 from m_logger_settings import logger
 from omzit_terminal.settings import BASE_DIR
 from orders.models import Orders
@@ -21,7 +22,7 @@ def create_order_report():
 
     qs = Orders.fresh_orders()
     qs = orders_to_dict(qs, ORDER_REPORT_COLUMNS)
-    verbose_header = get_order_verbose_names()
+    verbose_header = get_model_verbose_names()
     verbose_header.update({"id": "№"})
 
     for i, column in enumerate(ORDER_REPORT_COLUMNS):

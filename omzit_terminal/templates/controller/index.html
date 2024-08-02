@@ -6,8 +6,12 @@
     <form action="{% url 'controller:create' %}">
         <button class="btn">Добавить акт о браке</button>
     </form>
-</div>
 {% endif %}
+
+    <form action="{% url 'controller:defect_report' %}">
+        <button class="btn">Отчет</button>
+    </form>
+</div>
 
 <table class="table">
     <thead>
@@ -23,10 +27,10 @@
              <th class="td_cell_small">Примечание</th>
              <th class="td_cell_small">Тех. служба</th>
              <th class="td_cell_small">Тех. решение</th>
-             <th class="td_cell_small">брак исправимый</th>
-             <th class="td_cell_small">Виновник</th>
-             <th class="td_cell_small">Время исправления</th>
              <th class="td_cell_small">Причина</th>
+             <th class="td_cell_small">брак исправимый</th>
+             <th class="td_cell_small">Время исправления</th>
+             <th class="td_cell_small">Виновник</th>
              <th class="td_cell_small">Ответственный мастер</th>
              <th class="td_cell_small">Файлы</th>
             <th class="td_cell_small">Действия</th>
@@ -46,16 +50,16 @@
             <td class="td_cell_small">{{object.remark| default:""}}</td>
             <td class="td_cell_small">{{object.tech_service| default:""}}</td>
             <td class="td_cell_small">{{object.tech_solution| default:""}}</td>
+            <td class="td_cell_small">{{object.get_cause_display| default:""}}</td>
             <td class="td_cell_small">
                 {% if object.fixable %}
                     да
                 {% elif object.fixable is False %}
-                    нет
+                нет
                 {% endif %}
             </td>
-            <td class="td_cell_small">{{object.fio_failer| default:""}}</td>
             <td class="td_cell_small">{{object.fixing_time| default:""}}</td>
-            <td class="td_cell_small">{{object.get_cause_display| default:""}}</td>
+            <td class="td_cell_small">{{object.fio_failer| default:""}}</td>
             <td class="td_cell_small">{{object.master_finish_wp| default:""}}</td>
             <td class="td_cell_small">
                 {% if object.media_ref  and object.media_count > 0 %}

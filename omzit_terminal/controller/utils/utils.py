@@ -27,6 +27,7 @@ def insert_shifttask_records(qs:QuerySet, number: int):
             "fixing_time": fix_time,
             "shift_task": task,
             "fio_failer": task.fio_failer,
+            "master_finish_wp": task.master_finish_wp,
         }
         DefectAct.objects.create(**obj_dict)
         act_number += 1

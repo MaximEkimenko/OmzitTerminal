@@ -12,6 +12,7 @@ from controller.forms import EditDefectForm, FilesUploadForm
 from controller.apps import ControllerConfig as App
 
 from controller.models import DefectAct
+from controller.utils.report import create_report
 from controller.utils.utils import check_directory
 from controller.utils.utils import (get_model_verbose_names,
                                     import_acts_from_shift_task,
@@ -162,6 +163,7 @@ def file_list(request, pk):
     context.update(get_menu_context(request))
     return render(request, "controller/filelist.html", context)
 
+
 def show_file(request, path: str):
     """
     Проказывает пользователю файл, на который он кликнул по ссылке.
@@ -172,6 +174,7 @@ def show_file(request, path: str):
     except Exception as e:
         logger.error(f"Ошибка при отправке файла '{path}'")
         logger.exception(e)
+
 
 def delete_file_proc(request, pk: int, path: str):
     """
@@ -191,3 +194,17 @@ def delete_file_proc(request, pk: int, path: str):
             else:
                 logger.info(f"Файл  {file}, прикрепленный к заявке, удален.")
     return redirect(reverse_lazy("controller:file_list", args=(pk,)))
+
+
+def defect_report(request):
+    """
+    Создает файл отчета по актам о браке
+    """
+    try:
+        exel_file = create_report()
+        logger.info(f"Пользователь {request.user} успешно загрузил отчёт в excel.")
+        return FileResponse(open(exel_file, "rb"))
+    except Exception as e:
+        logger.info("Ошибка при создании xls-отчета")
+        logger.exception(e)
+    return redirect("controller:index")
