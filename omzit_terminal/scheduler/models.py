@@ -188,8 +188,6 @@ class Doers(models.Model):
 
 # class DocQuery(models.Model):
 #     pass
-
-
 class ShiftTask(models.Model):
     """
     Модель данных сменного задания основная модель всего терминала

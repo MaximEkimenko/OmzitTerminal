@@ -43,7 +43,8 @@ from orders.utils.common import (
     MATERIALS_NOT_REQUIRED,
 )
 from orders.utils.reference_materials import add_reference_materials
-from orders.utils.roles import Position, get_employee_position, custom_login_check, PERMITED_USERS
+from orders.utils.roles import Position, get_employee_position, custom_login_check, PERMITTED_USERS, menu_items, \
+    get_menu_context
 from orders.utils.utils import (
     get_doers_list,
     orders_record_to_dict,
@@ -59,6 +60,7 @@ from orders.utils.utils import (
     remove_old_file_if_exist, convert_dayworkers_to_string,
 )
 from orders.utils.telegram import order_telegram_notification
+from controller.utils.mixins import RoleMixin
 
 
 @login_required(login_url="/scheduler/login/")
@@ -111,9 +113,8 @@ def equipment(request: WSGIRequest) -> HttpResponse:
         "alerts": FlashMessage.pop_flash(),
         "add_equipment_form": AddEquipmentForm(),
         "button_conditions": {"create": [Position.Admin, Position.Engineer, Position.HoRT]},
-        "role": get_employee_position(request.user.username),
-        "permitted_users": PERMITED_USERS,
     }
+    context.update(get_menu_context(request))
     return render(request, "orders/equipment.html", context=context)
 
 
@@ -161,11 +162,12 @@ def orders(request) -> HttpResponse:
     return render(request, "orders/orders.html", context=context)
 
 
-class OrdersArchive(LoginRequiredMixin, ListView):
+class OrdersArchive(LoginRequiredMixin, RoleMixin,  ListView):
     """
     Отображает все заявки на ремонт, которые были завершены (приняты или отменены).
     """
     template_name = "orders/orders_archive.html"
+    login_url = "/scheduler/login/"
 
     def get_queryset(self):
         return Orders.archived_orders()
@@ -237,8 +239,12 @@ def order_assign_workers(request, pk):
 
     form = AssignWorkersForm()
     context.update(
-        {"object": order, "form": form, "permitted_users": PERMITED_USERS, "status": OrdStatus}
+        {"object": order,
+         "form": form,
+         "status": OrdStatus,
+         }
     )
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_start.html", context)
 
 
@@ -290,7 +296,9 @@ def order_clarify_repair(request, pk):
             return redirect("orders")
 
     form = RepairProgressForm(model_to_dict(order))
-    context = {"object": order, "form": form, "permitted_users": PERMITED_USERS}
+    context = {"object": order,
+               "form": form}
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_clarify.html", context)
 
 
@@ -336,7 +344,10 @@ def order_confirm_materials(request, pk):
             check_order_suspend(order)
         return redirect("orders")
     form = ConfirmMaterialsForm({"materials_request": order.materials_request})
-    context = {"object": order, "form": form, "permitted_users": PERMITED_USERS}
+    context = {"object": order,
+               "form": form,
+               }
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_confirm_materials.html", context)
 
 
@@ -377,8 +388,10 @@ def order_finish_repair(request, pk):
         return redirect("orders")
 
     form = RepairFinishForm(model_to_dict(order))
-    context = {"object": order, "form": form, "permitted_users": PERMITED_USERS}
-
+    context = {"object": order,
+               "form": form,
+               }
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_finish.html", context)
 
 
@@ -401,7 +414,9 @@ def order_accept_repair(request, pk):
         return redirect("orders")
 
     order_object = Orders.objects.get(pk=pk)
-    context = {"object": order_object, "permitted_users": PERMITED_USERS}
+    context = {"object": order_object,
+               }
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_accept.html", context)
 
 
@@ -453,7 +468,10 @@ def order_revision(request, pk):
         return redirect("orders")
 
     form = RepairRevisionForm()
-    context = {"object": order, "form": form, "permitted_users": PERMITED_USERS}
+    context = {"object": order,
+               "form": form,
+               }
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_revision.html", context)
 
 
@@ -494,7 +512,9 @@ def order_cancel_repair(request, pk):
         return redirect("orders")
 
     form = RepairCancelForm()
-    context = {"object": order, "form": form, "permitted_users": PERMITED_USERS}
+    context = {"object": order,
+               "form": form,}
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_cancel.html", context)
 
 
@@ -530,7 +550,6 @@ def order_card(request, pk):
         "order_params": vhd,
         "status": OrdStatus,
         "can_edit_workers": can_edit,
-        "permitted_users": PERMITED_USERS,
         "equipment": order.equipment,
         "special_fields": {
             "pdf_field": verbose_header["material_request_file"],
@@ -539,6 +558,7 @@ def order_card(request, pk):
         },
         "alerts": FlashMessage.pop_flash(),
     }
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_card.html", context)
 
 
@@ -600,15 +620,12 @@ def order_edit(request, pk):
             order.status_id not in conditions["stages"][key]
             or conditions["role"] not in conditions["employees"][key]
         ):  # если условия редактирования не удовлетворяют, то отключаем поля путем модификации виджетов формы
-            x = dict(field.widget.attrs)
-            x["disabled"] = "disabled"
-            field.widget.attrs = x
-    context.update({"permitted_users": PERMITED_USERS})
+            field.disabled = True
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_edit.html", context)
 
 
 @login_required(login_url="/scheduler/login/")
-
 def order_delete_proc(request: WSGIRequest):
     """
     Удаляет заявку на ремонт
@@ -666,24 +683,22 @@ def order_history(request: WSGIRequest, pk):
         "orders": orders,
         "object": equipment,
         "status": OrdStatus,
-        "permitted_users": PERMITED_USERS,
     }
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_history.html", context)
 
 
-class EquipmentCardView(LoginRequiredMixin, DetailView):
+class EquipmentCardView(LoginRequiredMixin, RoleMixin, DetailView):
     """
     Выводит карточку оборудования
     """
     model = Equipment
     template_name = "orders/equipment_card.html"
+    login_url = "/scheduler/login/"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({
-            "role": get_employee_position(self.request.user.username),
-            "edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],
-        })
+        context.update({"edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],})
         return context
 
     def post(self, request, *args, **kwargs):
@@ -731,20 +746,16 @@ class EquipmentCardView(LoginRequiredMixin, DetailView):
         return redirect("equipment")
 
 
-class EquipmentCardEditView(LoginRequiredMixin, UpdateView):
+class EquipmentCardEditView(LoginRequiredMixin, RoleMixin, UpdateView):
     """
     Карточка редактирования оборудования.
     """
     model = Equipment
     form_class = EditEquipmentForm
     template_name = "orders/equipment_edit.html"
-    extra_context = {
-                "edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],
-                "permitted_users": PERMITED_USERS,
-            }
+    login_url = "/scheduler/login/"
+    extra_context = {"edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],}
 
-    def get_success_url(self):
-        return self.object.get_absolute_url()
 
     def form_valid(self, form):
         form_data = form.cleaned_data
@@ -772,7 +783,7 @@ def order_report(request):
     return redirect("orders")
 
 
-class ShopsView(ListView):
+class ShopsView(RoleMixin, ListView):
     """
     Показывает страницу со списком цехов. На странице можно добавлять, редактировать и удалять цеха.
     Добавление обрабатывается в этом же классе в методе post, а удаление и редактирование происходит
@@ -905,11 +916,12 @@ def clear_workers_proc(request: WSGIRequest, pk):
     return redirect("orders")
 
 
-class RepairmenHistory(LoginRequiredMixin, ListView):
+class RepairmenHistory(LoginRequiredMixin, RoleMixin, ListView):
     """
     Демонстрирует список работников, которые были прикреплены к конкретной заявке за всё время ремонта.
     """
     template_name = "orders/repairmen_history.html"
+    login_url = "/scheduler/login/"
 
     def get_queryset(self):
         dayworkers = (
@@ -942,9 +954,11 @@ def order_upload_pdf(request: WSGIRequest, pk):
         else:
             # для вывода ошибок формы
             context = {"form": form}
+            context.update(get_menu_context(request))
             return render(request, "orders/upload_pdf.html", context=context)
     else:
         context = {"form": UploadPDFFile(), "pk": pk}
+        context.update(get_menu_context(request))
         return render(request, "orders/upload_pdf.html", context=context)
 
 
@@ -975,11 +989,12 @@ def filter_data(request):
 
 
 
-class PPRСalendar(ListView):
+class PPRСalendar(LoginRequiredMixin, RoleMixin, ListView):
     """
     Показывает график ППР для оборудования. На странице возможно изменить день ППР для конкретного оборудования.
     """
     template_name = "orders/PPR_calendar.html"
+    login_url = "/scheduler/login/"
 
     def get_queryset(self):
         return Equipment.equipment_with_PPR().values("id", "name", "shop_id", "ppr_plan_day", "inv_number")
@@ -991,7 +1006,6 @@ class PPRСalendar(ListView):
             "shops":  Shops.objects.all(),
             "range": range(1, 32),
             'form': ChangePPRForm(),
-            "role": get_employee_position(self.request.user.username),
             "edit_ppr_button": [Position.Admin, Position.HoRT, Position.Engineer],
         })
         return context
@@ -1007,7 +1021,7 @@ class PPRСalendar(ListView):
         return redirect("ppr_calendar")
 
 
-class ReferenceMaterialsList(ListView):
+class ReferenceMaterialsList(LoginRequiredMixin, RoleMixin, ListView):
     """
     Показывает страничку со списком справочных материалов по обслуживанию оборудования
     """
@@ -1018,7 +1032,6 @@ class ReferenceMaterialsList(ListView):
         context = super().get_context_data(**kwargs)
         context.update({
                    "alerts": FlashMessage.pop_flash(),
-                   "role": get_employee_position(self.request.user.username),
                    "edit_materials": [Position.Admin, Position.HoRT, Position.Engineer],
                    })
         return context
@@ -1051,13 +1064,16 @@ def convert_excel(request):
         # ошибка валидации формы
         else:
             context = {"form": form}
+            context.update(get_menu_context(request))
             return render(request, "orders/convert_excel.html", context)
         return redirect("reference")
     form = ConvertExcelForm()
     context = {"form": form}
+    context.update(get_menu_context(request))
     return render(request, "orders/convert_excel.html", context)
 
-class ShowReference(LoginRequiredMixin, DetailView):
+
+class ShowReference(LoginRequiredMixin, RoleMixin,  DetailView):
     """
     Показывает страницу со сконвертированным из экселя справочным материалом, предварительно достав ее из базы
     """

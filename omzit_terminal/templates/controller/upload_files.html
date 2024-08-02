@@ -1,0 +1,41 @@
+{% extends "base.html" %} 
+{% block body %}
+
+    {{block.super}}
+    <div class="col">
+    <div id="add-order-form">
+        <h2>добавить файлы к акту о браке № {{object.act_number}}:</h2>
+        <div class="equipment_card">
+        <form action="" class="form_form" method="POST"  enctype="multipart/form-data">
+        {% csrf_token %}
+        
+            <div class="card_row__center">
+            Файл должен быть эксель-документом с расширением xlsx.
+            </div>
+            <div class="card_row__center">  
+            {{form.as_p}}
+            </div>
+        
+            <div class="card_row__center">
+            <button
+                class="form_button"
+                onclick="window.location.href = `{% url 'controller:index' %}`;"
+                type="button"
+            >
+                <p class="green_word">Назад</p>
+            </button>
+
+            <button type="submit" class="form_button">
+                <p class="green_word">Загрузить</p>
+            </button>
+            </div>
+        
+        </form>
+    </div>
+    </div>
+    </div>
+
+{% endblock body %} 
+{% block js %} 
+    {{block.super }} 
+{% endblock js%}

@@ -8,7 +8,7 @@ from orders.utils.utils import remove_dayworkers_from_order, clear_dayworkers
 def clear_all_dayworkers():
     """
     Снимает со всех заданий работников.
-    Должна вызвать ся по таймеру в конце рабочего дня.
+    Должна вызваться по таймеру в конце рабочего дня.
     """
     active_orders = Orders.objects.exclude(dayworkers_string__isnull=True).all()
     if active_orders:

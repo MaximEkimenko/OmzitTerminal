@@ -135,11 +135,11 @@
           <td class="td_cell">{{rec.priority}}</td>
           <td class="td_cell">{{rec.breakdown_date}}</td>
           <td class="td_cell">{{rec.breakdown_description|default:""|truncatewords:13}}</td>
-          <td class="td_cell" >{{rec.expected_repair_date|default:""}}</td>
-          <td class="td_cell" >{{rec.materials__name|default:""}}</td>
-          <td class="td_cell" >{{rec.materials_request|default:""}}</td>
-          <td class="td_cell" >{{rec.dayworkers_string|default:""}}</td>
-          <td class="td_cell" >{{rec.revision_cause|default:"" |safe}}</td>
+          <td class="td_cell">{{rec.expected_repair_date|default:""}}</td>
+          <td class="td_cell">{{rec.materials__name|default:""}}</td>
+          <td class="td_cell">{{rec.materials_request|default:""}}</td>
+          <td class="td_cell">{{rec.dayworkers_string|default:""}}</td>
+          <td class="td_cell">{{rec.revision_cause|default:"" |safe}}</td>
           <td class="td_cell">
           {% for b in  button_context%}
             {% if rec.status in b.states and role in b.groups%}

@@ -1,0 +1,85 @@
+{% extends "base.html" %} 
+{% block body %}
+    <h1>Учет брака</h1>
+    <div class='form_row'>
+        {% if role in create_act_role %}
+        <form action="{% url 'controller:create' %}">
+            <button class="btn">Добавить акт о браке</button>
+        </form>
+        {% endif %}
+
+        <form action="{% url 'controller:defect_report' %}">
+            <button class="btn">Отчет</button>
+        </form>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr class="table_header_row">
+                <th class="td_cell_small">Дата</th>
+                <th class="td_cell_small">№ Акта</th>
+                <th class="td_cell_small">Цех</th>
+                <th class="td_cell_small">Операция</th>
+                <th class="td_cell_small">Объект</th>
+                <th class="td_cell_small">Объект контроля</th>
+                <th class="td_cell_small">Количество</th>
+                <th class="td_cell_small">Выявленные несоответствия</th>
+                <th class="td_cell_small">Примечание</th>
+                <th class="td_cell_small">Тех. служба</th>
+                <th class="td_cell_small">Тех. решение</th>
+                <th class="td_cell_small">Причина</th>
+                <th class="td_cell_small">брак исправимый</th>
+                <th class="td_cell_small">Время исправления</th>
+                <th class="td_cell_small">Виновник</th>
+                <th class="td_cell_small">Ответственный мастер</th>
+                <th class="td_cell_small">Файлы</th>
+                <th class="td_cell_small">Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for object in object_list %}
+            <tr class="table_header_row"> 
+                <td class="td_cell_small">{{object.datetime_fail| default:""}}</td>
+                <td class="td_cell_small">{{object.act_number| default:""}}</td>
+                <td class="td_cell_small">{{object.workshop| default:""}}</td>
+                <td class="td_cell_small">{{object.operation| default:""}}</td>
+                <td class="td_cell_small">{{object.processing_object| default:""}}</td>
+                <td class="td_cell_small">{{object.control_object| default:""}}</td>
+                <td class="td_cell_small">{{object.quantity| default:""}}</td>
+                <td class="td_cell_small">{{object.inconsistencies| default:""}}</td>
+                <td class="td_cell_small">{{object.remark| default:""}}</td>
+                <td class="td_cell_small">{{object.tech_service| default:""}}</td>
+                <td class="td_cell_small">{{object.tech_solution| default:""}}</td>
+                <td class="td_cell_small">{{object.get_cause_display| default:""}}</td>
+                <td class="td_cell_small">
+                    {% if object.fixable %}
+                        да
+                    {% elif object.fixable is False %}
+                    нет
+                    {% endif %}
+                </td>
+                <td class="td_cell_small">{{object.fixing_time| default:""}}</td>
+                <td class="td_cell_small">{{object.fio_failer| default:""}}</td>
+                <td class="td_cell_small">{{object.master_finish_wp| default:""}}</td>
+                <td class="td_cell_small">
+                    {% if object.media_ref  and object.media_count > 0 %}
+                        <a class="table_link" href="{% url 'controller:file_list' object.pk %}">Файлы({{object.media_count}})
+                    {% endif %}
+                </td>
+                
+                <td class="td_cell_small">
+                    <form action="{% url 'controller:edit' object.pk %}">
+                        <button class="table_button">Редактировать</button>
+                    </form>
+                    {% if role in create_act_role %}
+                    <form action="{% url 'controller:upload_files' object.pk %}">
+                        <button class="table_button">Добавить файлы</button>
+                    </form>                    
+                    {% endif %}
+                </td>
+            </tr>    
+        {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}

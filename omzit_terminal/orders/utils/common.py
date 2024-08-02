@@ -156,3 +156,4 @@ def can_edit_workers(status_id, role):
     ]:
         return True
     return False
+
