@@ -39,7 +39,7 @@ class Command(BaseCommand):
         scheduler.add_jobstore(DjangoJobStore(), "default")
 
         logger.info("Команда runscheduler выполнена успешно.")
-        """
+
         scheduler.add_job(
             pause_work,
             kwargs={'is_lunch': True, },
@@ -111,7 +111,7 @@ class Command(BaseCommand):
         )
         logger.info('Запущена задача: "Формирование отчётов для рабочих"')
 
-        """
+
         scheduler.add_job(
             suspend_orders_end_of_day,
             trigger=CronTrigger(hour="20", minute="0"),
