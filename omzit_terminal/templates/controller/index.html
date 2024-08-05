@@ -1,4 +1,5 @@
 {% extends "controller/base_controller.html" %} 
+{% load static %}
 {% block content %}
     <h1>Учет брака</h1>
     <div class='form_row'>
@@ -17,21 +18,81 @@
         <thead>
             <tr class="table_header_row">
                 <th class="td_cell_small">Дата</th>
-                <th class="td_cell_small">№ Акта</th>
-                <th class="td_cell_small">Цех</th>
-                <th class="td_cell_small">Операция</th>
-                <th class="td_cell_small">Объект</th>
-                <th class="td_cell_small">Объект контроля</th>
+                <th class="td_cell_small">
+                    № Акта
+                    <br>
+                    <div class="sort-filter">
+                        <input type="text" style="max-width:100px;" >
+                    </div>
+                </th>
+                <th class="td_cell_small">
+                    Цех
+                    <br>
+                    <div class="sort-filter">
+                        <input type="text" style="max-width:50px;" >
+                    </div>
+
+                </th>
+                <th class="td_cell_small">
+                    Операция
+                    <br>
+                    <div class="sort-filter">
+                        <input type="text" style="max-width:100px;" >
+                    </div>
+
+                </th>
+                <th class="td_cell_small">
+                    Объект
+                    <br>
+                    <div class="sort-filter">
+                        <input type="text" style="max-width:100px;" >
+                    </div>
+
+                </th>
+                <th class="td_cell_small">
+                    Объект контроля
+                    <br>
+                    <div class="sort-filter">
+                        <input type="text" style="max-width:100px;" >
+                    </div>
+
+                </th>
                 <th class="td_cell_small">Количество</th>
                 <th class="td_cell_small">Выявленные несоответствия</th>
                 <th class="td_cell_small">Примечание</th>
-                <th class="td_cell_small">Тех. служба</th>
+                <th class="td_cell_small">
+                    Тех. служба
+                    <br>
+                    <div class="sort-filter">
+                        <input type="text" style="max-width:100px;" >
+                    </div>
+                </th>
                 <th class="td_cell_small">Тех. решение</th>
                 <th class="td_cell_small">Причина</th>
-                <th class="td_cell_small">брак исправимый</th>
+                <th class="td_cell_small">
+                    брак исправимый
+                    <br>
+                    <div class="sort-filter">
+                        <input type="text" style="max-width:100px;" >
+                    </div>
+
+                </th>
                 <th class="td_cell_small">Время исправления</th>
-                <th class="td_cell_small">Виновник</th>
-                <th class="td_cell_small">Ответственный мастер</th>
+                <th class="td_cell_small">
+                    Виновник
+                    <br>
+                    <div class="sort-filter">
+                        <input type="text" style="max-width:100px;" >
+                    </div>
+
+                </th>
+                <th class="td_cell_small">
+                    Ответственный мастер
+                    <br>
+                    <div class="sort-filter">
+                        <input type="text" style="max-width:100px;" >
+                    </div>
+                </th>
                 <th class="td_cell_small">Файлы</th>
                 <th class="td_cell_small">Действия</th>
             </tr>
@@ -87,3 +148,8 @@
     </table>
 
 {% endblock %}
+
+{% block js %} 
+  {{block.super }}
+  <script src="{% static 'orders/js/multifield_filter.js' %}"></script>
+{% endblock js%}
