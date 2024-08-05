@@ -1,5 +1,5 @@
-{% extends "base.html" %} 
-{% block body %}
+{% extends "controller/base_controller.html" %} 
+{% block content %}
 
     {{block.super}}
     <div class="col">
@@ -35,7 +35,7 @@
     </div>
     </div>
 
-{% endblock body %} 
+{% endblock %} 
 {% block js %} 
     {{block.super }} 
 {% endblock js%}

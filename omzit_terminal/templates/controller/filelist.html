@@ -1,5 +1,5 @@
-{% extends "base.html" %} 
-{% block body %}
+{% extends "controller/base_controller.html" %} 
+{% block content %}
 <div class="col">
     <h1>Файлы к акту №  {{object.act_number}}</h1>
     <div class='form_row'>
@@ -23,4 +23,4 @@
     {% endfor %}
     </div>    
 </div>
-{% endblock body %}
+{% endblock %}

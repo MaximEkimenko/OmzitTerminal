@@ -1,5 +1,5 @@
-{% extends "base.html" %} 
-{% block body %}
+{% extends "controller/base_controller.html" %} 
+{% block content %}
 <div class="col">
     {% if form.instance.pk %}
         <h1>Редактирование акта о браке № {{form.instance.act_number}} </h1>

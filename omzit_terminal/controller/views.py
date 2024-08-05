@@ -5,6 +5,7 @@ from django.views.generic import UpdateView, ListView, CreateView, DetailView
 from django.urls import reverse_lazy
 from django.http import FileResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
 
 from controller.forms import EditDefectForm, FilesUploadForm
 from controller.apps import ControllerConfig as App
@@ -79,7 +80,6 @@ class DefectCard(LoginRequiredMixin, RoleMixin, DetailView):
         labels = get_model_verbose_names(DefectAct)
         instance_dict = model_to_dict(context["object"])
         context["object"] = {labels[label]: instance_dict[label] for label in labels if label in self.fields}
-        print(context["object"])
         return context
 
 
@@ -94,9 +94,7 @@ def upload_files(request, pk):
     if request.method == "POST":
         form = FilesUploadForm(request.POST, request.FILES)
         if form.is_valid():
-            another_act = check_media_ref(act)
-            print(another_act)
-            print("указывают на один объект? ", another_act == act)
+            check_media_ref(act)
             dest_dir = check_directory(act)
             if dest_dir:
                 logger.info(f"Создан каталог '{dest_dir}' для акта о браке {act.act_number}")
@@ -108,6 +106,8 @@ def upload_files(request, pk):
                         filecount += 1
                 act.media_count = filecount
                 act.save()
+                messages.add_message(request, messages.SUCCESS,
+                                     f"К акту о браке № {act.act_number} добавлены файлы.")
             else:
                 logger.info("Файлы не добавлялись из-за ошибка создания каталога")
 
@@ -146,14 +146,17 @@ def file_list(request, pk):
 
 def show_file(request, path: str):
     """
-    Проказывает пользователю файл, на который он кликнул по ссылке.
+    Показывает пользователю файл, на который он кликнул по ссылке.
     @param path: Абсолютный путь к файлу.
     """
     try:
         return FileResponse(open(path, "rb"))
     except Exception as e:
-        logger.error(f"Ошибка при отправке файла '{path}'")
+        alert_message = f"Ошибка при отправке файла '{path}'"
+        messages.add_message(request, messages.ERROR, alert_message)
+        logger.error(alert_message)
         logger.exception(e)
+        return redirect("controller:index")
 
 
 def delete_file_proc(request, pk: int, path: str):
@@ -182,9 +185,14 @@ def defect_report(request):
     """
     try:
         exel_file = create_report()
-        logger.info(f"Пользователь {request.user} успешно загрузил отчёт в excel.")
-        return FileResponse(open(exel_file, "rb"))
     except Exception as e:
-        logger.info("Ошибка при создании xls-отчета")
+        alert_message = "Ошибка при создании xls-отчета"
+        logger.info(alert_message)
+        messages.add_message(request, messages.ERROR, alert_message)
         logger.exception(e)
+    else:
+        alert_message = f"Пользователь {request.user} успешно загрузил отчёт в excel."
+        messages.add_message(request, messages.SUCCESS, alert_message)
+        logger.info(alert_message)
+        return FileResponse(open(exel_file, "rb"))
     return redirect("controller:index")
