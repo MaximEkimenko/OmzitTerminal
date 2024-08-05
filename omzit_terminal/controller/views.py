@@ -1,18 +1,19 @@
 from datetime import timedelta
 from pathlib import Path
 from django.shortcuts import render, redirect
-from django.views.generic import UpdateView, ListView, CreateView
+from django.views.generic import UpdateView, ListView, CreateView, DetailView
 from django.urls import reverse_lazy
 from django.http import FileResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from controller.forms import EditDefectForm, FilesUploadForm
 from controller.apps import ControllerConfig as App
+from django.forms.models import model_to_dict
 
 from controller.models import DefectAct
 from controller.utils.mixins import RoleMixin, DisableFieldsMixin
 from controller.utils.report import create_report
-from controller.utils.utils import check_directory
+from controller.utils.utils import check_directory, get_model_verbose_names
 from controller.utils.utils import (format_act_number,
                                     check_media_ref
                                     )
@@ -60,6 +61,26 @@ class EditDefectAct(LoginRequiredMixin, DisableFieldsMixin, RoleMixin, UpdateVie
         if form.cleaned_data.get("datetime_fail") is None:
             form.instance.datetime_fail = form.initial["datetime_fail"]
         return super().form_valid(form)
+
+
+class DefectCard(LoginRequiredMixin, RoleMixin, DetailView):
+    model = DefectAct
+    fields = [
+        "datetime_fail", "act_number", "workshop", "operation", "processing_object",
+        "control_object", "quantity", "inconsistencies", "remark", "tech_service",
+        "tech_solution", "cause", "fixable", "fixing_time", "fio_failer", "master_finish_wp",
+    ]
+    template_name = "controller/defect_card.html"
+    login_url = "/scheduler/login/"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["pk"] = context["object"].pk
+        labels = get_model_verbose_names(DefectAct)
+        instance_dict = model_to_dict(context["object"])
+        context["object"] = {labels[label]: instance_dict[label] for label in labels if label in self.fields}
+        print(context["object"])
+        return context
 
 
 def upload_files(request, pk):

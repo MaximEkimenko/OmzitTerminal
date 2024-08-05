@@ -63,6 +63,4 @@ urlpatterns = [
     path("reference/<int:pk>", ShowReference.as_view(), name="show_reference"),
     path("convert_excel/", convert_excel, name="convert_excel"),
     path("ref_delete/<int:pk>", reference_delete_proc, name="reference_delete"),
-
-
 ]

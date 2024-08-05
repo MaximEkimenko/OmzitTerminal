@@ -40,7 +40,11 @@
         {% for object in object_list %}
             <tr class="table_header_row"> 
                 <td class="td_cell_small">{{object.datetime_fail| default:""}}</td>
-                <td class="td_cell_small">{{object.act_number| default:""}}</td>
+                <td class="td_cell_small">
+                    <a class="table_link" href="{% url 'controller:defect_card' object.pk %}">
+                    {{object.act_number| default:""}}
+                    </a>
+                </td>
                 <td class="td_cell_small">{{object.workshop| default:""}}</td>
                 <td class="td_cell_small">{{object.operation| default:""}}</td>
                 <td class="td_cell_small">{{object.processing_object| default:""}}</td>
