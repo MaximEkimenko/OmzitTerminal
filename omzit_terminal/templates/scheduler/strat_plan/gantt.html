@@ -271,40 +271,6 @@
             */
             }
 
-            async function deleteModelFromServer() {
-                // write function which will delete selected row
-                // const options = {
-                //     method: 'POST', // HTTP method
-                //     headers: {
-                //         'Content-Type': 'application/json', // specify the content type as JSON
-                //     },
-                // var ge
-                // ge = new GanttMaster()
-                // ge.init($('#workSpace'))
-                // loadI18n() //overwrite with localized ones
-                // //in order to force compute the best-fitting zoom level
-                // delete ge.gantt.zoom
-                // var project = loadFromLocalStorage()
-                // // загрузка из контекста view django
-                // var new_json = JSON.parse(`{{ json|safe }}`) // Array of Objects.
-                // ge.loadProject(new_json)
-                // ge.checkpoint() //empty the undo stack
-                // console.log(ge.testGantt())
-                // console.log($('#taskSelector').val)
-                // console.log(JSON.stringify({ CM: 'DELETE', taskId: $('#taskSelector').val() }))
-                // }
-                // try {
-                //     const response = await fetch(`${baseUrl}`, options) // make the fetch request
-                //     // console.log(response)
-                //     if (!response.ok) {
-                //         throw new Error(`HTTP error! status: ${response.status}`) // handle HTTP errors
-                //     }
-                //     const responseData = response.json() // parse the JSON response
-                //     // console.log(responseData) // log the response data
-                // } catch (error) {
-                //     console.error('Error making POST request:', error)
-            }
-
             async function sendGanttOnServer() {
                 var prj = ge.saveProject()
                 // добавление цеха в ответный json
@@ -879,6 +845,7 @@
                             <th class="gdfColHeader gdfResizable" style="width: 100px">
                                 дата окончания договора
                             </th>
+                            <th class="gdfColHeader gdfResizable" style="width: 100px">отст.</th>
                         </tr>
                     </thead>
                 </table>
@@ -915,6 +882,8 @@
     <td class="gdfCell"><input type="text" name="contract_start_date_str" value="(#=obj.contract_start_date_str?obj.contract_start_date_str:''#)" placeholder=""></td>
 
     <td class="gdfCell"><input type="text" name="contract_end_date_str" value="(#=obj.contract_end_date_str?obj.contract_end_date_str:''#)" placeholder=""></td>
+
+    <td class="gdfCell"><input type="text" name="late_days" value="(#=obj.late_days?obj.late_days:''#)" placeholder=""></td>
 
   </tr>
          -->

@@ -72,8 +72,7 @@ class WorkshopSchedule(models.Model):
     contract_end_date = models.DateField(null=True, verbose_name='Дата готовности по договору')
 
     is_fixed = models.BooleanField(default=False, verbose_name='фиксация в план')
-
-
+    late_days = models.IntegerField(null=True, default=0, verbose_name='отставание дней')
 
     # def __str__(self):
     #     fields = [f"{field.name}: {getattr(self, field.name)}" for field in self._meta.fields]

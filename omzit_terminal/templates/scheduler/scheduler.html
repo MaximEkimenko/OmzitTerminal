@@ -28,12 +28,14 @@
     value=""
     title="График"
 >
-    График</button
-><br />
+    График
+</button>
+<!-- Кнопка загрузки отчёта -->
+<button class="btn" onclick="window.location.href = `{% url 'get_strat_report' %}`">
+    Скачать excel
+</button>
 <!-- Основная таблица интерфейса -->
-
 <div class="col scheduler">
-    <a href=" \\SVR-003\draws"> cc </a>
     <h3 class="table_h3">График производства</h3>
     <p>
         <input
@@ -60,6 +62,7 @@
                 </td>
                 <td class="td_cell">{{ filter_q.form.order_status }} Статус заказа</td>
                 <td class="td_cell">{{ filter_q.form.done_rate }} % готовности</td>
+                <td class="td_cell">{{ filter_q.form.late_days }} отставание дней</td>
                 <td class="td_cell">Действие</td>
             </tr>
         </form>
@@ -84,6 +87,7 @@
 
             <td class="td_cell">{{ line.order_status }}</td>
             <td class="td_cell">{{ line.done_rate }}</td>
+            <td class="td_cell">{{ line.late_days }}</td>
             <td class="td_cell">
                 <!-- prettier-ignore -->
                 {% comment %}

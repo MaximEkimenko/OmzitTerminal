@@ -1054,11 +1054,22 @@ GanttMaster.prototype.indentCurrentTask = function () {
     }
 }
 
-//!!!!!!!!!!
+//удаление задания по endpoint django
 GanttMaster.prototype.deleteTask = async function () {
     const deleteUrl = `http://192.168.8.163:8000/api/delete_model`
     var self = this
     model_id = self.currentTask.id
+
+    var userConfirmed = confirm(
+        `Вы уверены, что хотите удалить ${self.currentTask.model_order_query} ?`
+    )
+
+    // Подтверждение удаления
+    if (!userConfirmed) {
+        alert(`Удаление ${self.currentTask.model_order_query} отменено.`)
+        return
+    }
+
     const options = {
         method: 'GET', // HTTP method
         // headers: {

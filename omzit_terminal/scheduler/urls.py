@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (scheduler, schedulerwp, schedulerfio, LoginUser, logout_user, td_query, show_workshop_scheme, plan,
-                    shift_tasks_reports, shift_tasks_report_view, strat_plan, new_datetimedone)
+                    shift_tasks_reports, shift_tasks_report_view, strat_plan, new_datetimedone, get_strat_report)
 # from .views import serve_local_file
 
 # from .views import plan_resort, report # TODO ФУНКЦИОНАЛ ОТЧЁТОВ ЗАКОНСЕРВИРОВАНО
@@ -22,7 +22,7 @@ urlpatterns = [
     path('strat_plan<int:workshop>/', strat_plan, name='strat_plan'),  # стратегическое планирование
     path('st_report_<str:start>_<str:end>/', shift_tasks_reports, name='st_reports'),
     path('view_st_report_<str:start>_<str:end>/', shift_tasks_report_view, name='view_st_report'),
-    # path('files/<path:file_path>/', serve_local_file, name='serve_local_file'),  # отдача
+    path('strat_report/', get_strat_report, name='get_strat_report'),
 
     # TODO ФУНКЦИОНАЛ ОТЧЁТОВ ЗАКОНСЕРВИРОВАНО
     # path('confirm_sz_planning/', confirm_sz_planning, name='confirm_sz_planning'),

@@ -211,6 +211,8 @@ def save_strat_plan(request):
                                                       datetime.timedelta(days=schedule.produce_cycle))
                 # фиксирование в графике
                 schedule.is_fixed = json_item.get('is_fixed', False)
+                # отставание дней
+                schedule.late_days = json_item.get('late_days', 0)
                 # статус завершено при готовности 100 %
                 if json_item['progress'] >= 100:
                     schedule.order_status = 'завершено'
@@ -241,7 +243,6 @@ def save_strat_plan(request):
                             workshop=int(data['workshop']),
                             calculated_datetime_done=calculated_datetime_done,
                             datetime_done=calculated_datetime_done,
-                            # order=json_item['code'][:json_item['code'].find('_')],
                             order=json_item['code'],
                             model_name=json_item['name'],
                             model_order_query=f"{json_item['code']}_{json_item['name']}",
@@ -250,7 +251,8 @@ def save_strat_plan(request):
                             query_prior=4,
                             done_rate=json_item['progress'],
                             produce_cycle=produce_cycle,
-                            is_fixed=is_fixed
+                            is_fixed=is_fixed,
+                            late_days=0
                         )
                         new_schedules.append(new_schedule)
             except Exception as e:
@@ -259,7 +261,8 @@ def save_strat_plan(request):
             try:
                 WorkshopSchedule.objects.bulk_update(schedules_to_update,
                                                      ['calculated_datetime_done', 'done_rate', 'produce_cycle',
-                                                      'order_status', 'is_fixed', 'calculated_datetime_start'])
+                                                      'order_status', 'is_fixed', 'calculated_datetime_start',
+                                                      'late_days'])
                 logger.debug('Данные планирования успешно обновлены.')
             except Exception as e:
                 logger.error('Ошибка при обновлении данных WorkshopSchedule.')
@@ -284,7 +287,6 @@ def save_strat_plan(request):
             return JsonResponse({'status': 'error', 'message': 'Неверный формат JSON'}, status=400)
     else:
         raise PermissionDenied
-        # return JsonResponse({'status': 'error', 'message': 'Only POST method allowed'}, status=405)
 
 
 @csrf_exempt
@@ -295,12 +297,10 @@ def delete_model_from_start_plan(request, model_id):
     :param model_id:
     :return:
     """
-
     try:
         WorkshopSchedule.objects.get(pk=model_id).delete()
         logger.debug(f'Модель {model_id} успешно удалена из WorkshopSchedule.')
         return JsonResponse({'status': 'ok', 'message': f'{model_id} успешно удалена'}, status=200)
-
     except Exception as e:
         logger.error('Ошибка при удалении модели из WorkshopSchedule.')
         logger.exception(e)

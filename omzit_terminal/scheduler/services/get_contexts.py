@@ -234,7 +234,7 @@ from .schedule_handlers import get_done_rate_with_td, get_done_rate
 #     return context
 
 
-def NEW_get_strat_plan_context(workshop: int) -> dict:
+def get_strat_plan_context(workshop: int) -> dict:
     """
     Получение контекста для strat_plan ПЕРВАЯ ВЕРСИЯ
     :return:
@@ -409,10 +409,11 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
     end_date_range = max(dates)  # сама поздняя дата из графика
     daterange = [(start_date_range + datetime.timedelta(days=x)).timestamp() for x in
                  range(0, (end_date_range - start_date_range).days + 300)]
+    # максимальная трудоёмкость в день по цехам
     if workshop == 1:
-        max_day_capacity = 180  # максимальная трудоёмкость в день
+        max_day_capacity = 165
     elif workshop == 2:
-        max_day_capacity = 290
+        max_day_capacity = 236
     completed_models = set()  # готовые
     planned_models = set()  # запланированные
     today_timestamp = datetime.datetime.now().timestamp()
@@ -422,10 +423,8 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
         for index, model in enumerate(sorted_planned_models):
             # обработка зафиксированных (если зафиксировано, то сразу в запланированные)
             if model['is_fixed']:
-                # used_td.append(model['required_td'])
                 planned_models.add(model['model_order_query'])
                 model['model_done_date'] = model['date_start'] + model['model_prod_cycle'] * 86400
-                # model['date_start'] = model['date_start'] + 86400
             if model['model_order_query'] not in completed_models:
                 used_td.append(model['required_td'])
                 sum_used_td = sum(used_td)
@@ -434,9 +433,13 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
                     planned_models.add(model['model_order_query'])
                     model['model_done_date'] = model['date_start'] + model['model_prod_cycle'] * 86400
                     # статус отставание
-                    if (model['date_start'] + model['model_prod_cycle'] * 86400 * (model['done_rate'] / 100)
-                            < today_timestamp - 86400):
+                    late_timestamp = model['date_start'] + model['model_prod_cycle'] * 86400 * (model['done_rate'] / 100)
+                    if late_timestamp < today_timestamp - 86400:
                         model['status'] = 'STATUS_SUSPENDED'
+                        # отставание в днях
+                        late_days = today - datetime.datetime.fromtimestamp(late_timestamp)
+                        model['late_days'] = late_days.days
+                        # print(f"{model['model_order_query']=}", f"{late_days.days=}")
                     # статус провал
                     if model['model_done_date'] < today_timestamp:
                         model['status'] = 'STATUS_FAILED'
@@ -518,7 +521,8 @@ def NEW_get_strat_plan_context(workshop: int) -> dict:
                                  'contract_end_date': contract_end_date,
                                  'contract_start_date_str': str(contract_start_date_str),
                                  'contract_end_date_str': str(contract_end_date_str),
-                                 'is_fixed': model['is_fixed']
+                                 'is_fixed': model['is_fixed'],
+                                 'late_days': model.get('late_days', 0),
                                  }
                                 )
     return context

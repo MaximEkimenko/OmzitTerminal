@@ -26,7 +26,7 @@ from .forms import SchedulerWorkshop, SchedulerWorkplace, FioDoer, QueryDraw, Pl
 # from .models import  DailyReport, MonthPlans # TODO функционал отчётов ЗАКОНСЕРВИРОВАНО
 from .models import WorkshopSchedule, ShiftTask, Doers
 
-from .services.get_contexts import NEW_get_strat_plan_context
+from .services.get_contexts import get_strat_plan_context
 from .services.schedule_handlers import get_all_done_rate, make_workshop_plan_plot, create_pdf_report, report_merger
 from worker.services.master_call_function import terminal_message_to_id  # noqa
 from .services.sz_reports import get_start_end_st_report, create_shift_task_report
@@ -158,15 +158,6 @@ def scheduler(request):
     group_id = TERMINAL_GROUP_ID  # тг группа
     # обновление процента готовности всех заказов
     get_all_done_rate()
-    # график изделий
-    # workshop_schedule_fields = ('workshop', 'order', 'model_name', 'datetime_done', 'order_status', 'done_rate')
-    # workshop_schedule = (WorkshopSchedule.objects.values(*workshop_schedule_fields)
-    #                      .exclude(datetime_done=None).exclude(order_status='не запланировано')
-    #                      .exclude(order_status='завершено')
-    #                      .order_by('datetime_done'))
-    # фильтры в колонки графика
-    # f_w = get_filterset(data=request.GET, queryset=workshop_schedule, fields=workshop_schedule_fields, index=1)
-    # перечень запросов на КД
     td_queries_fields = ('workshop',  # цех
                          'model_order_query',  # заказ модель
                          'query_prior',  # приоритет чертежа
@@ -176,12 +167,13 @@ def scheduler(request):
                          'calculated_datetime_done',  # дата из графика
                          'order_status',  # статус заказа
                          'done_rate',  # степень готовности
+                         'late_days'  # отставание дней
                          )  # поля таблицы
     # основной queryset
     td_queries = (
         WorkshopSchedule.objects.values(*td_queries_fields)
         .exclude(order_status='завершено')
-        .order_by('datetime_done', 'calculated_datetime_done', 'order_status')
+        .order_by('-late_days', 'datetime_done', 'calculated_datetime_done', 'order_status')
     )
     # фильтры в колонки заявок
     f_q = get_filterset(data=request.GET, queryset=td_queries, fields=td_queries_fields, index=2)
@@ -195,16 +187,15 @@ def scheduler(request):
             try:
                 # заполнение срока готовности, категория изделия, статус изделия, ФИО планировщика
                 (WorkshopSchedule.objects.filter
+                    (model_order_query=form_workshop_plan.cleaned_data['model_order_query'].model_order_query).update
                     (
-                    model_order_query=form_workshop_plan.cleaned_data['model_order_query'].model_order_query).update
-                    (
-                    datetime_done=form_workshop_plan.cleaned_data['datetime_done'],
-                    workshop=form_workshop_plan.cleaned_data['workshop'],
-                    product_category=str(form_workshop_plan.cleaned_data['category']),
-                    order_status='запланировано',
-                    dispatcher_plan_ws_fio=f'{request.user.first_name} {request.user.last_name}',
-                    calculated_datetime_done=form_workshop_plan.cleaned_data['datetime_done']
-                ))
+                        datetime_done=form_workshop_plan.cleaned_data['datetime_done'],
+                        workshop=form_workshop_plan.cleaned_data['workshop'],
+                        product_category=str(form_workshop_plan.cleaned_data['category']),
+                        order_status='запланировано',
+                        dispatcher_plan_ws_fio=f'{request.user.first_name} {request.user.last_name}',
+                        calculated_datetime_done=form_workshop_plan.cleaned_data['datetime_done']
+                    ))
                 # Заполнение данных СЗ, статус СЗ, ФИО планировщика, категория изделия,
                 alert = 'Данные в график успешно занесены! '
                 logger.info(f'Данные заказа {form_workshop_plan.cleaned_data["model_order_query"].model_order_query} '
@@ -767,28 +758,27 @@ def strat_plan(request, workshop) -> HttpResponse:
     Страница стратегического планирования
     :param workshop: номер цеха
     :param request:
-
     :return:
     """
-    # получение данных
-    # context = get_strat_plan_context()
-    context = NEW_get_strat_plan_context(workshop)
-
-    field_tuple = ('заказ и модель',
-                   'Дата начала по договору', 'Дата готовности по договору',
-                   'Расчётная дата готовности', 'Расчётная дата запуска',)
-
-    db_fields_to_excel(DBmodel=WorkshopSchedule, db_verbose_names=field_tuple, report_name='strat_plan_report')
+    context = get_strat_plan_context(workshop)
     return render(request, 'scheduler/strat_plan/gantt.html', context={'json': json.dumps(context),
                                                                        'workshop': workshop})
-    # return render(request, 'api/gantt.html')
 
-# def serve_local_file(request, file_path):
-#     local_file_path = os.path.join('', file_path)
-#     print(local_file_path)
-#     if os.path.exists(local_file_path):
-#         return FileResponse(open(local_file_path, 'rb'))
 
+def get_strat_report(request):
+    """
+    Функция формирования отчёта по стратегическому планированию. Возвращает xlsx файл
+    :param request:
+    :return:
+    """
+    field_tuple = ('Цех', 'заказ и модель',
+                   'Дата начала по договору', 'Дата готовности по договору',
+                   'Расчётная дата готовности', 'Расчётная дата запуска',
+                   'отставание дней')
+    exel_file = db_fields_to_excel(DBmodel=WorkshopSchedule,
+                                   db_verbose_names=field_tuple, report_name='strat_plan_report')
+    logger.info(f'Пользователь {request.user} успешно загрузил strat отчёт в excel.')
+    return FileResponse(open(exel_file, 'rb'))
 
 # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
 # @login_required(login_url="login")

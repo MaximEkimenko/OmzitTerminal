@@ -28,7 +28,7 @@ def db_fields_to_excel(db_verbose_names: tuple, report_name: str, DBmodel) -> st
                 verbose_names[field.name] = field.name
     # сортировка по db_verbose_names
     reverse_values_dict = {value: key for key, value in verbose_names.items()}
-    verbose_names = {reverse_values_dict[key]: key for key in db_verbose_names}
+    verbose_names = {reverse_values_dict[value]: value for value in db_verbose_names}
     # данные
     data = DBmodel.objects.all().values(*verbose_names.keys())
     # файл excel
@@ -36,17 +36,22 @@ def db_fields_to_excel(db_verbose_names: tuple, report_name: str, DBmodel) -> st
     excel_sheet = excel_workbook.active
     # шапка
     headers = list(verbose_names.values())
-    headers.insert(0, '№')
+    headers.insert(0, '№')  # TODO найти другое решение добавления номера строки
     excel_sheet.append(headers)
-    # запись данных данные
+    # запись данных
     for index, row in enumerate(data):
         row_data = list(row.values())
-        row_data.insert(0, index + 1)
+        # форматирование даты
+        for element_index, element in enumerate(row_data):
+            if isinstance(element, datetime.date):
+                row_data[element_index] = element.strftime('%d.%m.%Y')
+        row_data.insert(0, index + 1)  # TODO найти другое решение добавления номера строки
         excel_sheet.append(row_data)
-    # форматирование
+    # форматирование TODO вынести во внешние параметры
     cols = get_column_interval(1, excel_sheet.max_column)  # литеры колонок листа
+    skip_format_columns = ('A', 'B', 'H')
     for col in cols:
-        if col != 'A':
+        if col not in skip_format_columns:
             excel_sheet.column_dimensions[col].width = 30
         else:
             excel_sheet.column_dimensions[col].width = 10
@@ -58,9 +63,3 @@ def db_fields_to_excel(db_verbose_names: tuple, report_name: str, DBmodel) -> st
     except Exception as e:
         logger.error(f'Ошибка сохранения файла Excel при запросу отчёта {exel_file_path}')
         logger.exception(e)
-
-
-
-
-if __name__ == '__main__':
-    pass

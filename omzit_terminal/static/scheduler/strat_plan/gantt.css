@@ -615,6 +615,16 @@ select.taskStatus {
     /* stroke-dasharray: 2, 2; */
 }
 
+.blackLIne {
+    stroke-width: 2px;
+    /* stroke: goldenrod !important; */
+    stroke: black !important;
+    fill: black !important;
+    /* stroke-linecap: 'round'; */
+    /* opacity: 0.3; */
+    /* stroke-dasharray: 2, 2; */
+}
+
 .colorByStatus .taskStatusSVG[status='STATUS_ACTIVE'] {
     fill: green;
 }

@@ -477,8 +477,8 @@ Ganttalendar.prototype.drawTask = function (task) {
         // высота полосы
         height = self.master.showBaselines ? self.taskHeight / 1.3 : self.taskHeight / 4 // поделено на 2, для видимости задачи
         contract_svg = self.svg.rect(taskSvg, x, y, width, height, { class: 'randomGantt' })
+        //Конец  ПРЯМОУГОЛЬНИКА ПО ДОГОВОРУ
 
-        ////
         var taskSvg = svg.svg(
             self.tasksGroup,
             dimensions.x,
@@ -492,8 +492,6 @@ Ganttalendar.prototype.drawTask = function (task) {
                 fill: task.color || '#eee',
             }
         )
-
-        //svg.title(taskSvg, task.name);
         //external box
         var layout = svg.rect(taskSvg, 0, 0, '100%', '100%', {
             class: 'taskLayout',
