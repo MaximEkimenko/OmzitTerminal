@@ -1,8 +1,14 @@
 {% extends "orders/testrep_base.html" %} {% load static %} {% block title %}
 Заявки на ремонт {%endblock %} {% block content %} {{block.super}}
 <div class="col">
+  
   <h1>
-    Начать ремонт оборудования "{{object.equipment}}" по заявке № {{object.id}}
+    {% if object.status_id == status.DETECTED %}
+      Начать
+    {% else %}
+      Возобновить
+    {% endif %}
+    ремонт оборудования "{{object.equipment}}" по заявке № {{object.id}}
   </h1>
 
   <div id="add-order-form">
@@ -26,7 +32,7 @@
           </button>
 
           <button type="submit" class="form_button">
-            <p class="green_word">Начать ремонт</p>
+            <p class="green_word">Назначить исполнителей</p>
           </button>
         </div>
       </div>

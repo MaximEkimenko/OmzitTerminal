@@ -1,29 +1,29 @@
 from datetime import datetime
-import asyncio
+from pathlib import Path
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.postgres.aggregates import StringAgg
 from django.shortcuts import render, redirect
-from django.http import HttpResponse, HttpResponseRedirect, FileResponse
-from django.db.models import Window, Count, ProtectedError
+from django.http import HttpResponse, HttpResponseRedirect, FileResponse, JsonResponse
+from django.db.models import Window, Count, ProtectedError, Subquery, OuterRef
 from django.db.models.functions import RowNumber
 from django.urls import reverse_lazy
-from django.views.generic import DetailView, UpdateView, ListView, DeleteView
+from django.views.generic import DetailView, UpdateView, ListView
 from django.forms.models import model_to_dict
 from django.core.handlers.wsgi import WSGIRequest
 from django.utils.timezone import make_aware
 
 
 from m_logger_settings import logger
-from scheduler.filters import get_filterset
 from orders.report import create_order_report
 
 
-from orders.models import Orders, Equipment, Shops
+from orders.models import Orders, Equipment, Shops, WorkersLog, ReferenceMaterials, FlashMessage
 from orders.forms import (
     AddEquipmentForm,
     AddOrderForm,
-    StartRepairForm,
+    AssignWorkersForm,
     EditEquipmentForm,
     RepairProgressForm,
     ConfirmMaterialsForm,
@@ -32,167 +32,227 @@ from orders.forms import (
     OrderEditForm,
     RepairCancelForm,
     AddShop,
+    UploadPDFFile,
+    ChangePPRForm,
+    ConvertExcelForm
+
 )
 from orders.utils.common import (
     OrdStatus,
+    can_edit_workers,
+    MATERIALS_NOT_REQUIRED,
 )
-from orders.utils.roles import Position, get_employee_position, custom_login_check, PERMITED_USERS
+from orders.utils.reference_materials import add_reference_materials
+from orders.utils.roles import Position, get_employee_position, custom_login_check, PERMITTED_USERS, menu_items, \
+    get_menu_context
 from orders.utils.utils import (
-    create_flash_message,
-    pop_flash_messages,
     get_doers_list,
-    convert_name,
-    orders_get_context,
     orders_record_to_dict,
     get_order_verbose_names,
     get_order_edit_context,
     process_repair_expect_date,
     apply_order_status,
     create_extra_materials,
+    check_order_suspend,
+    orders_get_context,
+    clear_dayworkers,
+    ORDER_CARD_COLUMNS,
+    remove_old_file_if_exist, convert_dayworkers_to_string,
 )
 from orders.utils.telegram import order_telegram_notification
+from controller.utils.mixins import RoleMixin
 
 
 @login_required(login_url="/scheduler/login/")
 def equipment(request: WSGIRequest) -> HttpResponse:
     custom_login_check(request)
-    context = {}
     if request.method == "POST":
         new_equipment_name = AddEquipmentForm(request.POST)
         if new_equipment_name.is_valid():
             try:
                 eq_params = new_equipment_name.cleaned_data
+                if eq_params['ppr_plan_day'] == "":
+                    eq_params.update({'ppr_plan_day': None})
                 eq_params.update(
                     {"unique_name": f"{eq_params['name']} ({eq_params['inv_number'][-4:]})"}
                 )
                 x = Equipment(**eq_params)
                 x.save()
                 alert_message = "Новое оборудование добавлено!"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 eq_name = new_equipment_name.cleaned_data["name"]
                 logger.info(f'Новое оборудование "{eq_name}" добавлено в таблицу Equipment')
                 # TODO отправка сообщения в телеграм
             except Exception as e:
                 alert_message = "Ошибка добавления оборудования"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.error("Ошибка записи в таблицу Equipment.")
                 logger.exception(e)
         return redirect("equipment")
 
-    # cols = ["id", "name", "inv_number", "category__name"]
-    cols = ["id", "name", "inv_number", "shop__name"]
+    # столбцы, которые будут выводиться в таблице оборудования
+    cols = ["id", "name", "inv_number", "shop__name", "ppr_plan_day"]
+    urgent_repairs = (
+        Orders.objects.exclude(is_ppr=True)
+        .filter(equipment=OuterRef("pk"))
+        .values("equipment")
+        .annotate(urgent_repairs_qty=Count("equipment"))
+    ).values("urgent_repairs_qty")
+
     table_data = (
         Equipment.objects.annotate(
             row_number=Window(expression=RowNumber(), order_by="unique_name")
         )
         .annotate(history=Count("repairs"))
-        .values("row_number", "history", *cols)
+        .annotate(urgent_repairs_qty=Subquery(urgent_repairs))
+        .values("row_number", "history", "urgent_repairs_qty", *cols)
     )
 
-    query_fields = ["id", "name", "inv_number", "shop__name"]
-    equipment_filter = get_filterset(request.GET, queryset=table_data, fields=query_fields)
-    context["equipment_filter"] = equipment_filter
-    context["table"] = table_data
-    context["alerts"] = pop_flash_messages()
-    context["add_equipment_form"] = AddEquipmentForm()
-    context.update(
-        {
-            "button_conditions": {
-                "create": [Position.Admin, Position.Engineer, Position.HoRT],
-            },
-            "role": get_employee_position(request.user.username),
-            "permitted_users": PERMITED_USERS,
-        }
-    )
+    context = {
+        "table_data": table_data,
+        "alerts": FlashMessage.pop_flash(),
+        "add_equipment_form": AddEquipmentForm(),
+        "button_conditions": {"create": [Position.Admin, Position.Engineer, Position.HoRT]},
+    }
+    context.update(get_menu_context(request))
     return render(request, "orders/equipment.html", context=context)
 
 
 @login_required(login_url="/scheduler/login/")
 def orders(request) -> HttpResponse:
+    """
+    Главная страница, на которой демонстрируется таблица с заявками на ремонт.
+    На этой странице проходит управление всем циклом заявок: от создания заявки до завершения ремонта.
+    """
     custom_login_check(request)
     if request.method == "POST":
-
         add_order_form = AddOrderForm(request.POST)
         if add_order_form.is_valid():
-            try:
-                # Выбираем все параметры кроме исполнителей, чтобы создать объект заявки.
-                # Исполнителей присоединим к созданному объекту позже
-                order_parameters = {
-                    key: val
-                    for key, val in add_order_form.cleaned_data.items()
-                    if not key.startswith("fio")
+            order_parameters = {key: val for key, val in add_order_form.cleaned_data.items()}
+            # поле shops нужно только для фильтрации названий, поэтому удаляем, иначе будет ошибка создания записи
+            order_parameters.pop("shops")
+            # добавляем сотрудника, который создал заявку
+            order_parameters.update(
+                {
+                    "breakdown_date": make_aware(datetime.now()),
+                    "identified_employee": " ".join(
+                        [request.user.last_name, request.user.first_name]
+                    ),
                 }
-                order_parameters.update(
-                    {
-                        "identified_employee": " ".join(
-                            [request.user.last_name, request.user.first_name]
-                        ),
-                    }
-                )
+            )
+            try:
                 new_order = Orders(**order_parameters)  # создаем заявку
                 new_order.save()
-
             except Exception as e:
                 alert_message = "Ошибка добавления в заявки"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.error("Ошибка записи в таблицу Orders.")
                 logger.exception(e)
             else:
                 alert_message = "Новая заявка на ремонт добавлена!"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.info(f"Заявка № {new_order.id} добавлена в таблицу Orders")
                 order_telegram_notification(OrdStatus.DETECTED, new_order)
-
         else:
-            logger.error("Ошибка валидации формы добавления новой заявки на ремонт.")
+            print("ошибка валидации при добавлении заявки")
         return redirect("orders")
 
     context = orders_get_context(request)
-    context.update({"permitted_users": PERMITED_USERS})
+
     return render(request, "orders/orders.html", context=context)
 
 
+class OrdersArchive(LoginRequiredMixin, RoleMixin,  ListView):
+    """
+    Отображает все заявки на ремонт, которые были завершены (приняты или отменены).
+    """
+    template_name = "orders/orders_archive.html"
+    login_url = "/scheduler/login/"
+
+    def get_queryset(self):
+        return Orders.archived_orders()
+
+
 @login_required(login_url="/scheduler/login/")
-def order_start_repair(request, pk):
+def order_assign_workers(request, pk):
+    """
+    Добавляем работников к ремонту:
+    Или в начале ремонта.
+    Или после того, как на предыдущем ремонте работники были удалены
+    Или в начала рабочего для, чтобы вновь запустить приостановленную заявку.
+    Вызывается при статусах заявки: "требует ремонта" и "приостановлено"
+    """
     context = {}
     order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
         pk=pk
     )
     if request.method == "POST":
-        form = StartRepairForm(request.POST)
+        form = AssignWorkersForm(request.POST)
         if form.is_valid():
             fios = get_doers_list(form)
             if len(fios) == len(set(fios)):  # если нет повторений в списке fios, добавляем запись
-                applied_status = OrdStatus.START_REPAIR
-                order.doers_fio = ", ".join(sorted(fios))
+                fios_ids = [i.id for i in fios]
+                # проверяем, есть ли среди указанных работников те, кто уже назначен на другую заявку
+                busy_workers = Orders.busy_workers(fios_ids)
+                # если есть, оставляем форму без изменения и отправляем сообщение об ошибке
+                if busy_workers:
+                    for worker in busy_workers:
+                        # не могу получить место заявки, потому что нет связи многие-ко многим
+                        # FlashMessage.create_flash(f"{worker.fio} занят на заявке № {worker.order}")
+                        FlashMessage.create_flash(f"{worker.fio} занят на другой заявке")
+                    form = AssignWorkersForm(form.cleaned_data)
+                    context.update({"object": order, "form": form, "alerts": FlashMessage.pop_flash()})
+                    return render(request, "orders/repair_start.html", context)
+                # если мы попали сюда (добавляем работников), значит ремонт либо начат, либо возобновлен
+                # если ремонт был приостановлен, возобновляем предыдущую стадию
+                if order.previous_status_id in (OrdStatus.START_REPAIR, OrdStatus.REPAIRING):
+                    applied_status = order.previous_status_id
+                    alert_message = (
+                        f"Возобновлен ремонт оборудования {order.equipment} по заявке № {order.id}."
+                    )
+                # или начинаем новый ремонт
+                else:
+                    applied_status = OrdStatus.START_REPAIR
+                    alert_message = (
+                        f"Начат ремонт оборудования {order.equipment} по заявке № {order.id}."
+                    )
+                order.dayworkers_string = convert_dayworkers_to_string(fios)
                 order.inspection_date = make_aware(datetime.now())
                 order.inspected_employee = " ".join(
                     [request.user.last_name, request.user.first_name]
                 )
-                apply_order_status(order, applied_status)
-                alert_message = (
-                    f"Начат ремонт оборудования {order.equipment} по заявке № {order.id}."
-                )
-                create_flash_message(alert_message)
-                logger.info(alert_message)
-                order_telegram_notification(applied_status, order)
+
+                success = apply_order_status(order, applied_status)
+                if success:
+                    FlashMessage.create_flash(alert_message)
+                    logger.info(alert_message)
+                    order_telegram_notification(applied_status, order)
 
                 return redirect("orders")
             else:
                 alert_message = f"Исполнители дублируются. Измените исполнителей."
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.error(alert_message)
-                form = StartRepairForm(form.cleaned_data)
-                context.update({"object": order, "form": form, "alerts": pop_flash_messages()})
+                form = AssignWorkersForm(form.cleaned_data)
+                context.update({"object": order, "form": form, "alerts": FlashMessage.pop_flash()})
                 return render(request, "orders/repair_start.html", context)
 
-    form = StartRepairForm()
-    context.update({"object": order, "form": form, "permitted_users": PERMITED_USERS})
+    form = AssignWorkersForm()
+    context.update(
+        {"object": order,
+         "form": form,
+         "status": OrdStatus,
+         }
+    )
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_start.html", context)
 
 
 @login_required(login_url="/scheduler/login/")
 def order_clarify_repair(request, pk):
+    """
+    Экран этапа, когда уточняются делатл ремонта, а именно примерная дата исполнения ремонта и требуемые материалы
+    """
     order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
         pk=pk
     )
@@ -201,15 +261,12 @@ def order_clarify_repair(request, pk):
         if form.is_valid():
             material_correct = False
             matl = form.cleaned_data["materials"]  # объект Materials
-            # строка на основе которой будет создан новый объект Materials
+            # Строка, на основе которой будет создан новый объект Materials
             # она имеет приоритетное значение. Если она заполнена, материалы из списка перестают учитываться
             exma = form.cleaned_data["extra_materials"]
-            # по умолчанию сооздается первая секунда дня. Но когда люди указывают дату производства,
+            # По умолчанию создается первая секунда дня. Но когда люди указывают дату производства,
             # они вряд ли думают, что все будет сделано в первую секунду указанного дня
             # поэтому пускай будет последняя секунда дня
-            # et = datetime.combine(form.cleaned_data["expected_repair_date"], datetime.max.time())
-            # order.expected_repair_date = make_aware(et)
-
             order.expected_repair_date = process_repair_expect_date(
                 form.cleaned_data["expected_repair_date"]
             )
@@ -222,25 +279,39 @@ def order_clarify_repair(request, pk):
                     material_correct = True
             if material_correct:
                 order.materials = m
-                applied_status = OrdStatus.WAIT_FOR_MATERIALS
+                if m.name == MATERIALS_NOT_REQUIRED:
+                    applied_status = OrdStatus.REPAIRING
+                else:
+                    applied_status = OrdStatus.WAIT_FOR_MATERIALS
                 order.clarify_date = make_aware(datetime.now())
                 apply_order_status(order, applied_status)
                 alert_message = "Данные по ремонту уточнены"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
+
                 order_telegram_notification(applied_status, order)
             else:
                 alert_message = f"Некорректно указаны материалы"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.error(alert_message)
             return redirect("orders")
 
     form = RepairProgressForm(model_to_dict(order))
-    context = {"object": order, "form": form, "permitted_users": PERMITED_USERS}
+    context = {"object": order,
+               "form": form}
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_clarify.html", context)
 
 
 @login_required(login_url="/scheduler/login/")
 def order_confirm_materials(request, pk):
+    """
+    Экран подтверждения требуемых для ремонта материалов
+    Здесь совершаются два действия.
+    1) Если материалы в наличии или не требуются, происходит переход на этап "в ремонте". И
+     онт тут же приостанавливается, так как работники на этапе подтверждения материалов были сняты.
+    2) Если материалы нужно ждать, вводится номер заявки на материалы. Статус заявки на ремонт не меняется.
+    """
+
     order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
         pk=pk
     )
@@ -253,9 +324,11 @@ def order_confirm_materials(request, pk):
             if form.is_valid():
                 order.materials_request = form.cleaned_data["materials_request"]
                 order.materials_request_date = make_aware(datetime.now())
+                # Нужно сохранить номер заявки и дату, больше ничего не меняется
+                # так что вызывает функцию с тем же статусом
                 apply_order_status(order, OrdStatus.WAIT_FOR_MATERIALS)
-                alert_message = "Наличие материалов для ремонта подтверждено."
-                create_flash_message(alert_message)
+                alert_message = "Номер заявки на материалы внесен."
+                FlashMessage.create_flash(alert_message)
 
         else:
             # нажата кнопка "материалы в наличии"
@@ -265,17 +338,24 @@ def order_confirm_materials(request, pk):
             applied_status = OrdStatus.REPAIRING
             apply_order_status(order, applied_status)
             alert_message = f"Наличие материалов для ремонта по заявке {order.id} подтверждено."
-            create_flash_message(alert_message)
+            FlashMessage.create_flash(alert_message)
             logger.info(alert_message)
             order_telegram_notification(applied_status, order)
+            check_order_suspend(order)
         return redirect("orders")
     form = ConfirmMaterialsForm({"materials_request": order.materials_request})
-    context = {"object": order, "form": form, "permitted_users": PERMITED_USERS}
+    context = {"object": order,
+               "form": form,
+               }
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_confirm_materials.html", context)
 
 
 @login_required(login_url="/scheduler/login/")
 def order_finish_repair(request, pk):
+    """
+    Экран завершения ремонта
+    """
     order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
         pk=pk
     )
@@ -293,27 +373,33 @@ def order_finish_repair(request, pk):
                 apply_order_status(order, applied_status)
             except Exception as e:
                 alert_message = f"Ошибка записи при завершении ремонта оборудования {order.equipment} по заявке {order.id}"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.error(alert_message)
                 logger.exception(e)
             else:
+                clear_dayworkers(order)
                 alert_message = (
                     f"Ремонт оборудования {order.equipment} по заявке {order.id} закончен"
                 )
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.info(alert_message)
                 order_telegram_notification(applied_status, order)
 
         return redirect("orders")
 
     form = RepairFinishForm(model_to_dict(order))
-    context = {"object": order, "form": form, "permitted_users": PERMITED_USERS}
-
+    context = {"object": order,
+               "form": form,
+               }
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_finish.html", context)
 
 
 @login_required(login_url="/scheduler/login/")
 def order_accept_repair(request, pk):
+    """
+    Экран завершения заявки, когда отремонтированное оборудование принимается в работу.
+    """
     if request.method == "POST":
         order: Orders = Orders.objects.prefetch_related(
             "equipment", "equipment__shop", "status"
@@ -323,17 +409,22 @@ def order_accept_repair(request, pk):
         applied_status = OrdStatus.ACCEPTED
         apply_order_status(order, applied_status)
         alert_message = "Отремонтированное оборудование принято"
-        create_flash_message(alert_message)
+        FlashMessage.create_flash(alert_message)
         order_telegram_notification(applied_status, order)
         return redirect("orders")
 
     order_object = Orders.objects.get(pk=pk)
-    context = {"object": order_object, "permitted_users": PERMITED_USERS}
+    context = {"object": order_object,
+               }
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_accept.html", context)
 
 
 @login_required(login_url="/scheduler/login/")
 def order_revision(request, pk):
+    """
+    Экран возвращения оконченного ремонта на доработку
+    """
     order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
         pk=pk
     )
@@ -350,18 +441,24 @@ def order_revision(request, pk):
                 else:
                     order.revision_cause = string
                 order.revised_employee = " ".join([request.user.last_name, request.user.first_name])
+                # так как при окончании ремонта все сотрудники снимаются, при возврате на доработку
+                # нужно возвращать статус "приостановлено"
                 applied_status = OrdStatus.REPAIRING
                 apply_order_status(order, applied_status)
+                check_order_suspend(order)
             except Exception as e:
-                alert_message = f"Ошибка записи при возвращении оборудования {order.equipment} по заявке {order.id} на доработку"
-                create_flash_message(alert_message)
+                alert_message = (
+                    f"Ошибка записи при возвращении оборудования {order.equipment} "
+                    f"по заявке {order.id} на доработку"
+                )
+                FlashMessage.create_flash(alert_message)
                 logger.error(alert_message)
                 logger.exception(e)
             else:
                 alert_message = (
-                    f"Оборудовани {order.equipment} по заявке {order.id} возвращено на доработку"
+                    f"Оборудование {order.equipment} по заявке {order.id} возвращено на доработку"
                 )
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.info(alert_message)
                 order_telegram_notification(
                     applied_status,
@@ -371,12 +468,18 @@ def order_revision(request, pk):
         return redirect("orders")
 
     form = RepairRevisionForm()
-    context = {"object": order, "form": form, "permitted_users": PERMITED_USERS}
+    context = {"object": order,
+               "form": form,
+               }
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_revision.html", context)
 
 
 @login_required(login_url="/scheduler/login/")
 def order_cancel_repair(request, pk):
+    """
+    Экран отмены ремонта
+    """
     order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
         pk=pk
     )
@@ -395,42 +498,76 @@ def order_cancel_repair(request, pk):
 
             except Exception as e:
                 alert_message = f"Ошибка записи при отмене ремонта оборудования {order.equipment} по заявке {order.id}"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.error(alert_message)
                 logger.exception(e)
             else:
+                clear_dayworkers(order)
                 alert_message = (
                     f"Ремонт оборудования {order.equipment} по заявке {order.id} отменен"
                 )
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 logger.info(alert_message)
                 order_telegram_notification(applied_status, order)
         return redirect("orders")
 
     form = RepairCancelForm()
-    context = {"object": order, "form": form, "permitted_users": PERMITED_USERS}
+    context = {"object": order,
+               "form": form,}
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_cancel.html", context)
 
 
 @login_required(login_url="/scheduler/login/")
-def order_info(request, pk):
-    order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
-        pk=pk
+def order_card(request, pk):
+    """
+    Выводит информацию о заявке (показывет все поля из модели, которые можно показать).
+    А так же пару кнопок: список назначений на ремонт и кнопку добавления пдф-файла.
+    """
+    assignments_count = (
+        WorkersLog.objects.filter(order=OuterRef("pk"))
+        .values("order")
+        .annotate(assignments=Count("order", distinct=False))
+        .values("assignments")
     )
+
+    order = (
+        Orders.objects.filter(pk=pk)
+        .annotate(assignments_count=Subquery(assignments_count))
+        .first()
+    )
+    # получаем подписи к полям таблицы
     verbose_header = get_order_verbose_names()
-    vd = orders_record_to_dict(order, list(verbose_header))
-    vhd = {verbose_header[i]: vd[i] for i in verbose_header}
+
+    # подписываем новое поле (подпись нужна, так как по полям идем в цикле, и у каждого поля должна быть подпись )
+    verbose_header.update({"assignments_count": "Назначения на ремонт"})
+    # из записи в базе данных получаем словарь с нужными нам колонками
+    vd = orders_record_to_dict(order, ORDER_CARD_COLUMNS)
+    vhd = {verbose_header[i]: vd[i] for i in ORDER_CARD_COLUMNS}
+    can_edit = can_edit_workers(order.status_id, get_employee_position(request.user.username))
     context = {
         "object": order,
         "order_params": vhd,
         "status": OrdStatus,
-        "permitted_users": PERMITED_USERS,
+        "can_edit_workers": can_edit,
+        "equipment": order.equipment,
+        "special_fields": {
+            "pdf_field": verbose_header["material_request_file"],
+            "assignments_field": verbose_header["assignments_count"],
+            "equipment": verbose_header["equipment"],
+        },
+        "alerts": FlashMessage.pop_flash(),
     }
-    return render(request, "orders/repair_info.html", context)
+    context.update(get_menu_context(request))
+    return render(request, "orders/repair_card.html", context)
 
 
 @login_required(login_url="/scheduler/login/")
 def order_edit(request, pk):
+    """
+    Выводит форму редактирования заявки. Отдельные поля формы могут быть отключены в зависимости
+    от стадии ремонта и роли пользователя.
+    """
     order: Orders = Orders.objects.prefetch_related("equipment", "equipment__shop", "status").get(
         pk=pk
     )
@@ -453,21 +590,22 @@ def order_edit(request, pk):
                     cd["materials"] = em
             try:
                 Orders.objects.filter(pk=pk).update(**cd)
+            except Exception as e:
+                alert_message = f"Ошибка редактирования заявки № {order.id}"
+                FlashMessage.create_flash(alert_message)
+                message = f"Ошибка при редактировании заявки № {order.id} пользователем {request.user.username}\n"
+                message += f"Попытка внести данные: {cd}"
+                logger.info(message)
+                logger.exception(e)
+            else:
                 alert_message = f"Заявка № {order.id} успешно отредактирована"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 message = (
                     f"Заявка № {order.id} отредактирована пользователем {request.user.username}\n"
                 )
                 message += f"Были внесены данные: {cd}"
                 logger.info(message)
 
-            except Exception as e:
-                alert_message = f"Ошибка редактирования заявки № {order.id}"
-                create_flash_message(alert_message)
-                message = f"Ошибка при редактировании заявки № {order.id} пользователем {request.user.username}\n"
-                message += f"Попытка внести данные: {cd}"
-                logger.info(message)
-                logger.exception(e)
         return redirect("orders")
 
     form = OrderEditForm(model_to_dict(order))
@@ -475,21 +613,23 @@ def order_edit(request, pk):
         "object": order,
         "form": form,
     }
+    # условия для отрисовки полей формы
     conditions = get_order_edit_context(request)
     for key, field in form.fields.items():
         if (
             order.status_id not in conditions["stages"][key]
             or conditions["role"] not in conditions["employees"][key]
-        ):
-            x = dict(field.widget.attrs)
-            x["disabled"] = "disabled"
-            field.widget.attrs = x
-    context.update({"permitted_users": PERMITED_USERS})
+        ):  # если условия редактирования не удовлетворяют, то отключаем поля путем модификации виджетов формы
+            field.disabled = True
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_edit.html", context)
 
 
 @login_required(login_url="/scheduler/login/")
 def order_delete_proc(request: WSGIRequest):
+    """
+    Удаляет заявку на ремонт
+    """
     if request.method == "POST":
         pk = request.POST.get("delete_button")
         try:
@@ -508,12 +648,12 @@ def order_delete_proc(request: WSGIRequest):
                 try:
                     Orders.objects.filter(pk=pk).delete()
                     alert_message = f"Заявка на ремонт удалена"
-                    create_flash_message(alert_message)
+                    FlashMessage.create_flash(alert_message)
                     message = f"Удалена заявка id {pk}.Удалил пользователь {request.user.username}"
                     logger.info(message)
                 except Exception as e:
                     alert_message = f"Ошибка при удалении заявки"
-                    create_flash_message(alert_message)
+                    FlashMessage.create_flash(alert_message)
                     message = (
                         f"Ошибка при удалении заявки id {pk} "
                         f"пользователем {request.user.username}"
@@ -522,7 +662,7 @@ def order_delete_proc(request: WSGIRequest):
                     logger.exception(e)
             else:
                 alert_message = f"Нельзя удалить заявку"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 message = (
                     f"Попытка удалить заявку id {pk} при некорректном статусе {order.status} "
                     f"пользователем {request.user.username}"
@@ -533,32 +673,32 @@ def order_delete_proc(request: WSGIRequest):
 
 
 @login_required(login_url="/scheduler/login/")
-def repair_history(request: WSGIRequest, pk):
+def order_history(request: WSGIRequest, pk):
+    """
+    Показывает все ремонты для конкретного оборудования
+    """
     equipment: Equipment = Equipment.objects.filter(pk=pk).values(*["id", "name", "unique_name"])[0]
     orders: Orders = Orders.objects.filter(equipment_id=pk).order_by("breakdown_date").all()
     context = {
         "orders": orders,
         "object": equipment,
         "status": OrdStatus,
-        "permitted_users": PERMITED_USERS,
     }
+    context.update(get_menu_context(request))
     return render(request, "orders/repair_history.html", context)
 
 
-class EquipmentCardView(LoginRequiredMixin, DetailView):
-    login_url = success_url = reverse_lazy("login")
+class EquipmentCardView(LoginRequiredMixin, RoleMixin, DetailView):
+    """
+    Выводит карточку оборудования
+    """
     model = Equipment
     template_name = "orders/equipment_card.html"
-    pk_url_kwarg = "equipment_id"
-    extra_context = {
-        "edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],
-        "permitted_users": PERMITED_USERS,
-    }
+    login_url = "/scheduler/login/"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({"role": get_employee_position(self.request.user.username)})
-
+        context.update({"edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],})
         return context
 
     def post(self, request, *args, **kwargs):
@@ -570,7 +710,7 @@ class EquipmentCardView(LoginRequiredMixin, DetailView):
             try:
                 Equipment.objects.filter(pk=pk).delete()
                 alert_message = f"Оборудование удалено"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 message = (
                     f"Удалено оборудование id {pk}.Удалил пользователь {request.user.username}"
                 )
@@ -580,7 +720,7 @@ class EquipmentCardView(LoginRequiredMixin, DetailView):
                 alert_message = (
                     f"Оборудование не может быть удалено, так как к нему привязаны заявки ремонтов"
                 )
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 message = (
                     f" К оборудованию id {pk} привязаны ремонты, поэтому оно не может быть "
                     f"удалено пользователем {request.user.username}"
@@ -590,7 +730,7 @@ class EquipmentCardView(LoginRequiredMixin, DetailView):
 
             except Exception as e:
                 alert_message = f"Ошибка при удалении оборудования"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 message = (
                     f"Ошибка при удалении оборудования id {pk} "
                     f"пользователем {request.user.username}"
@@ -600,59 +740,55 @@ class EquipmentCardView(LoginRequiredMixin, DetailView):
 
         else:
             alert_message = f"Не найден идентификатор оборудования"
-            create_flash_message(alert_message)
+            FlashMessage.create_flash(alert_message)
             message = f"Для удаления поступил пустой идентификатор оборудования {pk}.  Пользователь {request.user.username}"
             logger.error(message)
         return redirect("equipment")
 
 
-class EquipmentCardEditView(LoginRequiredMixin, UpdateView):
-    login_url = success_url = reverse_lazy("login")
+class EquipmentCardEditView(LoginRequiredMixin, RoleMixin, UpdateView):
+    """
+    Карточка редактирования оборудования.
+    """
     model = Equipment
     form_class = EditEquipmentForm
     template_name = "orders/equipment_edit.html"
-    pk_url_kwarg = "equipment_id"
-    success_url = reverse_lazy("equipment")
+    login_url = "/scheduler/login/"
+    extra_context = {"edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],}
 
-    extra_context = {
-        "color": "red",
-        "edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],
-        "permitted_users": PERMITED_USERS,
-    }
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(
-            {
-                # "permitted_users": PERMITED_USERS,
-                # "status": OrdStatus,
-                "edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],
-                "test": Position.Admin,
-            }
-        )
-        return context
 
     def form_valid(self, form):
         form_data = form.cleaned_data
         temp = form.instance
         temp.unique_name = f"{form_data['name']} ({form_data['inv_number'][-4:]})"
+        # это ради того, чтобы удалить у оборудования день планового ремонта
+        # из формы приходить пустая строка, а в базу нужно записывать None
+        if form_data["ppr_plan_day"] == "":
+            temp.ppr_plan_day = None
         temp.save()
         return HttpResponseRedirect(self.get_success_url())
 
 
-def repair_orders_reports(request):
+def order_report(request):
+    """
+    Создает файл отчета с заявками на ремонт
+    """
     try:
         exel_file = create_order_report()
         logger.info(f"Пользователь {request.user} успешно загрузил отчёт в excel.")
         return FileResponse(open(exel_file, "rb"))
-        return redirect("orders")
     except Exception as e:
         logger.info("Ошибка при создании xls-отчета")
         logger.exception(e)
     return redirect("orders")
 
 
-class ShopsView(ListView):
+class ShopsView(RoleMixin, ListView):
+    """
+    Показывает страницу со списком цехов. На странице можно добавлять, редактировать и удалять цеха.
+    Добавление обрабатывается в этом же классе в методе post, а удаление и редактирование происходит
+    путем перехода на другие эндпоинты.
+    """
     model = Shops
     template_name = "orders/shops.html"
 
@@ -660,7 +796,7 @@ class ShopsView(ListView):
         context = super().get_context_data(**kwargs)
         context.update(
             {
-                "alerts": pop_flash_messages(),
+                "alerts": FlashMessage.pop_flash(),
                 "add_form": AddShop(),
                 "edit_form": AddShop(),
             }
@@ -669,58 +805,16 @@ class ShopsView(ListView):
 
     def post(self, request, *args, **kwargs):
         """
-        Обрабатывает удаление оборудования
+        Обрабатывает добавление местонахождения
         """
         form = AddShop(request.POST)
         if form.is_valid():
             form.save()
-            create_flash_message("Местонахождение создано.")
+            FlashMessage.create_flash("Местонахождение создано.")
         else:
-            create_flash_message(form.errors["name"][0])
+            FlashMessage.create_flash(form.errors["name"][0])
 
         return redirect("shops")
-
-
-class ShopsEdit(UpdateView):
-    model = Shops
-
-    form_class = AddShop
-    template_name = "orders/shops_edit.html"
-    success_url = reverse_lazy("shops")
-
-    extra_context = {}
-
-
-class ShopsDelete(DeleteView):
-    model = Shops
-    template_name = "orders/shops_delete.html"
-    # success_url = reverse_lazy("orders:shops")
-    success_url = reverse_lazy("shops")
-
-    def post(self, request, *args, **kwargs):
-        try:
-            object: Shops = self.get_object()
-            name = object.name
-            pk = object.id
-            self.get_object().delete()
-            alert_message = f'Местонаходжение "{name}" удлено'
-            create_flash_message(alert_message)
-            message = f"{alert_message}. Удалил пользователь {request.user.username}"
-            logger.info(message)
-        except ProtectedError as e:
-
-            alert_message = (
-                f"Местоположение не может быть удалено, так как нему привязано оборудование"
-            )
-            create_flash_message(alert_message)
-            message = (
-                f" К местоположению id {pk} привязано оборудование, поэтому оно не может быть "
-                f"удалено пользователем {request.user.username}"
-            )
-            logger.error(message)
-            logger.exception(e)
-
-        return redirect(self.success_url)
 
 
 @login_required(login_url="/scheduler/login/")
@@ -728,8 +822,7 @@ def shop_edit_proc(request: WSGIRequest):
     """
     Техническая функция для изменения названия местоположения оборудования.
     Принимает строку с измененным местоположением, пытается применить это изменение и делает
-    редирект на ту же самую страницу, с которой была вызвана
-
+    редирект на ту же самую страницу, с которой была вызвана.
     """
     if request.method == "POST":
         form = AddShop(request.POST)
@@ -749,13 +842,13 @@ def shop_edit_proc(request: WSGIRequest):
                     alert_message = (
                         f"местонахождение {shop_name} было изменено на {form.cleaned_data['name']}"
                     )
-                    create_flash_message(alert_message)
+                    FlashMessage.create_flash(alert_message)
                     logger.info(
                         f"id {pk} местонахождение {shop_name} было изменено на {form.cleaned_data['name']}. Пользователь {request.user.username}"
                     )
                 except Exception as e:
                     alert_message = f"Ошибка при изменении местоположения {shop_name}"
-                    create_flash_message(alert_message)
+                    FlashMessage.create_flash(alert_message)
                     logger.error(
                         f"Ошибка при изменении местоположения id {pk}  {shop_name}  на {form.cleaned_data['name']}. "
                         f"Пользователь {request.user.username}"
@@ -767,6 +860,11 @@ def shop_edit_proc(request: WSGIRequest):
 
 @login_required(login_url="/scheduler/login/")
 def shop_delete_proc(request: WSGIRequest):
+    """
+    Функция удаляет местоположение (при нажатии на соответствующую кнопку на странице редактирования мест),
+    если к нему не привязано ни одно оборудование.
+    После удаления перенаправляет на ту же самую страницу редактирования местоположений.
+    """
     if request.method == "POST":
         pk = request.POST.get("commit-delete-button")
         try:
@@ -777,7 +875,7 @@ def shop_delete_proc(request: WSGIRequest):
             try:
                 Shops.objects.filter(pk=pk).delete()
                 alert_message = f"Местоположение удалено"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 message = (
                     f"Удалено местпоположение id {pk}.Удалил пользователь {request.user.username}"
                 )
@@ -786,7 +884,7 @@ def shop_delete_proc(request: WSGIRequest):
                 alert_message = (
                     f"Местоположение не может быть удалено, так как нему привязано оборудование"
                 )
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 message = (
                     f" К местоположению id {pk} привязано оборудование, поэтому оно не может быть "
                     f"удалено пользователем {request.user.username}"
@@ -796,7 +894,7 @@ def shop_delete_proc(request: WSGIRequest):
 
             except Exception as e:
                 alert_message = f"Ошибка при удалении местоположения"
-                create_flash_message(alert_message)
+                FlashMessage.create_flash(alert_message)
                 message = (
                     f"Ошибка при удалении местоположения id {pk} "
                     f"пользователем {request.user.username}"
@@ -805,3 +903,206 @@ def shop_delete_proc(request: WSGIRequest):
                 logger.exception(e)
 
     return redirect("shops")
+
+
+@login_required(login_url="/scheduler/login/")
+def clear_workers_proc(request: WSGIRequest, pk):
+    """
+    Снимает всех сотрудников с задания.
+    Вызывается при нажатии на кнопку "снять всех сотрудников" на главной странице заявок
+    """
+    order = Orders.objects.get(pk=pk)
+    clear_dayworkers(order)
+    return redirect("orders")
+
+
+class RepairmenHistory(LoginRequiredMixin, RoleMixin, ListView):
+    """
+    Демонстрирует список работников, которые были прикреплены к конкретной заявке за всё время ремонта.
+    """
+    template_name = "orders/repairmen_history.html"
+    login_url = "/scheduler/login/"
+
+    def get_queryset(self):
+        dayworkers = (
+            WorkersLog.objects.filter(order=self.kwargs["pk"])
+            .order_by("start_date")
+            .all()
+        )
+        return dayworkers
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"pk": self.kwargs["pk"]})
+        return context
+
+
+
+@login_required(login_url="/scheduler/login/")
+def order_upload_pdf(request: WSGIRequest, pk):
+    """
+    Представление для прикрепления pdf-файлов к заявке на ремонт
+    """
+    order: Orders = Orders.objects.get(pk=pk)
+    if request.method == "POST":
+        form = UploadPDFFile(request.POST, request.FILES)
+        if form.is_valid():
+            file = request.FILES.get("material_request_file")
+            remove_old_file_if_exist(order.material_request_file)
+            order.material_request_file.save(file.name, file)
+            return redirect(reverse_lazy("order_info", args=(pk,)))
+        else:
+            # для вывода ошибок формы
+            context = {"form": form}
+            context.update(get_menu_context(request))
+            return render(request, "orders/upload_pdf.html", context=context)
+    else:
+        context = {"form": UploadPDFFile(), "pk": pk}
+        context.update(get_menu_context(request))
+        return render(request, "orders/upload_pdf.html", context=context)
+
+
+def show_pdf(request, pk):
+    """
+    Открывает PDF-файл со сканом заявки на материалы из карточки заявки на ремонт (при нажатии на кнопку).
+    """
+    order: Orders = Orders.objects.get(pk=pk)
+    f = Path(order.material_request_file.path)
+    if f.exists():
+        pdf_file = order.material_request_file.open()
+        return FileResponse(pdf_file)
+    else:
+        order.material_request_file = None
+        order.save()
+        FlashMessage.create_flash("Файл не обнаружен")
+        return redirect(reverse_lazy("order_info", args=(pk,)))
+
+
+def filter_data(request):
+    """
+    Возвращает json при добавлении нового оборудования. json нужен для фильтрации оборудования по цехам.
+    Так как на странице информация о принадлежности оборудования к конкретному цеху отсутствует,
+    ее нужно запрашивать отдельно.
+    """
+    equipment_json = list(Equipment.objects.all().values("id", "unique_name", "shop_id"))
+    return JsonResponse({"filter": equipment_json})
+
+
+
+class PPRСalendar(LoginRequiredMixin, RoleMixin, ListView):
+    """
+    Показывает график ППР для оборудования. На странице возможно изменить день ППР для конкретного оборудования.
+    """
+    template_name = "orders/PPR_calendar.html"
+    login_url = "/scheduler/login/"
+
+    def get_queryset(self):
+        return Equipment.equipment_with_PPR().values("id", "name", "shop_id", "ppr_plan_day", "inv_number")
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            "shops":  Shops.objects.all(),
+            "range": range(1, 32),
+            'form': ChangePPRForm(),
+            "edit_ppr_button": [Position.Admin, Position.HoRT, Position.Engineer],
+        })
+        return context
+
+    def post(self, request):
+        form = ChangePPRForm(request.POST)
+        if form.is_valid():
+            pk = form.cleaned_data['pk']
+            ppr_plan_day = form.cleaned_data["ppr_plan_day"]
+            if ppr_plan_day == "":
+                ppr_plan_day = None
+            Equipment.objects.filter(pk=pk).update(ppr_plan_day=ppr_plan_day)
+        return redirect("ppr_calendar")
+
+
+class ReferenceMaterialsList(LoginRequiredMixin, RoleMixin, ListView):
+    """
+    Показывает страничку со списком справочных материалов по обслуживанию оборудования
+    """
+    model = ReferenceMaterials
+    template_name = "orders/reference_materials.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+                   "alerts": FlashMessage.pop_flash(),
+                   "edit_materials": [Position.Admin, Position.HoRT, Position.Engineer],
+                   })
+        return context
+
+
+def convert_excel(request):
+    """
+    Страница, где можно выбрать эксель файл и сконвертировать его листы в справочные материалы
+    (html-страницы, которые помещаются в базу и могут быть отображены по ссылке).
+    """
+    if request.method == "POST":
+        form = ConvertExcelForm(request.POST, request.FILES)
+        if form.is_valid():
+            file = form.cleaned_data["file"]
+            result = add_reference_materials(file)
+            if result is None:
+                message = (
+                    f"Добавлены справочные материалы из файла '{file.name}'. Добавил пользователь {request.user.username}"
+                )
+                logger.info(message)
+            # ошибка конвертирования эксель-файла
+            else:
+                FlashMessage.create_flash("Ошибка при добавлении справочных материалов.")
+                message = (
+                    f"Ошибка при добавлении справочных материалов из файла '{file.name}' "
+                    f"пользователем {request.user.username}"
+                )
+                logger.error(message)
+                logger.exception(result)
+        # ошибка валидации формы
+        else:
+            context = {"form": form}
+            context.update(get_menu_context(request))
+            return render(request, "orders/convert_excel.html", context)
+        return redirect("reference")
+    form = ConvertExcelForm()
+    context = {"form": form}
+    context.update(get_menu_context(request))
+    return render(request, "orders/convert_excel.html", context)
+
+
+class ShowReference(LoginRequiredMixin, RoleMixin,  DetailView):
+    """
+    Показывает страницу со сконвертированным из экселя справочным материалом, предварительно достав ее из базы
+    """
+    model = ReferenceMaterials
+    template_name = "orders/show_reference.html"
+
+
+@login_required(login_url="/scheduler/login/")
+def reference_delete_proc(request: WSGIRequest, pk):
+    """
+    Функция для удаления справочных материалов. На экране она не отображается.
+    Происходит переход по ссылке, удалени записи в базе и редирект на страницу со списком материалов.
+    """
+    try:
+        ReferenceMaterials.objects.filter(pk=pk).delete()
+        alert_message = f"Справочный материал удален"
+        FlashMessage.create_flash(alert_message)
+        message = (
+            f"Удален удален справочный материал  id {pk}.Удалил пользователь {request.user.username}"
+        )
+        logger.info(message)
+    except Exception as e:
+        alert_message = f"Ошибка при удалении местоположения"
+        FlashMessage.create_flash(alert_message)
+        message = (
+            f"Ошибка при удалении српавочного материала id {pk} "
+            f"пользователем {request.user.username}"
+        )
+        logger.error(message)
+        logger.exception(e)
+    return redirect("reference")
+

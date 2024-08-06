@@ -5,80 +5,116 @@
 {%endblock %} 
 {% block content %} 
   {{block.super}}
-  <div class="col">
-    <h1>Заявки на ремонт</h1>
+    <div class="col">
+      <h1>Заявки на ремонт</h1>
+      <div class='form_row'>
+      {%if role in create_order %}
+        <button id="add_order_button" class="btn">Добавить заявку</button>
+      {%endif%}
 
-    {%if role in button_conditions.create %}
-    <p>
-      <button id="add_order_button" class="btn">Добавить заявку</button>
-    </p>
-    {%endif%}
-
-    <p>
-      <form action="{% url 'orders_report'%}" method='get'>
-        <button type="submit">Отчет</button>
-      </form>
-    </p>
-    <p>
-      <input
-        type="button"
-        onclick="window.location.href = '{{ request.path }}';"
-        value="Сбросить фильтр"
-      />
-    </p>
+        <form action="{% url 'orders_report'%}" method='get'>
+          <button class="btn" type="submit">Отчет</button>
+        </form>
+        <form action="{% url 'orders_archive' %}" method='get'>
+          <button class="btn" type="submit">архив</button>
+        </form>
+      
+    </div>  
     <table class="table" id="st_table">
       <thead>
         <form method="get" id="filter_form">
           <tr class="table_header_row">
-            <th class="td_cell">№
-              <br>
+            <th class="td_cell">№<br>
               <div class="sort-filter">
-                  <button type="button" onclick="sortTable(0)"><img src="{% static 'scheduler/img/sort.svg' %}"
-              </div>
+                <input type="text" style="max-width:40px;" >
+            </div>
+
             </th>
+            <th class="td_cell">ППР<br>
+              <div class="sort-filter">
+                <input type="text" style="max-width:40px;" >
+            </div>
+
+              {% comment %}
+              <p>
+              <select type="text" name="ppr-select" id="ppr-select-id" style="width:20px;height:20px;border-radius:0;">
+                <option value selected>--</option>
+                <option value="1">да</option>
+                <option value="0">нет</option>
+              </select>
+            </p>
+            {% endcomment %}
+            </th>
+
             <th class="td_cell">
-              {{order_filter.form.equipment__unique_name}}Оборудование
+              Оборудование
               <br>
               <div class="sort-filter">
-                  <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 1)" placeholder="">
-                  <button type="button" onclick="sortTable(1)"><img src="{% static 'scheduler/img/sort.svg' %}"
-                    alt=""></button>
+                  <input type="text" style="max-width:120px;" >
               </div>
             </th>
             <th class="td_cell">Ремонты</th>
-            <th class="td_cell">{{order_filter.form.status__name}} Статус</th>
-            <th class="td_cell">{{order_filter.form.priority}} Приоритет
+            <th class="td_cell">Статус
               <br>
               <div class="sort-filter">
-                  <button type="button" onclick="sortTable(4)"><img src="{% static 'scheduler/img/sort.svg' %}"
+                  <input type="text" style="max-width:120px;" >
+              </div>
+            </th>
+            <th class="td_cell">Приоритет
+              <br>
+              <div class="sort-filter">
+                  <input type="text" style="max-width:120px;" >
               </div>
             </th>
             <th class="td_cell">
-              {{order_filter.form.breakdown_date}}Дата поломки
-              <br>
+              Дата поломки/ППР
+            </th>
+            <th class="td_cell">Описание поломки
               <div class="sort-filter">
-                  <button type="button" onclick="sortTable(5)"><img src="{% static 'scheduler/img/sort.svg' %}"
-              </div>
-
+                <input type="text" style="max-width:120px;" >
+            </div>
             </th>
-            <th class="td_cell">Описание поломки</th>
             <th class="td_cell">
-              {{order_filter.form.expected_repair_date}}Предполагаемая дата окончания ремонта
+              Предполагаемая дата окончания ремонта
             </th>
-            <th class="td_cell">{{order_filter.form.materials__name}}
+            <th class="td_cell">
               Необходимые матреиалы
+              <br>
+              <div class="sort-filter">
+                  <input type="text" style="max-width:120px;" >
+              </div>
             </th>
-            <th class="td_cell">{{order_filter.form.materials_request}}№ заявки на метриалы</th>
-            <th class="td_cell">{{order_filter.form.doers_fio}}Исполнители</th>
-            <th class="td_cell">Доработка</th>
+            <th class="td_cell">№ заявки на метриалы
+              <div class="sort-filter">
+                <input type="text" style="max-width:120px;" >
+            </div>
+            </th>
+            <th class="td_cell">Исполнители
+              <div class="sort-filter">
+                <input type="text" style="max-width:120px;" >
+            </div>
+            </th>
+            <th class="td_cell">Доработка
+              <div class="sort-filter">
+                <input type="text" style="max-width:120px;" >
+            </div>
+            </th>
             <th class="td_cell">Действия</th>
           </tr>
         </form>
       </thead>
       
-      {% for rec in order_filter.qs %}      
+      {% for rec in orders %}      
         <tr class="table_row">        
           <td class="td_cell">{{rec.id}}</td>
+          <td class="td_cell ppr_cell" data-ppr="{% if rec.is_ppr%}1{%else%}0{%endif%}">
+            {% if rec.is_ppr %}
+            да
+            {% else %}
+            нет
+            {% endif %}
+            
+          </td>
           <td class="td_cell">
             <a href="{% url 'order_info' rec.id %}" class="table_link">
               {{ rec.equipment__unique_name }}
@@ -89,15 +125,21 @@
               история
             </a>
           </td>
-          <td class="td_cell status_name" data-status={{rec.status}}>{{rec.status__name}}</td>
+          <td class="td_cell status_name" data-status={{rec.status}}>
+            {% if rec.status_id == statuses.SUSPENDED %}
+              {{rec.previous_status__name}}<br>({{rec.status__name}})
+            {% else %}
+              {{rec.status__name}}
+            {% endif %}
+          </td>
           <td class="td_cell">{{rec.priority}}</td>
           <td class="td_cell">{{rec.breakdown_date}}</td>
           <td class="td_cell">{{rec.breakdown_description|default:""|truncatewords:13}}</td>
-          <td class="td_cell" >{{rec.expected_repair_date|default:""}}</td>
-          <td class="td_cell" >{{rec.materials__name|default:""}}</td>
-          <td class="td_cell" >{{rec.materials_request|default:""}}</td>
-          <td class="td_cell" >{{rec.doers_fio|default:""}}</td>
-          <td class="td_cell" >{{rec.revision_cause|default:"" |safe}}</td>
+          <td class="td_cell">{{rec.expected_repair_date|default:""}}</td>
+          <td class="td_cell">{{rec.materials__name|default:""}}</td>
+          <td class="td_cell">{{rec.materials_request|default:""}}</td>
+          <td class="td_cell">{{rec.dayworkers_string|default:""}}</td>
+          <td class="td_cell">{{rec.revision_cause|default:"" |safe}}</td>
           <td class="td_cell">
           {% for b in  button_context%}
             {% if rec.status in b.states and role in b.groups%}
@@ -111,28 +153,51 @@
           </td>
         </tr>
 
-
-
       {% endfor %}
     </table>
-    {% comment "Добавление новой заявки" %}{% endcomment %}
+    
+
+    {# Добавление новой заявки #}
     <div id="add-order-form" class="modal">
       <form
         action="{% url 'orders' %}"
-        class="form_form modal-content"
+        class="modal-content"
         method="POST"
       >
         {% csrf_token %}
-        {{add_order_form.media}}
-        <div class="add_to_plan">
+        <div class="equipment_card">
           <div class="form-error">{{ add_order_form.non_field_errors }}</div>
-          {% for entry in add_order_form %}
-          <div class="form_row">
-            <label for="{{ entry.id_for_label }}">{{entry.label}}</label>
-            {{entry}}
+          <div class="card_row__center" style="border: solid 2px gray; border-radius: 10px;"> 
+            <label for="id_word_filter">Фильтр по названию</label>
+            <input type="text" style="width: 250px" placeholder="введите часть названия" 
+            name="word_filter" id="id_word_filter"/>
+            {{add_order_form.shops.label}} {{add_order_form.shops}}
           </div>
+
+          <div class="card_row"> 
+            <div class="equipment_card__label">
+              <label for="id_equipment">Оборудование</label>
+            </div>
+            <div >
+              <select type="text" name="{{add_order_form.equipment.html_name}}" id="{{add_order_form.equipment.auto_id}}" style="width:400px;">
+              </select>
+            </div>
+          </div>
+
+          {% for entry in add_order_form %}
+            {% if  entry.name != 'shops' and  entry.name != 'equipment' %}
+            <div class="card_row"> 
+
+              <div class="equipment_card__label">
+                <label for="{{ entry.id_for_label }}">{{entry.label}}</label>
+              </div>              
+              <div>
+                {{entry}}
+              </div>
+            </div>
+            {% endif %}
           {% endfor %}
-          <div class="form_row">
+          <div class="card_row__center"> 
             <button type="submit" class="form_button">
               <p class="green_word">Добавить</p>
             </button>
@@ -142,14 +207,14 @@
       </form>
     </div>
 
-    {% comment "Добавление новой заявки" %}{% endcomment %}
+    {# Удаление заявки #}
 
     <div id="delete-order-form" class="modal">
       <div id="add-order-form">
-        <div class="form_form modal-content">
+        <div class="modal-content">
       
       <div class="add_to_plan">
-        <h1>
+        <h1 class="header_margin">
           Вы действительно хотите удалить заявку? 
         </h1>
 
@@ -176,5 +241,5 @@
 {% block js %} 
   {{block.super }}
   <script src="{% static 'orders/js/orders.js' %}"></script>
-  <script src="{% static 'scheduler/js/scheduler.js' %}"></script>
+  <script src="{% static 'orders/js/multifield_filter.js' %}"></script>
 {% endblock js%}

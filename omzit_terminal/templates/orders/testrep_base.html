@@ -1,32 +1,23 @@
-{% extends "base.html" %} {% load static %} {% block body %}
-
-{% comment "" %}
-<div class="navbar">
-    <ul>
-      <li>
-        <a href="{% url 'equipment' %}"> Оборудование </a>
-      </li>
-          <li>
-        <a href="{% url 'orders' %}">Заявки на ремонт</a>
-          </li>
-      <ul>
-  </div>
-{% endcomment %}
-<div class="content">
-  <div class="content_window">
-    {% if alerts %}
-    <div id="id_alert">
-      {%for a in alerts%}
-        <div class="alert"> {{ a }}</div>
-      {%endfor%}
+{% extends "base.html" %} 
+{% load static %} 
+{% block body %}
+  <div class="content">
+    <div class="content_window">
+      {% if alerts %}
+        <div id="id_alert">
+          {%for a in alerts%}
+            <div class="alert"> {{ a }}</div>
+          {%endfor%}
+        </div>
+        <script>
+          const notification = document.getElementById("id_alert");
+          setTimeout(() => notification.remove(), 5000);
+        </script>
+      {% endif %} 
+      {% block content %} 
+      {% endblock content %}
     </div>
-    <script>
-      const notification = document.getElementById("id_alert");
-      setTimeout(() => notification.remove(), 4000);
-    </script>
-
-    {% endif %} 
-    {% block content %} {% endblock content %}
   </div>
-</div>
-{% block js%} {% endblock js%} {% endblock body %}
+  {% block js%} 
+  {% endblock js%} 
+{% endblock body %}

@@ -1,0 +1,110 @@
+{% extends "orders/testrep_base.html" %} {% load static %} {%block content%}
+<div class="col">
+    <h1>График ППР</h1>
+    <div class="form_row">  
+      <form action="{% url 'equipment' %}">
+        <button type="submit" class="btn">Список оборудования</button>
+      </form>
+      
+      <form action=" {% url "reference" %}">        
+        <button type="submit" class="btn">Справочные материалы</button>
+      </form>
+
+    </div>
+
+  <div><label for="id_shops">Фильтр по местонахождению</label> 
+    <select id="id_shops" class="input_like">
+        <option value="">------</option>
+        {% for shop in shops %}
+        <option value="{{shop.pk}}">{{shop.name}}</option>
+        {% endfor %}
+        <select>
+  <div>
+  <table class="table" id="st_table">
+    <thead>
+      <form method="get" id="filter_form">
+        <tr class="table_header_row">
+          <th class="td_cell_small" style="max-width:350px;">Оборудование
+            <br>
+              <div class="sort-filter">
+                <input type="text" style="max-width:200px;">  
+              </div>
+          </th>
+          <th class="td_cell_small">
+            Инв. номер
+            <br>
+            <div class="sort-filter">
+              <input type="text" style="max-width:120px;">  
+            </div>
+          </th>
+          {% for ppr_date in range%}
+            <th class="td_cell_small" style="width:30px;"> {{ppr_date}}  </th>
+          {%endfor%}
+        </tr>
+      </form>
+    </thead>
+   
+    {% for line in object_list %}
+    <tr class="table_row_small" data-shop_id="{{line.shop_id}}">
+
+      <td class="td_cell_small" style="max-width:350px;">
+        <a
+          href="{% url 'equipment_card' pk=line.id %}"
+          class="table_link"
+          data-pk="{{line.id}}"
+          data-ppr="{{line.ppr_plan_day}}"
+          >{{ line.name }}</a
+        >
+      </td>
+      <td class="td_cell_small">{{ line.inv_number }}</td>   
+      {% for ppr_date in range%}
+      {% if line.ppr_plan_day == ppr_date  %}
+        <td class="td_cell_small" style="width:30px; background-color:rgba(10, 10, 30, 0.6);">
+          {{ppr_date}}
+        </td>
+      {% else %}
+        <td class="td_cell_small" style="width:30px;"></td>
+      {% endif %}
+      
+    {%endfor%}
+
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+
+
+<div id="change-ppr-form" class="modal">
+  <form
+    action=""
+    class="modal-content"
+    method="POST"
+  >
+    {% csrf_token %}
+    <div class="equipment_card">
+      <div class="form-error">{{ add_equipment_form.non_field_errors }}</div>      
+      {{form.pk}}
+      <div class="card_row__center">
+        <p class="equipment_card__label">Изменение даты ППР обоудования:</p><p id="id_equip_name"></p>
+      </div>
+      <div class="card_row">
+        <label class="equipment_card__label" for="{{ form.ppr_plan_day.id_for_label }}">{{form.ppr_plan_day.label}}</label>
+        {{form.ppr_plan_day}}
+      </div>
+      
+      <div class="card_row__center">
+        {%if role in edit_ppr_button%}
+          <button type="submit" class="form_button">
+            <p class="green_word">Изменить</p>
+          </button>
+        {% endif %}
+      </div>
+      <div class="form-error">{{ add_equipment_form.errors }}</div>
+    </div>
+  </form>
+</div>
+
+{% endblock content%} {% block js%} {{block.super}}
+  <script src="{% static 'orders/js/ppr_calendar.js' %}"></script>
+{% endblock js%}

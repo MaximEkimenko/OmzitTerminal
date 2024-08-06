@@ -9,33 +9,33 @@
   <div id="add-order-form">
     <form action="" class="form_form" method="POST">
       {% csrf_token %}
-      <div class="add_to_plan">
+      <div class="equipment_card">
 
-        <div class="form_row">
-          <div>Описание поломки:</div> {{object.breakdown_description}}
+        <div class="card_row">
+          <div class="equipment_card__label">Описание поломки:</div> {{object.breakdown_description}}
         </div>
-        <div class="form_row">
-          <div>Причина поломки:</div> {{object.breakdown_cause}}
+        <div class="card_row">
+          <div class="equipment_card__label">Причина поломки:</div> {{object.breakdown_cause}}
         </div>
-        <div class="form_row">
-          <div>Способ устранения:</div> {{object.solution}}
+        <div class="card_row">
+          <div class="equipment_card__label">Способ устранения:</div> {{object.solution}}
         </div>
         {% if object.revision_cause %}
-          <div class="form_row">
-            <div>Причины возвращения на доработку:</div> {{object.revision_cause|safe}}
+          <div class="card_row">
+            <div class="equipment_card__label">Причины возвращения на доработку:</div> {{object.revision_cause|safe}}
           </div>
         {% endif %}
 
 
 
         {% for entry in form %}
-        <div class="form_row">
-          <label for="{{ entry.id_for_label }}">{{entry.label}}</label>
+        <div class="card_row">
+          <label class="equipment_card__label" for="{{ entry.id_for_label }}">{{entry.label}}</label>
           {{entry}}
         </div>
         {% endfor %}
 
-        <div class="form_row">
+        <div class="card_row__center">
           <button
             class="form_button"
             onclick="window.location.href = `{% url 'orders' %}`;"

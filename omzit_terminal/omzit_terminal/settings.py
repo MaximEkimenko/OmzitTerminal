@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'orders',
+    'controller',
 
 ]
 
@@ -83,13 +84,13 @@ WSGI_APPLICATION = 'omzit_terminal.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        # "NAME": "terminal_transit",
-        # "PASSWORD": "tolko123",
-        # "USER": "admin",
+        "NAME": "terminal_dayworker",
+        "PASSWORD": "tolko123",
+        "USER": "admin",
 
-        'NAME': 'terminal_test',
-        'PASSWORD': 'Epass1',
-        'USER': 'admin',
+        # 'NAME': 'terminal_test',
+        # 'PASSWORD': 'Epass1',
+        # 'USER': 'admin',
         #
         # 'NAME': 'postgres',
         # 'USER': 'postgres',

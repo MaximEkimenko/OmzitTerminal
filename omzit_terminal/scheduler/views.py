@@ -592,6 +592,10 @@ class LoginUser(LoginView):
             return reverse_lazy("orders")
         elif get_employee_position(self.request.user.username) in [Position.Engineer]:
             return reverse_lazy("equipment")
+        elif get_employee_position(self.request.user.username) in [Position.Controller]:
+            return reverse_lazy("controller:index")
+        elif get_employee_position(self.request.user.username) in [Position.Technolog]:
+            return reverse_lazy("tehnolog")
 
         # elif self.request.user.username == "dispatcher":
         #     return reverse_lazy("orders")
