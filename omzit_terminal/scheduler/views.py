@@ -749,10 +749,11 @@ def shift_tasks_report_view(request, start: str = "", end: str = ""):
         'workplace_schedule': workplace_schedule,
         'filter': f,
     }
-    logger.info(f'Пользователь {request.user} перешёл на страницу отчёта с интревалом: {start} - {end}')
+    logger.info(f'Пользователь {request.user} перешёл на страницу отчёта с интервалом: {start} - {end}')
     return render(request, fr"schedulerwp/view_report.html", context=context)
 
 
+@login_required(login_url="login")
 def strat_plan(request, workshop) -> HttpResponse:
     """
     Страница стратегического планирования
@@ -760,6 +761,10 @@ def strat_plan(request, workshop) -> HttpResponse:
     :param request:
     :return:
     """
+    if (str(request.user.username).strip()[:5] != "admin"
+            and str(request.user.username[:4]).strip() != "disp"):
+        logger.warning(f"Попытка доступа к графику диспетчера пользователем {request.user.username}")
+        raise PermissionDenied
     context = get_strat_plan_context(workshop)
     return render(request, 'scheduler/strat_plan/gantt.html', context={'json': json.dumps(context),
                                                                        'workshop': workshop})
