@@ -3,74 +3,91 @@
   <h1>Оборудование</h1>
   
   
-
+  <div class="form_row">        
     {%if role in button_conditions.create%}
-    <div class="form_row">        
+    
       <button id="add_equipment_button" class="btn">Добавить оборудование</button>
       <form action="{% url 'shops' %}">
         <button type="submit" class="btn">Добавить местонахождение</button>
       </form>
-
-    </div>
+    
     {%endif%}
+    <form action="{% url 'ppr_calendar' %}">
+      <button type="submit" class="btn">График ППР</button>
+    </form>
+  </div>
+  </p>
   
-  </p>
-  <p>
-    <input
-      type="button"
-      onclick="window.location.href = '{{ request.path }}';"
-      value="Сбросить фильтр"
-    />
-  </p>
 
   <table class="table" id="st_table">
     <thead>
       <form method="get" id="filter_form">
         <tr class="table_header_row">
           <th class="td_cell">№</th>
-          <th class="td_cell" style="max-width:350px;">{{equipment_filter.form.name}}Оборудование
+          <th class="td_cell" style="max-width:350px;">Оборудование
             <br>
               <div class="sort-filter">
-                  <input type="text" style="max-width:250px;" onkeyup="filterField(this.value, 1)" placeholder="">
+                <input type="text" style="max-width:250px;">  
               </div>
           </th>
           <th class="td_cell">
-            {{equipment_filter.form.inv_number}} Инв. номер
+            Инв. номер
             <br>
             <div class="sort-filter">
-                <input type="text" style="max-width:120px;" onkeyup="filterField(this.value, 2)" placeholder="">
+              <input type="text" style="max-width:120px;">  
             </div>
 
           </th>
           <th class="td_cell">
-            {{equipment_filter.form.shop__name}}Местонахождение
+            Местонахождение
+            <br>
+            <div class="sort-filter">
+              <input type="text" style="max-width:250px;">  
+            </div>
           </th>
-          <th class="td_cell">
-            {{equipment_filter.form.history}}
-            Ремонты
+          <th class="td_cell" style="max-width:150px;">
+            День ППР
+            <br>
+            <div class="sort-filter">
+              <input type="text" >  
+            </div>
+          </th>
+
+          <th class="td_cell" style="width:150px;">
+            История(кол-во срочных ремонтов) 
+            <br>
+            <div class="sort-filter">
+              <input type="text" style="max-width:250px;">  
+            </div>
           </th>
 
         </tr>
       </form>
     </thead>
     
-    {% for line in equipment_filter.qs %}
+    {% for line in table_data %}
     <tr class="table_row">
       <td class="td_cell">{{ line.row_number }}</td>
 
       <td class="td_cell" style="max-width:350px;">
         <a
-          href="{% url 'equipment_card' equipment_id=line.id %}"
+          href="{% url 'equipment_card' line.id %}"
           class="table_link"
           >{{ line.name }}</a
         >
       </td>
       <td class="td_cell">{{ line.inv_number }}</td>
       <td class="td_cell">{{ line.shop__name }}</td>
+      <td class="td_cell">{{ line.ppr_plan_day|default:"-" }}</td>
       
       <td class="td_cell">
-        {%if line.history != 0 %}  
-          <a  class="table_link" href="{% url 'repair_history' pk=line.id %}">история ({{line.history}})</a>
+        {%if line.history %}  
+          <a  class="table_link" href="{% url 'repair_history' line.id %}">
+            история 
+            {% if line.urgent_repairs_qty %}
+              ({{line.urgent_repairs_qty}})
+            {% endif %}
+          </a>
         {% endif %}
       </td>
     </tr>
@@ -82,19 +99,19 @@
 <div id="add-equipment-form" class="modal">
   <form
     action="{% url 'equipment' %}"
-    class="form_form modal-content"
+    class="modal-content"
     method="POST"
   >
     {% csrf_token %}
-    <div class="add_to_plan">
+    <div class="equipment_card">
       <div class="form-error">{{ add_equipment_form.non_field_errors }}</div>
       {% for entry in add_equipment_form %}
-      <div class="form_row">
-        <label for="{{ entry.id_for_label }}">{{entry.label}}</label>
+      <div class="card_row">
+        <label class="equipment_card__label" for="{{ entry.id_for_label }}">{{entry.label}}</label>
         {{entry}}
       </div>
       {% endfor %}
-      <div class="form_row">
+      <div class="card_row__center">
         <button type="submit" class="form_button">
           <p class="green_word">Добавить</p>
         </button>
@@ -105,5 +122,5 @@
 </div>
 {% endblock content%} {% block js%} {{block.super}}
 <script src="{% static 'orders/js/equipment.js' %}"></script>
-<script src="{% static 'scheduler/js/scheduler.js' %}"></script>
+<script src="{% static 'orders/js/multifield_filter.js' %}"></script>
 {% endblock js%}

@@ -9,23 +9,23 @@
   <div id="add-order-form">
     <form action="" class="form_form" method="POST">
       {% csrf_token %}
-      <div class="add_to_plan">
-        <div class="form_row">
-          <div>Описание поломки:</div> {{object.breakdown_description}}
+      <div class="equipment_card">
+        <div class="card_row">
+          <div class="equipment_card__label">Описание поломки:</div> {{object.breakdown_description}}
         </div>
-        <div class="form_row">
-          <div>Причина поломки:</div> {{object.breakdown_cause}}
+        <div class="card_row">
+          <div class="equipment_card__label">Причина поломки:</div> {{object.breakdown_cause}}
         </div>
-        <div class="form_row">
-          <div>Способ устранения:</div> {{object.solution}}
+        <div class="card_row">
+          <div class="equipment_card__label">Способ устранения:</div> {{object.solution}}
         </div>
         {% if object.revision_cause %}
-          <div class="form_row">
-            <div>Причины возвращения на доработку:</div> {{object.revision_cause|safe}}
+          <div class="card_row">
+            <div class="equipment_card__label">Причины возвращения на доработку:</div> {{object.revision_cause|safe}}
           </div>
         {% endif %}
 
-        <div class="form_row">
+        <div class="card_row__center">
           <button
             class="form_button"
             onclick="window.location.href = `{% url 'orders' %}`;"

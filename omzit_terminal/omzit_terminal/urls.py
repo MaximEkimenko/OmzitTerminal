@@ -16,6 +16,7 @@ urlpatterns = [
     path("api/", include("api.urls")),
     path("api-auth/", include("rest_framework.urls")),
     path("orders/", include("orders.urls")),
+    path("controller/", include("controller.urls", namespace="controller")),
     # path("tst/", tst, name="tst"),
 ]
 

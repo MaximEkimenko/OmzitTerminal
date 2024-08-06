@@ -1,0 +1,24 @@
+{% extends "controller/base_controller.html" %} 
+{% block content %}
+<div class="col">
+    <div class="form_row">
+        <form action="{% url 'controller:index'%}" method="GET">
+            <button type="submit" class="btn">Акты о браке</button>
+        </form>
+        <form action="{% url 'controller:edit' pk %}">
+            <button class="btn">Редактировать</button>
+        </form>
+    </div>
+
+    <div class="equipment_card">
+    {% for label, value in object.items %}
+    <div class="card_row">
+        <div class="equipment_card__label">{{label}}</div>
+        <div class="equipment_card__value">{{value|default:""}}</div>
+
+    </div>
+    {% endfor %}
+    
+    </div>
+</div>
+{% endblock %}
