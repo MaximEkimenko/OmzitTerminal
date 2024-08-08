@@ -1,9 +1,10 @@
 from django.core.validators import RegexValidator
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
+import datetime
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
-
+from django.utils.timezone import now
 # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
 # import datetime
 # from django.db.models import Avg
@@ -35,13 +36,9 @@ class WorkshopSchedule(models.Model):
     workshop = models.PositiveSmallIntegerField(verbose_name='Цех', null=True)
     model_name = models.CharField(max_length=30, verbose_name='Модель изделия', validators=[model_regex])
     datetime_done = models.DateField(null=True, verbose_name='Планируемая дата готовности')
-    calculated_datetime_done = models.DateField(null=True, verbose_name='Расчётная дата готовности')
-    calculated_datetime_start = models.DateField(null=True, verbose_name='Расчётная дата запуска')
     order = models.CharField(max_length=100, verbose_name='Номер заказа', validators=[order_regex])
     order_status = models.CharField(max_length=20, default='не запланировано', verbose_name='Статус заказа')
-
     model_order_query = models.CharField(max_length=60, null=True, verbose_name='заказ и модель', unique=True)
-
     query_prior = models.PositiveSmallIntegerField(verbose_name='Приоритет заявки чертежей', default=1)
     done_rate = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=0,
                                     verbose_name='процент готовности')
@@ -55,8 +52,6 @@ class WorkshopSchedule(models.Model):
     remark_datetime = models.DateTimeField(null=True, verbose_name='дата/время замечания к КД')
     td_const_done_datetime = models.DateTimeField(null=True, verbose_name='дата/время ответа конструктора по КД')
     td_tehnolog_done_datetime = models.DateTimeField(null=True, verbose_name='дата/время ответа технолога по КД')
-
-    plan_datetime = models.DateTimeField(null=True, verbose_name='дата/время выполнения планирования заказа')
     dispatcher_query_td_fio = models.CharField(max_length=30, null=True, verbose_name='Запросил КД')
     dispatcher_plan_ws_fio = models.CharField(max_length=31, null=True, verbose_name='Запланировал')
     constructor_query_td_fio = models.CharField(max_length=30, null=True, verbose_name='Передал КД')
@@ -68,11 +63,26 @@ class WorkshopSchedule(models.Model):
     #  либо работа только с таблицей ModelParameters
     produce_cycle = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=1,
                                         verbose_name='Производственный цикл')
-    contract_start_date = models.DateField(null=True, verbose_name='Дата начала по договору')
-    contract_end_date = models.DateField(null=True, verbose_name='Дата готовности по договору')
 
-    is_fixed = models.BooleanField(default=False, verbose_name='фиксация в план')
-    late_days = models.IntegerField(null=True, default=0, verbose_name='отставание дней')
+    plan_datetime = models.DateTimeField(null=True, verbose_name='дата/время выполнения планирования заказа',
+                                         # # TODO убрать после переноса
+                                         default=datetime.datetime.now(tz=datetime.timezone.utc))
+
+    contract_start_date = models.DateField(null=True, verbose_name='Дата начала по договору',
+                                           # # TODO убрать после переноса
+                                           default=datetime.datetime.now(tz=datetime.timezone.utc))
+    contract_end_date = models.DateField(null=True, verbose_name='Дата готовности по договору',
+                                         # # TODO убрать после переноса
+                                         default=datetime.datetime.now(tz=datetime.timezone.utc))
+    calculated_datetime_done = models.DateField(null=True, verbose_name='Расчётная дата готовности',
+                                                # # TODO убрать после переноса
+                                                default=datetime.datetime.now(tz=datetime.timezone.utc))
+    calculated_datetime_start = models.DateField(null=True, verbose_name='Расчётная дата запуска',
+                                                 # # TODO убрать после переноса
+                                                 default=datetime.datetime.now(tz=datetime.timezone.utc))
+
+    is_fixed = models.BooleanField(verbose_name='фиксация в план', default=False)
+    late_days = models.IntegerField(null=True, verbose_name='отставание дней', default=0)
 
     # def __str__(self):
     #     fields = [f"{field.name}: {getattr(self, field.name)}" for field in self._meta.fields]
@@ -88,17 +98,6 @@ class WorkshopSchedule(models.Model):
         if not self.calculated_datetime_done:
             self.calculated_datetime_done = self.datetime_done
         super().save(*args, **kwargs)
-
-
-    # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
-    # # Пример структуры {
-    # # "author": "admin",
-    # # "sz_text": "Прошу изготовить",
-    # # "need_date": "22.12.2023",
-    # # "sz_number": "СЗ1",
-    # # "product_name": "Блок Б57"
-    # # }
-    # sz = models.JSONField(null=True, blank=True, verbose_name='Данные служебной записки')
 
     class Meta:
         db_table = "workshop_schedule"

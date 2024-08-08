@@ -9,13 +9,12 @@ from django_apscheduler.jobstores import DjangoJobStore
 from django_apscheduler.models import DjangoJobExecution
 from django_apscheduler import util
 
-from orders.utils.tasks import (
-    create_ppr_at_first_run,
-    create_ppr_for_next_month,
-    CREATE_NEXT_MONTH_PPR_DAY,
-    suspend_orders_end_of_day,
-)
-from controller.utils.tasks import create_defect_act_at_first_run, add_defect_act_from_shift_task
+from orders.utils.tasks import (create_ppr_at_first_run, create_ppr_for_next_month,  # noqa
+                                CREATE_NEXT_MONTH_PPR_DAY, suspend_orders_end_of_day,  # noqa
+                                )
+from controller.utils.tasks import (create_defect_act_at_first_run, # noqa
+                                    add_defect_act_from_shift_task, # noqa
+                                    update_defect_act_from_shift_task)  # noqa
 
 from worker.views import pause_work, resume_work  # noqa
 
@@ -111,7 +110,6 @@ class Command(BaseCommand):
         )
         logger.info('Запущена задача: "Формирование отчётов для рабочих"')
 
-
         scheduler.add_job(
             suspend_orders_end_of_day,
             trigger=CronTrigger(hour="20", minute="0"),
@@ -121,7 +119,6 @@ class Command(BaseCommand):
             misfire_grace_time=1 * 60,
         )
         logger.info("Запущена задача: Снятие ремонтников с заявок в конце смены")
-
 
         # запускаем задание два дня подряд, на случай, если в первый раз не отработало
         ppr_run_days = f"{CREATE_NEXT_MONTH_PPR_DAY},{CREATE_NEXT_MONTH_PPR_DAY + 1}"
@@ -135,6 +132,7 @@ class Command(BaseCommand):
         )
         logger.info("Запущена задача по созданию заявок ППР на следующий месяц")
 
+        # TODO убрать после первого запуска? Или найти другой способ первоначального заполнения?
         scheduler.add_job(
             create_ppr_at_first_run,
             "date",
@@ -145,10 +143,11 @@ class Command(BaseCommand):
         )
         logger.info("Запущена задача по первоначальному созданию заявок ППР")
 
+        # TODO убрать после первого запуска? Или найти другой способ первоначального заполнения?
         scheduler.add_job(
             create_defect_act_at_first_run,
             "date",
-            id="Прервоначальное заполнение таблицы актов о браке",
+            id="Первоначальное заполнение таблицы актов о браке",
             max_instances=1,
             replace_existing=True,
             misfire_grace_time=1 * 60,
@@ -156,16 +155,24 @@ class Command(BaseCommand):
         logger.info("Запущена задача по первоначальному заполнению таблицы актов о браке из ShiftTask")
 
         scheduler.add_job(
-            create_defect_act_at_first_run,
+            add_defect_act_from_shift_task,
             trigger=CronTrigger(hour=23),
-            #trigger=CronTrigger(minute="*"),
-            id="Ежедневная проверка сменных заданий на брак",
+            id="Ежедневная проверка не добавленных сменных заданий на брак",
             max_instances=1,
             replace_existing=True,
             misfire_grace_time=1 * 60,
         )
-        logger.info("Запущена задача по ежедневному добавлению брака из сменных заданий в таблицу актов о браке")
+        logger.info("Запущена задача по ежедневному добавлению актов брака из сменных заданий в таблицу актов о браке")
 
+        scheduler.add_job(
+            update_defect_act_from_shift_task,
+            trigger=CronTrigger(hour='23', minute='5'),
+            id="Ежедневная проверка не обновлённых сменных заданий на брак",
+            max_instances=1,
+            replace_existing=True,
+            misfire_grace_time=1 * 60,
+        )
+        logger.info("Запущена задача по ежедневному обновлению актов брака из сменных заданий в таблицу актов о браке")
 
         # scheduler.add_job( # TODO ФУНКЦИОНАЛ ОТЧЁТОВ законсервировано пока не понадобится
         #     days_report_create,

@@ -1,6 +1,7 @@
 {% extends "controller/base_controller.html" %} 
 {% load static %}
 {% block content %}
+{% load duration_filters %}
     <h1>Учет брака</h1>
     <div class='form_row'>
         {% if role in create_act_role %}
@@ -77,7 +78,9 @@
                     </div>
 
                 </th>
+                <!-- TODO скрытие времени исправления брака-->
                 <th class="td_cell_small">Время исправления</th>
+
                 <th class="td_cell_small">
                     Виновник
                     <br>
@@ -123,7 +126,8 @@
                     нет
                     {% endif %}
                 </td>
-                <td class="td_cell_small">{{object.fixing_time| default:""}}</td>
+                <!-- TODO скрытие времени исправления брака-->
+                <td class="td_cell_small">{{object.fixing_time| format_interval}}</td>
                 <td class="td_cell_small">{{object.fio_failer| default:""}}</td>
                 <td class="td_cell_small">{{object.master_finish_wp| default:""}}</td>
                 <td class="td_cell_small">

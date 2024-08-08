@@ -187,15 +187,15 @@ def scheduler(request):
             try:
                 # заполнение срока готовности, категория изделия, статус изделия, ФИО планировщика
                 (WorkshopSchedule.objects.filter
-                    (model_order_query=form_workshop_plan.cleaned_data['model_order_query'].model_order_query).update
+                (model_order_query=form_workshop_plan.cleaned_data['model_order_query'].model_order_query).update
                     (
-                        datetime_done=form_workshop_plan.cleaned_data['datetime_done'],
-                        workshop=form_workshop_plan.cleaned_data['workshop'],
-                        product_category=str(form_workshop_plan.cleaned_data['category']),
-                        order_status='запланировано',
-                        dispatcher_plan_ws_fio=f'{request.user.first_name} {request.user.last_name}',
-                        calculated_datetime_done=form_workshop_plan.cleaned_data['datetime_done']
-                    ))
+                    datetime_done=form_workshop_plan.cleaned_data['datetime_done'],
+                    workshop=form_workshop_plan.cleaned_data['workshop'],
+                    product_category=str(form_workshop_plan.cleaned_data['category']),
+                    order_status='запланировано',
+                    dispatcher_plan_ws_fio=f'{request.user.first_name} {request.user.last_name}',
+                    calculated_datetime_done=form_workshop_plan.cleaned_data['datetime_done']
+                ))
                 # Заполнение данных СЗ, статус СЗ, ФИО планировщика, категория изделия,
                 alert = 'Данные в график успешно занесены! '
                 logger.info(f'Данные заказа {form_workshop_plan.cleaned_data["model_order_query"].model_order_query} '
@@ -221,8 +221,8 @@ def scheduler(request):
                 logger.info(f'Данные сменных заданий успешно занесены.\n'
                             f'{success_group_message}')
                 try:
-                    # TODO выключено на тесты
-                    # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                    # TODO выключать на тесты
+                    asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
                     pass
                 except Exception as e:
                     logger.error('ошибка отправки сообщения в группу телеграм при планировании графика')
@@ -293,8 +293,8 @@ def td_query(request):
                              f'{request.user.first_name} {request.user.last_name}')
                 try:
                     # отправка сообщения
-                    pass  # TODO отключено на тесты
-                    # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                    pass  # TODO выключать на тесты
+                    asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
                 except Exception as e:
                     logger.error('Ошибка отправки сообщения ботом при заказе чертежей в td_query')
                     logger.exception(e)
@@ -320,7 +320,6 @@ def new_datetimedone(request):
         if form_change_datetime_done.is_valid():
             # заказ_модель
             model_order_query = str(form_change_datetime_done.cleaned_data['model_order_query']).strip()
-            print('!!!!!!!!!', model_order_query, '!!!!!!!!!!!')
             try:
                 # обновление графика цеха данными запроса на чертеж
                 model_order_to_update = WorkshopSchedule.objects.get(model_order_query=model_order_query)
@@ -334,13 +333,13 @@ def new_datetimedone(request):
                 # сохранение данных
                 model_order_to_update.save()
                 # сообщение об успехе для отправки в группу телеграм
-                # success_group_message = (f"Изменена дата готовности под договору: "
-                #                          f"{form_change_datetime_done.cleaned_data['model_query']}."
-                #                          f"Изменил: {request.user.first_name} {request.user.last_name}.")
+                success_group_message = (f"Изменена дата готовности под договору: "
+                                         f"{form_change_datetime_done.cleaned_data['model_query']}."
+                                         f"Изменил: {request.user.first_name} {request.user.last_name}.")
                 try:
                     # отправка сообщения
-                    pass  # TODO отключено на тесты
-                    # asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
+                    pass  # TODO выключать на тесты
+                    asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
                 except Exception as e:
                     logger.error('Ошибка отправки сообщения ботом при заказе чертежей в td_query')
                     logger.exception(e)
@@ -693,6 +692,7 @@ def plan(request):
                                          f"{form_workshop_plan.cleaned_data['model_order_query'].model_order_query} "
                                          f"успешно запланирован на {form_workshop_plan.cleaned_data['datetime_done']}. "
                                          f"Запланировал: {request.user.first_name} {request.user.last_name}.")
+                # TODO выключать на тесты
                 asyncio.run(terminal_message_to_id(to_id=group_id, text_message_to_id=success_group_message))
             except Exception as e:
                 print(e, ' Ошибка запаси в базу SchedulerWorkshop')

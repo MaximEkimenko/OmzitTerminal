@@ -6,11 +6,11 @@ from django.views.generic.base import ContextMixin
 from django.views.generic.edit import FormMixin
 from django.contrib import messages
 
-from controller.forms import EditDefectForm
-from controller.models import DefectAct
-from controller.utils.edit_permissions import FIELD_EDIT_PERMISSIONS
-from orders.utils.roles import get_employee_position, PERMITTED_USERS, menu_items
-from m_logger_settings import logger
+from controller.forms import EditDefectForm  # noqa
+from controller.models import DefectAct  # noqa
+from controller.utils.edit_permissions import FIELD_EDIT_PERMISSIONS  # noqa
+from orders.utils.roles import get_employee_position, PERMITTED_USERS, menu_items  # noqa
+from m_logger_settings import logger  # noqa
 
 
 class RoleMixin(ContextMixin):
@@ -23,7 +23,7 @@ class RoleMixin(ContextMixin):
         context.update({
             "role": get_employee_position(self.request.user.username),
             "permitted_users": PERMITTED_USERS,
-            "menu_items": menu_items
+            "menu_items": menu_items,
         })
         return context
 

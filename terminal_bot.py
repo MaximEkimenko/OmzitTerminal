@@ -6,6 +6,7 @@ from aiogram import Bot, Dispatcher, executor, types
 # работа с БД
 from terminal_db import (ws_list_get, status_change_to_otk, st_list_get, master_id_get, control_man_id_set,
                          decision_data_set, lines_count, control_man_id_get, all_active_st_get)
+import json
 
 # TODO законсервировано функционал простоев
 # from terminal_db import confirm_downtime, reject_downtime
@@ -17,110 +18,164 @@ TOKEN = os.getenv('RSU_TOKEN')
 
 # ids
 admin_id = int(os.getenv('ADMIN_TELEGRAM_ID'))
-posohov_id = 2051721470  # цех 1
-ermishkin_id = 5221029965
-gordii_id = 6374431046
-kondratiev_id = 6125791135
-achmetov_id = 1153114403
-kozlov_id = 2103097640
-
-ostrijnoi_id = 5380143506  # цех 2
-mailashov_id = 546976234
-gorojanski_id = 6299557037
-kulbashin_id = 5426476877
-pospelov_id = 1377896858
-skorobogatov_id = 5439414299
-rihmaer_id = 6305730497
-lipski_id = 6424114889
-
-savchenko_id = 2131171377  # ПДО
-pavluchenkova_id = 1151694995
-
-averkina_id = 1563020113  # ОТК
-donskaya_id = 6359131276
-sultigova_id = 6049253475
-potapova_id = 5010645397
-sofinskaya_id = 1358370501
-sheglov_id = 1501419738
-dubenuk_id = 1359982302
-dolganev_id = 1907891961
-shagov_id = 1906275223
-mekelburg_id = 841834270  # УЗК
-kucherenko_id = 950359384
-
-mhitaryan_id = 413559952  # ПКО
-saks_id = 1366631138  # ОГТ
+# posohov_id = 2051721470  # цех 1
+# ermishkin_id = 5221029965
+# gordii_id = 6374431046
+# kondratiev_id = 6125791135
+# achmetov_id = 1153114403
+# kozlov_id = 2103097640
+# kravchenko_id = 5480144443
+#
+# ostrijnoi_id = 5380143506  # цех 2
+# mailashov_id = 546976234
+# gorojanski_id = 6299557037
+# kulbashin_id = 5426476877
+# pospelov_id = 1377896858
+# skorobogatov_id = 5439414299
+# rihmaer_id = 6305730497
+# lipski_id = 6424114889
+#
+# savchenko_id = 2131171377  # ПДО
+# pavluchenkova_id = 1151694995
+#
+# averkina_id = 1563020113  # ОТК
+# donskaya_id = 6359131276
+# sultigova_id = 6049253475
+# potapova_id = 5010645397
+# sofinskaya_id = 1358370501
+# sheglov_id = 1501419738
+# dubenuk_id = 1359982302
+# dolganev_id = 1907891961
+# shagov_id = 1906275223
+# seifilov_id = 5551812831
+#
+# mekelburg_id = 841834270  # УЗК
+# kucherenko_id = 950359384
+# vafin_id = 1419051027
+# kalashnikov_id = 1121811565
+#
+# mhitaryan_id = 413559952  # ПКО
+# saks_id = 1366631138  # ОГТ
 # groups
-# omzit_otk_group_id = -981440150
-# terminal_group_id = -908012934
-# omzit_master_group1_id = -4005524766  # цех 1
-# omzit_master_group2_id = -4109421151  # цех 2
+omzit_otk_group_id = -981440150
+terminal_group_id = -908012934
+omzit_master_group1_id = -4005524766  # цех 1
+omzit_master_group2_id = -4109421151  # цех 2
 
 # test groups
-omzit_otk_group_id = admin_id
-terminal_group_id = admin_id
-omzit_master_group1_id = admin_id
-omzit_master_group2_id = admin_id
+# omzit_otk_group_id = admin_id
+# terminal_group_id = admin_id
+# omzit_master_group1_id = admin_id
+# omzit_master_group2_id = admin_id
 
 ws_numbers_c1 = ('11', '12', '13', '14', '15', '16')  # терминалы цех 1
 ws_numbers_c2 = ('22', '23', '24', '25', '26', '27', '28', '29', '210', '211', '212')  # терминалы цех 2
 
-# fios
-id_fios = {admin_id: 'Екименко М.А.',  # цех 1
-           posohov_id: 'Посохов О.С.',
-           ermishkin_id: 'Ермишкин В.М.',
-           gordii_id: 'Гордий В.В.',
-           kondratiev_id: 'Кондратьев П.В.',
-           achmetov_id: 'Ахметов К.',
-           kozlov_id: 'Козлов А.А.',
+# # fios
+# id_fios = {admin_id: 'Екименко М.А.',  # цех 1
+#            posohov_id: 'Посохов О.С.',
+#            ermishkin_id: 'Ермишкин В.М.',
+#            gordii_id: 'Гордий В.В.',
+#            kondratiev_id: 'Кондратьев П.В.',
+#            achmetov_id: 'Ахметов К.',
+#            kozlov_id: 'Козлов А.А.',
+#            kravchenko_id: 'Кравченко Ю.',
+#            mailashov_id: 'Майлашов О.',  # цех 2
+#            gorojanski_id: 'Горожанский Н.Н.',
+#            pospelov_id: 'Поспелов К.С.',
+#            kulbashin_id: 'Кульбашин Ю.А.',
+#            skorobogatov_id: 'Скоробогатов А.',
+#            ostrijnoi_id: 'Острижной К.',
+#            rihmaer_id: 'Рихмаер Ю.С.',
+#
+#            savchenko_id: 'Савченко Е.Н.',  # ПДО
+#            pavluchenkova_id: 'Павлюченкова Н. Л.',
+#
+#            donskaya_id: 'Донская Ю.Г.',  # ОТК
+#            averkina_id: 'Аверкина О.В.',
+#            sultigova_id: 'Султыгова О.',
+#            potapova_id: 'Потапова М. А.',
+#            sofinskaya_id: 'Софинская А. Г.',
+#            dolganev_id: 'Долганев А.Н.',
+#            dubenuk_id: 'Дубенюк А. П.',
+#            sheglov_id: 'Щеглов В.',
+#            shagov_id: 'Шагов И.',
+#            seifilov_id: 'Сейфилов С.А.',
+#
+#            mekelburg_id: 'Мекельбург Д.',  # УЗК
+#            kucherenko_id: 'Кучеренко О.',
+#            vafin_id: 'Вафин Р.',
+#            kalashnikov_id: 'Калашников Д.',
+#
+#            mhitaryan_id: 'Мхитарян К.',  # ПКО
+#            saks_id: 'Сакс В.И.'  # ОГТ
+#            }
 
-           mailashov_id: 'Майлашов О.',  # цех 2
-           gorojanski_id: 'Горожанский Н.Н.',
-           pospelov_id: 'Поспелов К.С.',
-           kulbashin_id: 'Кульбашин Ю.А.',
-           skorobogatov_id: 'Скоробогатов А.',
-           ostrijnoi_id: 'Острижной К.',
-           rihmaer_id: 'Рихмаер Ю.С.',
-
-           savchenko_id: 'Савченко Е.Н.',  # ПДО
-           pavluchenkova_id: 'Павлюченкова Н. Л.',
-
-           donskaya_id: 'Донская Ю.Г.',  # ОТК
-           averkina_id: 'Аверкина О.В.',
-           sultigova_id: 'Султыгова О.',
-           potapova_id: 'Потапова М. А.',
-           sofinskaya_id: 'Софинская А. Г.',
-           dolganev_id: 'Долганев А.Н.',
-           dubenuk_id: 'Дубенюк А. П.',
-           sheglov_id: 'Щеглов В.',
-           shagov_id: 'Шагов И.',
-           mekelburg_id: 'Мекельбург Д.',  # УЗК
-           kucherenko_id: 'Кучеренко О.',
-
-           mhitaryan_id: 'Мхитарян К.',  # ПКО
-           saks_id: 'Сакс В.И.'  # ОГТ
-           }
+# использование общего json вместо ручного заполнения
+with open(r'omzit_terminal\id_fios.json', 'r', encoding='utf-8') as f:
+    json_id_fios = json.load(f)
+# переворот словаря ля сохранения функциональности
+id_fios = {v: k for k, v in json_id_fios.items()}
 
 # пользователи имеющие доступ
 users = (admin_id,  # root
-         posohov_id, ermishkin_id, gordii_id, kondratiev_id, achmetov_id, kozlov_id,  # цех 1
-         savchenko_id, pavluchenkova_id,  # ПДО
-         donskaya_id, averkina_id, sultigova_id, potapova_id, sofinskaya_id, sheglov_id, dubenuk_id, dolganev_id,
-         shagov_id, mekelburg_id, kucherenko_id,  # ОТК
-         mhitaryan_id,  # ПКО
-         saks_id,  # ОГТ
-         mailashov_id, gorojanski_id, pospelov_id, kulbashin_id, skorobogatov_id, ostrijnoi_id, rihmaer_id,  # цех 2
+         # цех 1
+         posohov_id := json_id_fios['Посохов О.С.'],
+         ermishkin_id := json_id_fios['Ермишкин В.М.'],
+         gordii_id := json_id_fios['Гордий В.В.'],
+         kondratiev_id := json_id_fios['Кондратьев П.В.'],
+         kozlov_id := json_id_fios['Козлов А.А.'],
+         kravchenko_id := json_id_fios['Кравченко Ю.'],
+         # цех 2
+         mailashov_id := json_id_fios['Майлашов О.'],
+         gorojanski_id := json_id_fios['Горожанский Н.Н.'],
+         pospelov_id := json_id_fios['Поспелов К.С.'],
+         kulbashin_id := json_id_fios['Кульбашин Ю.А.'],
+         skorobogatov_id := json_id_fios['Скоробогатов А.'],
+         ostrijnoi_id := json_id_fios['Острижной К.'],
+         rihmaer_id := json_id_fios['Рихмаер Ю.С.'],
+         yastrebov_id := json_id_fios['Ястребов А.А.'],
+         # ПДО
+         savchenko_id := json_id_fios['Савченко Е.Н.'],
+         pavluchenkova_id := json_id_fios['Павлюченкова Н. Л.'],
+         # ОТК
+         donskaya_id := json_id_fios['Донская Ю.Г.'],
+         averkina_id := json_id_fios['Аверкина О.В.'],
+         sultigova_id := json_id_fios['Султыгова О.'],
+         potapova_id := json_id_fios['Потапова М. А.'],
+         sofinskaya_id := json_id_fios['Софинская А. Г.'],
+         dolganev_id := json_id_fios['Долганев А.Н.'],
+         sheglov_id := json_id_fios['Щеглов В.'],
+         dubenuk_id := json_id_fios['Дубенюк А. П.'],
+         shagov_id := json_id_fios['Шагов И.'],
+         mekelburg_id := json_id_fios['Мекельбург Д.'],
+         kucherenko_id := json_id_fios['Кучеренко О.'],
+         vafin_id := json_id_fios['Вафин Р.'],
+         kalashnikov_id := json_id_fios['Калашников Д.'],
+         seifilov_id := json_id_fios['Сейфилов С.А.'],
+         # ПКО
+         json_id_fios['Мхитарян К.'],
+         # ОГТ
+         json_id_fios['Сакс В.И.'],
          )
 
+# выдача доступа
 # производство
-masters_list = (admin_id, ermishkin_id, posohov_id, gordii_id, kondratiev_id, achmetov_id, kozlov_id,  # цех 1
-                mailashov_id, gorojanski_id, pospelov_id, kulbashin_id, skorobogatov_id, ostrijnoi_id, rihmaer_id,
-                )
+masters_list = (
+    # цех 1
+    admin_id, ermishkin_id, posohov_id, gordii_id, kondratiev_id, kozlov_id, kravchenko_id,
+    # цех 2
+    mailashov_id, gorojanski_id, pospelov_id, kulbashin_id, skorobogatov_id, ostrijnoi_id,
+    rihmaer_id, yastrebov_id
+)
+# диспетчеры
+dispatchers_list = (admin_id, savchenko_id, pavluchenkova_id,)
 
-dispatchers_list = (admin_id, savchenko_id, pavluchenkova_id,)  # диспетчеры
-
+# контролёры
 control_mans_list = (admin_id, donskaya_id, averkina_id, sultigova_id, potapova_id, sofinskaya_id, dolganev_id,
-                     sheglov_id, dubenuk_id, shagov_id, mekelburg_id, kucherenko_id)  # контролёры
+                     sheglov_id, dubenuk_id, shagov_id, mekelburg_id, kucherenko_id, vafin_id, kalashnikov_id,
+                     seifilov_id
+                     )
 
 bot = Bot(token=TOKEN)  # инициализация бота
 dp = Dispatcher(bot)  # инициализация диспетчера
@@ -216,19 +271,19 @@ async def otk_call(callback_query: types.CallbackQuery, callback_data: dict):
         send_master_group = omzit_master_group1_id
     elif str(ws_number) in ws_numbers_c2:
         send_master_group = omzit_master_group2_id
-    # обработка большого количества вызовов ОТК
+
     st_count = lines_count(ws_number=str(ws_number))[0]  # количество СЗ с ожиданием контролёра
-    if st_count > 10:
-        await bot.send_message(chat_id=send_master_group, text=f"Вызов контролёра более чем на 8 СЗ недопустим.\n"
+    if st_count >= 8:
+        await bot.send_message(chat_id=send_master_group, text=f"Вызов контролёра более чем на 8 СЗ недопустим."
                                                                f"Сдайте сменные задания ОТК.")
-        logger.warning(f'Попытка вызвать ОТК на более 10 СЗ одновременно.'
+        logger.warning(f'Попытка вызвать ОТК на более 8 СЗ одновременно.'
                        f'{ws_number=}, {id_fios.get(int(master_id), master_id)}')
         return
     # Статус ожидание контролёра
     status_change_to_otk(ws_number=ws_number, initiator_id=master_id)
     st_count = lines_count(ws_number=str(ws_number))[0]  # количество СЗ с ожиданием контролёра
     ultra_sound_string = lines_count(ws_number=str(ws_number))[1]  # количество СЗ с ожиданием контролёра
-    logger.info(f'Количество сменных заданий для приёмки {st_count=}, Наличие УЗК, или рентгена: {ultra_sound_string=}')
+    logger.info(f'Количество сменных заданий для приёмки {st_count=}, Наличие УЗК: {ultra_sound_string=}')
     # отправка сообщения о заявке на контролёра в группу ОТК
     if ultra_sound_string:
         await bot.send_message(chat_id=omzit_otk_group_id, text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
@@ -239,14 +294,14 @@ async def otk_call(callback_query: types.CallbackQuery, callback_data: dict):
         await bot.send_message(chat_id=omzit_otk_group_id, text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
                                                                 f"{id_fios[int(master_id)]}.\n"
                                                                 f"Количество сменных заданий для приёмки: {st_count}.")
-    # Обратная связь мастеру отменено т.к. мастера не хотят личку
+    # Обратная связь мастеру выключено т.к. мастера не хотят сообщений в личку
     # await bot.send_message(chat_id=master_id, text="Запрос в отк отправлен.")
     if str(ws_number) in ws_numbers_c1:
         await bot.send_message(chat_id=omzit_master_group1_id, text="Запрос в отк отправлен.")
     elif str(ws_number) in ws_numbers_c2:
         await bot.send_message(chat_id=omzit_master_group2_id, text="Запрос в отк отправлен.")
     else:
-        logger.error('Ошибка в номере рабочего центра.')
+        logger.error(f'Ошибка в номере рабочего центра. {ws_number}')
     await callback_query.answer()  # закрытие inline кнопок
 
 
@@ -362,6 +417,7 @@ async def otk_decision_shift_task_choice(callback_query: types.CallbackQuery, ca
     :param callback_query:
     :return:
     """
+    inc = 1
     controlman_id = callback_data.get('user_id')
     ws_number = callback_data.get('ws_number')
     logger.debug(f'FROM_otk_dcgo_callback_data: {ws_number=}, {id_fios.get(int(controlman_id), controlman_id)}')
@@ -369,22 +425,24 @@ async def otk_decision_shift_task_choice(callback_query: types.CallbackQuery, ca
     # получение списка СЗ
     shift_task_list = st_list_get(ws_number)
 
-    # обработка длинной строки при большом количестве СЗ
     if len(shift_task_list) > 4:
         full_task_text = '\n'.join(shift_task_list)[:40]
     else:
         full_task_text = '\n'.join(shift_task_list)
 
-    for task in shift_task_list:
-        shift_task_id = task[2:str(task).find("|") - 1]  # id СЗ
-        logger.debug(f'{shift_task_id=} в otk_decision_shift_task_choice')
-        callback_to_decision = otk_stid_callback_data.new(shift_task_id, controlman_id)
-        btn = types.InlineKeyboardButton(text=f'ВЫБРАТЬ СЗ: № {shift_task_id}',
-                                         callback_data=callback_to_decision)
-        inline_st_buttons.add(btn)
-    await bot.send_message(chat_id=controlman_id, text='Список СЗ для приёмки: \n' + full_task_text,
-                           reply_markup=inline_st_buttons)
-    await callback_query.answer()  # закрытие inline кнопок
+    try:
+        for task in shift_task_list:
+            shift_task_id = task[2:str(task).find("|") - 1]  # id СЗ
+            logger.debug(f'{shift_task_id=} в otk_decision_shift_task_choice')
+            callback_to_decision = otk_stid_callback_data.new(shift_task_id, controlman_id)
+            btn = types.InlineKeyboardButton(text=f'ВЫБРАТЬ СЗ: № {shift_task_id}',
+                                             callback_data=callback_to_decision)
+            inline_st_buttons.add(btn)
+        await bot.send_message(chat_id=controlman_id, text='Список СЗ для приёмки: \n' + full_task_text,
+                               reply_markup=inline_st_buttons)
+        await callback_query.answer()  # закрытие inline кнопок
+    except Exception as e:
+        print(e)
 
 
 # обработчик callback otk_decision принятия решения по СЗ на РЦ отображение инлайн кнопок для принятия решения
@@ -489,6 +547,77 @@ async def report_active_shift_tasks(message: types.Message):
         await message.answer(text='У вас не доступа к этому функционалу. Обратитесь к руководителю.')
 
 
+@dp.message_handler(commands=['otk_send_text'])
+async def master_otk_text_send(message: types.Message):
+    """
+    Ручная отправка вызова ОТК
+    :param message:
+    :return:
+    """
+    try:
+        master_id = message.from_user.id
+        ws_number = message.text.split(' ')[1]
+        if str(ws_number) in ws_numbers_c1 or str(ws_number) in ws_numbers_c2:
+            if str(ws_number) in ws_numbers_c1:
+                send_master_group = omzit_master_group1_id
+            elif str(ws_number) in ws_numbers_c2:
+                send_master_group = omzit_master_group2_id
+            # обработка большого количества вызовов ОТК
+            # Статус ожидание контролёра
+            st_count = lines_count(ws_number=str(ws_number))[0]  # количество СЗ с ожиданием контролёра
+            if st_count > 10:
+                await bot.send_message(chat_id=send_master_group,
+                                       text=f"Вызов контролёра более "
+                                            f"чем на 10 СЗ недопустим.\n"
+                                            f"Сдайте сменные задания ОТК.")
+                logger.warning(f'Попытка вызвать ОТК на более 10 СЗ одновременно.'
+                               f'{ws_number=}, {id_fios.get(int(master_id), master_id)}')
+                return
+            status_change_to_otk(ws_number=ws_number, initiator_id=master_id)
+            st_count = lines_count(ws_number=str(ws_number))[0]  # количество СЗ с ожиданием контролёра
+            if st_count == 0:
+                await bot.send_message(chat_id=send_master_group,
+                                       text=f"Сменных заданий со статусом 'вызов контролёра' "
+                                            f"на {ws_number} нет.")
+                return
+        else:
+            await message.reply(text='Номер терминала введён неправильно')
+            logger.debug(f'Номер терминала введён неправильно {message.text=}. '
+                         f'При ручном вызове ОТК из master_otk_text_send')
+            return
+        logger.info(f'Вызов контролёра вручную из master_otk_text_send')
+        text_to_otk = ' '.join(message.text.split(' ')[2:])
+        if len(text_to_otk) > 50:
+            await message.reply(text='Сообщение для ОТК более 50 символов.')
+            logger.debug(f'Сообщение для ОТК более 50 символов {message.text=}. '
+                         f'При ручном вызове ОТК из master_otk_text_send')
+            return
+
+        ultra_sound_string = lines_count(ws_number=str(ws_number))[1]
+        logger.info(f'Количество сменных заданий для приёмки {st_count=}, '
+                    f'Наличие УЗК, или рентгена: {ultra_sound_string=}')
+        # отправка сообщения о заявке на контролёра в группу ОТК
+        if ultra_sound_string:
+            await bot.send_message(chat_id=omzit_otk_group_id,
+                                   text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
+                                        f"{id_fios[int(master_id)]}.\n"
+                                        f"Количество сменных заданий для приёмки: "
+                                        f"{st_count}.\n"
+                                        f"операция рентген, УЗК: {ultra_sound_string} \n"
+                                        f"Замечание мастера: {text_to_otk}")
+        else:
+            await bot.send_message(chat_id=omzit_otk_group_id,
+                                   text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
+                                        f"{id_fios[int(master_id)]}.\n"
+                                        f"Количество сменных заданий для приёмки: {st_count}. \n"
+                                        f"Замечание мастера: {text_to_otk}")
+        await bot.send_message(chat_id=send_master_group, text="Запрос в отк отправлен.")
+    except Exception as e:
+        logger.error(e)
+        await message.reply(text='Команда введена неправильно')
+        logger.debug(f'Команда введена неправильно {message.text=}. При ручном вызове ОТК из master_otk_text_send')
+
+
 async def on_shutdown(_):  # функция выполняется при завершении работы бота
     logger.info('Бот офлайн.')
 
@@ -533,77 +662,6 @@ async def on_shutdown(_):  # функция выполняется при зав
 #                                 f'при необходимости через пробел укажите описание проблемы')
 
 
-@dp.message_handler(commands=['otk_send_text'])
-async def master_otk_text_send(message: types.Message):
-    """
-    Ручная отправка вызова ОТК
-    :param message:
-    :return:
-    """
-    try:
-        master_id = message.from_user.id
-        ws_number = message.text.split(' ')[1]
-        if str(ws_number) in ws_numbers_c1 or str(ws_number) in ws_numbers_c2:
-            if str(ws_number) in ws_numbers_c1:
-                send_master_group = omzit_master_group1_id
-            elif str(ws_number) in ws_numbers_c2:
-                send_master_group = omzit_master_group2_id
-            # обработка большого количества вызовов ОТК
-            # Статус ожидание контролёра
-            status_change_to_otk(ws_number=ws_number, initiator_id=master_id)
-            st_count = lines_count(ws_number=str(ws_number))[0]  # количество СЗ с ожиданием контролёра
-            send_master_group = admin_id  # TODO ТЕСТЫ!!!
-            omzit_otk_group_id = admin_id  # TODO ТЕСТЫ!!!
-            if st_count > 10:
-                await bot.send_message(chat_id=send_master_group,
-                                       text=f"Вызов контролёра более "
-                                            f"чем на 10 СЗ недопустим."
-                                            f"Сдайте сменные задания ОТК.")
-                logger.warning(f'Попытка вызвать ОТК на более 10 СЗ одновременно.'
-                               f'{ws_number=}, {id_fios.get(int(master_id), master_id)}')
-                return
-            if st_count == 0:
-                await bot.send_message(chat_id=send_master_group,
-                                       text=f"Сменных заданий со статусом 'вызов контролёра' "
-                                            f"на {ws_number} нет.")
-                return
-        else:
-            await message.reply(text='Номер терминала введён неправильно')
-            logger.debug(f'Номер терминала введён неправильно {message.text=}. '
-                         f'При ручном вызове ОТК из master_otk_text_send')
-            return
-        logger.info(f'Вызов контролёра вручную из master_otk_text_send')
-        text_to_otk = ' '.join(message.text.split(' ')[2:])
-        if len(text_to_otk) > 50:
-            await message.reply(text='Сообщение для ОТК более 50 символов.')
-            logger.debug(f'Сообщение для ОТК более 50 символов {message.text=}. '
-                         f'При ручном вызове ОТК из master_otk_text_send')
-            return
-
-        ultra_sound_string = lines_count(ws_number=str(ws_number))[1]
-        logger.info(f'Количество сменных заданий для приёмки {st_count=}, '
-                    f'Наличие УЗК, или рентгена: {ultra_sound_string=}')
-        # отправка сообщения о заявке на контролёра в группу ОТК
-        if ultra_sound_string:
-            await bot.send_message(chat_id=omzit_otk_group_id,
-                                   text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
-                                        f"{id_fios[int(master_id)]}.\n"
-                                        f"Количество сменных заданий для приёмки: "
-                                        f"{st_count}.\n"
-                                        f"операция рентген, УЗК: {ultra_sound_string} \n"
-                                        f"Замечание мастера: {text_to_otk}")
-        else:
-            await bot.send_message(chat_id=omzit_otk_group_id,
-                                   text=f"Контролёра ожидают на Т{ws_number}. Запрос от "
-                                        f"{id_fios[int(master_id)]}.\n"
-                                        f"Количество сменных заданий для приёмки: {st_count}. \n"
-                                        f"Замечание мастера: {text_to_otk}")
-        await bot.send_message(chat_id=send_master_group, text="Запрос в отк отправлен.")
-    except Exception as e:
-        logger.error(e)
-        await message.reply(text='Команда введена неправильно')
-        logger.debug(f'Команда введена неправильно {message.text=}. При ручном вызове ОТК из master_otk_text_send')
-
-
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True, on_startup=on_startup, on_shutdown=on_shutdown, timeout=10)
+    # print(id_fios)

@@ -14,53 +14,27 @@ from django.forms.models import model_to_dict
 from django.core.handlers.wsgi import WSGIRequest
 from django.utils.timezone import make_aware
 
+from m_logger_settings import logger  # noqa
+from orders.report import create_order_report  # noqa
 
-from m_logger_settings import logger
-from orders.report import create_order_report
-
-
-from orders.models import Orders, Equipment, Shops, WorkersLog, ReferenceMaterials, FlashMessage
-from orders.forms import (
-    AddEquipmentForm,
-    AddOrderForm,
-    AssignWorkersForm,
-    EditEquipmentForm,
-    RepairProgressForm,
-    ConfirmMaterialsForm,
-    RepairFinishForm,
-    RepairRevisionForm,
-    OrderEditForm,
-    RepairCancelForm,
-    AddShop,
-    UploadPDFFile,
-    ChangePPRForm,
-    ConvertExcelForm
-
-)
-from orders.utils.common import (
-    OrdStatus,
-    can_edit_workers,
-    MATERIALS_NOT_REQUIRED,
-)
-from orders.utils.reference_materials import add_reference_materials
-from orders.utils.roles import Position, get_employee_position, custom_login_check, PERMITTED_USERS, menu_items, \
-    get_menu_context
-from orders.utils.utils import (
-    get_doers_list,
-    orders_record_to_dict,
-    get_order_verbose_names,
-    get_order_edit_context,
-    process_repair_expect_date,
-    apply_order_status,
-    create_extra_materials,
-    check_order_suspend,
-    orders_get_context,
-    clear_dayworkers,
-    ORDER_CARD_COLUMNS,
-    remove_old_file_if_exist, convert_dayworkers_to_string,
-)
-from orders.utils.telegram import order_telegram_notification
-from controller.utils.mixins import RoleMixin
+from orders.models import Orders, Equipment, Shops, WorkersLog, ReferenceMaterials, FlashMessage  # noqa
+from orders.forms import (AddEquipmentForm, AddOrderForm, AssignWorkersForm, EditEquipmentForm, # noqa
+                          RepairProgressForm, ConfirmMaterialsForm, RepairFinishForm, RepairRevisionForm, # noqa
+                          OrderEditForm, RepairCancelForm, AddShop, UploadPDFFile, ChangePPRForm, # noqa
+                          ConvertExcelForm # noqa
+                          )
+from orders.utils.common import OrdStatus, can_edit_workers, MATERIALS_NOT_REQUIRED # noqa
+from orders.utils.reference_materials import add_reference_materials # noqa
+from orders.utils.roles import (Position, get_employee_position, custom_login_check, PERMITTED_USERS, # noqa
+                                menu_items, get_menu_context) # noqa
+from orders.utils.utils import (get_doers_list, orders_record_to_dict, get_order_verbose_names, # noqa
+                                get_order_edit_context, process_repair_expect_date, apply_order_status, # noqa
+                                create_extra_materials, check_order_suspend, orders_get_context, # noqa
+                                clear_dayworkers, ORDER_CARD_COLUMNS, remove_old_file_if_exist, # noqa
+                                convert_dayworkers_to_string, # noqa
+                                )
+from orders.utils.telegram import order_telegram_notification # noqa
+from controller.utils.mixins import RoleMixin # noqa
 
 
 @login_required(login_url="/scheduler/login/")
@@ -162,7 +136,7 @@ def orders(request) -> HttpResponse:
     return render(request, "orders/orders.html", context=context)
 
 
-class OrdersArchive(LoginRequiredMixin, RoleMixin,  ListView):
+class OrdersArchive(LoginRequiredMixin, RoleMixin, ListView):
     """
     Отображает все заявки на ремонт, которые были завершены (приняты или отменены).
     """
@@ -513,7 +487,7 @@ def order_cancel_repair(request, pk):
 
     form = RepairCancelForm()
     context = {"object": order,
-               "form": form,}
+               "form": form, }
     context.update(get_menu_context(request))
     return render(request, "orders/repair_cancel.html", context)
 
@@ -617,8 +591,8 @@ def order_edit(request, pk):
     conditions = get_order_edit_context(request)
     for key, field in form.fields.items():
         if (
-            order.status_id not in conditions["stages"][key]
-            or conditions["role"] not in conditions["employees"][key]
+                order.status_id not in conditions["stages"][key]
+                or conditions["role"] not in conditions["employees"][key]
         ):  # если условия редактирования не удовлетворяют, то отключаем поля путем модификации виджетов формы
             field.disabled = True
     context.update(get_menu_context(request))
@@ -642,8 +616,8 @@ def order_delete_proc(request: WSGIRequest):
             ).get(pk=pk)
             # убеждаемся, что пользователю можно удалить заявку
             if (
-                get_employee_position(request.user.username) in [Position.Admin, Position.HoS]
-                and order.status_id == OrdStatus.DETECTED
+                    get_employee_position(request.user.username) in [Position.Admin, Position.HoS]
+                    and order.status_id == OrdStatus.DETECTED
             ):
                 try:
                     Orders.objects.filter(pk=pk).delete()
@@ -698,7 +672,7 @@ class EquipmentCardView(LoginRequiredMixin, RoleMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({"edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],})
+        context.update({"edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT], })
         return context
 
     def post(self, request, *args, **kwargs):
@@ -754,8 +728,7 @@ class EquipmentCardEditView(LoginRequiredMixin, RoleMixin, UpdateView):
     form_class = EditEquipmentForm
     template_name = "orders/equipment_edit.html"
     login_url = "/scheduler/login/"
-    extra_context = {"edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT],}
-
+    extra_context = {"edit_and_delete": [Position.Admin, Position.Engineer, Position.HoRT], }
 
     def form_valid(self, form):
         form_data = form.cleaned_data
@@ -937,7 +910,6 @@ class RepairmenHistory(LoginRequiredMixin, RoleMixin, ListView):
         return context
 
 
-
 @login_required(login_url="/scheduler/login/")
 def order_upload_pdf(request: WSGIRequest, pk):
     """
@@ -988,7 +960,6 @@ def filter_data(request):
     return JsonResponse({"filter": equipment_json})
 
 
-
 class PPRСalendar(LoginRequiredMixin, RoleMixin, ListView):
     """
     Показывает график ППР для оборудования. На странице возможно изменить день ППР для конкретного оборудования.
@@ -999,11 +970,10 @@ class PPRСalendar(LoginRequiredMixin, RoleMixin, ListView):
     def get_queryset(self):
         return Equipment.equipment_with_PPR().values("id", "name", "shop_id", "ppr_plan_day", "inv_number")
 
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({
-            "shops":  Shops.objects.all(),
+            "shops": Shops.objects.all(),
             "range": range(1, 32),
             'form': ChangePPRForm(),
             "edit_ppr_button": [Position.Admin, Position.HoRT, Position.Engineer],
@@ -1031,9 +1001,9 @@ class ReferenceMaterialsList(LoginRequiredMixin, RoleMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({
-                   "alerts": FlashMessage.pop_flash(),
-                   "edit_materials": [Position.Admin, Position.HoRT, Position.Engineer],
-                   })
+            "alerts": FlashMessage.pop_flash(),
+            "edit_materials": [Position.Admin, Position.HoRT, Position.Engineer],
+        })
         return context
 
 
@@ -1073,7 +1043,7 @@ def convert_excel(request):
     return render(request, "orders/convert_excel.html", context)
 
 
-class ShowReference(LoginRequiredMixin, RoleMixin,  DetailView):
+class ShowReference(LoginRequiredMixin, RoleMixin, DetailView):
     """
     Показывает страницу со сконвертированным из экселя справочным материалом, предварительно достав ее из базы
     """
@@ -1105,4 +1075,3 @@ def reference_delete_proc(request: WSGIRequest, pk):
         logger.error(message)
         logger.exception(e)
     return redirect("reference")
-

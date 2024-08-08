@@ -260,9 +260,9 @@ def save_strat_plan(request):
             # обновление данных
             try:
                 WorkshopSchedule.objects.bulk_update(schedules_to_update,
-                                                     ['calculated_datetime_done', 'done_rate', 'produce_cycle',
+                                                     ('calculated_datetime_done', 'done_rate', 'produce_cycle',
                                                       'order_status', 'is_fixed', 'calculated_datetime_start',
-                                                      'late_days'])
+                                                      'late_days'))
                 logger.debug('Данные планирования успешно обновлены.')
             except Exception as e:
                 logger.error('Ошибка при обновлении данных WorkshopSchedule.')

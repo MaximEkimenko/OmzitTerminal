@@ -7,20 +7,23 @@ from django.http import FileResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 
-from controller.forms import EditDefectForm, FilesUploadForm
-from controller.apps import ControllerConfig as App
+from controller.forms import EditDefectForm, FilesUploadForm # noqa
+from controller.apps import ControllerConfig as App # noqa
 from django.forms.models import model_to_dict
 
-from controller.models import DefectAct
-from controller.utils.mixins import RoleMixin, DisableFieldsMixin
-from controller.utils.report import create_report
-from controller.utils.utils import check_directory, get_model_verbose_names
-from controller.utils.utils import (format_act_number,
-                                    check_media_ref
+from controller.models import DefectAct # noqa
+from controller.utils.mixins import RoleMixin, DisableFieldsMixin # noqa
+from controller.utils.report import create_report # noqa
+from controller.utils.utils import check_directory, get_model_verbose_names # noqa
+from controller.utils.utils import (format_act_number, # noqa
+                                    check_media_ref, # noqa
+                                    update_defect_acts,  # noqa
+                                    add_defect_acts # noqa
                                     )
-from orders.utils.roles import Position, get_menu_context
-from tehnolog.services.service_handlers import handle_uploaded_file
-from m_logger_settings import logger
+from orders.utils.roles import Position, get_menu_context # noqa
+from tehnolog.services.service_handlers import handle_uploaded_file # noqa
+from m_logger_settings import logger # noqa
+from omzit_terminal.settings import BASE_DIR  # noqa
 
 
 class DefectsView(LoginRequiredMixin, RoleMixin, ListView):
@@ -30,12 +33,18 @@ class DefectsView(LoginRequiredMixin, RoleMixin, ListView):
     model = DefectAct
     template_name = "controller/index.html"
     login_url = "/scheduler/login/"
-    extra_context = {"create_act_role": [Position.Admin, Position.Controller],}
+    extra_context = {"create_act_role": [Position.Admin, Position.Controller], }
+
+    # TODO для тестов
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     update_defect_acts()
+    #     return context
 
 
 class CreateDefectAct(LoginRequiredMixin, DisableFieldsMixin, RoleMixin, CreateView):
     """
-    Представление для ручного создания нового акта о браке
+    Контроллер для ручного создания нового акта о браке
     """
     def form_valid(self, form):
         last_num = DefectAct.last_act_number()
@@ -53,7 +62,7 @@ class CreateDefectAct(LoginRequiredMixin, DisableFieldsMixin, RoleMixin, CreateV
 
 class EditDefectAct(LoginRequiredMixin, DisableFieldsMixin, RoleMixin, UpdateView):
     """
-    Представление для редактирования акта о браке
+    Контроллер для редактирования акта о браке
     """
     def form_valid(self, form):
         # Случай, когда поле "дата" было отключено в форме. Но в модели оно обязательно,
@@ -64,6 +73,9 @@ class EditDefectAct(LoginRequiredMixin, DisableFieldsMixin, RoleMixin, UpdateVie
 
 
 class DefectCard(LoginRequiredMixin, RoleMixin, DetailView):
+    """
+    Контроллер отображения карточки брака
+    """
     model = DefectAct
     fields = [
         "datetime_fail", "act_number", "workshop", "operation", "processing_object",
@@ -91,7 +103,7 @@ class DefectCard(LoginRequiredMixin, RoleMixin, DetailView):
 def upload_files(request, pk):
     """
     Функция в которой происходит добавление файлов в каталог, ассоциированный с актом о браке.
-    Сначала проверяеся, существует ли каталог, при необходимости он создается и в него копируются файлы.
+    Сначала проверяется, существует ли каталог, при необходимости он создается и в него копируются файлы.
     Так же происходит подсчет файлов, для отображения количества файлов в таблице.
     """
     act = DefectAct.objects.get(pk=pk)
@@ -101,10 +113,17 @@ def upload_files(request, pk):
         if form.is_valid():
             check_media_ref(act)
             dest_dir = check_directory(act)
+            permitted_extensions = ('.pdf', '.jpg', '.jpeg', '.png', '.bmp')
             if dest_dir:
-                logger.info(f"Создан каталог '{dest_dir}' для акта о браке {act.act_number}")
+                logger.info(f"Существует каталог '{dest_dir}' для акта о браке {act.act_number}")
                 filecount = len([f for f in dest_dir.iterdir() if f.is_file()])
                 for file in form.cleaned_data["files"]:
+                    # проверка файла
+                    file_extension = Path(str(file)).suffix
+                    if file_extension not in permitted_extensions:
+                        logger.warning(f'Попытка загрузки недопустимого файла: {file}. '
+                                       f'Пользователем {request.user.username}')
+                        return redirect(request.META.get('HTTP_REFERER', 'redirect_if_referer_not_found'))
                     filename = handle_uploaded_file(file, str(file), dest_dir)
                     if filename:
                         logger.info(f"Файл '{filename}' добавлен к акту о браке '{act.act_number}'")
@@ -115,7 +134,6 @@ def upload_files(request, pk):
                                      f"К акту о браке № {act.act_number} добавлены файлы.")
             else:
                 logger.info("Файлы не добавлялись из-за ошибка создания каталога")
-
             return redirect("controller:index")
         else:
             context.update({"form": form})
@@ -152,7 +170,8 @@ def file_list(request, pk):
 def show_file(request, path: str):
     """
     Показывает пользователю файл, на который он кликнул по ссылке.
-    @param path: Абсолютный путь к файлу.
+    :param path: Абсолютный путь к файлу.
+    :param request:
     """
     try:
         return FileResponse(open(path, "rb"))
@@ -168,8 +187,9 @@ def delete_file_proc(request, pk: int, path: str):
     """
     Удаляет файл из каталога ассоциированного с актом о браке.
     После удаления перенаправляет на страницу со списком прикрепленных файлов.
-    @param pk: Идентификатор конкретного акта о браке, к которому нужно вернуться после удаления.
-    @param path: Абсолютный путь для удаления файла.
+    :param pk: Идентификатор конкретного акта о браке, к которому нужно вернуться после удаления.
+    :param path: Абсолютный путь для удаления файла.
+    :param request:
     """
     if path:
         file = Path(path).resolve()

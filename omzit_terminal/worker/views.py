@@ -83,19 +83,42 @@ def worker(request, ws_number):
                              'TZ-019',
                              'TZ-020',
                              'TZ-021',
+                             'TZ-022',
+                             'TZ-023',
+                             'TZ-024',
+                             'TZ-025',
+                             'TZ-026',
+                             'TZ-027',
+                             'TZ-028',
+                             'TZ-030',
+                             'TZ-031',
+                             'TZ-032',
+                             'TZ-033',
+                             'TZ-034',
                              'apm-0140',  # Планшет цех1
                              'APM-0229',  # Планшет цех2
                              'host',
-                             '192'
+                             '192',
+                             'TZ-02!',
                              )
     terminal_ip = get_client_ip(request)  # определение IP терминала
     terminal_name = socket.getfqdn(terminal_ip)  # определение полного имени по IP
-    if terminal_name[:terminal_name.find('.')] not in allowed_terminal_list:
-        logger.warning(f'Не санкционированная попытка доступа {terminal_name[:terminal_name.find(".")]}! '
-                       f'В доступе отказано.')
-        raise PermissionDenied
+    if '.' in terminal_name:
+        if terminal_name[:terminal_name.find('.')] not in allowed_terminal_list:
+            print(f"{terminal_name=}")
+            logger.warning(f'Не санкционированная попытка доступа {terminal_name[:terminal_name.find(".")]}! '
+                           f'В доступе отказано.')
+            raise PermissionDenied
+        else:
+            logger.debug(f'Выдан доступ {terminal_name[:terminal_name.find(".")]}')
     else:
-        logger.debug(f'Выдан доступ {terminal_name[:terminal_name.find(".")]}')
+        if terminal_name not in allowed_terminal_list:
+            print(f"{terminal_name=}")
+            logger.warning(f'Не санкционированная попытка доступа {terminal_name}! '
+                           f'В доступе отказано.')
+            raise PermissionDenied
+        else:
+            logger.debug(f'Выдан доступ {terminal_name}')
     # вывод таблицы распределённых РЦ
     today = datetime.datetime.now().strftime('%d.%m.%Y')
     initial_shift_tasks = (ShiftTask.objects.values('id', 'ws_number', 'model_name', 'order', 'op_number',
@@ -309,7 +332,8 @@ def make_master_call(request, ws_st_number):
         logger.info(f'Вызов мастера.')
         for message in messages:
             try:
-                # asyncio.run(send_call_master(message, ws_number))  # отправка в группу мастерам телеграм ботом
+                # TODO выключать на тесты
+                asyncio.run(send_call_master(message, ws_number))  # отправка в группу мастерам телеграм ботом
                 logger.info(f'Сообщение мастеру в telegram отправлено успешно {message}')
             except Exception as e:
                 logger.error(f'Ошибка отправки telegram сообщения мастеру {message}')
@@ -342,6 +366,7 @@ def make_dispatcher_call(request, ws_st_number):
         logger.info('Вызов диспетчера')
         for message in messages:
             try:
+                # TODO выключать на тесты
                 asyncio.run(send_call_dispatcher(message, ws_number))  # отправка в группу мастерам телеграм ботом
                 logger.info(f'Сообщение диспетчеру в telegram отправлено успешно {message}')
             except Exception as e:
@@ -371,6 +396,7 @@ def pause_work(task_id=None, is_lunch=False, to_status='пауза'):
                              f"Операция: {st.op_number} {st.op_name_full}. "
                              f"Исполнители: {st.fio_doer}")
         try:
+            # TODO выключать на тесты
             asyncio.run(send_call_master(message_to_master, st.ws_number))
             logger.info(f'Сообщение telegram из функции "pause_work" мастеру отправлено {message_to_master}')
         except Exception as e:
@@ -445,6 +471,7 @@ def resume_work(task_id=None, is_lunch=False, from_status='пауза'):
                              f"Операция: {st.op_number} {st.op_name_full}. "
                              f"Исполнители: {st.fio_doer}")
         try:
+            # TODO выключать на тесты
             asyncio.run(send_call_master(message_to_master, st.ws_number))
             logger.info(f'Сообщение telegram из функции "resume_work" мастеру отправлено {message_to_master}')
         except Exception as e:
