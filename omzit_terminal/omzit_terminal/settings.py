@@ -91,17 +91,16 @@ DATABASES = {
         'NAME': 'terminal_test',
         'PASSWORD': 'Epass1',
         'USER': 'admin',
-        #
-        # 'NAME': 'postgres',
-        # 'USER': 'postgres',
-        # 'PASSWORD': 'Valm0nts89',
-
         # 'HOST': 'localhost',
         'HOST': "127.0.0.1",
-
-        # 'HOST': '192.168.8.163',
-        # 'HOST': '192.168.8.30',
         'PORT': '',
+        # TODO актуальные настройки сервера
+        # 'NAME': 'terminal_4',
+        # 'PASSWORD': 'Epass1',
+        # 'USER': 'admin',
+        # 'HOST': '192.168.8.30',
+        # 'PORT': '',
+        #
     },
     # 'sigma': {
     #     'NAME': 'SNDBase',

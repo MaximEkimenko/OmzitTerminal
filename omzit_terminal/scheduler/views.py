@@ -623,7 +623,7 @@ def show_workshop_scheme(request):
     :return:
     """
     try:
-        path_to_file = r"M:\Xranenie\ПТО\1 Екименко М.А\Планировка\Планирока участков(цех1, цех2, цех3)+РЦ+Расписание+Виды от 20.03.2024.xlsm"
+        path_to_file = r"M:\Xranenie\ПТО\1 Екименко М.А\Планировка\Планирока участков (цех1, цех2, цех3.2, цех4) от 05.08.2024.xlsx"
         response = FileResponse(open(fr'{path_to_file}', 'rb'))
         response['X-Frame-Options'] = 'SAMEORIGIN'
         logger.info(f"Пользователь {request.user} успешно запросил планировку.")

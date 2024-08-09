@@ -197,8 +197,8 @@
                     ge.checkpoint() //empty the undo stack
                 }
             }
-
-            baseUrl = 'http://192.168.8.163:8000/api/save_strat'
+            baseHome = `http://192.168.8.30:8008`
+            baseUrl = `${baseHome}/api/save_strat`
             async function saveGanttOnServer() {
                 //this is a simulation: save data to the local storage or to the textarea
                 //saveInLocalStorage();
@@ -761,11 +761,9 @@
                     </div>
 
                     <div>
-                        <a href="http://192.168.8.163:8000/scheduler/strat_plan1/"> цех 1 </a>
+                        <a href="/scheduler/strat_plan1/"> цех 1 </a>
                         |
-                        <a href="http://192.168.8.163:8000/scheduler/strat_plan2/"> цех 2 </a>
-                        <!-- prettier-ignore -->
-
+                        <a href="/scheduler/strat_plan2/"> цех 2 </a>
                         <button
                             onclick="saveGanttOnServer();"
                             class="button first big requireWrite"

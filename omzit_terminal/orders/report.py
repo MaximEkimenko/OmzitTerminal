@@ -22,7 +22,7 @@ def create_order_report():
 
     qs = Orders.fresh_orders()
     qs = orders_to_dict(qs, ORDER_REPORT_COLUMNS)
-    verbose_header = get_model_verbose_names()
+    verbose_header = get_model_verbose_names(Orders)
     verbose_header.update({"id": "№"})
 
     for i, column in enumerate(ORDER_REPORT_COLUMNS):

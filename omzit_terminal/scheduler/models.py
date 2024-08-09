@@ -5,6 +5,7 @@ import datetime
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.utils.timezone import now
+
 # TODO ФУНКЦИОНАЛ ЗАЯВИТЕЛЯ ПЛАЗМЫ И НОВОГО РАБОЧЕГО МЕСТА ТЕХНОЛОГА законсервировано
 # import datetime
 # from django.db.models import Avg
@@ -64,24 +65,23 @@ class WorkshopSchedule(models.Model):
     produce_cycle = models.DecimalField(null=True, max_digits=10, decimal_places=2, default=1,
                                         verbose_name='Производственный цикл')
 
-    plan_datetime = models.DateTimeField(null=True, verbose_name='дата/время выполнения планирования заказа',
-                                         # # TODO убрать после переноса
-                                         default=datetime.datetime.now(tz=datetime.timezone.utc))
+    plan_datetime = models.DateTimeField(null=True, verbose_name='дата/время выполнения планирования заказа', )
+    # TODO используется для переноса на сервер
+    # default=datetime.datetime.now(tz=datetime.timezone.utc))
+    contract_start_date = models.DateField(null=True, verbose_name='Дата начала по договору', )
+    # TODO используется для переноса на сервер
+    # default=datetime.datetime.now(tz=datetime.timezone.utc))
+    contract_end_date = models.DateField(null=True, verbose_name='Дата готовности по договору', )
+    # TODO используется для переноса на сервер
+    # default=datetime.datetime.now(tz=datetime.timezone.utc))
+    calculated_datetime_done = models.DateField(null=True, verbose_name='Расчётная дата готовности', )
+    # TODO используется для переноса на сервер
+    # default=datetime.datetime.now(tz=datetime.timezone.utc))
+    calculated_datetime_start = models.DateField(null=True, verbose_name='Расчётная дата запуска', )
+    # TODO используется для переноса на сервер
+    # default=datetime.datetime.now(tz=datetime.timezone.utc))
 
-    contract_start_date = models.DateField(null=True, verbose_name='Дата начала по договору',
-                                           # # TODO убрать после переноса
-                                           default=datetime.datetime.now(tz=datetime.timezone.utc))
-    contract_end_date = models.DateField(null=True, verbose_name='Дата готовности по договору',
-                                         # # TODO убрать после переноса
-                                         default=datetime.datetime.now(tz=datetime.timezone.utc))
-    calculated_datetime_done = models.DateField(null=True, verbose_name='Расчётная дата готовности',
-                                                # # TODO убрать после переноса
-                                                default=datetime.datetime.now(tz=datetime.timezone.utc))
-    calculated_datetime_start = models.DateField(null=True, verbose_name='Расчётная дата запуска',
-                                                 # # TODO убрать после переноса
-                                                 default=datetime.datetime.now(tz=datetime.timezone.utc))
-
-    is_fixed = models.BooleanField(verbose_name='фиксация в план', default=False)
+    is_fixed = models.BooleanField(verbose_name='фиксация в план', default=False, null=True)
     late_days = models.IntegerField(null=True, verbose_name='отставание дней', default=0)
 
     # def __str__(self):
